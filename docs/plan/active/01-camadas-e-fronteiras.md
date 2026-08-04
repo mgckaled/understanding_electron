@@ -204,7 +204,7 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-04 | 1, 2, 3 | passos concluídos; aceite da fase pendente de decisão | Os três passos e commits feitos. `pnpm typecheck` limpo e `pnpm dev` abre sem erro, confirmados duas vezes. `pnpm lint` limpo no código desta fase, mas o comando bruto retorna erro por causa de `.claude/hooks/guard.mjs` — pré-existente, da fase 08, ainda não ligado. O critério de aceite da fase pede "`pnpm lint` limpo" sem qualificação; ver nota abaixo. Import de `@shared/*` provado em `main` e `renderer` (D1.2 restringe `preload/` a só tipos de `shared/`, e `APP_ID` é valor — não há o que provar ali nesta fase). Skill `architecture` atualizada com D1.1, D1.2, D1.3 e D1.5. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
