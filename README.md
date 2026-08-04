@@ -1,13 +1,17 @@
 # data-lab
 
-Aplicação de desktop para análise de dados locais, construída com **Electron**, **React** e **TypeScript**.
+Bancada local para **limpar e transformar arquivos de dados**, construída com **Electron**, **React** e **TypeScript**.
+
+Abrir CSV, Parquet, Excel ou JSON; montar uma sequência de operações de tratamento — filtrar, renomear, tipar, normalizar, deduplicar; ver o efeito de cada passo; exportar o resultado. Tudo local, sem servidor, sem nuvem, sem instalar banco de dados.
 
 O projeto tem dois objetivos declarados, de peso equivalente:
 
-1. Entregar uma ferramenta que abra arquivos grandes de dados — CSV, Parquet — e permita consultá-los com SQL sem depender de servidor, nuvem ou instalação de banco.
+1. Entregar a ferramenta acima.
 2. Servir de estudo aprofundado do ecossistema Electron com TypeScript, com as decisões e os erros registrados em vez de apagados.
 
 O segundo objetivo explica a densidade da documentação em [`docs/study/`](docs/study/README.md).
+
+**O que o aplicativo faz e não faz** está definido em [`docs/ESCOPO.md`](docs/ESCOPO.md).
 
 ---
 
@@ -21,12 +25,18 @@ O segundo objetivo explica a densidade da documentação em [`docs/study/`](docs
 | ✅ | HMR no renderer, reinício automático do main |
 | ✅ | Verificação de tipos separada por ambiente, passando limpo |
 | ✅ | Pipeline de recompilação de módulo nativo funcionando |
+| ⬜ | Fundação: contrato IPC, sandbox, testes, design tokens |
 | ⬜ | DuckDB em `utilityProcess` |
 | ⬜ | Transporte de resultados via Apache Arrow |
 | ⬜ | Tabela virtualizada |
+| ⬜ | Pipeline de passos e catálogo de operações |
 | ⬜ | Empacotamento e instalador |
 
-O plano detalhado das etapas pendentes está em [`docs/study/05-proximos-passos.md`](docs/study/05-proximos-passos.md).
+O caminho está em três documentos, nesta ordem:
+
+1. [`docs/ESCOPO.md`](docs/ESCOPO.md) — o que se está construindo
+2. [`docs/plan/active/`](docs/plan/active/README.md) — oito fases de fundação, com passos e critérios de aceite
+3. [`docs/study/05-proximos-passos.md`](docs/study/05-proximos-passos.md) — a camada de dados, que começa quando a fundação terminar
 
 ---
 
@@ -108,10 +118,17 @@ O raciocínio completo — inclusive das alternativas recusadas, como Vite 8 e s
 
 | Documento | Para quem |
 |---|---|
-| [`CLAUDE.md`](CLAUDE.md) | Regras do projeto, armadilhas conhecidas, decisões pendentes |
+| [`docs/README.md`](docs/README.md) | **Mapa da documentação** — organização, ciclo de vida de um plano, convenção de fonte única |
+| [`docs/ESCOPO.md`](docs/ESCOPO.md) | O que o aplicativo faz e não faz |
+| [`docs/HISTORY.md`](docs/HISTORY.md) | Decisões, alternativas descartadas e armadilhas diagnosticadas |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | O que ainda falta, com os gatilhos que reabrem cada decisão |
+| [`docs/plan/active/`](docs/plan/active/README.md) | Planos por implementar, com passos e critérios de aceite |
 | [`docs/study/`](docs/study/README.md) | Caderno didático, do zero ao estado atual |
+| [`CLAUDE.md`](CLAUDE.md) | Stack fixada, regras invioláveis, ambiente de desenvolvimento |
 
-O [diário de bordo](docs/study/04-diario-de-bordo.md) registra quatro problemas reais enfrentados na montagem — com o raciocínio de diagnóstico preservado, não só a solução. É o documento mais útil quando algo quebrar de novo, porque o método sobrevive às versões.
+Cada assunto tem **um** dono; os demais apontam para ele. Fato duplicado é dívida — o segundo lugar envelhece calado.
+
+O [diário de bordo](docs/study/04-diario-de-bordo.md) registra quatro problemas reais enfrentados na montagem, com o raciocínio de diagnóstico preservado e não só a solução. É o documento mais útil quando algo quebrar de novo, porque o método sobrevive às versões.
 
 ---
 

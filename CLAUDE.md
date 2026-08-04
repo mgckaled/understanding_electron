@@ -1,8 +1,54 @@
 # data-lab
 
-Aplicação **Electron** de análise de dados. O objetivo declarado do projeto é duplo: entregar uma ferramenta de análise que funcione localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
+Aplicação **Electron** para limpeza e transformação de arquivos de dados (CSV, Parquet, Excel, JSON) por meio de um pipeline de passos que compila para SQL do DuckDB. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
 
-Documentação didática em [`docs/study/`](docs/study/README.md).
+---
+
+## ⚠️ Registro de trabalho — leia antes de começar
+
+**Toda sessão de trabalho termina registrando o que foi feito.** Não é burocracia: é a diferença entre um projeto que acumula contexto e um que o perde. Dois registros, com vidas diferentes:
+
+| | Onde | Unidade | Quando |
+|---|---|---|---|
+| **Diário de execução** | tabela no fim do plano em `docs/plan/active/` | uma sessão | antes de encerrar **toda** sessão |
+| **Entrada de histórico** | [`docs/HISTORY.md`](docs/HISTORY.md) | um marco concluído | ao mover um plano para `implemented/` |
+
+**Escalonamento — a regra que faz o sistema funcionar:** observação do diário que valha **além daquele plano** sobe para o `HISTORY.md` **na mesma sessão**. O teste é *"isto vai custar tempo de novo?"* — armadilha diagnosticada, alternativa tentada e descartada, número medido: sobe. "Terminei o passo 3": morre com o plano.
+
+Regra completa e formato em [`docs/README.md`](docs/README.md#os-dois-registros-e-por-que-são-dois).
+
+---
+
+## Organização da documentação
+
+```text
+docs/
+├── README.md        # mapa, ciclo de vida do plano, convenção de fonte única
+├── ESCOPO.md        # o que o app faz e não faz
+├── HISTORY.md       # decisões e entregas (cronológico inverso)
+├── ROADMAP.md       # o que ainda falta
+├── study/           # cadernos didáticos
+├── reference/       # consulta técnica estável
+└── plan/{active,implemented,archive}/
+```
+
+Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao diário dele → ao concluir, **move** para `implemented/` e ganha uma entrada em `HISTORY.md`. Plano abandonado vai para `archive/` **com o motivo** registrado no histórico.
+
+### Fonte única por assunto
+
+Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplicado é dívida: o segundo lugar envelhece calado.
+
+| Assunto | Dono |
+|---|---|
+| O que o app faz e não faz, catálogo de operações, formatos, escala | [`docs/ESCOPO.md`](docs/ESCOPO.md) |
+| Fundação: camadas, contrato IPC, testes, tokens — com passos e aceite | [`docs/plan/active/`](docs/plan/active/README.md) |
+| Camada de dados (DuckDB, `utilityProcess`, Arrow) | [`docs/study/05-proximos-passos.md`](docs/study/05-proximos-passos.md) |
+| IA local e de nuvem, ML, RAG | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
+| Decisões, alternativas descartadas, armadilhas | [`docs/HISTORY.md`](docs/HISTORY.md) |
+| Pendências e gatilhos de revisão | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
+| Fundamentos do Electron, anatomia, medições | [`docs/study/`](docs/study/README.md) |
+
+Este arquivo registra o que **não** se deduz do código nem cabe nos donos acima: stack fixada, regras invioláveis e ambiente de desenvolvimento.
 
 ---
 
@@ -83,8 +129,9 @@ Add-MpPreference -ExclusionProcess "node.exe"
 
 - `contextIsolation` fica em `true` (padrão do Electron, não mexer)
 - Todo acesso a dados passa pelo **preload** via `contextBridge` — o renderer nunca fala direto com o main
-- Tipos do contrato IPC ficam declarados em `src/preload/index.d.ts`
-- **Pendência conhecida:** `src/main/index.ts` está com `sandbox: false`. É o padrão do template, não uma decisão nossa. Revisitar antes de qualquer build de produção.
+- Tipos do contrato IPC ficam declarados em `src/shared/ipc.ts`, e todo canal novo passa por lá
+- Segredo é de mão única: o renderer grava e consulta se existe, **nunca lê** — ver [`docs/HISTORY.md`](docs/HISTORY.md)
+- **Pendência conhecida:** `src/main/index.ts` está com `sandbox: false`. É o padrão do template, não uma decisão nossa. Resolvido na [fase 03](docs/plan/active/03-sandbox-e-seguranca.md) do plano de fundação.
 
 ### Arquitetura de dados
 
@@ -97,6 +144,12 @@ Add-MpPreference -ExclusionProcess "node.exe"
 - `pnpm-lock.yaml` é commitado, sempre.
 - Toda configuração do pnpm mora em `pnpm-workspace.yaml`. O campo `pnpm` do `package.json` e o `.npmrc` **não são lidos** no pnpm 11 (exceto auth/registry no `.npmrc`).
 - Módulo nativo novo exige entrada em `allowBuilds` e um `pnpm dev` de validação antes de seguir.
+
+### Commits
+
+- Commit nunca leva `Co-authored-by` mencionando Claude, Anthropic ou qualquer assistente de IA. Autoria é de quem revisa e decide, não de quem redige o texto.
+- Isto é aplicado por hook, não por convenção lembrada em cada sessão: [`.claude/hooks/no_ai_coauthor.mjs`](.claude/hooks/no_ai_coauthor.mjs), registrado como `PreToolUse` em `.claude/settings.json` para `Bash` e `PowerShell`. Bloqueia (saída 2) qualquer comando cujo texto contenha esse trailer, antes do commit acontecer.
+- Os demais hooks já escritos em `.claude/hooks/` (`guard.mjs`, `format_fix.mjs`, `test_related.mjs`) ainda **não estão ligados** — fazem parte da fase [08](docs/plan/active/08-automacao-e-registro.md), ainda não iniciada. Não confundir "hook existe como arquivo" com "hook está ativo": só o que está registrado em `.claude/settings.json` roda.
 
 ---
 
@@ -118,11 +171,7 @@ O template vinha com `^22`, mas o Electron 42 embute Node 24.18.0. Corrigido par
 
 ## Decisões pendentes
 
-**Vite 7 → 8.** O Vite 8 (com bundler Rolldown, em Rust) é estável desde mar/2026, mas o electron-vite 5.0.0 é da mesma época e não declara suporte. Ficamos no 7 conscientemente. Se for migrar, o `vite-plugin-electron` declara suporte a 7 e 8 e é o plano B.
-
-**TypeScript 5.9 → 6.** O TS 6 é release de transição com remoções reais: `moduleResolution: "node"`, `baseUrl`, target ES5, módulos `amd`/`umd`/`systemjs`. Um ponto de quebra já mapeado: `baseUrl: "."` em `tsconfig.web.json` (o campo `paths` funciona sem ele desde o TS 4.1). Fazer como exercício isolado, com `tsc --ts6-migration` gerando o relatório.
-
-**Electron 42 → 43.** O Electron 43 já saiu. A política é manter as 3 majors mais recentes suportadas, então o 42 segue coberto — mas o ciclo é de 8 semanas e o bump precisa ser tarefa agendada, não reativa. É o Chromium embutido que carrega as CVEs.
+Moveram-se para [`docs/ROADMAP.md § 3`](docs/ROADMAP.md), que é o dono único de pendência. As versões **em uso** ficam na tabela de stack acima; o que falta subir mora lá — Electron 42→43, Vite 7→8 e TypeScript 5.9→6, cada uma com o motivo de estar parada.
 
 ---
 
