@@ -77,7 +77,7 @@ export async function scanDelimited(input: {
 }): Promise<DatasetSummary>
 ```
 
-`core/` **pode** importar `node:fs` — a tabela da [fase 01](01-camadas-e-fronteiras.md) permite. A decisão de não importar é sobre testabilidade: recebendo um iterável, o teste passa um array literal e cobre arquivo vazio, só cabeçalho, separador ambíguo, linha malformada e cancelamento no meio, tudo em milissegundos e sem tocar disco.
+`core/` **pode** importar `node:fs` — a tabela da [fase 01](../implemented/01-camadas-e-fronteiras.md) permite. A decisão de não importar é sobre testabilidade: recebendo um iterável, o teste passa um array literal e cobre arquivo vazio, só cabeçalho, separador ambíguo, linha malformada e cancelamento no meio, tudo em milissegundos e sem tocar disco.
 
 É a mesma injeção na fronteira de entrada/saída que o projeto Python faz com `embed_fn`.
 

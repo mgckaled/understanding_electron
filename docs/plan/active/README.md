@@ -41,7 +41,7 @@ Cada fase segue a mesma estrutura:
 | # | Fase | O que entrega | Dependências |
 |---|---|---|---|
 | [00](00-visao-geral.md) | Visão geral | O princípio, as decisões globais, o mapa | — |
-| [01](01-camadas-e-fronteiras.md) | Camadas e fronteiras | Estrutura de pastas, aliases, regra de importação verificada pelo ESLint | — |
+| [01](../implemented/01-camadas-e-fronteiras.md) | Camadas e fronteiras — **implementada** | Estrutura de pastas, aliases, regra de importação verificada pelo ESLint | — |
 | [02](02-contrato-ipc.md) | Contrato IPC | `src/shared/ipc.ts`, `Result`, preload tipado, registro de handlers, cancelamento | 01 |
 | [03](03-sandbox-e-seguranca.md) | Sandbox e segurança | `sandbox: true`, superfície estreita, pendências registradas | 02 |
 | [04](04-testes-rapidos.md) | Testes rápidos | Vitest com dois projetos, níveis 1–3 da pirâmide | 02 |

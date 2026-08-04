@@ -56,7 +56,7 @@ Reversível: são a mesma interface, trocar é uma linha no `vitest.config.ts`. 
 
 ### D4.3 — Os aliases vêm do mesmo lugar do bundler
 
-O `vitest.config.ts` importa `config/aliases.ts`, criado na [fase 01](01-camadas-e-fronteiras.md). Duplicar o mapa produziria o pior modo de falha possível: teste que passa e aplicação que quebra, ou o inverso, sem que nada aponte para a causa.
+O `vitest.config.ts` importa `config/aliases.ts`, criado na [fase 01](../implemented/01-camadas-e-fronteiras.md). Duplicar o mapa produziria o pior modo de falha possível: teste que passa e aplicação que quebra, ou o inverso, sem que nada aponte para a causa.
 
 ### D4.4 — O mock de `window.api` é derivado do tipo do contrato
 
@@ -127,7 +127,7 @@ Acrescente ao `package.json`:
 
 ### Passo 2 — Ensinar o ESLint sobre arquivos de teste
 
-Arquivos `*.test.ts` em `src/core/` importam utilitários do Vitest e, eventualmente, precisam de liberdade que a regra da [fase 01](01-camadas-e-fronteiras.md) não dá. Some a isso que o `describe`/`it` globais precisam ser reconhecidos.
+Arquivos `*.test.ts` em `src/core/` importam utilitários do Vitest e, eventualmente, precisam de liberdade que a regra da [fase 01](../implemented/01-camadas-e-fronteiras.md) não dá. Some a isso que o `describe`/`it` globais precisam ser reconhecidos.
 
 Acrescente ao `eslint.config.mjs` um bloco para `**/*.test.{ts,tsx}` e `test/**` que desligue as restrições relevantes, e ative `globals: true` no `vitest.config.ts` para evitar o import repetido em todo arquivo.
 

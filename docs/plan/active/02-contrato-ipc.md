@@ -1,6 +1,6 @@
 # 02 — Contrato IPC
 
-**Depende de:** [01](01-camadas-e-fronteiras.md) · **Entrega:** `src/shared/ipc.ts`, registro tipado de handlers, preload de superfície estreita, primeiros dois canais reais
+**Depende de:** [01](../implemented/01-camadas-e-fronteiras.md) · **Entrega:** `src/shared/ipc.ts`, registro tipado de handlers, preload de superfície estreita, primeiros dois canais reais
 
 ---
 
@@ -286,4 +286,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [01 — Camadas e fronteiras](01-camadas-e-fronteiras.md) · **Índice:** [README](README.md) · **Próximo:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md)
+**Anterior:** [01 — Camadas e fronteiras](../implemented/01-camadas-e-fronteiras.md) · **Índice:** [README](README.md) · **Próximo:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md)

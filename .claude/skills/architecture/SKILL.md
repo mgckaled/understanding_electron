@@ -5,7 +5,7 @@ description: Decisões estruturais do data-lab — fronteira de processo (main/p
 
 # Arquitetura — data-lab
 
-> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md) e [01](../../../docs/plan/active/01-camadas-e-fronteiras.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas e a regra de importação, já em vigor. Cresce quando as fases [02](../../../docs/plan/active/02-contrato-ipc.md) (contrato IPC), [03](../../../docs/plan/active/03-sandbox-e-seguranca.md) (sandbox) e [06](../../../docs/plan/active/06-primeira-feature.md) (primeira feature) forem implementadas. Fonte completa, com o porquê de cada decisão: docs/plan/active/00 e 01.
+> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md) e [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas e a regra de importação, já em vigor. Cresce quando as fases [02](../../../docs/plan/active/02-contrato-ipc.md) (contrato IPC), [03](../../../docs/plan/active/03-sandbox-e-seguranca.md) (sandbox) e [06](../../../docs/plan/active/06-primeira-feature.md) (primeira feature) forem implementadas. Fonte completa, com o porquê de cada decisão: `docs/plan/active/00-visao-geral.md` e `docs/plan/implemented/01-camadas-e-fronteiras.md`.
 
 ## O critério: o que é caro de desfazer
 

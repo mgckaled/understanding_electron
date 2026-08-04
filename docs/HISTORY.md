@@ -24,7 +24,8 @@ Três a oito linhas. Se precisar de mais, o detalhe pertence ao plano, não aqui
 
 ## Entregas (marcos)
 
-*Nenhuma ainda. O projeto está na fase de fundação — ver [`plan/active/`](plan/active/README.md).*
+### Fase 01 — camadas e fronteiras (ago/2026)
+Origem: primeira fase executável do plano de fundação, sem dependências. Entrega: seis pastas em `src/` (`shared/`, `core/`, `main/`, `workers/`, `preload/`, `renderer/`), aliases únicos (`@shared`, `@core`, `@renderer`) declarados em `config/aliases.ts` e a tabela de importação entre camadas virada regra de `no-restricted-imports` no ESLint. Decisões: `shared/` e `core/` ficam separados — vocabulário versus comportamento — em vez de uma pasta só; `eslint-plugin-boundaries` descartado por ser dependência nova para um problema que ainda não existe (só há uma feature planejada), revisitar na sexta fatia de `features/`. [`plan/implemented/01-camadas-e-fronteiras.md`](plan/implemented/01-camadas-e-fronteiras.md).
 
 ### Escopo e plano de fundação definidos (ago/2026)
 Origem: quatro commits no repositório, dos quais três eram documentação e um o scaffold do `electron-vite` intocado — a posição mais barata que existe para tomar decisões estruturais. Entrega: o [`ESCOPO.md`](ESCOPO.md) fecha o produto (bancada local de limpeza e transformação de arquivos, por pipeline de passos que compila para SQL do DuckDB); o [plano de fundação](plan/active/README.md) descreve oito fases, 33 passos, cada um com critério de aceite verificável e mensagem de commit; a [camada de IA](plan/active/09-camada-de-ia.md) registra como Ollama, Gemini, GLM e ML se encaixam sem exigir replanejamento. Critério que ordena tudo: **se eu adiar isto, quantos arquivos vou tocar quando finalmente fizer?** Nada de código foi escrito.

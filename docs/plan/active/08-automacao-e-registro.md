@@ -18,7 +18,7 @@ Há três destinos possíveis, e a escolha entre eles é o assunto desta fase:
 | **`CLAUDE.md`** | ocupa contexto em toda sessão | O que muda a decisão logo na primeira linha de código |
 | **Skill** | carregada só quando relevante | Detalhe de domínio: tabelas, catálogos, padrões |
 
-A ordem é uma preferência real: **o que pode ser verificado não deve ser documentado.** Regra escrita é regra que se descobre violada em revisão; regra em lint é regra que não chega a ser escrita errada. A [fase 01](01-camadas-e-fronteiras.md) já aplicou isso à tabela de importação, e é o mesmo princípio aqui em escala maior.
+A ordem é uma preferência real: **o que pode ser verificado não deve ser documentado.** Regra escrita é regra que se descobre violada em revisão; regra em lint é regra que não chega a ser escrita errada. A [fase 01](../implemented/01-camadas-e-fronteiras.md) já aplicou isso à tabela de importação, e é o mesmo princípio aqui em escala maior.
 
 O que sobra — o que a máquina não consegue checar — se divide pelo critério de frequência. `CLAUDE.md` é caro: entra em toda sessão, então cada linha ali compete por atenção com todas as outras. Skill é barata: fica no disco e só custa quando é aberta.
 

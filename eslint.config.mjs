@@ -46,7 +46,7 @@ export default defineConfig(
             {
               group: ['@renderer/*', '**/main/**', '**/preload/**', '**/workers/**'],
               message:
-                'Importação para camada acima. Ver docs/plan/active/01-camadas-e-fronteiras.md.'
+                'Importação para camada acima. Ver docs/plan/implemented/01-camadas-e-fronteiras.md.'
             }
           ]
         }

@@ -1,6 +1,6 @@
 # 05 — Design tokens
 
-**Depende de:** [01](01-camadas-e-fronteiras.md) para a estrutura, [04](04-testes-rapidos.md) para o critério de aceite · **Entrega:** `tokens.css`, base de desktop, quatro primitivos, `StateView`
+**Depende de:** [01](../implemented/01-camadas-e-fronteiras.md) para a estrutura, [04](04-testes-rapidos.md) para o critério de aceite · **Entrega:** `tokens.css`, base de desktop, quatro primitivos, `StateView`
 
 ---
 

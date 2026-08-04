@@ -149,7 +149,7 @@ Acrescente ao `eslint.config.mjs`, depois dos blocos existentes e **antes** do `
         { group: ['react', 'react-dom', 'react/*'],
           message: 'shared/ e core/ são puros — React só no renderer.' },
         { group: ['@renderer/*', '**/main/**', '**/preload/**', '**/workers/**'],
-          message: 'Importação para camada acima. Ver docs/planning/active/01-camadas-e-fronteiras.md.' }
+          message: 'Importação para camada acima. Ver docs/plan/implemented/01-camadas-e-fronteiras.md.' }
       ]
     }]
   }
@@ -204,10 +204,12 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-04 | 1, 2, 3 | passos concluídos; aceite da fase pendente de decisão | Os três passos e commits feitos. `pnpm typecheck` limpo e `pnpm dev` abre sem erro, confirmados duas vezes. `pnpm lint` limpo no código desta fase, mas o comando bruto retorna erro por causa de `.claude/hooks/guard.mjs` — pré-existente, da fase 08, ainda não ligado. O critério de aceite da fase pede "`pnpm lint` limpo" sem qualificação; ver nota abaixo. Import de `@shared/*` provado em `main` e `renderer` (D1.2 restringe `preload/` a só tipos de `shared/`, e `APP_ID` é valor — não há o que provar ali nesta fase). Skill `architecture` atualizada com D1.1, D1.2, D1.3 e D1.5. |
+| 2026-08-04 | 1, 2, 3 | concluída | Os três passos e commits feitos. `pnpm typecheck` limpo e `pnpm dev` abre sem erro, confirmados duas vezes. Import de `@shared/*` provado em `main` e `renderer` (D1.2 restringe `preload/` a só tipos de `shared/`, e `APP_ID` é valor — não há o que provar ali nesta fase). Skill `architecture` atualizada com D1.1, D1.2, D1.3 e D1.5. `pnpm lint` limpo no código desta fase; o comando bruto retornava erro por `.claude/hooks/guard.mjs` (pré-existente, fase 08, ainda não ligado) — decisão registrada: "código desta fase" é o que o critério de aceite mede, não arquivos de outra fase ainda não integrada. Fase movida para `implemented/` e entrada registrada em [`HISTORY.md`](../../HISTORY.md). |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [00 — Visão geral](00-visao-geral.md) · **Índice:** [README](README.md) · **Próximo:** [02 — Contrato IPC](02-contrato-ipc.md)
+**Anterior:** [00 — Visão geral](../active/00-visao-geral.md) · **Índice:** [README](../active/README.md) · **Próximo:** [02 — Contrato IPC](../active/02-contrato-ipc.md)
+
+> 🔍 Fase implementada em 2026-08-04. Este arquivo mudou de `plan/active/` para `plan/implemented/`, por isso os links acima sobem um nível (`../active/`) em vez de apontar para o mesmo diretório.
