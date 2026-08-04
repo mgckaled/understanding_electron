@@ -28,5 +28,51 @@ export default defineConfig(
       ...eslintPluginReactRefresh.configs.vite.rules
     }
   },
+  {
+    files: ['src/shared/**/*.ts', 'src/core/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['electron', 'electron/*'],
+              message: 'shared/ e core/ são puros — o acesso ao Electron fica em main/ ou preload/.'
+            },
+            {
+              group: ['react', 'react-dom', 'react/*'],
+              message: 'shared/ e core/ são puros — React só no renderer.'
+            },
+            {
+              group: ['@renderer/*', '**/main/**', '**/preload/**', '**/workers/**'],
+              message:
+                'Importação para camada acima. Ver docs/plan/active/01-camadas-e-fronteiras.md.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    files: ['src/renderer/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['electron', 'electron/*'],
+              message: 'O renderer fala com o main pelo preload. Ver src/shared/ipc.ts.'
+            },
+            {
+              group: ['**/main/**', '**/preload/**', '**/workers/**'],
+              message:
+                'Importação através da fronteira de processo. Só tipos de @shared atravessam.'
+            }
+          ]
+        }
+      ]
+    }
+  },
   eslintConfigPrettier
 )
