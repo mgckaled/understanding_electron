@@ -1,8 +1,43 @@
+# dependências
 node_modules
-dist
+
+# saída do electron-vite (dev/build) e do electron-builder (empacotamento) —
+# são pastas diferentes de propósito, ver docs/plan/active/07-e2e-e-empacotamento.md § D7.5
 out
-.DS_Store
-.eslintcache
+dist
+
+# logs
 *.log*
 
+# TypeScript — cache incremental (composite: true em tsconfig.node.json e tsconfig.web.json)
+*.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# segredos e configuração local. Nunca no repositório — ver CLAUDE.md § Segurança
+# e docs/plan/active/03-sandbox-e-seguranca.md. O electron-builder.yml já pressupõe
+# a existência destes arquivos e os exclui do pacote.
+.env
+.env.*
+
+# Vitest — docs/plan/active/04-testes-rapidos.md
+coverage
+
+# Playwright — docs/plan/active/07-e2e-e-empacotamento.md
+playwright-report
+test-results
+
+# banco local do DuckDB, caso alguém crie um durante desenvolvimento. O uso real
+# fica em app.getPath('userData'), fora do repositório — docs/study/05-proximos-passos.md
+*.duckdb
+*.duckdb.wal
+
+# Windows / macOS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# settings.json é acordo do projeto e vai versionado; settings.local.json é
+# preferência de máquina e nunca viaja — docs/plan/active/08-automacao-e-registro.md
 .claude/settings.local.json
