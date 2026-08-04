@@ -1,0 +1,193 @@
+# 05 — Próximos passos
+
+A base está validada: janela abre, HMR funciona, IPC de exemplo responde, `pnpm typecheck` passa limpo nos dois ambientes. Este documento descreve para onde o projeto vai e — mais importante — **por que o desenho é esse**.
+
+Nada aqui está implementado ainda. É um plano com justificativa, para ser conferido contra a realidade quando a implementação acontecer.
+
+---
+
+## O problema real
+
+Um aplicativo de análise de dados precisa de três coisas que brigam entre si:
+
+1. **Ler arquivos grandes** — CSV, Parquet, com milhões de linhas
+2. **Agregar rápido** — somas, agrupamentos, filtros, em tempo interativo
+3. **Manter a interface responsiva** — o usuário precisa poder cancelar, rolar, clicar
+
+A arquitetura do Electron torna o item 3 surpreendentemente difícil, e vale entender por quê antes de escrever qualquer linha.
+
+---
+
+## A armadilha do processo principal
+
+Como visto no [documento 01](01-o-que-e-electron.md), o processo main é **single-threaded** — executa uma coisa de cada vez.
+
+Se você colocar uma query de dez segundos no main, o que congela não é só a query. É:
+
+- a janela inteira (ela não redesenha)
+- os menus
+- o botão de fechar
+- qualquer outra janela do aplicativo
+
+O sistema operacional provavelmente vai marcar o app como "não está respondendo". E não há como cancelar, porque o código que responderia ao clique de cancelamento está na fila atrás da query.
+
+O renderer também não serve. Ele é um navegador: sem acesso a arquivos, e módulos nativos não carregam ali — ainda mais com `sandbox: true`, que é para onde queremos ir.
+
+**A solução é um terceiro lugar.**
+
+---
+
+## `utilityProcess`
+
+O Electron oferece uma API chamada `utilityProcess`: um processo Node adicional, filho do main, sem interface gráfica.
+
+```
+┌─────────────┐   IPC    ┌──────────────┐   IPC    ┌─────────────────┐
+│  renderer   │ ───────► │     main      │ ───────► │ utilityProcess  │
+│  (React)    │ ◄─────── │  (coordena)   │ ◄─────── │    (DuckDB)     │
+└─────────────┘          └──────────────┘          └─────────────────┘
+     UI                    orquestração              trabalho pesado
+```
+
+Uma query de dez segundos ali dentro não afeta ninguém. A janela continua desenhando, o botão de cancelar continua clicável, o usuário continua no controle.
+
+> 🔍 Existem alternativas — `child_process.fork` do Node, ou `worker_threads`. O `utilityProcess` é a opção específica do Electron, integrada ao ciclo de vida da aplicação (morre junto com o app, aparece corretamente no gerenciador de tarefas) e com um canal de mensagens mais eficiente que o IPC genérico.
+
+---
+
+## DuckDB
+
+**O que é:** um banco de dados analítico que roda embutido no seu processo — sem servidor, sem instalação separada, sem porta de rede. A comparação usual é "o SQLite da análise de dados".
+
+**Por que ele e não SQLite:** a diferença está no formato de armazenamento.
+
+O SQLite é **orientado a linhas**: guarda registro por registro, um do lado do outro. Ótimo para "me dê o pedido 4521 inteiro". Ruim para "me dê a média de uma coluna em dez milhões de registros" — porque para ler uma coluna ele precisa passar por todas as outras.
+
+O DuckDB é **orientado a colunas**: guarda cada coluna em bloco contíguo. Uma agregação em uma coluna lê só aquela coluna. Para o padrão de acesso da análise de dados, a diferença é de ordens de grandeza.
+
+**Por que não Python com pandas:** foi uma opção considerada. Rodar um processo Python paralelo daria acesso ao ecossistema científico maduro. O custo é dobrar a complexidade: dois runtimes para empacotar, duas cadeias de dependências, um protocolo entre eles, e o desafio nada trivial de distribuir um interpretador Python dentro de um instalador. Num projeto cujo objetivo declarado é aprender Electron, essa complexidade compete com o aprendizado em vez de servi-lo.
+
+**O pacote:** `@duckdb/node-api`, versão 1.5.5.
+
+⚠️ Existe um pacote antigo chamado apenas `duckdb`. Ele está **descontinuado** — os mantenedores anunciaram que a série 1.5.x não sairia mais por ali. Use o `@duckdb/node-api`.
+
+### Por que ele não vai exigir recompilação
+
+O DuckDB é um **módulo nativo** — contém código C++ compilado. Como visto no [documento 02](02-a-stack-e-o-porque.md), isso normalmente cria o problema de ABI: um binário compilado para um runtime pode não carregar em outro.
+
+O `@duckdb/node-api` usa **N-API** (também chamada Node-API), uma camada de interface deliberadamente estável. Módulos escritos contra a N-API funcionam em diferentes versões do Node — e do Electron — sem recompilar.
+
+Foi um critério explícito na escolha. A alternativa seria assumir a manutenção de uma matriz de builds: plataforma × arquitetura × versão de ABI, multiplicada a cada atualização do Electron.
+
+> 🔍 O mecanismo de recompilação existe e já está funcionando no projeto — é o `electron-builder install-app-deps` que roda a cada `pnpm install`, chamando o `@electron/rebuild`. Ter isso validado *antes* de adicionar o DuckDB foi deliberado: se algo falhar agora, você sabe que não é o pipeline.
+
+---
+
+## Apache Arrow: o transporte
+
+Este é o detalhe que mais impacta desempenho e que é mais fácil de errar.
+
+### O problema
+
+Processos não compartilham memória. Para o resultado de uma query chegar ao React, ele precisa atravessar uma fronteira de processo. O caminho ingênuo é serializar para JSON:
+
+```
+DuckDB → objetos JS → JSON.stringify → texto → JSON.parse → objetos JS → React
+```
+
+Para um milhão de linhas, isso significa: alocar um milhão de objetos, converter tudo para texto (com nomes de campo repetidos em cada linha), transmitir megabytes de string, e reconstruir tudo do outro lado. São segundos de CPU e picos violentos de memória.
+
+### A solução
+
+**Apache Arrow** é um formato de memória colunar padronizado. Os dados ficam como blocos binários contíguos — um por coluna — em vez de objetos individuais.
+
+```
+DuckDB → Arrow (já é o formato nativo dele) → ArrayBuffer transferível → React
+```
+
+Duas propriedades fazem a diferença:
+
+1. **O DuckDB já produz Arrow nativamente.** Não há conversão na origem — os dados saem no formato final.
+2. **`ArrayBuffer` é transferível.** O IPC do Electron pode *transferir a posse* do bloco de memória entre processos em vez de copiá-lo. A operação é praticamente instantânea, independente do tamanho.
+
+Em um milhão de linhas, a diferença entre os dois caminhos é da ordem de segundos versus milissegundos.
+
+⚠️ Um cuidado: "transferir" significa transferir mesmo. Depois de enviado, o `ArrayBuffer` fica inutilizável no processo de origem. É comportamento correto, mas surpreende quem espera semântica de cópia.
+
+---
+
+## Virtualização na interface
+
+Última peça, e a mais fácil de esquecer.
+
+Mesmo com os dados chegando instantaneamente, renderizar um milhão de linhas em HTML trava o navegador. Cada linha vira elementos no **DOM** (*Document Object Model*, a árvore de objetos que representa a página), e o Chromium não foi feito para milhões de nós.
+
+A técnica é **virtualização**: renderizar apenas as linhas visíveis na tela — tipicamente algumas dezenas — e substituí-las conforme o usuário rola. A tabela *parece* ter um milhão de linhas; o DOM tem cinquenta.
+
+Biblioteca sugerida: **TanStack Table** com **TanStack Virtual**. Para gráficos, **ECharts** lida bem com volumes grandes.
+
+**Regra prática:** nunca mais que ~200 linhas no DOM simultaneamente. Está registrada no `CLAUDE.md`.
+
+---
+
+## Ordem de implementação sugerida
+
+Seguindo o princípio de **uma variável por vez**:
+
+**1. Instalar e validar isoladamente**
+
+```powershell
+pnpm add @duckdb/node-api apache-arrow
+pnpm approve-builds   # se algum pedir script de build
+pnpm dev              # a janela ainda abre?
+```
+
+Só isso. Sem escrever código. Confirmar que adicionar um módulo nativo não quebrou nada.
+
+**2. Query no processo main, temporariamente**
+
+Sim, contrariando tudo que foi dito acima. O objetivo é isolar variáveis: aprender a API do DuckDB sem misturar com a complexidade do `utilityProcess`. Uma query trivial (`SELECT 42`), resultado no console.
+
+**3. Mover para o `utilityProcess`**
+
+Agora sim. Query já funcionando, muda-se apenas o *onde*. Se quebrar, o problema está claramente na comunicação entre processos.
+
+**4. Ligar ao renderer via IPC tipado**
+
+Expandir o `api = {}` do preload e a interface em `src/preload/index.d.ts`. Uma função só: `executarQuery(sql)`.
+
+**5. Arrow no transporte**
+
+Trocar o retorno de JSON para `ArrayBuffer` transferível. Medir a diferença — vale fazer o experimento com um arquivo grande de verdade, porque o número surpreende.
+
+**6. Tabela virtualizada**
+
+Só agora a interface de verdade.
+
+Cada etapa termina com `pnpm dev` funcionando e um commit. Seis pontos de retorno conhecidos-bons.
+
+---
+
+## Pendências de segurança antes de qualquer distribuição
+
+Registradas no `CLAUDE.md`, repetidas aqui porque é fácil deixar para depois:
+
+- **`sandbox: false`** em `src/main/index.ts` — herdado do template, não é decisão nossa. Revisitar.
+- **`shamefullyHoist: true`** — abre mão da proteção contra dependência fantasma. Foi um recuo por compatibilidade com o electron-builder.
+- **`asarUnpack`** — o `.node` do DuckDB provavelmente vai precisar de entrada, senão o app empacotado não carrega a biblioteca. Vai aparecer só no primeiro `pnpm build:win`, não em desenvolvimento.
+
+Essa última é clássica: funciona perfeitamente em `pnpm dev` e falha no instalador. Sabendo de antemão, o diagnóstico é imediato.
+
+---
+
+## O que este projeto ensina além do Electron
+
+Vale registrar, porque é o retorno menos óbvio do esforço.
+
+Escrever um app Electron de análise de dados obriga a pensar em coisas que frameworks web escondem: onde a memória está, quem é dono dela, o que custa atravessar uma fronteira de processo, por que um formato colunar é diferente de um orientado a linhas, o que é uma ABI.
+
+São conceitos de sistemas, não de front-end. E são transferíveis — valem para qualquer contexto em que desempenho importe, muito depois de o Electron 42 ter virado história.
+
+---
+
+**Anterior:** [04 — Diário de bordo](04-diario-de-bordo.md) · **Índice:** [README](README.md)
