@@ -108,11 +108,11 @@ DuckDB → Arrow (já é o formato nativo dele) → ArrayBuffer transferível �
 Duas propriedades fazem a diferença:
 
 1. **O DuckDB já produz Arrow nativamente.** Não há conversão na origem — os dados saem no formato final.
-2. **`ArrayBuffer` é transferível.** O IPC do Electron pode *transferir a posse* do bloco de memória entre processos em vez de copiá-lo. A operação é praticamente instantânea, independente do tamanho.
+2. **`ArrayBuffer` é transferível — dentro de um processo.** Entre renderer e um Web Worker, por exemplo, onde a memória é a mesma, o IPC pode *transferir a posse* do bloco em vez de copiá-lo, e a operação é praticamente instantânea. **Entre processos do sistema operacional — o caso daqui — os bytes são copiados de qualquer forma**; a posse não muda de dono, porque não há memória compartilhada para transferir posse sobre ela.
 
-Em um milhão de linhas, a diferença entre os dois caminhos é da ordem de segundos versus milissegundos.
+A vantagem sobre JSON não desaparece por isso — só muda de origem. O *structured clone* binário do Arrow copia um bloco contíguo por coluna; o caminho por JSON aloca um milhão de objetos e os converte para texto, com nomes de campo repetidos em cada linha. É cópia rápida contra reconstrução objeto a objeto, e a diferença continua sendo de ordens de grandeza — mas **meça no passo 5 abaixo antes de assumir milissegundos**: é uma cópia de bytes, não uma operação grátis.
 
-⚠️ Um cuidado: "transferir" significa transferir mesmo. Depois de enviado, o `ArrayBuffer` fica inutilizável no processo de origem. É comportamento correto, mas surpreende quem espera semântica de cópia.
+⚠️ Duas ressalvas. Primeiro: quando a transferência de posse *de fato* ocorre — dentro do mesmo processo — ela é real: depois de enviado, o `ArrayBuffer` fica inutilizável na origem, o que surpreende quem espera semântica de cópia. Segundo, a implementação do Electron tem limitações conhecidas nesta área — há relato de mensagem que chega vazia ao transferir um `ArrayBuffer` de renderer para main, e de crash com certos transferíveis na lista do `MessagePortMain`. Correção e decisão completas em [`docs/plan/active/00-visao-geral.md`](../plan/active/00-visao-geral.md#uma-correção-no-caderno-de-estudos) e [`docs/HISTORY.md`](../HISTORY.md).
 
 ---
 

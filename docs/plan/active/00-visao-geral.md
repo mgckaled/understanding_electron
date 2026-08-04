@@ -132,7 +132,7 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-04 | Decisões globais (D1-D6) | em andamento | Criado o início da skill [`architecture`](../../../.claude/skills/architecture/SKILL.md), condensando o critério "caro de desfazer" e D1-D6. Aplicada a ação pendente desta fase — corrigido o texto sobre `ArrayBuffer` transferível em [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md). Continua "em andamento" porque a skill cresce com as fases 01, 02, 03 e 06. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
