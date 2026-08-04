@@ -1,9 +1,15 @@
+import { useState } from 'react'
 import { APP_ID } from '@shared/meta'
 import Versions from './components/Versions'
 import electronLogo from './assets/electron.svg'
 
 function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  const [openError, setOpenError] = useState<string | null>(null)
+
+  const openDocs = async (): Promise<void> => {
+    const result = await window.api.shell.openExternal('https://electron-vite.org/')
+    setOpenError(result.ok ? null : result.error.kind)
+  }
 
   return (
     <>
@@ -18,16 +24,12 @@ function App(): React.JSX.Element {
       </p>
       <div className="actions">
         <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
+          <button type="button" onClick={openDocs}>
             Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
+          </button>
         </div>
       </div>
+      {openError && <p className="tip">{openError}</p>}
       <Versions></Versions>
     </>
   )
