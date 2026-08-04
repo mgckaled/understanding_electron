@@ -1,3 +1,8 @@
 {
-  "recommendations": ["dbaeumer.vscode-eslint"]
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig"
+  ],
+  "unwantedRecommendations": ["ms-python.python", "ms-python.vscode-pylance"]
 }
