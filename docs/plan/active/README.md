@@ -42,7 +42,7 @@ Cada fase segue a mesma estrutura:
 |---|---|---|---|
 | [00](00-visao-geral.md) | Visão geral | O princípio, as decisões globais, o mapa | — |
 | [01](../implemented/01-camadas-e-fronteiras.md) | Camadas e fronteiras — **implementada** | Estrutura de pastas, aliases, regra de importação verificada pelo ESLint | — |
-| [02](02-contrato-ipc.md) | Contrato IPC | `src/shared/ipc.ts`, `Result`, preload tipado, registro de handlers, cancelamento | 01 |
+| [02](../implemented/02-contrato-ipc.md) | Contrato IPC — **implementada** | `src/shared/ipc.ts`, `Result`, preload tipado, registro de handlers, cancelamento | 01 |
 | [03](03-sandbox-e-seguranca.md) | Sandbox e segurança | `sandbox: true`, superfície estreita, pendências registradas | 02 |
 | [04](04-testes-rapidos.md) | Testes rápidos | Vitest com dois projetos, níveis 1–3 da pirâmide | 02 |
 | [05](05-design-tokens.md) | Design tokens | `tokens.css`, primitivos, densidade de desktop, `StateView` | 01, 04 |

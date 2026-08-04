@@ -1,11 +1,11 @@
 ---
 name: architecture
-description: Decisões estruturais do data-lab — fronteira de processo (main/preload/renderer/core/shared/workers), o que entra de SOLID, erro como dado no IPC, convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar um canal IPC novo, decidir em que camada um arquivo vai, avaliar se uma dependência nova se justifica, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing) — ainda não escritas.
+description: Decisões estruturais do data-lab — fronteira de processo (main/preload/renderer/core/shared/workers), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada um arquivo vai, avaliar se uma dependência nova se justifica, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing) — ainda não escritas.
 ---
 
 # Arquitetura — data-lab
 
-> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md) e [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas e a regra de importação, já em vigor. Cresce quando as fases [02](../../../docs/plan/active/02-contrato-ipc.md) (contrato IPC), [03](../../../docs/plan/active/03-sandbox-e-seguranca.md) (sandbox) e [06](../../../docs/plan/active/06-primeira-feature.md) (primeira feature) forem implementadas. Fonte completa, com o porquê de cada decisão: `docs/plan/active/00-visao-geral.md` e `docs/plan/implemented/01-camadas-e-fronteiras.md`.
+> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md) e [02](../../../docs/plan/implemented/02-contrato-ipc.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação e o contrato IPC, já em vigor. Cresce quando as fases [03](../../../docs/plan/active/03-sandbox-e-seguranca.md) (sandbox) e [06](../../../docs/plan/active/06-primeira-feature.md) (primeira feature) forem implementadas. Fonte completa, com o porquê de cada decisão: os três documentos linkados acima.
 
 ## O critério: o que é caro de desfazer
 
@@ -37,7 +37,7 @@ src/
 
 | Camada      | Pode importar                               | Nunca importa                                                     |
 | ----------- | ------------------------------------------- | ----------------------------------------------------------------- |
-| `shared/`   | apenas `zod` (fase 02)                      | tudo o mais                                                       |
+| `shared/`   | apenas `zod`                                | tudo o mais                                                       |
 | `core/`     | `shared/`, stdlib do Node, libs puras       | `electron`, `react`, `main/`, `renderer/`, `preload/`, `workers/` |
 | `main/`     | `shared/`, `core/`, `electron`              | `react`, `renderer/`, `preload/`                                  |
 | `workers/`  | `shared/`, `core/`                          | `react`, `renderer/`, `main/`                                     |
@@ -66,7 +66,35 @@ src/
 
 Se um handler do main lança, o `ipcRenderer.invoke` rejeita com um `Error` genérico prefixado com `Error invoking remote method` — classe, propriedades customizadas e stack original se perdem no _structured clone_. Um `QuerySyntaxError { line, column }` chegaria ao React como texto inútil.
 
-Toda operação que atravessa main↔renderer retorna união discriminada (`Result`), nunca lança para o outro lado. Payload fora do schema é a exceção deliberada — isso **lança**, porque é bug de programação, não falha esperada. Contrato completo (ainda não implementado): [`docs/plan/active/02-contrato-ipc.md`](../../../docs/plan/active/02-contrato-ipc.md).
+| Situação                                                        | Convenção                                                         |
+| --------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Arquivo não existe · SQL com erro de sintaxe · usuário cancelou | **`Result`** — dado de domínio, a UI precisa reagir               |
+| Payload fora do schema · bug no handler                         | **Exceção** — defeito de programação, deve doer no console em dev |
+
+`Result<T, E = AppError>` é `{ ok: true; value: T } | { ok: false; error: E }`, com `AppError` uma união discriminada por `kind` (`not-found`, `permission`, `blocked`, `cancelled`, `timeout`, `unavailable`, `upstream`, `unknown`). Canal que não tem como falhar (`app:info`) não retorna `Result` — embrulhar tudo treina a equipe a ignorar o `ok`.
+
+## Contrato: um mapa de canais, dois consumidores
+
+`src/shared/ipc.ts` declara `Channel → { args, result }` uma vez; `main` tipa os handlers contra ele, `preload` tipa as chamadas contra ele. Nenhum dos dois escreve o nome do canal duas vezes, e o preload é o **único** arquivo que referencia tanto `IpcContract` (o fio, `'app:info'`) quanto `Api` (a interface, `api.app.info`) — divergência entre os dois é erro de compilação nesse único lugar.
+
+O renderer recebe uma superfície de domínio, nunca um `invoke` genérico:
+
+```ts
+window.api.app.info() // sim
+window.api.invoke('app:info') // não — reintroduz a superfície larga do template
+```
+
+`src/main/ipc/registry.ts` é o único arquivo que conhece `ipcMain.handle`; handlers nascem como funções exportadas em `src/main/features/<x>/handlers.ts`, nunca como closures dentro do registro — é o que os torna alcançáveis por teste em Node puro, sem subir o Electron.
+
+## Validação: zod nos argumentos, nunca na saída
+
+`renderer → main` passa por `zod` (schemas em `shared/ipc.ts`, tipos derivados via `z.infer` — nunca escritos em paralelo). `main → renderer` não passa: o main é código próprio rodando privilegiado, e validar a própria saída é desconfiar de si mesmo ao custo de latência em todo resultado.
+
+## Jobs e eventos: declarados na fase 02, implementados na fase 06
+
+`JobId` nasce no **renderer** (`crypto.randomUUID()`), nunca devolvido pelo main — o usuário cancela antes de a promessa resolver, e um id que só chega na resposta não deixa o que cancelar na janela em que isso importa. `JobEvent` é união por `type` (`progress`, `chunk`, `log`); a variante `progress` é a única com consumidor hoje, as outras duas (resposta em fluxo, linha de pipeline) são reserva deliberada — três linhas agora contra um segundo mecanismo de eventos depois.
+
+Listener de evento do main **nunca** vaza o `IpcRendererEvent` para o renderer — carrega `event.sender`, referência viva ao `webContents`. O callback do renderer recebe só o payload; toda assinatura devolve uma função de cancelamento.
 
 ## Convenção de idioma
 
@@ -78,7 +106,7 @@ Toda dependência nova entra na fase que a introduz, com a alternativa descartad
 
 ## `src/main/index.ts` não cresce
 
-É ciclo de vida e criação de janela — nada além disso. Handler de IPC vive em `src/main/features/<x>/`, registrado por um wrapper genérico. Lógica de negócio ali dentro fica intestável e imóvel, e mover para `utilityProcess` depois vira reescrita, não refatoração. Régua de tamanho (quando `main/features/` existir): [`CLAUDE.md`](../../../CLAUDE.md).
+É ciclo de vida e criação de janela — nada além disso. Handler de IPC vive em `src/main/features/<x>/handlers.ts`, registrado por `src/main/ipc/register-all.ts` via o wrapper `handle()` de `src/main/ipc/registry.ts`. Lógica de negócio dentro de `index.ts` fica intestável e imóvel, e mover para `utilityProcess` depois vira reescrita, não refatoração. Régua de tamanho: [`CLAUDE.md`](../../../CLAUDE.md).
 
 ## Mapa de dependência entre fases
 

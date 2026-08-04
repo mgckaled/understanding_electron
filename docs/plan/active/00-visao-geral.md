@@ -62,7 +62,7 @@ Se um handler do main lança, o `ipcRenderer.invoke` rejeita com um `Error` gen�
 
 Na prática: um `QuerySyntaxError { line, column }` chega do outro lado como texto inútil, e você não consegue destacar a linha do erro no editor.
 
-Por isso toda operação que atravessa a fronteira retorna união discriminada. Detalhes na [fase 02](02-contrato-ipc.md).
+Por isso toda operação que atravessa a fronteira retorna união discriminada. Detalhes na [fase 02](../implemented/02-contrato-ipc.md).
 
 ### D4 — Português na interface, inglês no código
 

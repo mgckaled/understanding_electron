@@ -1,6 +1,6 @@
 # 06 — Primeira feature vertical
 
-**Depende de:** [02](02-contrato-ipc.md), [03](03-sandbox-e-seguranca.md), [04](04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
+**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](03-sandbox-e-seguranca.md), [04](04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
 
 ---
 
@@ -21,7 +21,7 @@ Ela foi escolhida por exercitar tudo o que precisa ser validado, sem introduzir 
 | Diálogo nativo | só o main consegue abrir |
 | `Result` com erro real | arquivo apagado entre a escolha e a leitura, permissão negada |
 | Operação longa com progresso | contar linhas de um arquivo grande demora de verdade |
-| Cancelamento durante a operação | é o caso que a [fase 02](02-contrato-ipc.md) desenhou e não pôde provar |
+| Cancelamento durante a operação | é o caso que a [fase 02](../implemented/02-contrato-ipc.md) desenhou e não pôde provar |
 | Total desconhecido | não se sabe quantas linhas há antes de terminar |
 | Lógica pura em `core/` | dedução de separador e parsing de cabeçalho |
 | `StateView` nos seis estados | todos ocorrem naturalmente |
@@ -89,7 +89,7 @@ Uma emissão a cada 100ms, mais uma final garantida. O valor é token de configu
 
 ### D6.5 — Progresso é transmitido a todas as janelas
 
-O `handle` da [fase 02](02-contrato-ipc.md) entrega ao handler **apenas os argumentos** — não o `IpcMainInvokeEvent`. É essa restrição que torna o handler uma função comum e testável no nível 3.
+O `handle` da [fase 02](../implemented/02-contrato-ipc.md) entrega ao handler **apenas os argumentos** — não o `IpcMainInvokeEvent`. É essa restrição que torna o handler uma função comum e testável no nível 3.
 
 O preço é que o handler não sabe quem chamou. Como o app tem uma janela, `emitProgress` transmite para todas e o efeito é o mesmo.
 
@@ -99,7 +99,7 @@ Registrado como troca consciente: a testabilidade do nível 3 vale mais hoje do 
 
 ### D6.6 — Cancelamento é `Result`, não exceção
 
-Cancelar devolve `{ ok: false, error: { kind: 'cancelled' } }`. Pela D2.2 da [fase 02](02-contrato-ipc.md), é desfecho esperado e acionável pela UI — o `StateView` tem um estado próprio para ele —, portanto é dado.
+Cancelar devolve `{ ok: false, error: { kind: 'cancelled' } }`. Pela D2.2 da [fase 02](../implemented/02-contrato-ipc.md), é desfecho esperado e acionável pela UI — o `StateView` tem um estado próprio para ele —, portanto é dado.
 
 ### D6.7 — O `AbortController` mora no main, indexado pelo `jobId`
 
@@ -147,7 +147,7 @@ dataset:scan   → Result<DatasetSummary>        args: { path, jobId }
 job:cancel     → void
 ```
 
-E o evento `job:event`, com o payload `JobEvent` já declarado na [fase 02](02-contrato-ipc.md). Esta feature emite **apenas** a variante `progress`; `chunk` e `log` continuam reserva.
+E o evento `job:event`, com o payload `JobEvent` já declarado na [fase 02](../implemented/02-contrato-ipc.md). Esta feature emite **apenas** a variante `progress`; `chunk` e `log` continuam reserva.
 
 > 🔍 `null` e erro são coisas diferentes. Fechar o diálogo é sucesso com resultado vazio; não conseguir abri-lo é falha. Colapsar os dois em `Result` de erro obrigaria a UI a mostrar mensagem para uma ação normal do usuário.
 
@@ -174,7 +174,7 @@ job: {
 
 Uma assinatura para a união inteira, não uma por variante — quem consome estreita pelo `type`, e uma variante nova não altera a superfície exposta.
 
-O `onEvent` é a primeira aplicação da D2.8 da [fase 02](02-contrato-ipc.md): o listener registrado no `ipcRenderer` descarta o `IpcRendererEvent` e repassa **só o payload**; o retorno é a função que remove o listener.
+O `onEvent` é a primeira aplicação da D2.8 da [fase 02](../implemented/02-contrato-ipc.md): o listener registrado no `ipcRenderer` descarta o `IpcRendererEvent` e repassa **só o payload**; o retorno é a função que remove o listener.
 
 Sem esse retorno, todo componente React que assinar vira vazamento — o `useEffect` não tem o que devolver na limpeza, e cada remontagem empilha mais um ouvinte.
 

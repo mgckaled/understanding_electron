@@ -1,6 +1,6 @@
 # 03 — Sandbox e segurança
 
-**Depende de:** [02](02-contrato-ipc.md) · **Entrega:** `sandbox: true`, `webPreferences` explícito, guarda de navegação, pendências registradas
+**Depende de:** [02](../implemented/02-contrato-ipc.md) · **Entrega:** `sandbox: true`, `webPreferences` explícito, guarda de navegação, pendências registradas
 
 ---
 
@@ -25,7 +25,7 @@ O `sandbox: false` veio do template. Não é decisão do projeto, e ninguém sab
 
 Essa limitação é a razão pela qual a decisão é assimétrica no tempo.
 
-Depois da [fase 02](02-contrato-ipc.md), o preload é um arquivo que importa `electron` e um tipo. Nada mais. Ligar o sandbox custa apagar uma linha.
+Depois da [fase 02](../implemented/02-contrato-ipc.md), o preload é um arquivo que importa `electron` e um tipo. Nada mais. Ligar o sandbox custa apagar uma linha.
 
 Daqui a três meses, o preload provavelmente terá se dividido em `ipc.ts`, `channels.ts` e um utilitário qualquer — e aí a mesma mudança é uma tarde de reorganização, feita sob a pressão de um app que já funciona, que é o pior momento possível para mexer na fronteira de segurança.
 
@@ -191,4 +191,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [02 — Contrato IPC](02-contrato-ipc.md) · **Índice:** [README](README.md) · **Próximo:** [04 — Testes rápidos](04-testes-rapidos.md)
+**Anterior:** [02 — Contrato IPC](../implemented/02-contrato-ipc.md) · **Índice:** [README](README.md) · **Próximo:** [04 — Testes rápidos](04-testes-rapidos.md)

@@ -1,6 +1,6 @@
 # 02 — Contrato IPC
 
-**Depende de:** [01](../implemented/01-camadas-e-fronteiras.md) · **Entrega:** `src/shared/ipc.ts`, registro tipado de handlers, preload de superfície estreita, primeiros dois canais reais
+**Depende de:** [01](01-camadas-e-fronteiras.md) · **Entrega:** `src/shared/ipc.ts`, registro tipado de handlers, preload de superfície estreita, primeiros dois canais reais
 
 ---
 
@@ -280,10 +280,12 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-04 | 1, 2, 3, 4 | concluída | Os quatro passos e commits feitos. `pnpm typecheck`, `pnpm lint` (código desta fase) e `pnpm dev` limpos. Validação de ponta a ponta feita com Playwright `_electron` instalado temporariamente (revertido após o teste, não é dependência do projeto — isso é escopo da fase 07): versões aparecem, `window.api` só tem `app`/`shell`, `window.electron` é `undefined`, esquema bloqueado devolve `{ ok: false, error: { kind: 'blocked' } }` sem tocar o sistema, zero erros no console. `openExternal` já recebe a função de abertura por parâmetro (DIP) — antecipando o que a fase 04 pede, para não ser retrabalho depois. Skill `architecture` atualizada com D2.1–D2.8. Fase movida para `implemented/`. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [01 — Camadas e fronteiras](../implemented/01-camadas-e-fronteiras.md) · **Índice:** [README](README.md) · **Próximo:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md)
+**Anterior:** [01 — Camadas e fronteiras](01-camadas-e-fronteiras.md) · **Índice:** [README](../active/README.md) · **Próximo:** [03 — Sandbox e segurança](../active/03-sandbox-e-seguranca.md)
+
+> 🔍 Fase implementada em 2026-08-04. Este arquivo mudou de `plan/active/` para `plan/implemented/`, por isso os links para fases ainda em `active/` sobem um nível (`../active/`), enquanto o link para a fase 01 (também já implementada) fica direto, no mesmo diretório.

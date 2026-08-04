@@ -1,6 +1,6 @@
 # 04 — Testes rápidos
 
-**Depende de:** [02](02-contrato-ipc.md) · **Entrega:** Vitest com dois projetos, os níveis 1 a 3 da pirâmide, `check:fast`
+**Depende de:** [02](../implemented/02-contrato-ipc.md) · **Entrega:** Vitest com dois projetos, os níveis 1 a 3 da pirâmide, `check:fast`
 
 ---
 
@@ -30,7 +30,7 @@ ipcMain.handle('dataset:scan', async (_e, args) => { /* toda a lógica aqui */ }
 
 Esse código só é alcançável subindo o Electron inteiro — ou seja, ele nasce no nível 4, cem vezes mais lento, e na prática acaba sem teste nenhum.
 
-A [fase 02](02-contrato-ipc.md) já resolveu isso por outro motivo. Como os handlers são funções exportadas e o `handle` é um registro genérico, `getAppInfo` e `openExternal` são chamadas como funções comuns, em Node puro. O `ipcMain` não aparece em nenhum arquivo de teste.
+A [fase 02](../implemented/02-contrato-ipc.md) já resolveu isso por outro motivo. Como os handlers são funções exportadas e o `handle` é um registro genérico, `getAppInfo` e `openExternal` são chamadas como funções comuns, em Node puro. O `ipcMain` não aparece em nenhum arquivo de teste.
 
 **Esta é a propriedade que mais paga do contrato tipado**, e ela não era o objetivo declarado — é consequência. Vale registrar, porque é o argumento a usar quando aparecer a tentação de escrever "só este aqui" como closure.
 
@@ -171,7 +171,7 @@ O terceiro é o mais valioso e o mais esquecido. Ele é a primeira vez que o pro
 
 `core/` ainda está vazia — a primeira função pura nasce na [fase 06](06-primeira-feature.md), e é lá que este nível ganha conteúdo.
 
-O que fazer agora é apenas garantir que a infraestrutura o alcança: crie `src/core/result.ts` com dois auxiliares (`ok(value)` e `err(error)`) que constroem o `Result` da [fase 02](02-contrato-ipc.md), e um teste trivial para eles.
+O que fazer agora é apenas garantir que a infraestrutura o alcança: crie `src/core/result.ts` com dois auxiliares (`ok(value)` e `err(error)`) que constroem o `Result` da [fase 02](../implemented/02-contrato-ipc.md), e um teste trivial para eles.
 
 São cinco linhas úteis — os handlers vão usá-las — e provam que o projeto `node` alcança `src/core/` e que a cobertura é medida ali.
 

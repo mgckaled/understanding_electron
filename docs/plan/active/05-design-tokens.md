@@ -173,7 +173,7 @@ export type ViewState<T> =
 
 E `<StateView state={...} render={(data) => ...} />`, que cobre os cinco casos que não são `ready` e delega o `ready` ao `render`.
 
-O caso `loading` mostra barra determinada quando `progress.total` não é nulo, e indeterminada quando é. A distinção existe porque o próprio contrato ([fase 02](02-contrato-ipc.md)) admite total desconhecido — contar linhas de um CSV grande não sabe o total antes de terminar.
+O caso `loading` mostra barra determinada quando `progress.total` não é nulo, e indeterminada quando é. A distinção existe porque o próprio contrato ([fase 02](../implemented/02-contrato-ipc.md)) admite total desconhecido — contar linhas de um CSV grande não sabe o total antes de terminar.
 
 Crie `messages.ts` com o mapa de `AppError['kind']` para texto em português, e um teste que percorre **todos** os `kind` da união e confirma que cada um tem texto. Assim, adicionar um `kind` sem mensagem quebra o teste em vez de aparecer como texto genérico em produção.
 
