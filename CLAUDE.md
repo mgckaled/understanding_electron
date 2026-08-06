@@ -125,6 +125,10 @@ Add-MpPreference -ExclusionProcess "node.exe"
 
 ## Regras do projeto
 
+### Idioma
+
+Código em inglês, sempre — identificador, comentário, docstring e log, sem exceção de escopo (variável local inclusa) e sem exceção de fonte (nem citado dentro de um `.md` em português). Português fica reservado a texto visível ao usuário, mensagem de erro crua e documentação. Detalhe e armadilha diagnosticada: skill `architecture`.
+
 ### Segurança
 
 - Todo acesso a dados passa pelo **preload** via `contextBridge` — o renderer nunca fala direto com o main

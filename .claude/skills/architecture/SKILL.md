@@ -108,7 +108,7 @@ Navegação para fora da origem do app é negada por padrão (`will-navigate`, a
 
 ## Convenção de idioma
 
-Identificadores, comentários, docstrings e logs em inglês. Português só em texto visível ao usuário e em mensagens de erro que chegam cruas à interface. Documentos de planejamento e estudo são português — são leitura, não código.
+Identificadores, comentários, docstrings e logs em inglês, sem exceção de escopo — vale para variável local e parâmetro tanto quanto para export público. Português só em texto visível ao usuário e em mensagens de erro que chegam cruas à interface. Documentos de planejamento e estudo são português — são leitura, não código — e essa diferença de idioma não se transfere: trecho de código citado dentro de um `.md` segue a regra do código, não a do documento ao redor, então revise o idioma antes de transcrever qualquer exemplo de um plano para um arquivo fonte.
 
 ## Dependência nova pede justificativa registrada, nunca em silêncio
 
