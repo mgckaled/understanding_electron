@@ -12,7 +12,7 @@ function createWindow(): void {
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#1e1e1e', // provisório — fase 05 alinha com --color-bg
+    backgroundColor: '#16171a', // must match --color-bg in shared/ui/tokens.css (dark theme)
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
