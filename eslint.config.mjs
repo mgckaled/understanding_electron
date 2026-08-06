@@ -74,5 +74,24 @@ export default defineConfig(
       ]
     }
   },
+  {
+    files: ['**/*.test.{ts,tsx}', 'test/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly'
+      }
+    },
+    rules: {
+      'no-restricted-imports': 'off'
+    }
+  },
   eslintConfigPrettier
 )
