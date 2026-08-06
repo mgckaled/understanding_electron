@@ -1,12 +1,12 @@
 # 04 — Testes rápidos
 
-**Depende de:** [02](../implemented/02-contrato-ipc.md) · **Entrega:** Vitest com dois projetos, os níveis 1 a 3 da pirâmide, `check:fast`
+**Depende de:** [02](02-contrato-ipc.md) · **Entrega:** Vitest com dois projetos, os níveis 1 a 3 da pirâmide, `check:fast`
 
 ---
 
 ## Por que esta fase existe
 
-A pirâmide de testes de um app Electron tem cinco níveis, não três. Esta fase entrega os três primeiros — os que rodam em milissegundos e cabem no ciclo de edição. Os dois últimos, que precisam subir o Electron de verdade, ficam na [fase 07](07-e2e-e-empacotamento.md).
+A pirâmide de testes de um app Electron tem cinco níveis, não três. Esta fase entrega os três primeiros — os que rodam em milissegundos e cabem no ciclo de edição. Os dois últimos, que precisam subir o Electron de verdade, ficam na [fase 07](../active/07-e2e-e-empacotamento.md).
 
 | Nível | Onde | Ferramenta | Custo |
 |---|---|---|---|
@@ -16,7 +16,7 @@ A pirâmide de testes de um app Electron tem cinco níveis, não três. Esta fas
 | 4 | app em desenvolvimento | Playwright | dezenas de s |
 | 5 | app empacotado | Playwright | minutos |
 
-A separação não é estética. É o que decide se o ciclo de retorno cabe num *hook* de edição ([fase 08](08-automacao-e-registro.md)) ou se ele fica lento a ponto de passar a ser contornado.
+A separação não é estética. É o que decide se o ciclo de retorno cabe num *hook* de edição ([fase 08](../active/08-automacao-e-registro.md)) ou se ele fica lento a ponto de passar a ser contornado.
 
 ## O nível 3 é o que quase ninguém tem
 
@@ -30,7 +30,7 @@ ipcMain.handle('dataset:scan', async (_e, args) => { /* toda a lógica aqui */ }
 
 Esse código só é alcançável subindo o Electron inteiro — ou seja, ele nasce no nível 4, cem vezes mais lento, e na prática acaba sem teste nenhum.
 
-A [fase 02](../implemented/02-contrato-ipc.md) já resolveu isso por outro motivo. Como os handlers são funções exportadas e o `handle` é um registro genérico, `getAppInfo` e `openExternal` são chamadas como funções comuns, em Node puro. O `ipcMain` não aparece em nenhum arquivo de teste.
+A [fase 02](02-contrato-ipc.md) já resolveu isso por outro motivo. Como os handlers são funções exportadas e o `handle` é um registro genérico, `getAppInfo` e `openExternal` são chamadas como funções comuns, em Node puro. O `ipcMain` não aparece em nenhum arquivo de teste.
 
 **Esta é a propriedade que mais paga do contrato tipado**, e ela não era o objetivo declarado — é consequência. Vale registrar, porque é o argumento a usar quando aparecer a tentação de escrever "só este aqui" como closure.
 
@@ -56,7 +56,7 @@ Reversível: são a mesma interface, trocar é uma linha no `vitest.config.ts`. 
 
 ### D4.3 — Os aliases vêm do mesmo lugar do bundler
 
-O `vitest.config.ts` importa `config/aliases.ts`, criado na [fase 01](../implemented/01-camadas-e-fronteiras.md). Duplicar o mapa produziria o pior modo de falha possível: teste que passa e aplicação que quebra, ou o inverso, sem que nada aponte para a causa.
+O `vitest.config.ts` importa `config/aliases.ts`, criado na [fase 01](01-camadas-e-fronteiras.md). Duplicar o mapa produziria o pior modo de falha possível: teste que passa e aplicação que quebra, ou o inverso, sem que nada aponte para a causa.
 
 ### D4.4 — O mock de `window.api` é derivado do tipo do contrato
 
@@ -120,14 +120,14 @@ Acrescente ao `package.json`:
 "check:fast": "npm run typecheck && npm run lint && npm run test"
 ```
 
-> 🔍 O `check:fast` é um único comando por design. É o que o *hook* da [fase 08](08-automacao-e-registro.md) vai chamar, e um comando é mais fácil de manter alinhado do que três espalhados por configurações diferentes.
+> 🔍 O `check:fast` é um único comando por design. É o que o *hook* da [fase 08](../active/08-automacao-e-registro.md) vai chamar, e um comando é mais fácil de manter alinhado do que três espalhados por configurações diferentes.
 
 **Aceite:** `pnpm test` roda e reporta zero testes nos dois projetos — sem erro de configuração.
 **Commit:** `chore(testes): configura Vitest com projetos node e web`
 
 ### Passo 2 — Ensinar o ESLint sobre arquivos de teste
 
-Arquivos `*.test.ts` em `src/core/` importam utilitários do Vitest e, eventualmente, precisam de liberdade que a regra da [fase 01](../implemented/01-camadas-e-fronteiras.md) não dá. Some a isso que o `describe`/`it` globais precisam ser reconhecidos.
+Arquivos `*.test.ts` em `src/core/` importam utilitários do Vitest e, eventualmente, precisam de liberdade que a regra da [fase 01](01-camadas-e-fronteiras.md) não dá. Some a isso que o `describe`/`it` globais precisam ser reconhecidos.
 
 Acrescente ao `eslint.config.mjs` um bloco para `**/*.test.{ts,tsx}` e `test/**` que desligue as restrições relevantes, e ative `globals: true` no `vitest.config.ts` para evitar o import repetido em todo arquivo.
 
@@ -140,7 +140,7 @@ Verifique com um teste trivial que o lint fica limpo nos dois projetos.
 
 Os primeiros testes de verdade, porque provam a propriedade arquitetural.
 
-`src/main/features/shell/handlers.test.ts` — `openExternal` recebe o `shell.openExternal` por parâmetro (DIP, D2 da [visão geral](00-visao-geral.md)), então o teste passa uma função falsa e verifica:
+`src/main/features/shell/handlers.test.ts` — `openExternal` recebe o `shell.openExternal` por parâmetro (DIP, D2 da [visão geral](../active/00-visao-geral.md)), então o teste passa uma função falsa e verifica:
 
 | Entrada | Esperado |
 |---|---|
@@ -162,16 +162,16 @@ Crie `test/api-mock.ts` exportando uma fábrica que devolve um objeto `satisfies
 
 Escreva `src/renderer/src/components/Versions.test.tsx` cobrindo três casos: enquanto carrega, depois de resolver, e quando o canal rejeita.
 
-O terceiro é o mais valioso e o mais esquecido. Ele é a primeira vez que o projeto exercita o caminho de erro da interface — e é o que a [fase 05](05-design-tokens.md) vai transformar num componente reutilizável.
+O terceiro é o mais valioso e o mais esquecido. Ele é a primeira vez que o projeto exercita o caminho de erro da interface — e é o que a [fase 05](../active/05-design-tokens.md) vai transformar num componente reutilizável.
 
 **Aceite:** três testes verdes; `pnpm typecheck` limpo (o `satisfies` bate com o contrato).
 **Commit:** `test(renderer): cobre Versions com a API falsa derivada do contrato`
 
 ### Passo 5 — Nível 1: reservado
 
-`core/` ainda está vazia — a primeira função pura nasce na [fase 06](06-primeira-feature.md), e é lá que este nível ganha conteúdo.
+`core/` ainda está vazia — a primeira função pura nasce na [fase 06](../active/06-primeira-feature.md), e é lá que este nível ganha conteúdo.
 
-O que fazer agora é apenas garantir que a infraestrutura o alcança: crie `src/core/result.ts` com dois auxiliares (`ok(value)` e `err(error)`) que constroem o `Result` da [fase 02](../implemented/02-contrato-ipc.md), e um teste trivial para eles.
+O que fazer agora é apenas garantir que a infraestrutura o alcança: crie `src/core/result.ts` com dois auxiliares (`ok(value)` e `err(error)`) que constroem o `Result` da [fase 02](02-contrato-ipc.md), e um teste trivial para eles.
 
 São cinco linhas úteis — os handlers vão usá-las — e provam que o projeto `node` alcança `src/core/` e que a cobertura é medida ali.
 
@@ -187,13 +187,13 @@ pnpm check:fast     # typecheck + lint + testes, tudo verde
 pnpm test:coverage  # limite de 85% respeitado em core/ e shared/
 ```
 
-E uma verificação de tempo: **`pnpm check:fast` deve terminar em menos de 15 segundos** nesta altura do projeto. Se já estiver mais lento, investigue agora — a [fase 08](08-automacao-e-registro.md) vai colocá-lo no ciclo de edição, e um ciclo lento é um ciclo contornado.
+E uma verificação de tempo: **`pnpm check:fast` deve terminar em menos de 15 segundos** nesta altura do projeto. Se já estiver mais lento, investigue agora — a [fase 08](../active/08-automacao-e-registro.md) vai colocá-lo no ciclo de edição, e um ciclo lento é um ciclo contornado.
 
 ---
 
 ## O que fica para depois
 
-- **Níveis 4 e 5** — [fase 07](07-e2e-e-empacotamento.md), depois de existir uma feature que valha percorrer de ponta a ponta.
+- **Níveis 4 e 5** — [fase 07](../active/07-e2e-e-empacotamento.md), depois de existir uma feature que valha percorrer de ponta a ponta.
 - **Testes de `utilityProcess`** — quando existir. A regra já está decidida: teste a função pura de `core/`, não o processo. O *shim* de mensageria ganha um teste de nível 4.
 - **Storybook** — fora de escopo. Enquanto os primitivos couberem numa tela, ele custa mais manutenção do que entrega.
 
@@ -205,10 +205,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-06 | 1–5 | concluída | Duas armadilhas subiram para o HISTORY.md: import de `electron` no arquivo do handler (mesmo só como default de parâmetro) quebra em teste Node puro; `types` explícito no tsconfig remove a inclusão implícita de `@types/node`. `pnpm check:fast` só falha por um erro de lint pré-existente em `.claude/hooks/guard.mjs` (fase 08, não tocado) — isolando os arquivos desta fase, tudo limpo. `pnpm typecheck && pnpm test` ~9s. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [03 — Sandbox e segurança](../implemented/03-sandbox-e-seguranca.md) · **Índice:** [README](README.md) · **Próximo:** [05 — Design tokens](05-design-tokens.md)
+**Anterior:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md) · **Índice:** [README](../active/README.md) · **Próximo:** [05 — Design tokens](../active/05-design-tokens.md)

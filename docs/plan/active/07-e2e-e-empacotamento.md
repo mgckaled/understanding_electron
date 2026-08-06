@@ -52,7 +52,7 @@ Teste de E2E que verifica regra de negócio é um teste de nível 1 rodando cem 
 
 Ele exige um `build:unpack` antes, o que leva minutos. Fica num script próprio, chamado à mão e — quando houver — na integração contínua depois do empacotamento.
 
-O `check:fast` da [fase 04](04-testes-rapidos.md) não muda. É o compromisso que mantém o ciclo do agente abaixo de quinze segundos.
+O `check:fast` da [fase 04](../implemented/04-testes-rapidos.md) não muda. É o compromisso que mantém o ciclo do agente abaixo de quinze segundos.
 
 ### D7.4 — O E2E tem `tsconfig` próprio
 

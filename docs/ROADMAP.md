@@ -67,6 +67,9 @@ Aponta para `https://example.com/auto-updates`, herdado do template. Fica como e
 ### Assinatura de código e notarização
 Só faz sentido com distribuição. Registrado para não ser confundido com esquecimento.
 
+### `pnpm lint` (e portanto `check:fast`) falha por `.claude/hooks/guard.mjs`
+`declaredTokens()` não declara tipo de retorno, e o `@typescript-eslint/explicit-function-return-type` deste projeto não aceita anotação via JSDoc em `.mjs` — só sintaxe TypeScript real, que o arquivo não tem por ser JavaScript puro. Resolver de verdade exige mexer na configuração central do ESLint (parser/`checkJs`), não só no arquivo. Bloqueia o critério "tudo verde" de qualquer fase que rode `pnpm lint` sobre o repositório inteiro, até a [fase 08](plan/active/08-automacao-e-registro.md) tratar os hooks. Isolando os arquivos de cada fase (`pnpm eslint <arquivos>`), o lint continua confiável enquanto isso.
+
 ---
 
 ## 5. Fora de escopo

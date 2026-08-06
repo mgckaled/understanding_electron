@@ -43,7 +43,7 @@ Três decisões embutidas aí:
 
 **Formatar a cada edição é diferente:** é idempotente, não falha por estado intermediário, e evita que estilo apareça no diff misturado com conteúdo.
 
-**`vitest related` cabe no ciclo porque não roda a suíte inteira.** Ele percorre o grafo de módulos e executa só os testes que importam o arquivo tocado — o que é possível porque o Vitest já está configurado com os dois projetos da [fase 04](04-testes-rapidos.md).
+**`vitest related` cabe no ciclo porque não roda a suíte inteira.** Ele percorre o grafo de módulos e executa só os testes que importam o arquivo tocado — o que é possível porque o Vitest já está configurado com os dois projetos da [fase 04](../implemented/04-testes-rapidos.md).
 
 > 🔍 Os quatro scripts em `.claude/hooks/` são `.mjs`, não `.py`. Node já é dependência obrigatória do projeto; Python não é — e no Windows um `python` no PATH pode ser o stub da Microsoft Store, que abre a loja em vez de executar. O `_shared.mjs` também resolve os binários lendo o `bin` do `package.json` de cada dependência e executando-os com o próprio Node, sem shell — o que elimina o problema de PATHEXT e de aspas em caminho com espaço no Windows.
 

@@ -1,6 +1,6 @@
 # 05 — Design tokens
 
-**Depende de:** [01](../implemented/01-camadas-e-fronteiras.md) para a estrutura, [04](04-testes-rapidos.md) para o critério de aceite · **Entrega:** `tokens.css`, base de desktop, quatro primitivos, `StateView`
+**Depende de:** [01](../implemented/01-camadas-e-fronteiras.md) para a estrutura, [04](../implemented/04-testes-rapidos.md) para o critério de aceite · **Entrega:** `tokens.css`, base de desktop, quatro primitivos, `StateView`
 
 ---
 
@@ -154,7 +154,7 @@ Regra única e sem exceção: **nenhum valor literal**. Sem `#hex`, sem `px` for
 
 Reescreva `App.tsx` usando os primitivos, aposentando a tela do template. O `Versions` vira um `Panel`.
 
-**Aceite:** `pnpm check:fast` verde (o teste de `Versions` da [fase 04](04-testes-rapidos.md) continua passando); nenhum literal de cor ou tamanho fora do `tokens.css`.
+**Aceite:** `pnpm check:fast` verde (o teste de `Versions` da [fase 04](../implemented/04-testes-rapidos.md) continua passando); nenhum literal de cor ou tamanho fora do `tokens.css`.
 **Commit:** `feat(ds): primitivos Button, Field, Panel e Toolbar`
 
 ### Passo 4 — `ViewState` e o componente que o desenha
@@ -201,7 +201,7 @@ E, à mão:
 - **Tailwind v4** — reversível a qualquer momento, lendo os mesmos tokens.
 - **Alternador manual de tema** — precisa de `nativeTheme` e persistência.
 - **Ícones** — nada precisa de ícone ainda. Quando precisar, um conjunto (Lucide) em vez de SVG solto.
-- **Storybook** — mesma justificativa da [fase 04](04-testes-rapidos.md).
+- **Storybook** — mesma justificativa da [fase 04](../implemented/04-testes-rapidos.md).
 - **Janela sem moldura e `-webkit-app-region: drag`** — decisão de produto, não de fundação.
 
 ---
@@ -218,4 +218,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [04 — Testes rápidos](04-testes-rapidos.md) · **Índice:** [README](README.md) · **Próximo:** [06 — Primeira feature vertical](06-primeira-feature.md)
+**Anterior:** [04 — Testes rápidos](../implemented/04-testes-rapidos.md) · **Índice:** [README](README.md) · **Próximo:** [06 — Primeira feature vertical](06-primeira-feature.md)

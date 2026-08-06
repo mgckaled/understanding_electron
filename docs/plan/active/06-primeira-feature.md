@@ -1,6 +1,6 @@
 # 06 — Primeira feature vertical
 
-**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](../implemented/03-sandbox-e-seguranca.md), [04](04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
+**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](../implemented/03-sandbox-e-seguranca.md), [04](../implemented/04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
 
 ---
 
@@ -192,7 +192,7 @@ E a fatia `src/renderer/src/features/open-dataset/`, com o painel, seu módulo C
 
 Os seis estados usam o `StateView` da [fase 05](05-design-tokens.md), sem componente novo de carregamento ou erro. Se algum estado pedir algo que o `StateView` não faz, o ajuste é nele — não uma variante local. É assim que design system não se dissolve.
 
-Testes de nível 2 com a API falsa da [fase 04](04-testes-rapidos.md):
+Testes de nível 2 com a API falsa da [fase 04](../implemented/04-testes-rapidos.md):
 
 | Cenário | Verifica |
 |---|---|
