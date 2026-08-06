@@ -1,11 +1,10 @@
-import { shell } from 'electron'
 import type { Result } from '@shared/ipc'
 
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:'])
 
 export async function openExternal(
   { url }: { url: string },
-  openExternalFn: (url: string) => Promise<void> = shell.openExternal
+  openExternalFn: (url: string) => Promise<void>
 ): Promise<Result<void>> {
   let protocol: string
   try {
