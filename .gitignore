@@ -39,5 +39,6 @@ desktop.ini
 .DS_Store
 
 # settings.json é acordo do projeto e vai versionado; settings.local.json é
-# preferência de máquina e nunca viaja — docs/plan/active/08-automacao-e-registro.md
+# preferência de máquina — e, desde a config do MCP Context7, também guarda a
+# API key pessoal em "env" — e nunca viaja — docs/plan/active/08-automacao-e-registro.md
 .claude/settings.local.json
