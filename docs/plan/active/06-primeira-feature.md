@@ -1,6 +1,6 @@
 # 06 — Primeira feature vertical
 
-**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](../implemented/03-sandbox-e-seguranca.md), [04](../implemented/04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
+**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](../implemented/03-sandbox-e-seguranca.md), [04](../implemented/04-testes-rapidos.md), [05](../implemented/05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
 
 ---
 
@@ -65,7 +65,7 @@ Adotá-la agora seria pagar por um problema que ainda não existe, que é a mesm
 
 **Gatilho de revisão:** a primeira query de DuckDB reexecutada sobre o mesmo dataset. Aí o cache passa a valer, e o custo da migração continua sendo os poucos hooks que existirem.
 
-No lugar, um `useAsyncAction` de cerca de quarenta linhas em `shared/hooks/`, que devolve um `ViewState` — o mesmo tipo da [fase 05](05-design-tokens.md).
+No lugar, um `useAsyncAction` de cerca de quarenta linhas em `shared/hooks/`, que devolve um `ViewState` — o mesmo tipo da [fase 05](../implemented/05-design-tokens.md).
 
 ### D6.3 — `core/` recebe as linhas, não o caminho
 
@@ -190,7 +190,7 @@ Dois hooks genéricos em `src/renderer/src/shared/hooks/`:
 
 E a fatia `src/renderer/src/features/open-dataset/`, com o painel, seu módulo CSS e o hook que orquestra escolher → gerar `jobId` → escanear → cancelar.
 
-Os seis estados usam o `StateView` da [fase 05](05-design-tokens.md), sem componente novo de carregamento ou erro. Se algum estado pedir algo que o `StateView` não faz, o ajuste é nele — não uma variante local. É assim que design system não se dissolve.
+Os seis estados usam o `StateView` da [fase 05](../implemented/05-design-tokens.md), sem componente novo de carregamento ou erro. Se algum estado pedir algo que o `StateView` não faz, o ajuste é nele — não uma variante local. É assim que design system não se dissolve.
 
 Testes de nível 2 com a API falsa da [fase 04](../implemented/04-testes-rapidos.md):
 
@@ -198,7 +198,7 @@ Testes de nível 2 com a API falsa da [fase 04](../implemented/04-testes-rapidos
 |---|---|
 | Escolher e resumir com sucesso | o resumo aparece |
 | Fechar o diálogo (`null`) | volta a ocioso, sem erro |
-| Erro `not-found` | mensagem em português do registro da [fase 05](05-design-tokens.md) |
+| Erro `not-found` | mensagem em português do registro da [fase 05](../implemented/05-design-tokens.md) |
 | Cancelar durante o progresso | `job.cancel` foi chamado com o `jobId` correto |
 | Desmontar durante a operação | a função de desassinatura foi chamada |
 
@@ -257,4 +257,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [05 — Design tokens](05-design-tokens.md) · **Índice:** [README](README.md) · **Próximo:** [07 — E2E e empacotamento](07-e2e-e-empacotamento.md)
+**Anterior:** [05 — Design tokens](../implemented/05-design-tokens.md) · **Índice:** [README](README.md) · **Próximo:** [07 — E2E e empacotamento](07-e2e-e-empacotamento.md)

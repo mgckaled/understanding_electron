@@ -1,0 +1,61 @@
+---
+name: design-system
+description: Tokens de design do data-lab — os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, tema pelo sistema operacional sem alternador manual, densidade e comportamento de desktop (seleção de texto, foco, movimento), os quatro primitivos (Button, Field, Panel, Toolbar) em CSS Modules, ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor ou medida, decidir onde um estado de UI mora, ou tratar um AppError na interface.
+---
+
+# Design tokens — data-lab
+
+> Escrito na fase [05](../../../docs/plan/implemented/05-design-tokens.md) do plano de fundação. Fonte completa, com o porquê de cada decisão: o documento linkado acima.
+
+## App de desktop não é site
+
+Densidade, seleção de texto, rolagem, duração de animação — cada diferença descoberta tarde é uma varredura por todo componente já escrito. `src/renderer/src/assets/base.css` fixa isso uma vez: `user-select: none` na raiz (com `.selectable` para o que é dado copiável — caminho, célula, mensagem de erro), sem rolagem elástica, `:focus-visible` com anel só quando o teclado foi usado (`:focus` sozinho não mostra nada), `prefers-reduced-motion` zerando duração.
+
+## Dois níveis de token, componente só toca o segundo
+
+```css
+--gray-2: #16171a;                  /* primitivo — a cor existe */
+--color-surface: var(--gray-3);     /* semântico — a cor significa algo */
+```
+
+Componente escreve `var(--color-surface)`, nunca `var(--gray-N)`, nunca um `#hex` solto. **Regra sem exceção** (fora espessura de borda de 1–2px, hairline universal que nenhum design system tokeniza): `src/renderer/src/shared/ui/tokens.css` é a única fonte, e `grep` por `#` seguido de hex em `*.module.css` fora desse arquivo é o teste.
+
+`--gray-1` a `--gray-12` é a escala fixa (não muda com tema). Tema claro (`@media (prefers-color-scheme: light)`) redefine **só a camada semântica**, espelhando a escala (`--gray-N` vira `--gray-(13-N)` na atribuição) — os primitivos permanecem os mesmos números em ambos os temas.
+
+## Tema pelo sistema operacional, sem alternador
+
+`prefers-color-scheme` decide, e mais nada. Um alternador manual exige persistir a escolha, sincronizar `nativeTheme` no main e propagar por IPC — trabalho real que nada no app pede hoje. Como a estrutura de tokens não muda quando ele chegar, adiar não cobra juros depois.
+
+`--color-bg` é o único valor que precisa existir em dois lugares: o CSS e o `backgroundColor` do `BrowserWindow` em `src/main/index.ts` (fase 03) não compartilham fonte. Os dois arquivos têm comentário cruzado — ao mudar um, mude o outro.
+
+## `ViewState<T>` mora no renderer, não em `shared/`
+
+```ts
+type ViewState<T> =
+  | { status: 'idle' }
+  | { status: 'loading'; progress?: JobProgress }
+  | { status: 'ready'; data: T }
+  | { status: 'empty' }
+  | { status: 'cancelled' }
+  | { status: 'error'; error: AppError }
+```
+
+Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atravessa a fronteira de processo — o main precisa concordar com ele. `ViewState` é como o renderer decide desenhar; o main não tem opinião nenhuma sobre isso, e colocá-lo em `shared/` acoplaria o processo privilegiado a decisão de tela.
+
+> ⚠️ **Armadilha:** `src/renderer/src/shared/` e `src/shared/` compartilham o segmento `shared/` no caminho. Um glob mal ancorado (`'src/shared/**'` sem `/` inicial) pode capturar os dois — foi o que aconteceu com `coverage.include` do Vitest, corrigido com `coverage.exclude: ['src/renderer/**']`. Ver skill `testing` e [`docs/HISTORY.md`](../../../docs/HISTORY.md) se mexer em configuração que usa glob sobre `src/`.
+
+`<StateView state={...} render={(data) => ...} />` cobre os cinco estados que não são `ready` e delega `ready` ao `render`. `loading` mostra barra determinada quando `progress.total` não é nulo, indeterminada quando é — o próprio contrato ([`shared/ipc.ts`](../../../src/shared/ipc.ts)) admite total desconhecido.
+
+## Erro é dado em inglês no contrato, texto em português na borda
+
+`src/renderer/src/shared/ui/messages.ts` mapeia `AppError['kind']` para texto, via `Record<ErrorKind, string>` — o `pnpm typecheck` força toda entrada nova da união a ganhar mensagem aqui. O fallback genérico dentro de `errorMessage()` é a garantia gêmea em runtime: protege contra um `kind` que este build não conhece (main mais novo que o renderer), não contra esquecimento em desenvolvimento — isso o typecheck já pega.
+
+## Os quatro primitivos: um diretório, um `.module.css`
+
+`Button`, `Field`, `Panel`, `Toolbar` em `src/renderer/src/shared/ui/<Nome>/`, cada um com seu módulo CSS ao lado. CSS Modules já funciona sem configuração no Vite (arquivo terminado em `.module.css`), com nomes de classe exportados exatamente como escritos — sem conversão automática para camelCase, então as classes já nascem em camelCase no `.module.css` para acesso direto via `styles.algumaCoisa`.
+
+`Field` clona o `children` (`cloneElement`) para injetar `id`/`aria-describedby` no controle real, o que o deixa agnóstico ao tipo de input. `Button` esconde o rótulo com `visibility: hidden` durante `loading` (não `color: transparent`) para o spinner herdar `currentColor` — a cor certa do `variant`, sem precisar de uma cor extra por variante.
+
+## Ref é prop comum desde o React 19
+
+Não precisa `forwardRef` para um componente funcional aceitar `ref` — ele chega como qualquer outra prop tipada (`ComponentProps<'button'>` já inclui `ref`). Vale para qualquer primitivo novo que precise expor o elemento real (foco programático, medição de layout).

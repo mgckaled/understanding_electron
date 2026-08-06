@@ -1,6 +1,6 @@
 # 05 — Design tokens
 
-**Depende de:** [01](../implemented/01-camadas-e-fronteiras.md) para a estrutura, [04](../implemented/04-testes-rapidos.md) para o critério de aceite · **Entrega:** `tokens.css`, base de desktop, quatro primitivos, `StateView`
+**Depende de:** [01](01-camadas-e-fronteiras.md) para a estrutura, [04](04-testes-rapidos.md) para o critério de aceite · **Entrega:** `tokens.css`, base de desktop, quatro primitivos, `StateView`
 
 ---
 
@@ -72,7 +72,7 @@ A distinção vale a linha: `src/shared/` é o que atravessa a fronteira de proc
 
 ### D5.6 — O texto de erro fica num registro central
 
-Um mapa de `AppError['kind']` para texto em português, num arquivo só. É a aplicação da D4 da [visão geral](00-visao-geral.md): erro é dado em inglês no contrato, e vira texto em português na borda da interface.
+Um mapa de `AppError['kind']` para texto em português, num arquivo só. É a aplicação da D4 da [visão geral](../active/00-visao-geral.md): erro é dado em inglês no contrato, e vira texto em português na borda da interface.
 
 O `kind` desconhecido cai num texto genérico em vez de quebrar — a união vai crescer, e nem toda adição vai lembrar de passar por aqui.
 
@@ -117,7 +117,7 @@ Crie `src/renderer/src/shared/ui/tokens.css`, importado uma vez em `main.tsx`. Q
 
 O bloco de tema claro fica sob `@media (prefers-color-scheme: light)`, redefinindo **apenas** a camada semântica.
 
-> ⚠️ Use o valor de `--color-bg` também no `backgroundColor` do `BrowserWindow` ([fase 03](../implemented/03-sandbox-e-seguranca.md)). São dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor aparece duas vezes. Deixe um comentário nos dois apontando para o outro.
+> ⚠️ Use o valor de `--color-bg` também no `backgroundColor` do `BrowserWindow` ([fase 03](03-sandbox-e-seguranca.md)). São dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor aparece duas vezes. Deixe um comentário nos dois apontando para o outro.
 
 **Aceite:** `pnpm dev` abre; alternar o tema do Windows entre claro e escuro muda a janela sem recarregar.
 **Commit:** `feat(ds): tokens de cor, espaço, tipo e movimento`
@@ -154,7 +154,7 @@ Regra única e sem exceção: **nenhum valor literal**. Sem `#hex`, sem `px` for
 
 Reescreva `App.tsx` usando os primitivos, aposentando a tela do template. O `Versions` vira um `Panel`.
 
-**Aceite:** `pnpm check:fast` verde (o teste de `Versions` da [fase 04](../implemented/04-testes-rapidos.md) continua passando); nenhum literal de cor ou tamanho fora do `tokens.css`.
+**Aceite:** `pnpm check:fast` verde (o teste de `Versions` da [fase 04](04-testes-rapidos.md) continua passando); nenhum literal de cor ou tamanho fora do `tokens.css`.
 **Commit:** `feat(ds): primitivos Button, Field, Panel e Toolbar`
 
 ### Passo 4 — `ViewState` e o componente que o desenha
@@ -173,7 +173,7 @@ export type ViewState<T> =
 
 E `<StateView state={...} render={(data) => ...} />`, que cobre os cinco casos que não são `ready` e delega o `ready` ao `render`.
 
-O caso `loading` mostra barra determinada quando `progress.total` não é nulo, e indeterminada quando é. A distinção existe porque o próprio contrato ([fase 02](../implemented/02-contrato-ipc.md)) admite total desconhecido — contar linhas de um CSV grande não sabe o total antes de terminar.
+O caso `loading` mostra barra determinada quando `progress.total` não é nulo, e indeterminada quando é. A distinção existe porque o próprio contrato ([fase 02](02-contrato-ipc.md)) admite total desconhecido — contar linhas de um CSV grande não sabe o total antes de terminar.
 
 Crie `messages.ts` com o mapa de `AppError['kind']` para texto em português, e um teste que percorre **todos** os `kind` da união e confirma que cada um tem texto. Assim, adicionar um `kind` sem mensagem quebra o teste em vez de aparecer como texto genérico em produção.
 
@@ -201,7 +201,7 @@ E, à mão:
 - **Tailwind v4** — reversível a qualquer momento, lendo os mesmos tokens.
 - **Alternador manual de tema** — precisa de `nativeTheme` e persistência.
 - **Ícones** — nada precisa de ícone ainda. Quando precisar, um conjunto (Lucide) em vez de SVG solto.
-- **Storybook** — mesma justificativa da [fase 04](../implemented/04-testes-rapidos.md).
+- **Storybook** — mesma justificativa da [fase 04](04-testes-rapidos.md).
 - **Janela sem moldura e `-webkit-app-region: drag`** — decisão de produto, não de fundação.
 
 ---
@@ -212,10 +212,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-06 | 1–4 | concluída | Armadilha subiu para o HISTORY.md: `coverage.include: ['src/shared/**']` (fase 04) também capturava `src/renderer/src/shared/ui/` — mesmo segmento de nome, o glob não é ancorado à raiz do jeito que se espera. Verificação visual (tema do Windows, tela substituída) feita pelo usuário — sem display gráfico neste ambiente de CLI. `pnpm check:fast` ~12s, só falha pela pendência já registrada do `guard.mjs`. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [04 — Testes rápidos](../implemented/04-testes-rapidos.md) · **Índice:** [README](README.md) · **Próximo:** [06 — Primeira feature vertical](06-primeira-feature.md)
+**Anterior:** [04 — Testes rápidos](04-testes-rapidos.md) · **Índice:** [README](../active/README.md) · **Próximo:** [06 — Primeira feature vertical](../active/06-primeira-feature.md)

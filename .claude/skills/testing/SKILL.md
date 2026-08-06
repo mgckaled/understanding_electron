@@ -33,6 +33,10 @@ Fora do binário real, `node_modules/electron/index.js` faz `module.exports = ge
 
 **A regra:** nenhum handler testável importa `electron` por valor — nem como default de parâmetro. O parâmetro fica obrigatório; só o composition root (`register-all.ts`, que nenhum teste alcança) importa `electron` de verdade e monta a chamada real.
 
+## Armadilha: glob de `coverage.include` sem `/` inicial não é ancorado só à raiz
+
+`coverage.include: ['src/shared/**']` foi pensado para pegar `src/shared/` (a raiz, contrato IPC). Quando a fase 05 criou `src/renderer/src/shared/ui/` (ver skill `design-system`), o mesmo glob passou a capturar os dois — os caminhos compartilham o segmento `shared/`, e o `picomatch` usado pelo coverage v8 não trata o padrão como ancorado ao início do path. Sintoma: um componente do renderer (sem meta de cobertura) aparecendo no relatório como se fosse `core/`/`shared/`, distorcendo a métrica em silêncio. Corrigido com `coverage.exclude: ['src/renderer/**']` — o default de `coverage.exclude` é array vazio, e as exclusões de proteção do próprio Vitest (setup/test/config files) são hardcoded e continuam aplicadas por cima, então isso não perde nada. Vale para qualquer par de pastas com segmento de nome compartilhado.
+
 ## O mock de `window.api` é derivado do tipo do contrato
 
 ```ts

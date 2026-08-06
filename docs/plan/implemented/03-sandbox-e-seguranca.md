@@ -98,7 +98,7 @@ webPreferences: {
 }
 ```
 
-Aproveite e defina `backgroundColor` no `BrowserWindow` com um cinza escuro provisório. O `show: false` + `ready-to-show` já evita o flash branco na abertura; o `backgroundColor` cobre redimensionamento e o quadro que o sistema desenha antes do primeiro *paint*. A [fase 05](../active/05-design-tokens.md) volta aqui para alinhar o valor com o token `--color-bg` — são dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor precisa aparecer duas vezes.
+Aproveite e defina `backgroundColor` no `BrowserWindow` com um cinza escuro provisório. O `show: false` + `ready-to-show` já evita o flash branco na abertura; o `backgroundColor` cobre redimensionamento e o quadro que o sistema desenha antes do primeiro *paint*. A [fase 05](05-design-tokens.md) volta aqui para alinhar o valor com o token `--color-bg` — são dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor precisa aparecer duas vezes.
 
 **Verificação, nesta ordem:**
 

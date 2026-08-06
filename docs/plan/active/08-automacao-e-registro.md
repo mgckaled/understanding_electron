@@ -53,7 +53,7 @@ Sete invariantes, em ordem decrescente de dano se violadas: regressão de `webPr
 
 A primeira é a que justifica o hook existir. `sandbox: false` reintroduzido não quebra nada visível — apenas apaga em silêncio a fronteira em que toda a arquitetura se apoia, e nenhuma revisão de código pega isso de forma confiável.
 
-A última só entra em vigor quando o `tokens.css` da [fase 05](05-design-tokens.md) existir; até lá o guarda se desliga sozinho. Ela pega o defeito que nenhum linter pega: `var()` com nome errado não gera erro, o navegador simplesmente não aplica nada, e ninguém nota até olhar aquele componente específico.
+A última só entra em vigor quando o `tokens.css` da [fase 05](../implemented/05-design-tokens.md) existir; até lá o guarda se desliga sozinho. Ela pega o defeito que nenhum linter pega: `var()` com nome errado não gera erro, o navegador simplesmente não aplica nada, e ninguém nota até olhar aquele componente específico.
 
 > ⚠️ Duas guardas são propositalmente redundantes com o ESLint (pureza de camada e superfície do `contextBridge`). Isso contradiz a regra "o que pode ser verificado não deve ser duplicado" — e a exceção é deliberada: o hook dispara a **cada edição**, o lint só quando invocado. Para invariante de fronteira, o custo de descobrir tarde é maior que o custo da duplicação.
 

@@ -14,6 +14,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/core/**', 'src/shared/**'],
+      // src/renderer/src/shared/ui/ (D5.5) shares the "shared" segment with
+      // src/shared/ — without this, the include glob below matches both,
+      // pulling renderer code (no coverage goal) into the core/shared metric.
+      exclude: ['src/renderer/**'],
       thresholds: {
         lines: 85
       }

@@ -162,7 +162,7 @@ Crie `test/api-mock.ts` exportando uma fábrica que devolve um objeto `satisfies
 
 Escreva `src/renderer/src/components/Versions.test.tsx` cobrindo três casos: enquanto carrega, depois de resolver, e quando o canal rejeita.
 
-O terceiro é o mais valioso e o mais esquecido. Ele é a primeira vez que o projeto exercita o caminho de erro da interface — e é o que a [fase 05](../active/05-design-tokens.md) vai transformar num componente reutilizável.
+O terceiro é o mais valioso e o mais esquecido. Ele é a primeira vez que o projeto exercita o caminho de erro da interface — e é o que a [fase 05](05-design-tokens.md) vai transformar num componente reutilizável.
 
 **Aceite:** três testes verdes; `pnpm typecheck` limpo (o `satisfies` bate com o contrato).
 **Commit:** `test(renderer): cobre Versions com a API falsa derivada do contrato`
@@ -211,4 +211,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md) · **Índice:** [README](../active/README.md) · **Próximo:** [05 — Design tokens](../active/05-design-tokens.md)
+**Anterior:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md) · **Índice:** [README](../active/README.md) · **Próximo:** [05 — Design tokens](05-design-tokens.md)
