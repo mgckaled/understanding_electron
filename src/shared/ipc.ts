@@ -30,6 +30,12 @@ export type JobEvent =
 
 export type JobProgress = Extract<JobEvent, { type: 'progress' }>
 
+export type DatasetSummary = {
+  delimiter: string
+  columns: string[]
+  rowCount: number
+}
+
 export const argsSchema = {
   'app:info': z.void(),
   'shell:openExternal': z.object({ url: z.string().url() })
