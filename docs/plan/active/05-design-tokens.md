@@ -117,7 +117,7 @@ Crie `src/renderer/src/shared/ui/tokens.css`, importado uma vez em `main.tsx`. Q
 
 O bloco de tema claro fica sob `@media (prefers-color-scheme: light)`, redefinindo **apenas** a camada semântica.
 
-> ⚠️ Use o valor de `--color-bg` também no `backgroundColor` do `BrowserWindow` ([fase 03](03-sandbox-e-seguranca.md)). São dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor aparece duas vezes. Deixe um comentário nos dois apontando para o outro.
+> ⚠️ Use o valor de `--color-bg` também no `backgroundColor` do `BrowserWindow` ([fase 03](../implemented/03-sandbox-e-seguranca.md)). São dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor aparece duas vezes. Deixe um comentário nos dois apontando para o outro.
 
 **Aceite:** `pnpm dev` abre; alternar o tema do Windows entre claro e escuro muda a janela sem recarregar.
 **Commit:** `feat(ds): tokens de cor, espaço, tipo e movimento`

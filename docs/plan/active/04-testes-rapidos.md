@@ -211,4 +211,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md) · **Índice:** [README](README.md) · **Próximo:** [05 — Design tokens](05-design-tokens.md)
+**Anterior:** [03 — Sandbox e segurança](../implemented/03-sandbox-e-seguranca.md) · **Índice:** [README](README.md) · **Próximo:** [05 — Design tokens](05-design-tokens.md)

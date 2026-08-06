@@ -1,11 +1,11 @@
 ---
 name: architecture
-description: Decisões estruturais do data-lab — fronteira de processo (main/preload/renderer/core/shared/workers), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada um arquivo vai, avaliar se uma dependência nova se justifica, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing) — ainda não escritas.
+description: Decisões estruturais do data-lab — fronteira de processo (main/preload/renderer/core/shared/workers), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), o sandbox do renderer e a fronteira de segurança, convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada um arquivo vai, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing) — ainda não escritas.
 ---
 
 # Arquitetura — data-lab
 
-> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md) e [02](../../../docs/plan/implemented/02-contrato-ipc.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação e o contrato IPC, já em vigor. Cresce quando as fases [03](../../../docs/plan/active/03-sandbox-e-seguranca.md) (sandbox) e [06](../../../docs/plan/active/06-primeira-feature.md) (primeira feature) forem implementadas. Fonte completa, com o porquê de cada decisão: os três documentos linkados acima.
+> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md), [02](../../../docs/plan/implemented/02-contrato-ipc.md) e [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação, o contrato IPC e a fronteira de segurança do sandbox, já em vigor. Cresce quando a fase [06](../../../docs/plan/active/06-primeira-feature.md) (primeira feature) for implementada. Fonte completa, com o porquê de cada decisão: os quatro documentos linkados acima.
 
 ## O critério: o que é caro de desfazer
 
@@ -95,6 +95,16 @@ window.api.invoke('app:info') // não — reintroduz a superfície larga do temp
 `JobId` nasce no **renderer** (`crypto.randomUUID()`), nunca devolvido pelo main — o usuário cancela antes de a promessa resolver, e um id que só chega na resposta não deixa o que cancelar na janela em que isso importa. `JobEvent` é união por `type` (`progress`, `chunk`, `log`); a variante `progress` é a única com consumidor hoje, as outras duas (resposta em fluxo, linha de pipeline) são reserva deliberada — três linhas agora contra um segundo mecanismo de eventos depois.
 
 Listener de evento do main **nunca** vaza o `IpcRendererEvent` para o renderer — carrega `event.sender`, referência viva ao `webContents`. O callback do renderer recebe só o payload; toda assinatura devolve uma função de cancelamento.
+
+## Sandbox: renderer sem Node, preload é bundle único
+
+`sandbox: true` no `webPreferences`, ao lado de `contextIsolation: true` e `nodeIntegration: false` explícitos. Os três já eram padrão do Electron antes de virarem linha escrita — o motivo de escrever mesmo assim é leitura: um comentário curto no ponto de aplicação distingue "padrão seguro" de "ninguém pensou nisso" para quem abrir o arquivo daqui a seis meses, e uma alteração acidental aparece no diff.
+
+Com o sandbox ligado, o preload perde o `require` completo — sobra um polyfill limitado, sem capacidade de carregar múltiplos arquivos do próprio código. Por isso o preload é, e continua sendo, **um arquivo único**: `externalizeDepsPlugin()` nunca entra no bloco `preload` do `electron.vite.config.ts`. Ele existe para deixar dependência fora do bundle e resolvida por `require` em runtime — exatamente o que o preload sandboxed não sabe fazer.
+
+Navegação para fora da origem do app é negada por padrão (`will-navigate`, ao lado do `setWindowOpenHandler` que já negava janela nova), com uma única exceção em desenvolvimento: o HMR do Vite precisa navegar dentro da própria origem do servidor.
+
+`shamefullyHoist: true` no `pnpm-workspace.yaml` segue registrado como pendência deliberada, não esquecimento — gatilho de revisão é a instalação do primeiro módulo nativo, o DuckDB. Estado completo da fronteira: tabela em [`CLAUDE.md`](../../../CLAUDE.md).
 
 ## Convenção de idioma
 

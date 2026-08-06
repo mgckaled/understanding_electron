@@ -1,6 +1,6 @@
 # 03 — Sandbox e segurança
 
-**Depende de:** [02](../implemented/02-contrato-ipc.md) · **Entrega:** `sandbox: true`, `webPreferences` explícito, guarda de navegação, pendências registradas
+**Depende de:** [02](02-contrato-ipc.md) · **Entrega:** `sandbox: true`, `webPreferences` explícito, guarda de navegação, pendências registradas
 
 ---
 
@@ -25,7 +25,7 @@ O `sandbox: false` veio do template. Não é decisão do projeto, e ninguém sab
 
 Essa limitação é a razão pela qual a decisão é assimétrica no tempo.
 
-Depois da [fase 02](../implemented/02-contrato-ipc.md), o preload é um arquivo que importa `electron` e um tipo. Nada mais. Ligar o sandbox custa apagar uma linha.
+Depois da [fase 02](02-contrato-ipc.md), o preload é um arquivo que importa `electron` e um tipo. Nada mais. Ligar o sandbox custa apagar uma linha.
 
 Daqui a três meses, o preload provavelmente terá se dividido em `ipc.ts`, `channels.ts` e um utilitário qualquer — e aí a mesma mudança é uma tarde de reorganização, feita sob a pressão de um app que já funciona, que é o pior momento possível para mexer na fronteira de segurança.
 
@@ -98,7 +98,7 @@ webPreferences: {
 }
 ```
 
-Aproveite e defina `backgroundColor` no `BrowserWindow` com um cinza escuro provisório. O `show: false` + `ready-to-show` já evita o flash branco na abertura; o `backgroundColor` cobre redimensionamento e o quadro que o sistema desenha antes do primeiro *paint*. A [fase 05](05-design-tokens.md) volta aqui para alinhar o valor com o token `--color-bg` — são dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor precisa aparecer duas vezes.
+Aproveite e defina `backgroundColor` no `BrowserWindow` com um cinza escuro provisório. O `show: false` + `ready-to-show` já evita o flash branco na abertura; o `backgroundColor` cobre redimensionamento e o quadro que o sistema desenha antes do primeiro *paint*. A [fase 05](../active/05-design-tokens.md) volta aqui para alinhar o valor com o token `--color-bg` — são dois mundos que não compartilham CSS, e é o único lugar do projeto onde uma cor precisa aparecer duas vezes.
 
 **Verificação, nesta ordem:**
 
@@ -185,10 +185,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-06 | 1, 2, 3 | concluída | Verificação do DevTools feita pelo usuário (sem display gráfico neste ambiente de CLI): `window.api` responde, `window.electron`/`require`/`process` undefined, HMR ok. `pnpm typecheck`, `pnpm lint` (arquivo tocado), `pnpm build` e inspeção do `out/preload/index.js` (CommonJS) verdes. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [02 — Contrato IPC](../implemented/02-contrato-ipc.md) · **Índice:** [README](README.md) · **Próximo:** [04 — Testes rápidos](04-testes-rapidos.md)
+**Anterior:** [02 — Contrato IPC](02-contrato-ipc.md) · **Índice:** [README](../active/README.md) · **Próximo:** [04 — Testes rápidos](../active/04-testes-rapidos.md)

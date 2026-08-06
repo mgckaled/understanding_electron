@@ -1,6 +1,6 @@
 # 06 — Primeira feature vertical
 
-**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](03-sandbox-e-seguranca.md), [04](04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
+**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](../implemented/03-sandbox-e-seguranca.md), [04](04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
 
 ---
 

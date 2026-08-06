@@ -18,7 +18,7 @@ Comporta, e por um motivo que não é sorte: as decisões que a camada de IA exi
 | Falha esperada e acionável (serviço fora do ar, chave ausente, limite de taxa) | D2.2 da [fase 02](../implemented/02-contrato-ipc.md) — `Result` com `AppError` |
 | Operação longa com progresso e cancelamento | D2.7 e D6.7 — `jobId` do renderer, `AbortController` no main |
 | Recurso opcional que degrada em vez de quebrar | `AppError.kind = 'unavailable'` com `hint` — o formato do *gate* |
-| Segredo que nunca chega ao renderer | D3.4 da [fase 03](03-sandbox-e-seguranca.md) |
+| Segredo que nunca chega ao renderer | D3.4 da [fase 03](../implemented/03-sandbox-e-seguranca.md) |
 | Resposta em fluxo, token a token | Variante `chunk` de `JobEvent`, [fase 02](../implemented/02-contrato-ipc.md) |
 
 As três últimas linhas foram **acrescentadas à fundação** por causa desta conversa. As outras já estavam lá.

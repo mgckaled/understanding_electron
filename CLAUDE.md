@@ -127,11 +127,23 @@ Add-MpPreference -ExclusionProcess "node.exe"
 
 ### Segurança
 
-- `contextIsolation` fica em `true` (padrão do Electron, não mexer)
 - Todo acesso a dados passa pelo **preload** via `contextBridge` — o renderer nunca fala direto com o main
 - Tipos do contrato IPC ficam declarados em `src/shared/ipc.ts`, e todo canal novo passa por lá
 - Segredo é de mão única: o renderer grava e consulta se existe, **nunca lê** — ver [`docs/HISTORY.md`](docs/HISTORY.md)
-- **Pendência conhecida:** `src/main/index.ts` está com `sandbox: false`. É o padrão do template, não uma decisão nossa. Resolvido na [fase 03](docs/plan/active/03-sandbox-e-seguranca.md) do plano de fundação.
+
+Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented/03-sandbox-e-seguranca.md):
+
+| Item | Estado |
+|---|---|
+| `contextIsolation` | `true`, explícito |
+| `nodeIntegration` | `false`, explícito |
+| `sandbox` | `true` |
+| Superfície do preload | apenas `window.api`, montada a partir de `src/shared/ipc.ts` |
+| Abertura de link externo | canal `shell:openExternal`, com lista branca de esquemas |
+| Navegação e janela nova | negadas por padrão |
+| CSP | `default-src 'self'` no `index.html` |
+| Segredos | regra fixada (mão única, `safeStorage`, `userData`); **nenhum segredo existe ainda** |
+| `shamefullyHoist` | **pendente** — gatilho de revisão: instalação do DuckDB |
 
 ### Arquitetura de dados
 

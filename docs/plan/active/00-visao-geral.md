@@ -109,7 +109,7 @@ Registrado para não ser confundido com esquecimento:
 - **DuckDB, `utilityProcess` e Arrow.** Continuam no `05-proximos-passos.md`. A fundação existe justamente para que aquele plano seja executável sem improviso.
 - **Virtualização de tabela.** Chega junto com dados de verdade para virtualizar.
 - **Atualização automática.** O `electron-builder.yml` já tem um `publish` apontando para `https://example.com/auto-updates` — placeholder do template, não configuração nossa. Fica como está até existir distribuição real.
-- **`shamefullyHoist: true`.** Registrado como pendência de segurança na [fase 03](03-sandbox-e-seguranca.md), sem ação nesta rodada.
+- **`shamefullyHoist: true`.** Registrado como pendência de segurança na [fase 03](../implemented/03-sandbox-e-seguranca.md), sem ação nesta rodada.
 - **Assinatura de código e notarização.** Só faz sentido com distribuição.
 
 ---

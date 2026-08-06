@@ -145,7 +145,7 @@ Hook que nunca foi visto falhar é hook que você não sabe se está ligado.
 
 ### Passo 2 — Reescrever o `CLAUDE.md`
 
-O arquivo está desatualizado desde a [fase 03](03-sandbox-e-seguranca.md). Faça a revisão completa, não remendo.
+O arquivo está desatualizado desde a [fase 03](../implemented/03-sandbox-e-seguranca.md). Faça a revisão completa, não remendo.
 
 **Sai:** "Pendência conhecida: `sandbox: false`" (resolvida). A afirmação de que os tipos do contrato ficam em `src/preload/index.d.ts` — mudou para `src/shared/ipc.ts`.
 
