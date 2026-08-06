@@ -12,10 +12,13 @@ function createWindow(): void {
     height: 670,
     show: false,
     autoHideMenuBar: true,
+    backgroundColor: '#1e1e1e', // provisório — fase 05 alinha com --color-bg
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: true, // renderer no sandbox do Chromium
+      contextIsolation: true, // padrão — explícito por ser fronteira de segurança
+      nodeIntegration: false // idem
     }
   })
 
