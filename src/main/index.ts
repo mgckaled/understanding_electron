@@ -31,6 +31,17 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const allowed =
+      is.dev && process.env['ELECTRON_RENDERER_URL']
+        ? new URL(url).origin === new URL(process.env['ELECTRON_RENDERER_URL']).origin
+        : false
+    if (!allowed) {
+      event.preventDefault()
+      shell.openExternal(url)
+    }
+  })
+
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
