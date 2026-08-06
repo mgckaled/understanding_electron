@@ -1,9 +1,13 @@
+import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
 import { aliases } from './config/aliases'
 
 export default defineConfig({
   resolve: {
-    alias: aliases
+    alias: {
+      ...aliases,
+      '@test': resolve('test')
+    }
   },
   test: {
     globals: true,

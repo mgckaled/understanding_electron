@@ -3,11 +3,16 @@ import type { AppInfo } from '@shared/ipc'
 
 function Versions(): React.JSX.Element {
   const [info, setInfo] = useState<AppInfo | null>(null)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
-    window.api.app.info().then(setInfo)
+    window.api.app
+      .info()
+      .then(setInfo)
+      .catch(() => setError(true))
   }, [])
 
+  if (error) return <p className="versions-error">Não foi possível carregar as versões.</p>
   if (!info) return <ul className="versions" />
 
   return (
