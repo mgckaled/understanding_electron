@@ -13,13 +13,14 @@ const APP_INFO: AppInfo = {
 }
 
 describe('Versions', () => {
-  it('renders nothing while loading', () => {
+  it('renders neither versions nor an error while loading', () => {
     const api = installApiMock()
     vi.mocked(api.app.info).mockReturnValue(new Promise(() => {}))
 
-    const { container } = render(<Versions />)
+    render(<Versions />)
 
-    expect(container.querySelector('.versions')).toBeEmptyDOMElement()
+    expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
+    expect(screen.queryByText('Não foi possível carregar as versões.')).not.toBeInTheDocument()
   })
 
   it('renders the resolved versions', async () => {
