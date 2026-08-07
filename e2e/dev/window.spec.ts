@@ -14,7 +14,7 @@ test.afterAll(async () => {
 })
 
 test('the window opens with the expected title', async () => {
-  expect(await page.title()).toBe('Electron')
+  expect(await page.title()).toBe('data-lab')
 })
 
 test('#root has content', async () => {

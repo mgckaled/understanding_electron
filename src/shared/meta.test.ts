@@ -1,7 +1,16 @@
-import { APP_ID } from './meta'
+import { APP_ID, APP_NAME } from './meta'
+
+describe('APP_NAME', () => {
+  it('is the human-readable product name', () => {
+    expect(APP_NAME).toBe('data-lab')
+  })
+})
 
 describe('APP_ID', () => {
-  it('identifies the app for the OS shell (AppUserModelId, taskbar)', () => {
-    expect(APP_ID).toBe('data-lab')
+  // Not a tautology: this value has to match `appId` in electron-builder.yml,
+  // and nothing else compares the two. A change here without a change there
+  // desynchronises the shortcut from the running process on Windows.
+  it('is the AppUserModelId, in reverse-domain form, matching electron-builder.yml', () => {
+    expect(APP_ID).toBe('com.mgckaled.datalab')
   })
 })
