@@ -1,6 +1,13 @@
 out
 dist
 pnpm-lock.yaml
-LICENSE.md
 tsconfig.json
 tsconfig.*.json
+
+# Markdown fica fora do Prettier. A documentação em docs/ e o CLAUDE.md são prosa
+# de manutenção manual com tabelas alinhadas à mão que o formatter reflui — rodar
+# `pnpm format` de boa-fé produziria um diff de dezenas de arquivos. O hook
+# format_fix (fase 08) chama `prettier --write <arquivo>` a cada edição, e o
+# Prettier honra este ignore mesmo para caminho explícito. Fecha docs/ROADMAP.md § 4.
+# (LICENSE.md também é .md — coberto por este padrão.)
+*.md
