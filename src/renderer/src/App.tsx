@@ -4,6 +4,7 @@ import Panel from './shared/ui/Panel/Panel'
 import Toolbar from './shared/ui/Toolbar/Toolbar'
 import Button from './shared/ui/Button/Button'
 import Versions from './components/Versions'
+import OpenDatasetPanel from './features/open-dataset/OpenDatasetPanel'
 import styles from './App.module.css'
 
 function App(): React.JSX.Element {
@@ -29,6 +30,7 @@ function App(): React.JSX.Element {
         {openError && <p className={styles.error}>{openError}</p>}
         <p>Built with React and TypeScript.</p>
       </Panel>
+      <OpenDatasetPanel />
       <Versions />
     </div>
   )

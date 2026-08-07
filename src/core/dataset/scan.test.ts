@@ -50,6 +50,17 @@ describe('scanDelimited', () => {
     })
   })
 
+  it('does not split a quoted delimiter inside the header itself into a new column', async () => {
+    const lines = linesFrom(['"first, name",age', '"Silva, João",28'])
+
+    const result = await scanDelimited({ lines })
+
+    expect(result).toEqual({
+      ok: true,
+      value: { delimiter: ',', columns: ['first, name', 'age'], rowCount: 1 }
+    })
+  })
+
   it('returns cancelled without consuming the iterable when the signal is already aborted', async () => {
     const controller = new AbortController()
     controller.abort()
