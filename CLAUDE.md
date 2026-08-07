@@ -133,6 +133,7 @@ Código em inglês, sempre — identificador, comentário, docstring e log, sem 
 
 - Todo acesso a dados passa pelo **preload** via `contextBridge` — o renderer nunca fala direto com o main
 - Tipos do contrato IPC ficam declarados em `src/shared/ipc.ts`, e todo canal novo passa por lá
+- Decisão de segurança que dois processos precisam tomar nasce em `core/`, nunca ao lado de um dos chamadores — validação colocada junto de um deles vira bypass no segundo, ver [`docs/HISTORY.md`](docs/HISTORY.md)
 - Segredo é de mão única: o renderer grava e consulta se existe, **nunca lê** — ver [`docs/HISTORY.md`](docs/HISTORY.md)
 
 Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented/03-sandbox-e-seguranca.md):
@@ -143,7 +144,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 | `nodeIntegration` | `false`, explícito |
 | `sandbox` | `true` |
 | Superfície do preload | apenas `window.api`, montada a partir de `src/shared/ipc.ts` |
-| Abertura de link externo | canal `shell:openExternal`, com lista branca de esquemas |
+| Abertura de link externo | `checkExternalUrl` em `src/core/url.ts` (lista branca `http:`/`https:`), **único** caminho até `shell.openExternal` — usado pelo canal `shell:openExternal`, pelo `setWindowOpenHandler` e pelo `will-navigate` |
 | Navegação e janela nova | negadas por padrão |
 | CSP | `default-src 'self'` no `index.html` |
 | Segredos | regra fixada (mão única, `safeStorage`, `userData`); **nenhum segredo existe ainda** |

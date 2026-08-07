@@ -2,8 +2,20 @@ import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { APP_ID } from '@shared/meta'
+import { checkExternalUrl } from '@core/url'
 import { registerAll } from './ipc/register-all'
 import icon from '../../resources/icon.png?asset'
+
+/**
+ * The only way this process hands a URL to the OS. Both callers below used to
+ * call `shell.openExternal` directly, bypassing the scheme allow-list that the
+ * `shell:openExternal` IPC channel enforces — the protection existed and was
+ * tested, but not on the paths that a page could actually reach.
+ */
+function openExternalIfAllowed(url: string): void {
+  const checked = checkExternalUrl(url)
+  if (checked.ok) void shell.openExternal(checked.value)
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -16,8 +28,8 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: true, // renderer no sandbox do Chromium
-      contextIsolation: true, // padrão — explícito por ser fronteira de segurança
+      sandbox: true, // renderer runs inside the Chromium sandbox
+      contextIsolation: true, // default — spelled out because it is a security boundary
       nodeIntegration: false // idem
     }
   })
@@ -27,7 +39,7 @@ function createWindow(): void {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    openExternalIfAllowed(details.url)
     return { action: 'deny' }
   })
 
@@ -38,7 +50,7 @@ function createWindow(): void {
         : false
     if (!allowed) {
       event.preventDefault()
-      shell.openExternal(url)
+      openExternalIfAllowed(url)
     }
   })
 

@@ -1,22 +1,13 @@
 import type { Result } from '@shared/ipc'
-
-const ALLOWED_PROTOCOLS = new Set(['http:', 'https:'])
+import { checkExternalUrl } from '@core/url'
 
 export async function openExternal(
   { url }: { url: string },
   openExternalFn: (url: string) => Promise<void>
 ): Promise<Result<void>> {
-  let protocol: string
-  try {
-    protocol = new URL(url).protocol
-  } catch {
-    return { ok: false, error: { kind: 'blocked', reason: `URL inválida: ${url}` } }
-  }
+  const checked = checkExternalUrl(url)
+  if (!checked.ok) return checked
 
-  if (!ALLOWED_PROTOCOLS.has(protocol)) {
-    return { ok: false, error: { kind: 'blocked', reason: `esquema não permitido: ${protocol}` } }
-  }
-
-  await openExternalFn(url)
+  await openExternalFn(checked.value)
   return { ok: true, value: undefined }
 }
