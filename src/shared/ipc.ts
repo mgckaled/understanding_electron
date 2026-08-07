@@ -36,9 +36,22 @@ export type DatasetSummary = {
   rowCount: number
 }
 
+export type DatasetRef = {
+  path: string
+}
+
+// job:event is not an invoke/handle channel — ipcMain never `.handle()`s it,
+// so it has no entry in argsSchema/IpcContract. main broadcasts JobEvent
+// payloads through it and preload subscribes with ipcRenderer.on. The
+// constant is what keeps main and preload from drifting on the channel name.
+export const JOB_EVENT_CHANNEL = 'job:event'
+
 export const argsSchema = {
   'app:info': z.void(),
-  'shell:openExternal': z.object({ url: z.string().url() })
+  'shell:openExternal': z.object({ url: z.string().url() }),
+  'dataset:pick': z.void(),
+  'dataset:scan': z.object({ path: z.string(), jobId: z.string() }),
+  'job:cancel': z.object({ jobId: z.string() })
 } as const
 
 export type IpcContract = {
@@ -47,6 +60,15 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['shell:openExternal']>
     result: Result<void>
   }
+  'dataset:pick': {
+    args: z.infer<(typeof argsSchema)['dataset:pick']>
+    result: Result<DatasetRef | null>
+  }
+  'dataset:scan': {
+    args: z.infer<(typeof argsSchema)['dataset:scan']>
+    result: Result<DatasetSummary>
+  }
+  'job:cancel': { args: z.infer<(typeof argsSchema)['job:cancel']>; result: void }
 }
 
 export type Channel = keyof IpcContract
@@ -56,4 +78,12 @@ export type ResultOf<C extends Channel> = IpcContract[C]['result']
 export type Api = {
   app: { info(): Promise<AppInfo> }
   shell: { openExternal(url: string): Promise<Result<void>> }
+  dataset: {
+    pick(): Promise<Result<DatasetRef | null>>
+    scan(path: string, jobId: JobId): Promise<Result<DatasetSummary>>
+  }
+  job: {
+    cancel(jobId: JobId): Promise<void>
+    onEvent(cb: (event: JobEvent) => void): () => void
+  }
 }
