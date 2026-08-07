@@ -16,5 +16,10 @@ export async function* readLines(path: string): AsyncGenerator<string> {
     }
   } finally {
     rl.close()
+    // rl.close() only releases readline's control of the stream — it does
+    // not destroy it (confirmed empirically: bytesRead kept growing after a
+    // for-await break with only rl.close()). Without this, cancelling a
+    // scan does not stop the disk read. See docs/HISTORY.md.
+    stream.destroy()
   }
 }
