@@ -1,7 +1,7 @@
 import { app, shell, dialog, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import type { JobEvent } from '@shared/ipc'
-import { JOB_EVENT_CHANNEL } from '@shared/ipc'
+import { JOB_EVENT_CHANNEL } from '@shared/channels'
 import { handle } from './registry'
 import { getAppInfo } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'

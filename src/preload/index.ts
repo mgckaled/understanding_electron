@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type { Api, Args, Channel, JobEvent, ResultOf } from '@shared/ipc'
-import { JOB_EVENT_CHANNEL } from '@shared/ipc'
+import { JOB_EVENT_CHANNEL } from '@shared/channels'
 
 function invoke<C extends Channel>(channel: C, args?: Args<C>): Promise<ResultOf<C>> {
   return ipcRenderer.invoke(channel, args) as Promise<ResultOf<C>>

@@ -42,9 +42,8 @@ export type DatasetRef = {
 
 // job:event is not an invoke/handle channel — ipcMain never `.handle()`s it,
 // so it has no entry in argsSchema/IpcContract. main broadcasts JobEvent
-// payloads through it and preload subscribes with ipcRenderer.on. The
-// constant is what keeps main and preload from drifting on the channel name.
-export const JOB_EVENT_CHANNEL = 'job:event'
+// payloads through it and preload subscribes with ipcRenderer.on. Its name
+// lives in shared/channels.ts, not here — see that file for why.
 
 export const argsSchema = {
   'app:info': z.void(),
