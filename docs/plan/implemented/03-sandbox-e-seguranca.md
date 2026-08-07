@@ -191,4 +191,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [02 — Contrato IPC](02-contrato-ipc.md) · **Índice:** [README](../active/README.md) · **Próximo:** [04 — Testes rápidos](../active/04-testes-rapidos.md)
+**Anterior:** [02 — Contrato IPC](02-contrato-ipc.md) · **Índice:** [README](../active/README.md) · **Próximo:** [04 — Testes rápidos](04-testes-rapidos.md)

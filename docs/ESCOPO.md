@@ -182,7 +182,7 @@ As receitas precisam ser salvas. É o primeiro dado próprio do aplicativo — t
 
 ### Revisa a primeira feature de IA
 
-A [camada de IA](planning/backlog/09-camada-de-ia.md) previa NL→SQL como maior retorno. Num modelo de pipeline, o alvo certo é **NL→passo**: "tira os duplicados por CPF e preenche cidade vazia" vira dois passos no pipeline, editáveis e inspecionáveis, em vez de SQL opaco.
+A [camada de IA](plan/active/09-camada-de-ia.md) previa NL→SQL como maior retorno. Num modelo de pipeline, o alvo certo é **NL→passo**: "tira os duplicados por CPF e preenche cidade vazia" vira dois passos no pipeline, editáveis e inspecionáveis, em vez de SQL opaco.
 
 Mesmo ponto de privacidade, inegociável: **o modelo recebe apenas o esquema — nomes e tipos de coluna — nunca as linhas.**
 

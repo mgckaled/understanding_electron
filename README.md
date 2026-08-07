@@ -17,20 +17,23 @@ O segundo objetivo explica a densidade da documentação em [`docs/study/`](docs
 
 ## Estado atual
 
-🟡 **Em construção — base validada, camada de dados ainda não implementada.**
+🟡 **Em construção — fundação concluída, camada de dados ainda não implementada.**
 
 | | |
 |---|---|
-| ✅ | Estrutura de três processos (main, preload, renderer) compilando |
-| ✅ | HMR no renderer, reinício automático do main |
-| ✅ | Verificação de tipos separada por ambiente, passando limpo |
-| ✅ | Pipeline de recompilação de módulo nativo funcionando |
-| ⬜ | Fundação: contrato IPC, sandbox, testes, design tokens |
-| ⬜ | DuckDB em `utilityProcess` |
-| ⬜ | Transporte de resultados via Apache Arrow |
+| ✅ | Estrutura de camadas, com a regra de importação verificada por lint |
+| ✅ | Contrato IPC tipado, com validação de argumentos e erro como dado |
+| ✅ | Fronteira de segurança fechada: sandbox, isolamento, CSP, navegação negada |
+| ✅ | Cinco níveis de teste, do nível 1 ao aplicativo empacotado |
+| ✅ | Design tokens, primitivos de interface e estados de operação |
+| ✅ | Primeira feature vertical: abrir arquivo, com progresso e cancelamento |
+| ✅ | Empacotamento verificado — conteúdo do pacote inspecionado, não presumido |
+| ⬜ | Automação de sessão e registro (fase 08) |
+| ⬜ | DuckDB em processo auxiliar |
+| ⬜ | Transporte de resultados em formato colunar |
 | ⬜ | Tabela virtualizada |
 | ⬜ | Pipeline de passos e catálogo de operações |
-| ⬜ | Empacotamento e instalador |
+| ⬜ | Instalador distribuível, com assinatura |
 
 O caminho está em três documentos, nesta ordem:
 
@@ -73,13 +76,20 @@ O Electron 42 não baixa o binário durante a instalação — ele usa download 
 | Comando | O que faz |
 |---|---|
 | `pnpm dev` | Desenvolvimento com HMR |
-| `pnpm typecheck` | Verifica tipos nos dois ambientes (Node e web) |
+| `pnpm check:fast` | **O portão:** tipos + lint + testes rápidos |
+| `pnpm typecheck` | Verifica tipos nos três ambientes |
+| `pnpm test` | Testes dos níveis 1 a 3 |
+| `pnpm test:coverage` | Idem, com relatório de cobertura |
+| `pnpm test:e2e` | Sobe o aplicativo e o dirige (nível 4) |
+| `pnpm test:e2e:packaged` | Idem, contra o aplicativo empacotado (nível 5) |
 | `pnpm lint` | ESLint |
 | `pnpm format` | Prettier |
 | `pnpm build` | Verificação de tipos + build de produção |
 | `pnpm build:win` | Instalador NSIS para Windows |
 
-`pnpm typecheck` roda **dois** projetos TypeScript independentes, porque main/preload e renderer vivem em ambientes incompatíveis. Rodar apenas um dá cobertura parcial com aparência de cobertura total.
+`pnpm typecheck` roda **três** projetos TypeScript independentes, porque main/preload, renderer e os testes de ponta a ponta vivem em ambientes incompatíveis. Rodar apenas um dá cobertura parcial com aparência de cobertura total.
+
+`check:fast` é o comando que vale memorizar — é o que roda antes de commitar, e o único cujo tempo de resposta é vigiado.
 
 ---
 
@@ -87,14 +97,17 @@ O Electron 42 não baixa o binário durante a instalação — ele usa download 
 
 ```
 src/
+├── shared/     contrato e vocabulário — os três processos conhecem
+├── core/       lógica pura — sem electron, sem react
 ├── main/       processo principal — Node, sem interface, coordena tudo
+├── workers/    processos auxiliares para trabalho pesado (ainda vazia)
 ├── preload/    a ponte — expõe ao renderer apenas o que foi autorizado
 └── renderer/   a interface — React, sem acesso ao sistema de arquivos
 ```
 
-Essa divisão não é organização estética: são três alvos de compilação distintos, com regras e tipos próprios. É o modelo de segurança do Electron transformado em estrutura de pastas — e reforçado pelos `tsconfig` separados, que fazem o compilador recusar `import fs` dentro de um componente React.
+Três dessas pastas não foram escolha nossa: `main`, `preload` e `renderer` são alvos de compilação impostos pelo Electron, com globais e regras próprias. As outras três nomeiam o que sobra. É o modelo de segurança transformado em estrutura — e reforçado pelos `tsconfig` separados, que fazem o compilador recusar `import fs` dentro de um componente React.
 
-[`docs/study/03-anatomia-do-projeto.md`](docs/study/03-anatomia-do-projeto.md) percorre cada arquivo.
+Qual camada pode importar qual é regra de lint, não convenção. [`docs/study/03-anatomia-do-projeto.md`](docs/study/03-anatomia-do-projeto.md) percorre a árvore inteira.
 
 ---
 
@@ -128,7 +141,7 @@ O raciocínio completo — inclusive das alternativas recusadas, como Vite 8 e s
 
 Cada assunto tem **um** dono; os demais apontam para ele. Fato duplicado é dívida — o segundo lugar envelhece calado.
 
-O [diário de bordo](docs/study/04-diario-de-bordo.md) registra quatro problemas reais enfrentados na montagem, com o raciocínio de diagnóstico preservado e não só a solução. É o documento mais útil quando algo quebrar de novo, porque o método sobrevive às versões.
+O [diário de bordo](docs/study/04-diario-de-bordo.md) registra os problemas reais enfrentados até aqui, com o raciocínio de diagnóstico preservado e não só a solução. É o documento mais útil quando algo quebrar de novo, porque o método sobrevive às versões.
 
 ---
 
