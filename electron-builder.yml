@@ -1,27 +1,31 @@
-appId: com.electron.app
+# Must stay identical to APP_ID in src/shared/meta.ts — see that file for what
+# breaks on Windows when the two drift apart.
+appId: com.mgckaled.datalab
 productName: data-lab
 directories:
   buildResources: build
+# Deny-by-default, and that inversion is the whole point.
+#
+# This was a list of exclusions, which can only ever enumerate what somebody
+# remembered. Phase 07 found .claude/settings.local.json (a personal MCP API
+# key) inside app.asar along with coverage/, docs/, e2e/, scripts/ and test/;
+# a later audit of the same package still found CLAUDE.md, .mcp.json,
+# config/aliases.ts and pnpm-workspace.yaml, because nobody had thought to add
+# them. An exclusion list rots every time a file appears in the repository
+# root — an allow-list cannot, since a new file is out until opted in.
+#
+# electron-builder packages straight from disk, not from what git tracks, so
+# .gitignore protects nothing here. Verify with @electron/asar list after any
+# change, never by reading the globs. See docs/HISTORY.md.
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,tsconfig.e2e.json}'
-  # .claude/ carries settings.local.json, which holds a personal MCP API key
-  # (never committed — see .gitignore — but still on disk, and electron-builder
-  # packages straight from disk, not from git). Found leaking into app.asar in
-  # phase 07's build:unpack inspection. Never remove this line.
-  - '!.claude/*'
-  - '!coverage/*'
-  - '!docs/*'
-  - '!e2e/*'
-  - '!scripts/*'
-  - '!test/*'
-  - '!test-results/*'
-  - '!playwright-report/*'
-  - '!{vitest.config.ts,playwright.config.ts}'
+  - '!**/*'
+  - 'out/**'
+  - 'resources/**'
+  - 'package.json'
+  - 'node_modules/**'
+  # zod ships its full TypeScript source and ~700 test files. None of it is
+  # reachable at runtime, and it was most of the packaged size.
+  - '!node_modules/zod/src/**'
 asarUnpack:
   - resources/**
 win:
@@ -34,10 +38,12 @@ nsis:
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    # Camera and microphone came from the template and were never used. Declaring
+    # a permission an app does not exercise prompts the user for no reason and is
+    # grounds for App Store rejection. Only the two folders a data file is
+    # realistically opened from are left.
+    - NSDocumentsFolderUsageDescription: data-lab reads the data files you open from your Documents folder.
+    - NSDownloadsFolderUsageDescription: data-lab reads the data files you open from your Downloads folder.
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
@@ -46,7 +52,7 @@ linux:
     - AppImage
     - snap
     - deb
-  maintainer: electronjs.org
+  maintainer: mgckaled
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
