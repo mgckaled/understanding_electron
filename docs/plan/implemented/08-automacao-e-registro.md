@@ -1,6 +1,6 @@
 # 08 — Automação e registro
 
-**Depende de:** [07](../implemented/07-e2e-e-empacotamento.md) · **Entrega:** hooks de verificação, `CLAUDE.md` atualizado, três skills, plano arquivado
+**Depende de:** [07](07-e2e-e-empacotamento.md) · **Entrega:** hooks de verificação, `CLAUDE.md` atualizado, três skills, plano arquivado
 
 ---
 
@@ -18,7 +18,7 @@ Há três destinos possíveis, e a escolha entre eles é o assunto desta fase:
 | **`CLAUDE.md`** | ocupa contexto em toda sessão | O que muda a decisão logo na primeira linha de código |
 | **Skill** | carregada só quando relevante | Detalhe de domínio: tabelas, catálogos, padrões |
 
-A ordem é uma preferência real: **o que pode ser verificado não deve ser documentado.** Regra escrita é regra que se descobre violada em revisão; regra em lint é regra que não chega a ser escrita errada. A [fase 01](../implemented/01-camadas-e-fronteiras.md) já aplicou isso à tabela de importação, e é o mesmo princípio aqui em escala maior.
+A ordem é uma preferência real: **o que pode ser verificado não deve ser documentado.** Regra escrita é regra que se descobre violada em revisão; regra em lint é regra que não chega a ser escrita errada. A [fase 01](01-camadas-e-fronteiras.md) já aplicou isso à tabela de importação, e é o mesmo princípio aqui em escala maior.
 
 O que sobra — o que a máquina não consegue checar — se divide pelo critério de frequência. `CLAUDE.md` é caro: entra em toda sessão, então cada linha ali compete por atenção com todas as outras. Skill é barata: fica no disco e só custa quando é aberta.
 
@@ -43,7 +43,7 @@ Três decisões embutidas aí:
 
 **Formatar a cada edição é diferente:** é idempotente, não falha por estado intermediário, e evita que estilo apareça no diff misturado com conteúdo.
 
-**`vitest related` cabe no ciclo porque não roda a suíte inteira.** Ele percorre o grafo de módulos e executa só os testes que importam o arquivo tocado — o que é possível porque o Vitest já está configurado com os dois projetos da [fase 04](../implemented/04-testes-rapidos.md).
+**`vitest related` cabe no ciclo porque não roda a suíte inteira.** Ele percorre o grafo de módulos e executa só os testes que importam o arquivo tocado — o que é possível porque o Vitest já está configurado com os dois projetos da [fase 04](04-testes-rapidos.md).
 
 > 🔍 Os quatro scripts em `.claude/hooks/` são `.mjs`, não `.py`. Node já é dependência obrigatória do projeto; Python não é — e no Windows um `python` no PATH pode ser o stub da Microsoft Store, que abre a loja em vez de executar. O `_shared.mjs` também resolve os binários lendo o `bin` do `package.json` de cada dependência e executando-os com o próprio Node, sem shell — o que elimina o problema de PATHEXT e de aspas em caminho com espaço no Windows.
 
@@ -53,13 +53,13 @@ Sete invariantes, em ordem decrescente de dano se violadas: regressão de `webPr
 
 A primeira é a que justifica o hook existir. `sandbox: false` reintroduzido não quebra nada visível — apenas apaga em silêncio a fronteira em que toda a arquitetura se apoia, e nenhuma revisão de código pega isso de forma confiável.
 
-A última só entra em vigor quando o `tokens.css` da [fase 05](../implemented/05-design-tokens.md) existir; até lá o guarda se desliga sozinho. Ela pega o defeito que nenhum linter pega: `var()` com nome errado não gera erro, o navegador simplesmente não aplica nada, e ninguém nota até olhar aquele componente específico.
+A última só entra em vigor quando o `tokens.css` da [fase 05](05-design-tokens.md) existir; até lá o guarda se desliga sozinho. Ela pega o defeito que nenhum linter pega: `var()` com nome errado não gera erro, o navegador simplesmente não aplica nada, e ninguém nota até olhar aquele componente específico.
 
 > ⚠️ Duas guardas são propositalmente redundantes com o ESLint (pureza de camada e superfície do `contextBridge`). Isso contradiz a regra "o que pode ser verificado não deve ser duplicado" — e a exceção é deliberada: o hook dispara a **cada edição**, o lint só quando invocado. Para invariante de fronteira, o custo de descobrir tarde é maior que o custo da duplicação.
 
 ### D8.2 — E2E nunca entra em hook
 
-Os níveis 4 e 5 continuam manuais, conforme a D7.3 da [fase 07](../implemented/07-e2e-e-empacotamento.md).
+Os níveis 4 e 5 continuam manuais, conforme a D7.3 da [fase 07](07-e2e-e-empacotamento.md).
 
 O raciocínio já foi feito e vale repetir porque é a decisão mais fácil de reverter por engano: se o ciclo de retorno passa de alguns segundos, o trabalho passa a ser agrupado para amortizar a espera — e agrupar mudanças é exatamente o oposto do **uma variável por vez** que o [`CLAUDE.md`](../../../CLAUDE.md) estabelece como princípio.
 
@@ -145,7 +145,7 @@ Hook que nunca foi visto falhar é hook que você não sabe se está ligado.
 
 ### Passo 2 — Reescrever o `CLAUDE.md`
 
-O arquivo está desatualizado desde a [fase 03](../implemented/03-sandbox-e-seguranca.md). Faça a revisão completa, não remendo.
+O arquivo está desatualizado desde a [fase 03](03-sandbox-e-seguranca.md). Faça a revisão completa, não remendo.
 
 **Sai:** "Pendência conhecida: `sandbox: false`" (resolvida). A afirmação de que os tipos do contrato ficam em `src/preload/index.d.ts` — mudou para `src/shared/ipc.ts`.
 
@@ -228,12 +228,12 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-07 | 1–4 | concluída | Quatro hooks ligados em `settings.json` (três `PostToolUse` exec form + `Stop` shell form `pnpm check:fast`), provados por provocação deliberada. `.prettierignore` passa a ignorar `*.md` — sem isso o `format_fix` reformataria os `.md` a cada edição (fecha [`ROADMAP § 4`](../../ROADMAP.md)). `CLAUDE.md` reescrito (D8.3 + régua D8.5, fonte-única repontada às skills). Duas entregas do plano foram **superadas pelo repositório** e registradas no [`HISTORY.md`](../../HISTORY.md): a "tabela única de armadilhas" da `design-system` (o dono virou `HISTORY.md` + `study/04`) e a consolidação dos gatilhos no README (o dono virou [`ROADMAP § 2`](../../ROADMAP.md)). Armadilha nova: `test_related` usava `--reporter basic`, removido no Vitest 4 — teria bloqueado toda edição. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [07 — E2E e empacotamento](../implemented/07-e2e-e-empacotamento.md) · **Índice:** [README](README.md)
+**Anterior:** [07 — E2E e empacotamento](07-e2e-e-empacotamento.md) · **Índice:** [README](../active/README.md)
 
 **Fim do plano de fundação.** O trabalho continua em [`docs/study/05-proximos-passos.md`](../../study/05-proximos-passos.md).

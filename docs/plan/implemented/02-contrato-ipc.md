@@ -288,4 +288,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 **Anterior:** [01 — Camadas e fronteiras](01-camadas-e-fronteiras.md) · **Índice:** [README](../active/README.md) · **Próximo:** [03 — Sandbox e segurança](03-sandbox-e-seguranca.md)
 
-> 🔍 Fase implementada em 2026-08-04. Este arquivo mudou de `plan/active/` para `plan/implemented/`, por isso os links para fases ainda em `active/` sobem um nível (`../active/`), enquanto o link para a fase 01 (também já implementada) fica direto, no mesmo diretório.
+> 🔍 Fase implementada em 2026-08-04. Com a fundação inteira arquivada em `plan/implemented/` (fase 08), todas as fases vizinhas ficam no mesmo diretório; só o índice `README`, que permanece em `active/`, sobe um nível (`../active/`).

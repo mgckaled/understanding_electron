@@ -210,6 +210,6 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [00 — Visão geral](../active/00-visao-geral.md) · **Índice:** [README](../active/README.md) · **Próximo:** [02 — Contrato IPC](02-contrato-ipc.md)
+**Anterior:** [00 — Visão geral](00-visao-geral.md) · **Índice:** [README](../active/README.md) · **Próximo:** [02 — Contrato IPC](02-contrato-ipc.md)
 
-> 🔍 Fase implementada em 2026-08-04. Este arquivo mudou de `plan/active/` para `plan/implemented/`, por isso os links acima sobem um nível (`../active/`) em vez de apontar para o mesmo diretório.
+> 🔍 Fase implementada em 2026-08-04. Com a fundação inteira arquivada em `plan/implemented/` (fase 08), as fases vizinhas ficam no mesmo diretório e só o índice `README`, que permanece em `active/`, sobe um nível (`../active/`).

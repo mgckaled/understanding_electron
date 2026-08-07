@@ -62,7 +62,7 @@ Se um handler do main lança, o `ipcRenderer.invoke` rejeita com um `Error` gen�
 
 Na prática: um `QuerySyntaxError { line, column }` chega do outro lado como texto inútil, e você não consegue destacar a linha do erro no editor.
 
-Por isso toda operação que atravessa a fronteira retorna união discriminada. Detalhes na [fase 02](../implemented/02-contrato-ipc.md).
+Por isso toda operação que atravessa a fronteira retorna união discriminada. Detalhes na [fase 02](02-contrato-ipc.md).
 
 ### D4 — Português na interface, inglês no código
 
@@ -72,7 +72,7 @@ Estes documentos de planejamento são português, porque são leitura, não cód
 
 ### D5 — Nenhuma dependência nova sem justificativa registrada
 
-O plano inteiro adiciona três grupos de pacotes, e a [fase 06](../implemented/06-primeira-feature.md) — a que mais entrega — não adiciona nenhum. Cada um aparece na fase que o introduz, com a alternativa descartada:
+O plano inteiro adiciona três grupos de pacotes, e a [fase 06](06-primeira-feature.md) — a que mais entrega — não adiciona nenhum. Cada um aparece na fase que o introduz, com a alternativa descartada:
 
 | Pacote | Fase | Descartado no lugar |
 |---|---|---|
@@ -82,7 +82,7 @@ O plano inteiro adiciona três grupos de pacotes, e a [fase 06](../implemented/0
 
 **Não entra:** Tailwind, biblioteca de componentes, container de DI, gerenciador de estado global.
 
-**Adiado com gatilho registrado:** `@tanstack/react-query`. A intenção original era adotá-lo na fase 06, e o próprio critério de "caro de adiar" reprovou a ideia — o que ele entrega (cache com chave, invalidação, deduplicação) não tem uso antes de existirem consultas repetidas, e migrar depois custa os poucos hooks que existirem. O raciocínio completo está na [D6.2](../implemented/06-primeira-feature.md#d62--sem-tanstack-query-nesta-fase), e vale como exemplo de decisão revista pela régua em vez de por preferência.
+**Adiado com gatilho registrado:** `@tanstack/react-query`. A intenção original era adotá-lo na fase 06, e o próprio critério de "caro de adiar" reprovou a ideia — o que ele entrega (cache com chave, invalidação, deduplicação) não tem uso antes de existirem consultas repetidas, e migrar depois custa os poucos hooks que existirem. O raciocínio completo está na [D6.2](06-primeira-feature.md#d62--sem-tanstack-query-nesta-fase), e vale como exemplo de decisão revista pela régua em vez de por preferência.
 
 ### D6 — `src/main/index.ts` não cresce
 
@@ -109,7 +109,7 @@ Registrado para não ser confundido com esquecimento:
 - **DuckDB, `utilityProcess` e Arrow.** Continuam no `05-proximos-passos.md`. A fundação existe justamente para que aquele plano seja executável sem improviso.
 - **Virtualização de tabela.** Chega junto com dados de verdade para virtualizar.
 - **Atualização automática.** O `electron-builder.yml` já tem um `publish` apontando para `https://example.com/auto-updates` — placeholder do template, não configuração nossa. Fica como está até existir distribuição real.
-- **`shamefullyHoist: true`.** Registrado como pendência de segurança na [fase 03](../implemented/03-sandbox-e-seguranca.md), sem ação nesta rodada.
+- **`shamefullyHoist: true`.** Registrado como pendência de segurança na [fase 03](03-sandbox-e-seguranca.md), sem ação nesta rodada.
 - **Assinatura de código e notarização.** Só faz sentido com distribuição.
 
 ---
@@ -132,10 +132,11 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-04 | Decisões globais (D1-D6) | em andamento | Criado o início da skill [`architecture`](../../../.claude/skills/architecture/SKILL.md), condensando o critério "caro de desfazer" e D1-D6. Aplicada a ação pendente desta fase — corrigido o texto sobre `ArrayBuffer` transferível em [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md). Continua "em andamento" porque a skill cresce com as fases 01, 02, 03 e 06. |
+| 2026-08-04 | Decisões globais (D1-D6) | concluída | A skill [`architecture`](../../../.claude/skills/architecture/SKILL.md) nasceu aqui (critério "caro de desfazer", D1-D6) e cresceu com as fases 01–06, como previsto; corrigido o texto sobre `ArrayBuffer` transferível em [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md). |
+| 2026-08-07 | Encerramento | concluída | Fundação concluída na [fase 08](08-automacao-e-registro.md); esta visão geral foi arquivada em `implemented/` junto com ela. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Índice:** [README](README.md) · **Próximo:** [01 — Camadas e fronteiras](../implemented/01-camadas-e-fronteiras.md)
+**Índice:** [README](../active/README.md) · **Próximo:** [01 — Camadas e fronteiras](01-camadas-e-fronteiras.md)

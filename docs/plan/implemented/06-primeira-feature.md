@@ -57,7 +57,7 @@ Duas regras a partir daqui:
 
 ### D6.2 — Sem TanStack Query nesta fase
 
-Esta decisão **inverte** a intenção original registrada na [visão geral](../active/00-visao-geral.md), e a inversão é o próprio critério do plano funcionando.
+Esta decisão **inverte** a intenção original registrada na [visão geral](00-visao-geral.md), e a inversão é o próprio critério do plano funcionando.
 
 O critério é: *se eu adiar, quantos arquivos toco depois?* Aqui a resposta é dois hooks. As duas operações são ações com efeito colateral — `useMutation`, não `useQuery` —, e a biblioteca não faz progresso nem cancelamento por assinatura. O que ela realmente entrega é cache com chave, invalidação e deduplicação de requisição, e nada disso tem uso antes de existirem consultas repetidas sobre o mesmo dado.
 

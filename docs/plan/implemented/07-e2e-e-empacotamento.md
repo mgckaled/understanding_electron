@@ -195,4 +195,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [06 — Primeira feature vertical](06-primeira-feature.md) · **Índice:** [README](../active/README.md) · **Próximo:** [08 — Automação e registro](../active/08-automacao-e-registro.md)
+**Anterior:** [06 — Primeira feature vertical](06-primeira-feature.md) · **Índice:** [README](../active/README.md) · **Próximo:** [08 — Automação e registro](08-automacao-e-registro.md)

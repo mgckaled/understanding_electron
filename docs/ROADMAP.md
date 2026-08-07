@@ -34,9 +34,9 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Primeira query reexecutada sobre o mesmo dataset | Adotar TanStack Query | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
 | Segunda janela do app | Progresso endereçado ao remetente, em vez de transmitido a todas | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
 | Sexta fatia em `features/` | `eslint-plugin-boundaries` no lugar do `no-restricted-imports` | [`01-camadas`](plan/implemented/01-camadas-e-fronteiras.md) |
-| Vigésimo canal em `shared/ipc.ts` | Skill própria para IPC, separada de `architecture` | [`08-automacao`](plan/active/08-automacao-e-registro.md) |
+| Vigésimo canal em `shared/ipc.ts` | Skill própria para IPC, separada de `architecture` | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
 | Design system estável | Endurecer a CSP (hoje permite `style-src 'unsafe-inline'`) | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
-| ~~`check:fast` passar de 10s~~ **disparado** — medido em **21,5s** (ago/2026), acima também da meta de 15s da skill `testing`. Investigar antes de empilhar mais teste | Medir a duração do ciclo de retorno | [`08-automacao`](plan/active/08-automacao-e-registro.md) |
+| ~~`check:fast` passar de 10s~~ **disparado** — 21,5s (ago/2026) e **27s** medido na fase 08, agora que roda a cada resposta no `Stop` hook, bem acima da meta de 15s da skill `testing`. Investigar antes de empilhar mais teste | Medir a duração do ciclo de retorno | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
 | Existirem cartões de dados suficientes | RAG sobre cartões e receitas | [`09-camada-de-ia`](plan/active/09-camada-de-ia.md) |
 
 ---

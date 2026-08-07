@@ -16,7 +16,7 @@ A pirâmide de testes de um app Electron tem cinco níveis, não três. Esta fas
 | 4 | app em desenvolvimento | Playwright | dezenas de s |
 | 5 | app empacotado | Playwright | minutos |
 
-A separação não é estética. É o que decide se o ciclo de retorno cabe num *hook* de edição ([fase 08](../active/08-automacao-e-registro.md)) ou se ele fica lento a ponto de passar a ser contornado.
+A separação não é estética. É o que decide se o ciclo de retorno cabe num *hook* de edição ([fase 08](08-automacao-e-registro.md)) ou se ele fica lento a ponto de passar a ser contornado.
 
 ## O nível 3 é o que quase ninguém tem
 
@@ -120,7 +120,7 @@ Acrescente ao `package.json`:
 "check:fast": "npm run typecheck && npm run lint && npm run test"
 ```
 
-> 🔍 O `check:fast` é um único comando por design. É o que o *hook* da [fase 08](../active/08-automacao-e-registro.md) vai chamar, e um comando é mais fácil de manter alinhado do que três espalhados por configurações diferentes.
+> 🔍 O `check:fast` é um único comando por design. É o que o *hook* da [fase 08](08-automacao-e-registro.md) vai chamar, e um comando é mais fácil de manter alinhado do que três espalhados por configurações diferentes.
 
 **Aceite:** `pnpm test` roda e reporta zero testes nos dois projetos — sem erro de configuração.
 **Commit:** `chore(testes): configura Vitest com projetos node e web`
@@ -140,7 +140,7 @@ Verifique com um teste trivial que o lint fica limpo nos dois projetos.
 
 Os primeiros testes de verdade, porque provam a propriedade arquitetural.
 
-`src/main/features/shell/handlers.test.ts` — `openExternal` recebe o `shell.openExternal` por parâmetro (DIP, D2 da [visão geral](../active/00-visao-geral.md)), então o teste passa uma função falsa e verifica:
+`src/main/features/shell/handlers.test.ts` — `openExternal` recebe o `shell.openExternal` por parâmetro (DIP, D2 da [visão geral](00-visao-geral.md)), então o teste passa uma função falsa e verifica:
 
 | Entrada | Esperado |
 |---|---|
@@ -187,7 +187,7 @@ pnpm check:fast     # typecheck + lint + testes, tudo verde
 pnpm test:coverage  # limite de 85% respeitado em core/ e shared/
 ```
 
-E uma verificação de tempo: **`pnpm check:fast` deve terminar em menos de 15 segundos** nesta altura do projeto. Se já estiver mais lento, investigue agora — a [fase 08](../active/08-automacao-e-registro.md) vai colocá-lo no ciclo de edição, e um ciclo lento é um ciclo contornado.
+E uma verificação de tempo: **`pnpm check:fast` deve terminar em menos de 15 segundos** nesta altura do projeto. Se já estiver mais lento, investigue agora — a [fase 08](08-automacao-e-registro.md) vai colocá-lo no ciclo de edição, e um ciclo lento é um ciclo contornado.
 
 ---
 

@@ -72,7 +72,7 @@ A distinção vale a linha: `src/shared/` é o que atravessa a fronteira de proc
 
 ### D5.6 — O texto de erro fica num registro central
 
-Um mapa de `AppError['kind']` para texto em português, num arquivo só. É a aplicação da D4 da [visão geral](../active/00-visao-geral.md): erro é dado em inglês no contrato, e vira texto em português na borda da interface.
+Um mapa de `AppError['kind']` para texto em português, num arquivo só. É a aplicação da D4 da [visão geral](00-visao-geral.md): erro é dado em inglês no contrato, e vira texto em português na borda da interface.
 
 O `kind` desconhecido cai num texto genérico em vez de quebrar — a união vai crescer, e nem toda adição vai lembrar de passar por aqui.
 
