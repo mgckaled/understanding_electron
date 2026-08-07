@@ -2,7 +2,7 @@
 
 O que o aplicativo faz, o que ele não faz, e as consequências arquiteturais de cada decisão.
 
-> Este documento é a **definição de produto**. O [`CLAUDE.md`](../CLAUDE.md) diz como o código é escrito; o [plano de fundação](planning/active/README.md) diz em que ordem construir; o [caderno de estudos](study/README.md) explica o Electron. Aqui está o que se está construindo, e por quê.
+> Este documento é a **definição de produto**. O [`CLAUDE.md`](../CLAUDE.md) diz como o código é escrito; o [plano de fundação](plan/active/README.md) diz em que ordem construir; o [caderno de estudos](study/README.md) explica o Electron. Aqui está o que se está construindo, e por quê.
 
 ---
 
@@ -203,4 +203,4 @@ fundação (8 fases)  ──►  camada de dados (DuckDB, utilityProcess, Arrow,
 
 ---
 
-**Índice:** [README](../README.md) · [Plano de fundação](planning/active/README.md) · [Caderno de estudos](study/README.md)
+**Índice:** [README](../README.md) · [Plano de fundação](plan/active/README.md) · [Caderno de estudos](study/README.md)

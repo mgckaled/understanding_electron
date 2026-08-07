@@ -177,7 +177,7 @@ Regra que mantém isso saudável: **uma armadilha, um lugar.** O `CLAUDE.md` apo
 
 ### Passo 4 — Arquivar o plano
 
-Crie `docs/planning/implemented/` e mova os nove arquivos de `active/`.
+`docs/plan/implemented/` já existe e recebeu as fases 01–07 à medida que cada uma terminou. Mova o que ainda restar em `active/`.
 
 No `README.md` do plano, troque o índice por um bloco curto de encerramento: o que foi entregue, o que foi adiado com gatilho registrado, e o link para [`05-proximos-passos.md`](../../study/05-proximos-passos.md), que é onde o trabalho continua.
 
@@ -192,7 +192,7 @@ Junte os gatilhos que ficaram espalhados numa lista só — é a informação ma
 | Vigésimo canal | skill própria para IPC |
 | Design system estável | endurecer a CSP |
 
-**Aceite:** `docs/planning/active/` vazio; nenhum link quebrado nos documentos que apontam para o plano.
+**Aceite:** `docs/plan/active/` sem fase pendente; nenhum link quebrado nos documentos que apontam para o plano.
 **Commit:** `docs: arquiva o plano de fundação e consolida os gatilhos de revisão`
 
 ---

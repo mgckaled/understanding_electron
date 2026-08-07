@@ -36,7 +36,7 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Sexta fatia em `features/` | `eslint-plugin-boundaries` no lugar do `no-restricted-imports` | [`01-camadas`](plan/implemented/01-camadas-e-fronteiras.md) |
 | Vigésimo canal em `shared/ipc.ts` | Skill própria para IPC, separada de `architecture` | [`08-automacao`](plan/active/08-automacao-e-registro.md) |
 | Design system estável | Endurecer a CSP (hoje permite `style-src 'unsafe-inline'`) | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
-| `check:fast` passar de 10s | Medir a duração do ciclo de retorno | [`08-automacao`](plan/active/08-automacao-e-registro.md) |
+| ~~`check:fast` passar de 10s~~ **disparado** — medido em **21,5s** (ago/2026), acima também da meta de 15s da skill `testing`. Investigar antes de empilhar mais teste | Medir a duração do ciclo de retorno | [`08-automacao`](plan/active/08-automacao-e-registro.md) |
 | Existirem cartões de dados suficientes | RAG sobre cartões e receitas | [`09-camada-de-ia`](plan/active/09-camada-de-ia.md) |
 
 ---
@@ -67,8 +67,8 @@ Aponta para `https://example.com/auto-updates`, herdado do template. Fica como e
 ### Assinatura de código e notarização
 Só faz sentido com distribuição. Registrado para não ser confundido com esquecimento.
 
-### `pnpm lint` (e portanto `check:fast`) falha por `.claude/hooks/guard.mjs`
-`declaredTokens()` não declara tipo de retorno, e o `@typescript-eslint/explicit-function-return-type` deste projeto não aceita anotação via JSDoc em `.mjs` — só sintaxe TypeScript real, que o arquivo não tem por ser JavaScript puro. Resolver de verdade exige mexer na configuração central do ESLint (parser/`checkJs`), não só no arquivo. Bloqueia o critério "tudo verde" de qualquer fase que rode `pnpm lint` sobre o repositório inteiro, até a [fase 08](plan/active/08-automacao-e-registro.md) tratar os hooks. Isolando os arquivos de cada fase (`pnpm eslint <arquivos>`), o lint continua confiável enquanto isso.
+### `dist/win-unpacked` travado por um handle do sistema
+Durante a auditoria de ago/2026, `electron-builder` passou a falhar com `EBUSY: resource busy or locked` ao substituir `dist/win-unpacked/resources/app.asar`, e `rm -rf` falha no mesmo arquivo. Nenhum processo `node`, `pnpm` ou `data-lab` estava em execução — o handle é do sistema, e o suspeito é a proteção em tempo real do Defender (`Get-MpComputerStatus` confirma ativa; conferir as exclusões exige terminal como administrador, que não foi usado). Contorno que funcionou: empacotar noutro destino com `electron-builder --dir -c.directories.output=<dir>`. Reiniciar a máquina libera o handle. **Se voltar a acontecer, reconferir as exclusões do Defender do [`CLAUDE.md`](../CLAUDE.md) — elas não viajam com o repositório e podem ter se perdido.**
 
 ---
 
