@@ -41,7 +41,9 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | Assunto | Dono |
 |---|---|
 | O que o app faz e não faz, catálogo de operações, formatos, escala | [`docs/ESCOPO.md`](docs/ESCOPO.md) |
-| Fundação: camadas, contrato IPC, testes, tokens — com passos e aceite | [`docs/plan/active/`](docs/plan/active/README.md) |
+| Camadas, regra de importação, contrato IPC, sandbox, régua de tamanho | skill [`architecture`](.claude/skills/architecture/SKILL.md) |
+| Tokens, primitivos, `ViewState`, convenções de desktop | skill [`design-system`](.claude/skills/design-system/SKILL.md) |
+| Níveis de teste, mocks, o que não testar | skill [`testing`](.claude/skills/testing/SKILL.md) |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow) | [`docs/study/05-proximos-passos.md`](docs/study/05-proximos-passos.md) |
 | IA local e de nuvem, ML, RAG | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
 | Decisões, alternativas descartadas, armadilhas | [`docs/HISTORY.md`](docs/HISTORY.md) |
@@ -125,6 +127,30 @@ Add-MpPreference -ExclusionProcess "node.exe"
 
 ## Regras do projeto
 
+### Ao escrever código novo — o que decide a primeira linha
+
+Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha. Aqui fica o essencial e o ponteiro; o porquê está na skill indicada.
+
+- **Camadas e quem importa quem.** Seis pastas em `src/` (`shared`, `core`, `main`, `workers`, `preload`, `renderer`), com a regra de importação verificada por ESLint. Decida a camada antes de criar o arquivo — skill [`architecture`](.claude/skills/architecture/SKILL.md).
+- **Todo canal novo nasce em `src/shared/ipc.ts`** e é registrado pelo `handle()` genérico de `src/main/ipc/`; não existe `ipcMain.handle` avulso. O handler é função exportada, testável sem subir o Electron — skill `architecture`.
+- **`Result` para falha esperada, exceção para bug.** O que atravessa o IPC e pode falhar retorna união discriminada (`AppError`); payload fora do schema **lança** — skill `architecture`.
+- **Componente só toca token semântico** (`var(--color-*)`): nenhum `#hex` nem `var(--gray-N)` fora de `tokens.css` — skill [`design-system`](.claude/skills/design-system/SKILL.md).
+- **Cinco níveis de teste**, cada coisa no seu. `core`/`shared` (1), `renderer` (2) e handlers do `main` (3) rodam em `check:fast` e no hook de edição; E2E em dev (4) e empacotado (5) ficam fora do ciclo — skill [`testing`](.claude/skills/testing/SKILL.md).
+- **Régua de tamanho** — arquivo que cresce é sintoma. Tabela abaixo.
+
+#### Régua de tamanho
+
+| Tipo | Alvo | Teto |
+|---|---|---|
+| Módulo de `core/` | 200 | 300 |
+| Handler de `main/features/` | 100 | 150 |
+| Componente do renderer | 150 | 250 |
+| Hook | 80 | 120 |
+| `src/main/index.ts` | — | **100, sem exceção** |
+| `src/preload/index.ts` | — | **60, sem exceção** |
+
+As duas últimas linhas são a decisão de manter main e preload finos, tornada mensurável: main que cresce vira lugar de lógica; preload que cresce, lugar de lógica no pior sítio para testá-la. **Divide-se ao tocar** — não varra a base atrás de arquivo grande; divida quando for estendê-lo. E coesão pesa abaixo do teto: componente que orquestra duas features, ou handlers de domínios diferentes no mesmo arquivo, dividem mesmo curtos.
+
 ### Idioma
 
 Código em inglês, sempre — identificador, comentário, docstring e log, sem exceção de escopo (variável local inclusa) e sem exceção de fonte (nem citado dentro de um `.md` em português). Português fica reservado a texto visível ao usuário, mensagem de erro crua e documentação. Detalhe e armadilha diagnosticada: skill `architecture`.
@@ -166,23 +192,19 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 - Commit nunca leva `Co-authored-by` mencionando Claude, Anthropic ou qualquer assistente de IA. Autoria é de quem revisa e decide, não de quem redige o texto.
 - Isto é aplicado por hook, não por convenção lembrada em cada sessão: [`.claude/hooks/no_ai_coauthor.mjs`](.claude/hooks/no_ai_coauthor.mjs), registrado como `PreToolUse` em `.claude/settings.json` para `Bash` e `PowerShell`. Bloqueia (saída 2) qualquer comando cujo texto contenha esse trailer, antes do commit acontecer.
-- Os demais hooks já escritos em `.claude/hooks/` (`guard.mjs`, `format_fix.mjs`, `test_related.mjs`) ainda **não estão ligados** — fazem parte da fase [08](docs/plan/active/08-automacao-e-registro.md), ainda não iniciada. Não confundir "hook existe como arquivo" com "hook está ativo": só o que está registrado em `.claude/settings.json` roda.
+- Além do `no_ai_coauthor`, o `.claude/settings.json` liga três hooks `PostToolUse` (`Edit|Write`) — `format_fix` (Prettier + ESLint `--fix`), `guard` (invariantes que o lint não expressa, bloqueia com saída 2) e `test_related` (`vitest related` no arquivo tocado) — e um `Stop` que roda `pnpm check:fast`. O princípio segue de pé: só o que está registrado em `.claude/settings.json` roda; hook que existe como arquivo não é hook ativo.
 
 ---
 
-## Armadilhas já diagnosticadas
+## Armadilhas — o conserto rápido
 
-Registradas para não repetir o trabalho de investigação. Detalhamento em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md).
+O diagnóstico completo, com o que as fases 03–07 descobriram, é dono de [`docs/HISTORY.md`](docs/HISTORY.md) § Armadilhas e de [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
-**1. Configuração do pnpm em lugar morto.**
-O template do electron-vite foi feito para pnpm 10 e trazia `"pnpm": { "onlyBuiltDependencies": [...] }` no `package.json` e `shamefully-hoist=true` no `.npmrc`. No pnpm 11 os dois são ignorados silenciosamente. Migrado para `pnpm-workspace.yaml`.
-
-**2. `Error: Electron uninstall` no `pnpm dev`.**
-O Electron 42 **não tem script de postinstall** — o binário é baixado preguiçosamente no primeiro `require('electron')`. O electron-vite 5.0.0 lê `node_modules/electron/path.txt` diretamente e falha antes de acionar esse download. Conserto: `pnpm exec install-electron`.
-Diagnóstico rápido: `path.txt` existe?
-
-**3. `@types/node` desalinhado.**
-O template vinha com `^22`, mas o Electron 42 embute Node 24.18.0. Corrigido para `^24`. Ao subir de major do Electron, reconferir com `process.versions.node`.
+| Sintoma | Conserto |
+|---|---|
+| `Error: Electron uninstall` no `pnpm dev` | `pnpm exec install-electron`. O Electron 42 não tem postinstall — o binário baixa no primeiro `require('electron')`, e o electron-vite falha antes ao ler `node_modules/electron/path.txt`. Diagnóstico: `path.txt` existe? |
+| Config do pnpm ignorada em silêncio | no pnpm 11 só `pnpm-workspace.yaml` é lido; o campo `pnpm` do `package.json` e o `.npmrc` (fora de auth/registry) são mortos |
+| `@types/node` desalinhado | fixar no major que o Electron embute (hoje `^24`); reconferir com `process.versions.node` ao subir de major do Electron |
 
 ---
 
