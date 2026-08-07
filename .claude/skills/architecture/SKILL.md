@@ -5,7 +5,7 @@ description: Decisões estruturais do data-lab — fronteira de processo (main/p
 
 # Arquitetura — data-lab
 
-> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md), [02](../../../docs/plan/implemented/02-contrato-ipc.md) e [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação, o contrato IPC e a fronteira de segurança do sandbox, já em vigor. Cresce quando a fase [06](../../../docs/plan/active/06-primeira-feature.md) (primeira feature) for implementada. Fonte completa, com o porquê de cada decisão: os quatro documentos linkados acima.
+> Escrito nas fases [00](../../../docs/plan/active/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md), [02](../../../docs/plan/implemented/02-contrato-ipc.md), [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação, o contrato IPC, a fronteira de segurança do sandbox e o registro de jobs canceláveis, já em vigor. Fonte completa, com o porquê de cada decisão: os cinco documentos linkados acima, mais [`docs/HISTORY.md`](../../../docs/HISTORY.md) para as armadilhas de runtime que a fase 06 diagnosticou.
 
 ## O critério: o que é caro de desfazer
 
@@ -96,11 +96,19 @@ window.api.invoke('app:info') // não — reintroduz a superfície larga do temp
 
 Listener de evento do main **nunca** vaza o `IpcRendererEvent` para o renderer — carrega `event.sender`, referência viva ao `webContents`. O callback do renderer recebe só o payload; toda assinatura devolve uma função de cancelamento.
 
+O canal do evento (`job:event`) **não** entra em `IpcContract`/`argsSchema` — `handle()` faz `argsSchema[channel]` para todo canal ali, e `job:event` nunca passa por `ipcMain.handle`, só por `webContents.send`. Seu nome mora em `src/shared/channels.ts`, não em `src/shared/ipc.ts` — motivo na próxima seção.
+
+`src/main/jobs.ts` guarda um `Map<JobId, AbortController>` module-level, com `create`/`cancel`/`finish`. `finish` roda no `finally` do handler, sempre, por qualquer via de término — um `Map` que só cresce é vazamento silencioso, que teste nenhum pega sozinho (nenhum teste abre quarenta jobs seguidos). Progresso é emitido a todas as janelas (`BrowserWindow.getAllWindows()`), não endereçado ao remetente — o `handle()` genérico só entrega argumentos ao handler, nunca o `IpcMainInvokeEvent`, e é essa restrição que mantém o handler testável em Node puro; o preço é não saber quem chamou. Gatilho de revisão: a segunda janela do app.
+
+**Cancelar um stream não fecha o stream.** `readline.Interface.close()` só libera o controle do `readline` sobre o `input` — o `fs.ReadStream` subjacente segue lendo do disco depois de um `break` no `for await`, a menos que `stream.destroy()` seja chamado também. Medido, não suposto: ver [`docs/HISTORY.md`](../../../docs/HISTORY.md) § armadilhas.
+
 ## Sandbox: renderer sem Node, preload é bundle único
 
 `sandbox: true` no `webPreferences`, ao lado de `contextIsolation: true` e `nodeIntegration: false` explícitos. Os três já eram padrão do Electron antes de virarem linha escrita — o motivo de escrever mesmo assim é leitura: um comentário curto no ponto de aplicação distingue "padrão seguro" de "ninguém pensou nisso" para quem abrir o arquivo daqui a seis meses, e uma alteração acidental aparece no diff.
 
 Com o sandbox ligado, o preload perde o `require` completo — sobra um polyfill limitado, sem capacidade de carregar múltiplos arquivos do próprio código. Por isso o preload é, e continua sendo, **um arquivo único**: `externalizeDepsPlugin()` nunca entra no bloco `preload` do `electron.vite.config.ts`. Ele existe para deixar dependência fora do bundle e resolvida por `require` em runtime — exatamente o que o preload sandboxed não sabe fazer.
+
+**É por isso que `preload/` importa `shared/` só por tipo (ver a tabela acima), e essa restrição já mordeu uma vez.** `src/shared/ipc.ts` importa `zod` como valor (para `argsSchema`); quando a fase 06 importou uma constante de lá **por valor** (`JOB_EVENT_CHANNEL`, precisava existir em runtime para `ipcRenderer.on`), isso arrastou `zod` para o bundle do preload — que o build deixa como `require('zod')` externo não resolvido. O preload falhou ao carregar, `window.api` ficou `undefined`, e a janela abriu **vazia, sem nenhum erro no terminal** onde `pnpm dev` roda; o erro só aparece no DevTools da própria janela (F12). Nem `typecheck`, nem `lint`, nem `test` pegam isso — nenhum executa o bundle do preload dentro do sandbox real. Corrigido com `src/shared/channels.ts`, um arquivo em `shared/` sem nenhuma dependência externa. Regra prática: valor novo que o preload vai consumir de `shared/` nasce num arquivo que não importa nada de fora — nunca reaproveitar um arquivo que já importa uma lib só porque o tipo relacionado mora lá.
 
 Navegação para fora da origem do app é negada por padrão (`will-navigate`, ao lado do `setWindowOpenHandler` que já negava janela nova), com uma única exceção em desenvolvimento: o HMR do Vite precisa navegar dentro da própria origem do servidor.
 

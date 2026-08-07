@@ -169,7 +169,7 @@ O terceiro é o mais valioso e o mais esquecido. Ele é a primeira vez que o pro
 
 ### Passo 5 — Nível 1: reservado
 
-`core/` ainda está vazia — a primeira função pura nasce na [fase 06](../active/06-primeira-feature.md), e é lá que este nível ganha conteúdo.
+`core/` ainda está vazia — a primeira função pura nasce na [fase 06](06-primeira-feature.md), e é lá que este nível ganha conteúdo.
 
 O que fazer agora é apenas garantir que a infraestrutura o alcança: crie `src/core/result.ts` com dois auxiliares (`ok(value)` e `err(error)`) que constroem o `Result` da [fase 02](02-contrato-ipc.md), e um teste trivial para eles.
 

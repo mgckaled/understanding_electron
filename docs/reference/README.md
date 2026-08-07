@@ -27,7 +27,7 @@ Um caderno explicando por que o Electron tem três processos é `study/`. Uma ta
 
 Não existem ainda; ficam anotados para que, quando surgirem, não acabem no lugar errado:
 
-- **Medição de leitura de arquivo grande** — sai da validação manual da [fase 06](../plan/active/06-primeira-feature.md). Vira a linha de base contra a qual o DuckDB será comparado.
+- **Medição de leitura de arquivo grande** — sai da validação manual da [fase 06](../plan/implemented/06-primeira-feature.md). Vira a linha de base contra a qual o DuckDB será comparado.
 - **Dialetos e sujeira de CSV** — separadores, encodings, BOM, cabeçalho fora da primeira linha. Catálogo do que o app precisa reconhecer, com exemplo real de cada caso.
 - **Peculiaridades do `.xlsx`** — planilhas múltiplas, células mescladas, tipo por célula, datas em serial, valor armazenado versus formatado. O [`ESCOPO.md`](../ESCOPO.md) registra o teto de memória; o detalhe do formato mora aqui.
 - **Comparativo de modelos locais** — quando a camada de IA chegar, qual modelo do Ollama para qual papel, com custo de RAM medido nesta máquina.

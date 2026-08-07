@@ -99,7 +99,7 @@ Delimitado é o formato mais simples e o que mais dá trabalho, porque não tem 
 
 separador ambíguo (vírgula, ponto e vírgula, tabulação) · encoding que não é UTF-8 (cp1252 é o padrão do Excel brasileiro) · BOM no início do arquivo · cabeçalho que não está na primeira linha · linhas com contagem de campos diferente · aspas mal fechadas · decimal com vírgula.
 
-Cada um desses é uma decisão de interface, não só de parsing: o usuário precisa **ver** o que foi detectado e poder corrigir. É por isso que a fase 06 do plano de fundação existe — [`open-dataset`](planning/active/06-primeira-feature.md) já ataca detecção de separador e cabeçalho.
+Cada um desses é uma decisão de interface, não só de parsing: o usuário precisa **ver** o que foi detectado e poder corrigir. É por isso que a fase 06 do plano de fundação existe — [`open-dataset`](plan/implemented/06-primeira-feature.md) já ataca detecção de separador e cabeçalho.
 
 ### Excel tem teto próprio
 
@@ -170,7 +170,7 @@ Nada disso é impossível de acrescentar depois. Está fora porque cada item mul
 
 Foi conferido item a item. O contrato IPC, o `Result`, o registro de jobs, os tokens e a pirâmide de testes servem a este escopo sem alteração — que é o resultado esperado de uma fundação que não presume o produto.
 
-A única confirmação relevante: a feature [`open-dataset`](planning/active/06-primeira-feature.md) da fase 06 continua sendo a escolha certa, e ganha peso — detectar separador, encoding e cabeçalho não é mais um exercício de validação, é o primeiro passo real do produto.
+A única confirmação relevante: a feature [`open-dataset`](plan/implemented/06-primeira-feature.md) da fase 06 continua sendo a escolha certa, e ganha peso — detectar separador, encoding e cabeçalho não é mais um exercício de validação, é o primeiro passo real do produto.
 
 ### Cria um pacote novo em `core/` depois do DuckDB
 

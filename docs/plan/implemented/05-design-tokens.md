@@ -218,4 +218,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [04 — Testes rápidos](04-testes-rapidos.md) · **Índice:** [README](../active/README.md) · **Próximo:** [06 — Primeira feature vertical](../active/06-primeira-feature.md)
+**Anterior:** [04 — Testes rápidos](04-testes-rapidos.md) · **Índice:** [README](../active/README.md) · **Próximo:** [06 — Primeira feature vertical](06-primeira-feature.md)

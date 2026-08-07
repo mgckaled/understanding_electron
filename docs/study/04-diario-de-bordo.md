@@ -279,4 +279,115 @@ Instale. Valide com `pnpm dev`. Commite. Só então siga.
 
 ---
 
+## Fase 06 — primeira feature vertical
+
+Três casos novos, todos descobertos na validação do passo 5 — o passo que existe justamente para pegar o que teste automatizado não pega.
+
+### Caso 5 — A documentação dizia uma coisa, o runtime fazia outra
+
+**O sintoma.** Antes de escrever `src/main/features/dataset/lines.ts`, a documentação do `node:readline` (`rl[Symbol.asyncIterator]()`) trazia uma frase que parecia decisiva: "Errors in the input stream are not forwarded." A leitura óbvia: um `for await` sobre `readline.createInterface({ input: fs.createReadStream(...) })` nunca lançaria para `ENOENT` ou `EACCES` — seria preciso um mecanismo à parte (cogitado: `Promise.race` por `.next()` entre o iterador real e um listener de `'error'` no stream) só para transformar isso em `Result`.
+
+**A investigação.** Em vez de implementar a versão complexa em cima da frase da doc, um script de trinta linhas no scratchpad testou os dois casos reais do projeto — caminho inexistente e caminho que é diretório — com `stream.on('error', () => {})` registrado:
+
+```
+--- nonexistent file ---
+stream error event: ENOENT
+for-await threw: ENOENT
+--- directory as file ---
+stream error event: EISDIR
+for-await threw: EISDIR
+```
+
+O `for await` **lançou** normalmente nos dois casos, contradizendo a leitura direta da frase.
+
+**A correção.** Doze linhas, sem `Promise.race`:
+
+```ts
+async function* readLines(path: string): AsyncGenerator<string> {
+  const stream = createReadStream(path)
+  stream.on('error', () => {}) // sem isto, 'error' sem handler derruba o processo
+  const rl = createInterface({ input: stream, crlfDelay: Infinity })
+  try {
+    for await (const line of rl) yield line
+  } finally {
+    rl.close()
+  }
+}
+```
+
+O `stream.on('error', ...)` continua obrigatório — sem handler algum, o `'error'` sem ouvinte derruba o processo Node antes mesmo de chegar ao `for await`. É a presença desse listener (mesmo vazio) que faz o erro tomar o caminho que o `for await` consegue capturar.
+
+**A lição.** Uma frase de documentação genérica descreve um comportamento observado por quem escreveu, num contexto que pode não ser o seu. Antes de desenhar um mecanismo em cima dela, um script de trinta linhas testando o caso real do projeto substitui uma hipótese por um fato — e aqui a implementação real ficou um terço do tamanho da versão desenhada para a hipótese.
+
+### Caso 6 — `rl.close()` não fecha o que parece fechar
+
+**O sintoma.** Ninguém tropeçou nisto em execução — foi antecipado antes de rodar a GUI, ao revisar o que `D6.7` exige ("cancelamento remove a entrada do `Map`... a operação, ao terminar por qualquer via"). A pergunta: `rl.close()` no `finally` do generator é suficiente para parar a leitura de disco quando o consumidor cancela a meio caminho?
+
+**A investigação.** Um script no scratchpad leu um CSV de teste, deu `break` após 5 linhas, e mediu o `stream` do `fs.createReadStream` subjacente:
+
+```
+lines read before break: 5
+immediately after break: stream.destroyed = false   bytesRead = 65536
+data events observed 300ms after break: 0
+final: stream.destroyed = false   bytesRead = 131072
+```
+
+`bytesRead` **dobrou** nos 300ms seguintes ao `break`, sem nenhum consumidor lendo mais nada. `rl.close()` desliga o controle do `readline` sobre o stream — não o `stream` em si. O buffer interno do `Readable` (`highWaterMark`) seguia puxando do disco por conta própria.
+
+**A correção.** Uma linha a mais no mesmo `finally`:
+
+```ts
+} finally {
+  rl.close()
+  stream.destroy() // sem isto, bytesRead segue crescendo depois do break — confirmado acima
+}
+```
+
+Reexecutado, o mesmo script confirmou `destroyed = true` e `bytesRead` estável nos 300ms seguintes.
+
+**A lição.** `readline.Interface` e o `stream` que ele envolve são dois objetos com ciclos de vida independentes. Fechar o de cima não fecha o de baixo. Vale para qualquer wrapper de stream do Node: o método "close" do wrapper raramente propaga para a fonte — quando cancelamento de I/O importa, teste o `bytesRead`/`destroyed` do stream real, não só o retorno da função de alto nível.
+
+### Caso 7 — Tela em branco sem nenhum erro no terminal
+
+**O sintoma.** `pnpm build` limpo, `pnpm dev` subiu sem uma linha de erro no terminal — e a janela do app abriu **vazia**, sem nenhum dos painéis. Nenhuma pista no processo onde o `pnpm dev` roda, porque o erro não estava lá: estava no processo do *renderer*, visível só no DevTools da própria janela (F12).
+
+**A investigação.** O Console do DevTools mostrou a causa em duas linhas:
+
+```
+Unable to load preload script: .../out/preload/index.js
+Error: module not found: zod
+```
+
+E o efeito em cascata: `window.api` ficou `undefined` porque o preload nunca terminou de carregar, e todo componente que usa `window.api.*` (a partir de `Versions`, que roda no primeiro `useEffect` da árvore) lançou e derrubou a renderização.
+
+A causa raiz remontava a uma regra que já estava escrita antes desta fase começar, na skill `architecture`: *"`preload/` pode importar `shared/` **(somente tipos)**"* — porque o preload sandboxed é um bundle único, sem `require` funcional para pacotes de terceiros (`externalizeDepsPlugin()` nunca entra nesse bloco do `electron.vite.config.ts`, de propósito). `src/shared/ipc.ts` importa `zod` como valor (para `argsSchema`). O passo 3 desta fase precisava do nome do canal `job:event` como **valor** dentro do preload (para `ipcRenderer.on(...)`), e foi importado direto de `@shared/ipc` — arrastando `zod` para o grafo de dependências do bundle do preload. O bundler deixou `zod` como um `require('zod')` externo não resolvido, e esse `require` só existe de verdade em runtime, no processo sandboxed, onde falha.
+
+**A correção.** `src/shared/channels.ts`, um arquivo em `shared/` que não importa nada além do que ele mesmo declara:
+
+```ts
+export const JOB_EVENT_CHANNEL = 'job:event'
+```
+
+Preload e main passaram a importar a constante dali, não de `ipc.ts`. Nenhuma outra mudança de arquitetura — a regra já documentada voltou a valer.
+
+**A lição.** `pnpm typecheck`, `pnpm lint` e `pnpm test` não pegam isto: nenhum dos três executa o bundle do preload dentro do sandbox real do Electron. Só `pnpm dev` (ou a fase 07, quando existir) exercita esse caminho. E quando o preload falha ao carregar, o sintoma não aparece onde se espera — o terminal do `pnpm dev` fica limpo, e o erro só existe no DevTools da janela, que precisa ser aberto deliberadamente (F12). Regra prática: **qualquer valor novo exportado de um arquivo em `shared/` que o preload vai consumir por valor (não só por tipo) precisa nascer num arquivo que não importe nada externo** — nunca reaproveitar um arquivo que já importa uma lib como `zod` só porque o tipo relacionado mora lá.
+
+### A medição de desempenho
+
+Com as três correções acima em vigor, o item que o plano pedia para medir e não presumir: `readLines` + `scanDelimited` sobre um CSV de 345,9 MB / 5.000.000 de linhas, gerado por `scripts/generate-large-csv.mjs`, fora do processo Electron (Node puro, sem overhead de IPC):
+
+| Métrica | Valor |
+|---|---|
+| Tamanho do arquivo | 345,9 MB |
+| Linhas | 5.000.000 |
+| Tempo total | 3,23 s |
+| Throughput | ~107 MB/s |
+| Emissões de progresso (throttle 100 ms) | 32 |
+
+Dentro do app (Electron, com IPC e overhead do main process), a validação interativa com o mesmo arquivo confirmou: o escaneamento completa, o resumo aparece na interface, sem travamento perceptível — mas 3 segundos é rápido demais para observar em detalhe arrastar/redimensionar a janela ou testar cancelamento a meio caminho com segurança. Essa parte específica (cancelamento observado ao vivo com Gerenciador de Tarefas, durante um escaneamento real de segundos) não chegou a ser confirmada interativamente nesta sessão — a garantia de que o cancelamento realmente para a leitura vem da medição isolada do Caso 6 acima e do teste automatizado `scanDataset > removes the job entry on finish`, não de uma observação ao vivo dentro do app com um arquivo grande o bastante para dar tempo de clicar.
+
+`for await` sobre `readline` é documentadamente mais lento que a API de evento `'line'` — não investigado aqui; ~107 MB/s já está bem acima do que a interface consegue desenhar, então não é o gargalo desta fase.
+
+---
+
 **Anterior:** [03 — Anatomia do projeto](03-anatomia-do-projeto.md) · **Próximo:** [05 — Próximos passos](05-proximos-passos.md)

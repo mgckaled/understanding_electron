@@ -31,8 +31,8 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Quando acontecer | Revisitar | Registrado em |
 |---|---|---|
 | DuckDB instalado e carregando | `shamefullyHoist: false` no `pnpm-workspace.yaml` | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
-| Primeira query reexecutada sobre o mesmo dataset | Adotar TanStack Query | [`06-primeira-feature`](plan/active/06-primeira-feature.md) |
-| Segunda janela do app | Progresso endereçado ao remetente, em vez de transmitido a todas | [`06-primeira-feature`](plan/active/06-primeira-feature.md) |
+| Primeira query reexecutada sobre o mesmo dataset | Adotar TanStack Query | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
+| Segunda janela do app | Progresso endereçado ao remetente, em vez de transmitido a todas | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
 | Sexta fatia em `features/` | `eslint-plugin-boundaries` no lugar do `no-restricted-imports` | [`01-camadas`](plan/implemented/01-camadas-e-fronteiras.md) |
 | Vigésimo canal em `shared/ipc.ts` | Skill própria para IPC, separada de `architecture` | [`08-automacao`](plan/active/08-automacao-e-registro.md) |
 | Design system estável | Endurecer a CSP (hoje permite `style-src 'unsafe-inline'`) | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |

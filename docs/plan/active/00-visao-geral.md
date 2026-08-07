@@ -72,7 +72,7 @@ Estes documentos de planejamento são português, porque são leitura, não cód
 
 ### D5 — Nenhuma dependência nova sem justificativa registrada
 
-O plano inteiro adiciona três grupos de pacotes, e a [fase 06](06-primeira-feature.md) — a que mais entrega — não adiciona nenhum. Cada um aparece na fase que o introduz, com a alternativa descartada:
+O plano inteiro adiciona três grupos de pacotes, e a [fase 06](../implemented/06-primeira-feature.md) — a que mais entrega — não adiciona nenhum. Cada um aparece na fase que o introduz, com a alternativa descartada:
 
 | Pacote | Fase | Descartado no lugar |
 |---|---|---|
@@ -82,7 +82,7 @@ O plano inteiro adiciona três grupos de pacotes, e a [fase 06](06-primeira-feat
 
 **Não entra:** Tailwind, biblioteca de componentes, container de DI, gerenciador de estado global.
 
-**Adiado com gatilho registrado:** `@tanstack/react-query`. A intenção original era adotá-lo na fase 06, e o próprio critério de "caro de adiar" reprovou a ideia — o que ele entrega (cache com chave, invalidação, deduplicação) não tem uso antes de existirem consultas repetidas, e migrar depois custa os poucos hooks que existirem. O raciocínio completo está na [D6.2](06-primeira-feature.md#d62--sem-tanstack-query-nesta-fase), e vale como exemplo de decisão revista pela régua em vez de por preferência.
+**Adiado com gatilho registrado:** `@tanstack/react-query`. A intenção original era adotá-lo na fase 06, e o próprio critério de "caro de adiar" reprovou a ideia — o que ele entrega (cache com chave, invalidação, deduplicação) não tem uso antes de existirem consultas repetidas, e migrar depois custa os poucos hooks que existirem. O raciocínio completo está na [D6.2](../implemented/06-primeira-feature.md#d62--sem-tanstack-query-nesta-fase), e vale como exemplo de decisão revista pela régua em vez de por preferência.
 
 ### D6 — `src/main/index.ts` não cresce
 

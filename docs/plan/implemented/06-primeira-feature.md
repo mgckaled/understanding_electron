@@ -1,6 +1,6 @@
 # 06 — Primeira feature vertical
 
-**Depende de:** [02](../implemented/02-contrato-ipc.md), [03](../implemented/03-sandbox-e-seguranca.md), [04](../implemented/04-testes-rapidos.md), [05](../implemented/05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
+**Depende de:** [02](02-contrato-ipc.md), [03](03-sandbox-e-seguranca.md), [04](04-testes-rapidos.md), [05](05-design-tokens.md) · **Entrega:** `open-dataset` de ponta a ponta, registro de jobs, organização em fatias
 
 ---
 
@@ -21,7 +21,7 @@ Ela foi escolhida por exercitar tudo o que precisa ser validado, sem introduzir 
 | Diálogo nativo | só o main consegue abrir |
 | `Result` com erro real | arquivo apagado entre a escolha e a leitura, permissão negada |
 | Operação longa com progresso | contar linhas de um arquivo grande demora de verdade |
-| Cancelamento durante a operação | é o caso que a [fase 02](../implemented/02-contrato-ipc.md) desenhou e não pôde provar |
+| Cancelamento durante a operação | é o caso que a [fase 02](02-contrato-ipc.md) desenhou e não pôde provar |
 | Total desconhecido | não se sabe quantas linhas há antes de terminar |
 | Lógica pura em `core/` | dedução de separador e parsing de cabeçalho |
 | `StateView` nos seis estados | todos ocorrem naturalmente |
@@ -65,7 +65,7 @@ Adotá-la agora seria pagar por um problema que ainda não existe, que é a mesm
 
 **Gatilho de revisão:** a primeira query de DuckDB reexecutada sobre o mesmo dataset. Aí o cache passa a valer, e o custo da migração continua sendo os poucos hooks que existirem.
 
-No lugar, um `useAsyncAction` de cerca de quarenta linhas em `shared/hooks/`, que devolve um `ViewState` — o mesmo tipo da [fase 05](../implemented/05-design-tokens.md).
+No lugar, um `useAsyncAction` de cerca de quarenta linhas em `shared/hooks/`, que devolve um `ViewState` — o mesmo tipo da [fase 05](05-design-tokens.md).
 
 ### D6.3 — `core/` recebe as linhas, não o caminho
 
@@ -77,7 +77,7 @@ export async function scanDelimited(input: {
 }): Promise<DatasetSummary>
 ```
 
-`core/` **pode** importar `node:fs` — a tabela da [fase 01](../implemented/01-camadas-e-fronteiras.md) permite. A decisão de não importar é sobre testabilidade: recebendo um iterável, o teste passa um array literal e cobre arquivo vazio, só cabeçalho, separador ambíguo, linha malformada e cancelamento no meio, tudo em milissegundos e sem tocar disco.
+`core/` **pode** importar `node:fs` — a tabela da [fase 01](01-camadas-e-fronteiras.md) permite. A decisão de não importar é sobre testabilidade: recebendo um iterável, o teste passa um array literal e cobre arquivo vazio, só cabeçalho, separador ambíguo, linha malformada e cancelamento no meio, tudo em milissegundos e sem tocar disco.
 
 É a mesma injeção na fronteira de entrada/saída que o projeto Python faz com `embed_fn`.
 
@@ -89,7 +89,7 @@ Uma emissão a cada 100ms, mais uma final garantida. O valor é token de configu
 
 ### D6.5 — Progresso é transmitido a todas as janelas
 
-O `handle` da [fase 02](../implemented/02-contrato-ipc.md) entrega ao handler **apenas os argumentos** — não o `IpcMainInvokeEvent`. É essa restrição que torna o handler uma função comum e testável no nível 3.
+O `handle` da [fase 02](02-contrato-ipc.md) entrega ao handler **apenas os argumentos** — não o `IpcMainInvokeEvent`. É essa restrição que torna o handler uma função comum e testável no nível 3.
 
 O preço é que o handler não sabe quem chamou. Como o app tem uma janela, `emitProgress` transmite para todas e o efeito é o mesmo.
 
@@ -99,7 +99,7 @@ Registrado como troca consciente: a testabilidade do nível 3 vale mais hoje do 
 
 ### D6.6 — Cancelamento é `Result`, não exceção
 
-Cancelar devolve `{ ok: false, error: { kind: 'cancelled' } }`. Pela D2.2 da [fase 02](../implemented/02-contrato-ipc.md), é desfecho esperado e acionável pela UI — o `StateView` tem um estado próprio para ele —, portanto é dado.
+Cancelar devolve `{ ok: false, error: { kind: 'cancelled' } }`. Pela D2.2 da [fase 02](02-contrato-ipc.md), é desfecho esperado e acionável pela UI — o `StateView` tem um estado próprio para ele —, portanto é dado.
 
 ### D6.7 — O `AbortController` mora no main, indexado pelo `jobId`
 
@@ -147,7 +147,7 @@ dataset:scan   → Result<DatasetSummary>        args: { path, jobId }
 job:cancel     → void
 ```
 
-E o evento `job:event`, com o payload `JobEvent` já declarado na [fase 02](../implemented/02-contrato-ipc.md). Esta feature emite **apenas** a variante `progress`; `chunk` e `log` continuam reserva.
+E o evento `job:event`, com o payload `JobEvent` já declarado na [fase 02](02-contrato-ipc.md). Esta feature emite **apenas** a variante `progress`; `chunk` e `log` continuam reserva.
 
 > 🔍 `null` e erro são coisas diferentes. Fechar o diálogo é sucesso com resultado vazio; não conseguir abri-lo é falha. Colapsar os dois em `Result` de erro obrigaria a UI a mostrar mensagem para uma ação normal do usuário.
 
@@ -174,7 +174,7 @@ job: {
 
 Uma assinatura para a união inteira, não uma por variante — quem consome estreita pelo `type`, e uma variante nova não altera a superfície exposta.
 
-O `onEvent` é a primeira aplicação da D2.8 da [fase 02](../implemented/02-contrato-ipc.md): o listener registrado no `ipcRenderer` descarta o `IpcRendererEvent` e repassa **só o payload**; o retorno é a função que remove o listener.
+O `onEvent` é a primeira aplicação da D2.8 da [fase 02](02-contrato-ipc.md): o listener registrado no `ipcRenderer` descarta o `IpcRendererEvent` e repassa **só o payload**; o retorno é a função que remove o listener.
 
 Sem esse retorno, todo componente React que assinar vira vazamento — o `useEffect` não tem o que devolver na limpeza, e cada remontagem empilha mais um ouvinte.
 
@@ -190,15 +190,15 @@ Dois hooks genéricos em `src/renderer/src/shared/hooks/`:
 
 E a fatia `src/renderer/src/features/open-dataset/`, com o painel, seu módulo CSS e o hook que orquestra escolher → gerar `jobId` → escanear → cancelar.
 
-Os seis estados usam o `StateView` da [fase 05](../implemented/05-design-tokens.md), sem componente novo de carregamento ou erro. Se algum estado pedir algo que o `StateView` não faz, o ajuste é nele — não uma variante local. É assim que design system não se dissolve.
+Os seis estados usam o `StateView` da [fase 05](05-design-tokens.md), sem componente novo de carregamento ou erro. Se algum estado pedir algo que o `StateView` não faz, o ajuste é nele — não uma variante local. É assim que design system não se dissolve.
 
-Testes de nível 2 com a API falsa da [fase 04](../implemented/04-testes-rapidos.md):
+Testes de nível 2 com a API falsa da [fase 04](04-testes-rapidos.md):
 
 | Cenário | Verifica |
 |---|---|
 | Escolher e resumir com sucesso | o resumo aparece |
 | Fechar o diálogo (`null`) | volta a ocioso, sem erro |
-| Erro `not-found` | mensagem em português do registro da [fase 05](../implemented/05-design-tokens.md) |
+| Erro `not-found` | mensagem em português do registro da [fase 05](05-design-tokens.md) |
 | Cancelar durante o progresso | `job.cancel` foi chamado com o `jobId` correto |
 | Desmontar durante a operação | a função de desassinatura foi chamada |
 
@@ -251,10 +251,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-06 | 1–5 | concluída | Medição real: 345,9 MB / 5.000.000 linhas em 3,23s (~107 MB/s) — ver `study/04-diario-de-bordo.md` § Fase 06. Validação interativa do usuário confirmou que o app funciona (escolher arquivo → resumo aparece), mas o escaneamento foi rápido demais (poucos segundos) para observar arrastar/redimensionar a janela ou clicar em cancelar com segurança ao vivo; a garantia de que o cancelamento para a leitura de disco vem da medição isolada (Caso 6) e do teste automatizado `scanDataset > removes the job entry on finish`, não de observação com Gerenciador de Tarefas durante um escaneamento real — aceito como evidência suficiente por decisão do usuário. Duas correções reais encontradas e commitadas nesta sessão: `stream.destroy()` ausente no cancelamento (Caso 6) e preload quebrando em silêncio por importar valor de `zod` via `shared/ipc.ts` (Caso 7) — a segunda derrubava a UI inteira sem nenhum erro visível fora do DevTools. `pnpm check:fast` segue vermelho pela falha pré-existente de `guard.mjs` (ROADMAP §4); usado o workaround `pnpm eslint <arquivos>` por fase, conforme já registrado ali. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [05 — Design tokens](../implemented/05-design-tokens.md) · **Índice:** [README](README.md) · **Próximo:** [07 — E2E e empacotamento](07-e2e-e-empacotamento.md)
+**Anterior:** [05 — Design tokens](05-design-tokens.md) · **Índice:** [README](../active/README.md) · **Próximo:** [07 — E2E e empacotamento](../active/07-e2e-e-empacotamento.md)

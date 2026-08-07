@@ -1,6 +1,6 @@
 # 07 — E2E e empacotamento
 
-**Depende de:** [06](06-primeira-feature.md) · **Entrega:** níveis 4 e 5 da pirâmide, `asarUnpack` conferido, instalador validado
+**Depende de:** [06](../implemented/06-primeira-feature.md) · **Entrega:** níveis 4 e 5 da pirâmide, `asarUnpack` conferido, instalador validado
 
 ---
 
@@ -20,7 +20,7 @@ O [`05-proximos-passos.md`](../../study/05-proximos-passos.md) já antecipa o ca
 
 Os níveis 4 e 5 são lentos: dezenas de segundos um, minutos o outro. Colocá-los cedo teria custado tempo em todas as fases anteriores sem pegar nada — não havia comportamento de ponta a ponta para percorrer.
 
-Agora há: a [fase 06](06-primeira-feature.md) entregou um caminho que atravessa os três processos, e é ele que vale percorrer.
+Agora há: a [fase 06](../implemented/06-primeira-feature.md) entregou um caminho que atravessa os três processos, e é ele que vale percorrer.
 
 ---
 
@@ -117,7 +117,7 @@ Em `e2e/dev/`, com `_electron.launch({ args: ['.'] })`:
 
 Este é o teste mais valioso do arquivo inteiro. Toda a fase 03 é uma configuração que ninguém revisita, e um `sandbox: false` reintroduzido por um merge distraído não quebra nada visível — só apaga a barreira em silêncio. A última linha também pega o oposto: alguém expondo algo a mais no preload "só para depurar".
 
-**`abrir-dataset.spec.ts`** — o caminho completo da [fase 06](06-primeira-feature.md). O diálogo nativo não é dirigível pelo Playwright; use `electron.evaluate` para instalar um `dialog.showOpenDialog` falso no main antes de clicar, devolvendo um arquivo de teste versionado em `e2e/fixtures/`.
+**`abrir-dataset.spec.ts`** — o caminho completo da [fase 06](../implemented/06-primeira-feature.md). O diálogo nativo não é dirigível pelo Playwright; use `electron.evaluate` para instalar um `dialog.showOpenDialog` falso no main antes de clicar, devolvendo um arquivo de teste versionado em `e2e/fixtures/`.
 
 **Aceite:** os três arquivos verdes; `pnpm test:e2e` abaixo de 60 segundos.
 **Commit:** `test(e2e): janela, fronteira de segurança e abertura de dataset`
@@ -195,4 +195,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [06 — Primeira feature vertical](06-primeira-feature.md) · **Índice:** [README](README.md) · **Próximo:** [08 — Automação e registro](08-automacao-e-registro.md)
+**Anterior:** [06 — Primeira feature vertical](../implemented/06-primeira-feature.md) · **Índice:** [README](README.md) · **Próximo:** [08 — Automação e registro](08-automacao-e-registro.md)
