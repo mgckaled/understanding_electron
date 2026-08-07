@@ -93,5 +93,16 @@ export default defineConfig(
       'no-restricted-imports': 'off'
     }
   },
+  {
+    // The Claude Code hooks are plain JavaScript — they cannot carry a
+    // TypeScript return annotation, and this project's
+    // explicit-function-return-type does not accept the JSDoc form. Relaxing
+    // the rule for these files is narrower than teaching the central parser
+    // about checkJs, which is what a real fix would require.
+    files: ['.claude/hooks/**/*.mjs'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off'
+    }
+  },
   eslintConfigPrettier
 )
