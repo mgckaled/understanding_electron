@@ -187,7 +187,7 @@ pnpm check:fast     # typecheck + lint + testes, tudo verde
 pnpm test:coverage  # limite de 85% respeitado em core/ e shared/
 ```
 
-E uma verificação de tempo: **`pnpm check:fast` deve terminar em menos de 15 segundos** nesta altura do projeto. Se já estiver mais lento, investigue agora — a [fase 08](08-automacao-e-registro.md) vai colocá-lo no ciclo de edição, e um ciclo lento é um ciclo contornado.
+E uma verificação de tempo: **`pnpm check:fast` deve terminar em menos de 15 segundos** nesta altura do projeto. A meta já foi ultrapassada, e a [fase 08](08-automacao-e-registro.md) colocou o comando no ciclo de edição (e no `Stop` hook, a cada resposta), como previsto — o acompanhamento virou gatilho de revisão em [`ROADMAP § 2`](../../ROADMAP.md#2-gatilhos-de-revisão). Um ciclo lento é um ciclo contornado.
 
 ---
 
