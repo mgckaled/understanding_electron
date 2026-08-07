@@ -390,4 +390,32 @@ Dentro do app (Electron, com IPC e overhead do main process), a validação inte
 
 ---
 
+## Fase 07 — E2E e empacotamento
+
+O passo 3 desta fase ("olhe o que o `electron-builder` está montando antes de escrever o teste do nível 5") existe exatamente para pegar o que apareceu aqui — e o que apareceu foi mais sério do que o plano antecipava.
+
+### Caso 8 — `app.asar` levava uma chave de API pessoal para dentro do instalador
+
+**O sintoma.** Nenhum, até alguém olhar de propósito. `pnpm build:unpack` e `pnpm typecheck`/`lint`/`test` continuavam verdes — o vazamento não é do tipo que qualquer um desses três pega, porque nenhum inspeciona o **conteúdo** do pacote final.
+
+**A investigação.** `pnpm dlx @electron/asar list dist/win-unpacked/resources/app.asar`, grepando por diretórios que não deveriam estar ali. Resultado: `.claude/` inteiro dentro do asar — incluindo `.claude/settings.local.json`, que guarda a API key pessoal do MCP Context7 (ver `.gitignore`: `.claude/settings.local.json` nunca é versionado, exatamente por isso). O `electron-builder` empacota **direto do disco**, não do que o `git` rastreia — um arquivo corretamente excluído do repositório continua presente na máquina de quem fez o build, e o `files` do `electron-builder.yml` não sabia que precisava excluí-lo também. Junto dele, vazavam `coverage/`, `docs/`, `e2e/`, `scripts/`, `test/`, `test-results/`, `playwright-report/`, e os três configs de teste (`vitest.config.ts`, `playwright.config.ts`, `tsconfig.e2e.json`).
+
+**A correção.** Nove entradas novas em `files`, todas seguindo o padrão `'!pasta/*'` já usado para `src/`. Reempacotado e reconferido com o mesmo `asar list`: 87 entradas a menos, `.claude/settings.local.json` ausente.
+
+**A lição.** `.gitignore` e `files` do `electron-builder.yml` respondem perguntas diferentes — "o que entra no histórico do projeto" e "o que entra no que o usuário instala" — e não há nada que sincronize as duas listas automaticamente. Toda vez que um novo tipo de arquivo local-only aparece (segredo, cache, config de ferramenta), as duas listas precisam ser revisadas juntas. `pnpm dlx @electron/asar list <asar> | grep <candidato>` é o jeito de verificar, não de supor pela leitura do glob — foi assim que a lista antiga (que parecia razoável) se revelou incompleta.
+
+### Caso 9 — Duas hipóteses do plano que o comportamento real não confirmou (nos dois sentidos)
+
+**Instalação do Playwright.** A expectativa, com base no histórico deste projeto (`pnpm-workspace.yaml`/`allowBuilds`), era que `pnpm add -D @playwright/test` disparasse um postinstall de download de browsers, bloqueado silenciosamente por `allowBuilds` e exigindo uma entrada nova. Não aconteceu: `@playwright/test` 1.62.1 não declara `postinstall` nenhum, e `%LOCALAPPDATA%\ms-playwright` nunca foi criado. Não foi preciso mexer em `allowBuilds` — e não era para mexer mesmo: `_electron.launch()` usa o binário Electron que o próprio projeto já tem em `node_modules`, sem precisar do Chromium que o Playwright baixaria para testes de navegador comum.
+
+**`findLatestBuild('dist')`.** A documentação do `electron-playwright-helpers` descreve a convenção como `out/<nome>-<plataforma>-<arch>` — o que não bate com `dist/win-unpacked/` gerado por `electron-builder --dir`. Lendo o código-fonte (`find_parse_builds.js`) antes de escrever o teste: a função aceita qualquer nome de subpasta cujo split por hífen contenha um token de plataforma reconhecido (`win`, `win32`, `darwin`, `mac`, `linux`, …) — e `win-unpacked` bate, porque `"win-unpacked".split('-')` inclui `'win'`. Funcionou de primeira, sem precisar do fallback manual (`parseElectronApp('dist/win-unpacked')` direto) que o plano deixava como plano B.
+
+**A lição repetida:** ler o código-fonte da dependência antes de escrever o teste continua sendo mais barato que escrever para a documentação e descobrir depois — mesmo quando, desta vez, o resultado foi "funciona sem ajuste" em vez de "quebra do jeito que a doc sugeria" (caso 5, fase 06). As duas direções são possíveis; só a leitura direta do código decide qual.
+
+### Ciclo de aceite provado, não presumido
+
+O passo 4 pede para o smoke test falhar de propósito antes de confiar nele. Sabotagem (`'!out/preload/**'` em `files`) → reempacotado → `pnpm test:e2e:packaged` falhou de verdade, com o sintoma já conhecido da fase 06 (`#root` vazio, `window.api` nunca aparece) — só que desta vez capturado pelo próprio teste automatizado, não por inspeção manual do DevTools. Revertido a mesma linha, reempacotado, verde de novo. O ciclo vermelho→verde é a única prova de que o teste testa alguma coisa.
+
+---
+
 **Anterior:** [03 — Anatomia do projeto](03-anatomia-do-projeto.md) · **Próximo:** [05 — Próximos passos](05-proximos-passos.md)

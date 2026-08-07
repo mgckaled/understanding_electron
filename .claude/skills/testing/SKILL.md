@@ -1,11 +1,11 @@
 ---
 name: testing
-description: Estratégia de teste do data-lab — a pirâmide de cinco níveis e onde cada um roda, por que handlers de IPC precisam ser funções exportadas (não closures) para serem testáveis sem subir o Electron, a armadilha de importar 'electron' por valor em código testável, o mock de window.api derivado do contrato via satisfies, e o que não vale a pena testar. Use ao escrever um teste novo, decidir se algo precisa de mock, avaliar se um handler está estruturado de forma testável, ou julgar se vale perseguir cobertura em renderer/ ou main/.
+description: Estratégia de teste do data-lab — a pirâmide de cinco níveis e onde cada um roda, por que handlers de IPC precisam ser funções exportadas (não closures) para serem testáveis sem subir o Electron, a armadilha de importar 'electron' por valor em código testável, o mock de window.api derivado do contrato via satisfies, Playwright/_electron para os níveis 4-5, a verificação real do que vai para dentro do app.asar, e o que não vale a pena testar. Use ao escrever um teste novo, decidir se algo precisa de mock, avaliar se um handler está estruturado de forma testável, escrever um spec E2E, ajustar o files do electron-builder.yml, ou julgar se vale perseguir cobertura em renderer/ ou main/.
 ---
 
 # Testes — data-lab
 
-> Escrito na fase [04](../../../docs/plan/implemented/04-testes-rapidos.md) do plano de fundação. Fonte completa, com o porquê de cada decisão: o documento linkado acima.
+> Escrito nas fases [04](../../../docs/plan/implemented/04-testes-rapidos.md) e [07](../../../docs/plan/implemented/07-e2e-e-empacotamento.md) do plano de fundação. Fonte completa, com o porquê de cada decisão: os dois documentos linkados acima.
 
 ## A pirâmide tem cinco níveis, não três
 
@@ -17,7 +17,7 @@ description: Estratégia de teste do data-lab — a pirâmide de cinco níveis e
 | 4 | app em desenvolvimento | Playwright | dezenas de s |
 | 5 | app empacotado | Playwright | minutos |
 
-Os níveis 1–3 rodam em `pnpm test` / `pnpm check:fast`, cabem no ciclo de edição. Os níveis 4–5 (fase 07) precisam subir o Electron de verdade e não entram nesse ciclo — a separação decide se o retorno cabe num *hook* de edição ou se fica lento a ponto de ser contornado.
+Os níveis 1–3 rodam em `pnpm test` / `pnpm check:fast`, cabem no ciclo de edição. Os níveis 4–5 precisam subir o Electron de verdade e não entram nesse ciclo — a separação decide se o retorno cabe num *hook* de edição ou se fica lento a ponto de ser contornado.
 
 Vitest usa `test.projects` **dentro de** `vitest.config.ts` (a API atual — `vitest.workspace.ts` está depreciado desde a 3.2, não usar mesmo aparecendo em tutorial recente), com dois projetos espelhando os dois `tsconfig`: `node` para `core/shared/main/workers`, `jsdom` (não `happy-dom` — mais completo, e um app de análise de dados vai testar tabela e rolagem) para `renderer/`. `coverage` fica só no root do `test`, nunca dentro de um projeto — o v8 provider coleta uma vez para a corrida inteira.
 
@@ -26,6 +26,20 @@ Vitest usa `test.projects` **dentro de** `vitest.config.ts` (a API atual — `vi
 Handler de IPC como closure (`ipcMain.handle('x', async (_e, args) => { /* lógica aqui */ })`) só é alcançável subindo o Electron inteiro — nasce direto no nível 4, cem vezes mais lento, e na prática fica sem teste nenhum.
 
 Handler como **função exportada**, registrada por um `handle()` genérico (ver skill `architecture`), é chamável como função comum em Node puro. É a propriedade que mais paga do contrato tipado, e não era o objetivo declarado — é consequência. Vale o argumento quando aparecer a tentação de escrever "só este aqui" como closure.
+
+## Níveis 4–5: Playwright dirige o Electron de verdade
+
+`_electron.launch({ args: ['.'] })` lança o app contra o `main` do `package.json` (`./out/main/index.js`) — precisa de `pnpm build` antes, nunca roda contra o dev server do Vite. `electronApp.firstWindow()` devolve a `Page`; **dois `evaluate` diferentes, dois contextos diferentes**: `electronApp.evaluate(({ dialog }) => ...)` roda no processo **main** (é como se estuba `dialog.showOpenDialog` — funciona porque o handler real lê a propriedade dentro do corpo da função, late-bound, não capturada no registro), `page.evaluate(() => window...)` roda no **renderer**. `fronteira.spec.ts`/`security-boundary.spec.ts` (o teste mais valioso da fase: pega um `sandbox: false` reintroduzido por merge distraído) precisa da lib `DOM` no `tsconfig.e2e.json` só para tipar o `window` do callback — o cast fica dentro do `evaluate`, nunca alargando o tsconfig com a global augmentation do preload, porque o ponto do teste é justamente verificar globals sem tipo.
+
+`playwright.config.ts` com dois `projects` (`dev`: `e2e/dev/**`, roda contra `out/`; `packaged`: `e2e/packaged/**`, roda contra `dist/win-unpacked/`) e `workers: 1` — instâncias paralelas do Electron brigam pelo mesmo `userData`.
+
+Nível 5 usa `electron-playwright-helpers`: `findLatestBuild('dist')` + `parseElectronApp(buildDir)`. A doc do pacote descreve a convenção como `out/<nome>-<plataforma>`, mas a função na prática aceita qualquer nome de pasta cujo split por hífen contenha um token de plataforma reconhecido — `win-unpacked` (saída padrão do `electron-builder --dir` no Windows) bate, porque contém `win`. Confirmado lendo `find_parse_builds.js` antes de escrever o teste, não supondo pela doc.
+
+**Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
+
+## Armadilha grave: `electron-builder` empacota direto do disco, não do que o git rastreia
+
+`app.asar` não sabe o que está no `.gitignore` — ele empacota tudo que sobrevive ao filtro `files`, de onde estiver no disco. `.claude/settings.local.json` está no `.gitignore` (guarda a API key pessoal do MCP Context7) e mesmo assim vazava para dentro do instalador, porque `files` nunca excluía `.claude/`. Junto vazavam `coverage/`, `docs/`, `e2e/`, `scripts/`, `test/`, `test-results/`, `playwright-report/` e os configs de teste. Verificação real, não leitura de glob: `pnpm dlx @electron/asar list dist/win-unpacked/resources/app.asar | grep <candidato>` — antes e depois de qualquer mudança em `files`. `.gitignore` e `files` respondem perguntas diferentes (o que entra no histórico vs. o que entra no que o usuário instala) e nada as sincroniza automaticamente; todo tipo novo de arquivo local-only exige revisar as duas.
 
 ## Armadilha: `electron` importado por valor quebra em teste, mesmo só como default
 

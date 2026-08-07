@@ -47,7 +47,7 @@ Cada fase segue a mesma estrutura:
 | [04](../implemented/04-testes-rapidos.md) | Testes rápidos — **implementada** | Vitest com dois projetos, níveis 1–3 da pirâmide | 02 |
 | [05](../implemented/05-design-tokens.md) | Design tokens — **implementada** | `tokens.css`, primitivos, densidade de desktop, `StateView` | 01, 04 |
 | [06](../implemented/06-primeira-feature.md) | Primeira feature vertical — **implementada** | `open-dataset` de ponta a ponta, com progresso e cancelamento | 02–05 |
-| [07](07-e2e-e-empacotamento.md) | E2E e empacotamento | Playwright em dev e contra o instalador | 06 |
+| [07](../implemented/07-e2e-e-empacotamento.md) | E2E e empacotamento — **implementada** | Playwright em dev e contra o instalador | 06 |
 | [08](08-automacao-e-registro.md) | Automação e registro | Hooks, `check:fast`, atualização do `CLAUDE.md`, skills | 07 |
 
 E, sem número de fase por não ser executável ainda:

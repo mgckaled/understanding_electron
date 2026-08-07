@@ -2,7 +2,7 @@
 node_modules
 
 # saída do electron-vite (dev/build) e do electron-builder (empacotamento) —
-# são pastas diferentes de propósito, ver docs/plan/active/07-e2e-e-empacotamento.md § D7.5
+# são pastas diferentes de propósito, ver docs/plan/implemented/07-e2e-e-empacotamento.md § D7.5
 out
 dist
 
@@ -16,15 +16,17 @@ dist
 .eslintcache
 
 # segredos e configuração local. Nunca no repositório — ver CLAUDE.md § Segurança
-# e docs/plan/active/03-sandbox-e-seguranca.md. O electron-builder.yml já pressupõe
-# a existência destes arquivos e os exclui do pacote.
+# e docs/plan/implemented/03-sandbox-e-seguranca.md. O electron-builder.yml já
+# exclui estes do pacote — mas ele empacota direto do disco, não do git, e a
+# lista de exclusão precisa ser mantida à mão em paralelo: ver a armadilha do
+# .claude/settings.local.json em docs/HISTORY.md (fase 07).
 .env
 .env.*
 
-# Vitest — docs/plan/active/04-testes-rapidos.md
+# Vitest — docs/plan/implemented/04-testes-rapidos.md
 coverage
 
-# Playwright — docs/plan/active/07-e2e-e-empacotamento.md
+# Playwright — docs/plan/implemented/07-e2e-e-empacotamento.md
 playwright-report
 test-results
 

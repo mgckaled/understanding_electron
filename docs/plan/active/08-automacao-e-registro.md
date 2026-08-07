@@ -1,6 +1,6 @@
 # 08 — Automação e registro
 
-**Depende de:** [07](07-e2e-e-empacotamento.md) · **Entrega:** hooks de verificação, `CLAUDE.md` atualizado, três skills, plano arquivado
+**Depende de:** [07](../implemented/07-e2e-e-empacotamento.md) · **Entrega:** hooks de verificação, `CLAUDE.md` atualizado, três skills, plano arquivado
 
 ---
 
@@ -59,7 +59,7 @@ A última só entra em vigor quando o `tokens.css` da [fase 05](../implemented/0
 
 ### D8.2 — E2E nunca entra em hook
 
-Os níveis 4 e 5 continuam manuais, conforme a D7.3 da [fase 07](07-e2e-e-empacotamento.md).
+Os níveis 4 e 5 continuam manuais, conforme a D7.3 da [fase 07](../implemented/07-e2e-e-empacotamento.md).
 
 O raciocínio já foi feito e vale repetir porque é a decisão mais fácil de reverter por engano: se o ciclo de retorno passa de alguns segundos, o trabalho passa a ser agrupado para amortizar a espera — e agrupar mudanças é exatamente o oposto do **uma variável por vez** que o [`CLAUDE.md`](../../../CLAUDE.md) estabelece como princípio.
 
@@ -234,6 +234,6 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [07 — E2E e empacotamento](07-e2e-e-empacotamento.md) · **Índice:** [README](README.md)
+**Anterior:** [07 — E2E e empacotamento](../implemented/07-e2e-e-empacotamento.md) · **Índice:** [README](README.md)
 
 **Fim do plano de fundação.** O trabalho continua em [`docs/study/05-proximos-passos.md`](../../study/05-proximos-passos.md).

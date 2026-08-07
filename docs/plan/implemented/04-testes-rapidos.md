@@ -6,7 +6,7 @@
 
 ## Por que esta fase existe
 
-A pirâmide de testes de um app Electron tem cinco níveis, não três. Esta fase entrega os três primeiros — os que rodam em milissegundos e cabem no ciclo de edição. Os dois últimos, que precisam subir o Electron de verdade, ficam na [fase 07](../active/07-e2e-e-empacotamento.md).
+A pirâmide de testes de um app Electron tem cinco níveis, não três. Esta fase entrega os três primeiros — os que rodam em milissegundos e cabem no ciclo de edição. Os dois últimos, que precisam subir o Electron de verdade, ficam na [fase 07](07-e2e-e-empacotamento.md).
 
 | Nível | Onde | Ferramenta | Custo |
 |---|---|---|---|
@@ -193,7 +193,7 @@ E uma verificação de tempo: **`pnpm check:fast` deve terminar em menos de 15 s
 
 ## O que fica para depois
 
-- **Níveis 4 e 5** — [fase 07](../active/07-e2e-e-empacotamento.md), depois de existir uma feature que valha percorrer de ponta a ponta.
+- **Níveis 4 e 5** — [fase 07](07-e2e-e-empacotamento.md), depois de existir uma feature que valha percorrer de ponta a ponta.
 - **Testes de `utilityProcess`** — quando existir. A regra já está decidida: teste a função pura de `core/`, não o processo. O *shim* de mensageria ganha um teste de nível 4.
 - **Storybook** — fora de escopo. Enquanto os primitivos couberem numa tela, ele custa mais manutenção do que entrega.
 

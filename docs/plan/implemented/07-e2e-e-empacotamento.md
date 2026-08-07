@@ -1,6 +1,6 @@
 # 07 — E2E e empacotamento
 
-**Depende de:** [06](../implemented/06-primeira-feature.md) · **Entrega:** níveis 4 e 5 da pirâmide, `asarUnpack` conferido, instalador validado
+**Depende de:** [06](06-primeira-feature.md) · **Entrega:** níveis 4 e 5 da pirâmide, `asarUnpack` conferido, instalador validado
 
 ---
 
@@ -20,7 +20,7 @@ O [`05-proximos-passos.md`](../../study/05-proximos-passos.md) já antecipa o ca
 
 Os níveis 4 e 5 são lentos: dezenas de segundos um, minutos o outro. Colocá-los cedo teria custado tempo em todas as fases anteriores sem pegar nada — não havia comportamento de ponta a ponta para percorrer.
 
-Agora há: a [fase 06](../implemented/06-primeira-feature.md) entregou um caminho que atravessa os três processos, e é ele que vale percorrer.
+Agora há: a [fase 06](06-primeira-feature.md) entregou um caminho que atravessa os três processos, e é ele que vale percorrer.
 
 ---
 
@@ -52,7 +52,7 @@ Teste de E2E que verifica regra de negócio é um teste de nível 1 rodando cem 
 
 Ele exige um `build:unpack` antes, o que leva minutos. Fica num script próprio, chamado à mão e — quando houver — na integração contínua depois do empacotamento.
 
-O `check:fast` da [fase 04](../implemented/04-testes-rapidos.md) não muda. É o compromisso que mantém o ciclo do agente abaixo de quinze segundos.
+O `check:fast` da [fase 04](04-testes-rapidos.md) não muda. É o compromisso que mantém o ciclo do agente abaixo de quinze segundos.
 
 ### D7.4 — O E2E tem `tsconfig` próprio
 
@@ -117,7 +117,7 @@ Em `e2e/dev/`, com `_electron.launch({ args: ['.'] })`:
 
 Este é o teste mais valioso do arquivo inteiro. Toda a fase 03 é uma configuração que ninguém revisita, e um `sandbox: false` reintroduzido por um merge distraído não quebra nada visível — só apaga a barreira em silêncio. A última linha também pega o oposto: alguém expondo algo a mais no preload "só para depurar".
 
-**`abrir-dataset.spec.ts`** — o caminho completo da [fase 06](../implemented/06-primeira-feature.md). O diálogo nativo não é dirigível pelo Playwright; use `electron.evaluate` para instalar um `dialog.showOpenDialog` falso no main antes de clicar, devolvendo um arquivo de teste versionado em `e2e/fixtures/`.
+**`abrir-dataset.spec.ts`** — o caminho completo da [fase 06](06-primeira-feature.md). O diálogo nativo não é dirigível pelo Playwright; use `electron.evaluate` para instalar um `dialog.showOpenDialog` falso no main antes de clicar, devolvendo um arquivo de teste versionado em `e2e/fixtures/`.
 
 **Aceite:** os três arquivos verdes; `pnpm test:e2e` abaixo de 60 segundos.
 **Commit:** `test(e2e): janela, fronteira de segurança e abertura de dataset`
@@ -189,10 +189,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-07 | 1–5 | concluída | Playwright 1.62.1 não baixa browsers no install (sem postinstall; `_electron.launch` usa o Electron do projeto) — nada a ajustar em `allowBuilds`. `findLatestBuild('dist')` funcionou sem fallback: `win-unpacked` contém o token `win`. Achado sério no passo 3: `app.asar` empacotava `.claude/settings.local.json` (chave de API pessoal do MCP Context7) junto com `coverage/`, `docs/`, `e2e/`, `scripts/`, `test/`, `test-results/`, `playwright-report/` e três configs de teste — corrigido em `electron-builder.yml`, reconferido com `@electron/asar list` (87 entradas a menos). Ciclo vermelho→verde do smoke test provado sabotando e revertendo `files`. Nomes de arquivo em `e2e/dev/` copiados em português direto do texto do plano — corrigido para inglês (`window`, `security-boundary`, `open-dataset`), recaída na mesma armadilha da fase 03. `pnpm check:fast` segue vermelho pela falha pré-existente de `guard.mjs` (ROADMAP §4, não desta fase); `test:e2e` (15,4s) e `test:e2e:packaged` verdes, ambos abaixo do limite. Executável de `dist/win-unpacked/` validado pelo usuário: abre e a feature funciona contra arquivo real. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [06 — Primeira feature vertical](../implemented/06-primeira-feature.md) · **Índice:** [README](README.md) · **Próximo:** [08 — Automação e registro](08-automacao-e-registro.md)
+**Anterior:** [06 — Primeira feature vertical](06-primeira-feature.md) · **Índice:** [README](../active/README.md) · **Próximo:** [08 — Automação e registro](../active/08-automacao-e-registro.md)

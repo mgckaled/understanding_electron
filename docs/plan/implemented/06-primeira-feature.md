@@ -257,4 +257,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [05 — Design tokens](05-design-tokens.md) · **Índice:** [README](../active/README.md) · **Próximo:** [07 — E2E e empacotamento](../active/07-e2e-e-empacotamento.md)
+**Anterior:** [05 — Design tokens](05-design-tokens.md) · **Índice:** [README](../active/README.md) · **Próximo:** [07 — E2E e empacotamento](07-e2e-e-empacotamento.md)
