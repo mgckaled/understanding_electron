@@ -3,6 +3,9 @@
   "include": ["e2e/**/*", "playwright.config.ts"],
   "compilerOptions": {
     "composite": true,
+    // page.evaluate() callbacks run inside the browser context — DOM is
+    // needed to typecheck `window`/`document` references inside them.
+    "lib": ["ES2022", "DOM"],
     "paths": {
       "@shared/*": ["./src/shared/*"]
     }
