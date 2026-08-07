@@ -1,352 +1,229 @@
 # 03 — Anatomia do projeto
 
-O comando `pnpm create @quick-start/electron .` gerou cerca de vinte arquivos. Este documento percorre os que importam e explica o papel de cada um. Ler código de scaffold com atenção é uma das formas mais eficientes de aprender um framework — o template embute decisões que alguém experiente já tomou.
+Este documento responde a uma pergunta prática: **onde as coisas moram, e por quê**. É o passeio pela árvore do projeto como ela está — não como o gerador de projetos a entregou.
+
+A distinção importa. Um scaffold é um chute educado: alguém que não conhece o seu problema organizou pastas que servem para a maioria dos casos. O que você lê aqui é o resultado de sete fases de trabalho que moveram, dividiram e renomearam quase tudo — e cada mudança tem um motivo registrado.
+
+> 🔍 Se quiser ver a distância percorrida, o [diário de bordo](04-diario-de-bordo.md) e o [`docs/HISTORY.md`](../HISTORY.md) contam o caminho. Aqui interessa o destino.
+
+---
 
 ## Mapa geral
 
-```
+```text
 data-lab/
 ├── src/
-│   ├── main/index.ts          ← processo principal (Node)
-│   ├── preload/
-│   │   ├── index.ts           ← a ponte
-│   │   └── index.d.ts         ← tipos da ponte
-│   └── renderer/
-│       ├── index.html         ← ponto de entrada da página
-│       └── src/               ← aplicação React
-├── build/                     ← ícones e recursos do instalador
-├── resources/                 ← recursos empacotados no app
-├── out/                       ← saída compilada (não versionada)
-├── electron.vite.config.ts    ← configuração de build dos 3 alvos
-├── electron-builder.yml       ← configuração de empacotamento
-├── tsconfig.json              ← raiz, só aponta para os outros dois
-├── tsconfig.node.json         ← tipos para main + preload
-├── tsconfig.web.json          ← tipos para renderer
-├── pnpm-workspace.yaml        ← configuração do pnpm
-└── package.json
+│   ├── shared/      contrato e vocabulário — os três processos conhecem
+│   ├── core/        lógica pura — sem electron, sem react
+│   ├── main/        ciclo de vida, janelas, roteamento de IPC
+│   ├── workers/     entrypoints de processo auxiliar (ainda vazia)
+│   ├── preload/     a única superfície exposta ao renderer
+│   └── renderer/    a interface, em React
+├── config/          o que é lido por mais de uma ferramenta
+├── e2e/             testes que sobem o aplicativo de verdade
+├── test/            apoio para os testes rápidos
+├── scripts/         utilitários de desenvolvimento
+├── build/           ícones e recursos do instalador
+├── resources/       recursos que vão empacotados no aplicativo
+└── docs/            esta documentação
 ```
 
-A divisão de `src/` em três pastas **espelha exatamente os três processos**. Não é organização estética: são três alvos de compilação distintos, com regras diferentes.
+Os arquivos de configuração da raiz — e são muitos — têm caderno próprio: [06 — A montanha de configuração](06-a-montanha-de-configuracao.md).
 
 ---
 
-## `src/main/index.ts` — o processo principal
+## As seis pastas de `src/`
 
-O arquivo mais denso do template. Vamos por partes.
+A primeira coisa a entender é que **três delas não foram escolha nossa**. `main`, `preload` e `renderer` são impostas pelo Electron: são três ambientes de execução com globais diferentes e compilação separada. Qualquer projeto Electron tem essa divisão, com ou sem nome.
 
-### Criando a janela
+As outras três nomeiam o que sobra quando você para de misturar coisas.
 
-```ts
-const mainWindow = new BrowserWindow({
-  width: 900,
-  height: 670,
-  show: false,
-  autoHideMenuBar: true,
-  webPreferences: {
-    preload: join(__dirname, '../preload/index.js'),
-    sandbox: false
-  }
-})
+### `shared/` — o vocabulário comum
+
+O que os três processos precisam concordar: o contrato de comunicação, os tipos de domínio, as constantes de identidade.
+
+```text
+src/shared/
+├── ipc.ts        o contrato: que canais existem, o que entra, o que sai
+├── channels.ts   nomes de canal que o preload precisa em tempo de execução
+└── meta.ts       identidade do aplicativo
 ```
 
-`BrowserWindow` é a classe que representa uma janela. Cada instância cria um processo de renderização novo.
+⚠️ `channels.ts` existir separado de `ipc.ts` parece redundância e não é. `ipc.ts` importa uma biblioteca de validação; `channels.ts` não importa nada. A razão é o sandbox: o preload não consegue carregar biblioteca de terceiro, então **todo valor que o preload consome de `shared/` precisa vir de um arquivo sem dependência externa**. Ignorar isso derrubou a interface inteira uma vez, sem nenhum erro no terminal. O caso está no [diário de bordo](04-diario-de-bordo.md).
 
-**`show: false`** parece contraintuitivo — criar uma janela invisível. É uma técnica deliberada, explicada logo abaixo:
+### `core/` — a lógica que não sabe onde está rodando
 
-```ts
-mainWindow.on('ready-to-show', () => {
-  mainWindow.show()
-})
+Funções puras: recebem dados, devolvem dados. Nenhum `import` de `electron`, nenhum de `react`.
+
+```text
+src/core/
+├── result.ts        construtores de sucesso e falha
+├── url.ts           validação de esquema antes de entregar ao sistema
+└── dataset/scan.ts  dedução de separador e contagem de linhas
 ```
 
-A janela só aparece quando o conteúdo terminou de renderizar. Sem isso, o usuário veria um retângulo branco piscando antes da interface aparecer. Detalhe pequeno que separa app que parece profissional de app que parece protótipo.
+O critério que separa `core/` de `shared/` é **vocabulário contra comportamento**. `shared/` diz *o que as coisas são*; `core/` diz *o que se faz com elas*. Um tipo `DatasetSummary` é vocabulário. A função que percorre linhas e deduz o separador é comportamento.
 
-**`preload`** aponta para o arquivo *compilado*, em `out/`, não para o `.ts` que você edita. Vale internalizar: o Electron nunca executa TypeScript diretamente — sempre o JavaScript gerado pelo build.
+Por que isso paga: `core/` é a única camada testável sem nenhuma cerimônia. Sem subir Electron, sem simular navegador, sem mock. É também a única com meta de cobertura, justamente porque é onde o teste é barato e o erro é caro.
 
-### Abrindo links externos com segurança
+### `main/` — coordena, e nada mais
 
-```ts
-mainWindow.webContents.setWindowOpenHandler((details) => {
-  shell.openExternal(details.url)
-  return { action: 'deny' }
-})
+```text
+src/main/
+├── index.ts              ciclo de vida e criação de janela
+├── jobs.ts               registro de tarefas canceláveis
+├── ipc/
+│   ├── registry.ts       o único arquivo que conhece ipcMain.handle
+│   └── register-all.ts   liga cada canal ao seu handler
+└── features/
+    ├── app/handlers.ts
+    ├── dataset/handlers.ts
+    ├── dataset/lines.ts
+    ├── job/handlers.ts
+    └── shell/handlers.ts
 ```
 
-Isso intercepta qualquer tentativa de abrir uma nova janela. Em vez de permitir, abre a URL no navegador padrão do sistema e **nega** a abertura interna.
+A regra que mantém isso saudável: **`index.ts` não cresce**. Ele cria a janela e cuida do ciclo de vida do aplicativo. Lógica de negócio ali dentro fica intestável e imóvel — e mover para um processo auxiliar depois vira reescrita, não refatoração.
 
-É uma proteção importante. Se um link abrisse numa janela Electron, ele carregaria conteúdo externo dentro do seu app, com o seu preload disponível. Empurrar para o navegador do sistema mantém a fronteira limpa.
+Repare em `features/`: cada assunto tem sua pasta, com o handler como **função exportada comum**. Não é detalhe de organização. Um handler escrito direto dentro do registro de IPC só é alcançável subindo o Electron inteiro; como função exportada, ele é chamável em Node puro, num teste de milissegundos. É a propriedade que mais paga em todo o desenho, e ela caiu de bônus.
 
-### Desenvolvimento versus produção
+### `workers/` — vazia, de propósito
 
-```ts
-if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-  mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-} else {
-  mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-}
+Reservada para processos auxiliares, onde vai morar o trabalho pesado quando a camada de dados chegar. Está no repositório vazia porque o lugar já foi decidido; deixar a decisão registrada custa uma pasta e evita que alguém, com pressa, coloque uma query de dez segundos no lugar errado.
+
+### `preload/` — fino a ponto de não ter o que testar
+
+```text
+src/preload/
+├── index.ts     monta o objeto exposto e o publica na ponte
+└── index.d.ts   informa ao TypeScript que window.api existe
 ```
 
-Duas formas de carregar a interface:
-
-- **Desenvolvimento:** a janela aponta para o servidor do Vite (`http://localhost:5173`). É isso que permite HMR — o Vite empurra as mudanças e a tela atualiza sem reiniciar.
-- **Produção:** carrega o arquivo HTML compilado do disco. Não há servidor.
-
-Por isso o `pnpm dev` mostra a URL do Vite no terminal antes de abrir a janela.
-
-### O ciclo de vida do aplicativo
+O `index.d.ts` é onde TypeScript e Electron se encontram de forma elegante:
 
 ```ts
-app.whenReady().then(() => { /* ... */ })
-```
-
-`app` representa a aplicação. `whenReady()` é uma `Promise` que resolve quando o Electron terminou de inicializar. Criar janela antes disso falha — e é um erro comum de quem está começando.
-
-```ts
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-app.on('activate', function () {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
-})
-```
-
-Esses dois blocos existem por uma diferença cultural entre sistemas operacionais. No Windows e no Linux, fechar a última janela encerra o programa. No macOS (`darwin`), o aplicativo continua vivo na dock — e clicar no ícone recria a janela.
-
-É um bom exemplo de que "multiplataforma" não significa "idêntico em toda plataforma". O Electron entrega a mesma base de código, mas as convenções de cada sistema continuam sendo sua responsabilidade.
-
-### O IPC de exemplo
-
-```ts
-ipcMain.on('ping', () => console.log('pong'))
-```
-
-Uma linha, mas é o embrião de tudo. `ipcMain` escuta mensagens vindas dos renderers. Quando o botão "Send IPC" é clicado, esta função roda e imprime `pong` **no terminal** — não no DevTools.
-
----
-
-## `src/preload/index.ts` — a ponte
-
-Curto e carregado de significado:
-
-```ts
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
-
-const api = {}
-
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
-  }
-} else {
-  window.electron = electronAPI
-  window.api = api
-}
-```
-
-`process.contextIsolated` informa se o isolamento de contexto está ativo. Se estiver (o padrão e o recomendado), o código usa a ponte formal; se não, atribui direto no `window`. O `else` existe só para compatibilidade com configurações legadas — no nosso caso, ele nunca executa.
-
-**`const api = {}`** é o seu espaço. Está vazio de propósito: é aqui que as funções do seu aplicativo vão ser expostas. Quando o DuckDB entrar, algo assim vai aparecer:
-
-```ts
-const api = {
-  executarQuery: (sql: string) => ipcRenderer.invoke('db:query', sql)
-}
-```
-
-E o renderer chamaria `window.api.executarQuery('SELECT ...')`.
-
-Repare no desenho: o renderer nunca ganha acesso genérico ao banco. Ele ganha acesso a *uma função específica*. Se amanhã você quiser validar o SQL, registrar log ou limitar o número de linhas, o ponto de intervenção é único e óbvio.
-
----
-
-## `src/preload/index.d.ts` — o contrato tipado
-
-```ts
-import { ElectronAPI } from '@electron-toolkit/preload'
+import type { Api } from '@shared/ipc'
 
 declare global {
   interface Window {
-    electron: ElectronAPI
-    api: unknown
+    api: Api
   }
 }
 ```
 
-Este arquivo é onde TypeScript e Electron se encontram de forma elegante.
+O problema que ele resolve: `window.api` só existe em tempo de execução, criado pelo preload. O TypeScript, analisando o renderer estaticamente, não teria como saber disso. `declare global` diz ao compilador que aquela propriedade existe — e, por vir do mesmo tipo `Api` que o main implementa, o autocompletar do renderer passa a refletir o contrato real.
 
-O problema: `window.electron` só existe em tempo de execução, criado pelo preload. O TypeScript, analisando o código do renderer estaticamente, não teria como saber disso — reclamaria que a propriedade não existe.
+A extensão `.d.ts` significa *declaration file*: só declarações de tipo, nada executável.
 
-`declare global` resolve dizendo ao compilador: "confie em mim, o objeto `Window` tem essas propriedades". A extensão `.d.ts` significa *declaration file* — arquivo que contém apenas declarações de tipo, sem código executável.
+### `renderer/` — uma aplicação web comum
 
-**`api: unknown`** é o ponto a evoluir. `unknown` é o tipo "não sei o que é", e obriga verificação antes de qualquer uso. Quando você popular o `api` no preload, troque por uma interface de verdade:
-
-```ts
-interface DataLabAPI {
-  executarQuery: (sql: string) => Promise<Uint8Array>
-}
-
-declare global {
-  interface Window {
-    electron: ElectronAPI
-    api: DataLabAPI
-  }
-}
+```text
+src/renderer/src/
+├── App.tsx
+├── main.tsx
+├── components/
+├── features/
+│   └── open-dataset/     uma fatia vertical completa
+└── shared/
+    ├── hooks/            comportamento reutilizável
+    └── ui/               primitivos, tokens e estado de tela
 ```
 
-A partir daí o autocompletar funciona no renderer, e mudar a assinatura no preload sem atualizar quem chama vira erro de compilação. **É esse arquivo que transforma o IPC — que é essencialmente troca de mensagens sem garantias — em algo verificável.** Sem ele, você teria strings mágicas de um lado e `any` do outro.
+Nada aqui sabe o que é Electron, exceto pelo `window.api`. Todo conhecimento de React se aplica sem tradução.
+
+A organização em `features/` é uma **fatia vertical**: a pasta `open-dataset/` contém o painel, o hook que orquestra a operação e o CSS — tudo que aquela funcionalidade precisa, junto. O que é genérico o bastante para servir a duas features sobe para `shared/`.
+
+⚠️ Existem dois `shared/` no projeto — `src/shared/` e `src/renderer/src/shared/` — e eles significam coisas diferentes. O primeiro atravessa a fronteira de processo; o segundo é reuso interno do renderer. A ambiguidade já custou uma métrica de cobertura distorcida em silêncio, porque um padrão de busca mal ancorado capturou os dois.
 
 ---
 
-## `src/renderer/` — a aplicação React
+## A tabela de importação
 
-### `index.html`
+Esta é a parte que transforma as pastas em arquitetura. Cada camada pode importar uma lista, e não pode importar o resto:
 
-```html
-<meta
-  http-equiv="Content-Security-Policy"
-  content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-/>
-```
+| Camada | Pode importar | Nunca importa |
+|---|---|---|
+| `shared/` | apenas a lib de validação | tudo o mais |
+| `core/` | `shared/`, biblioteca padrão do Node | `electron`, `react`, qualquer camada acima |
+| `main/` | `shared/`, `core/`, `electron` | `react`, `renderer/`, `preload/` |
+| `workers/` | `shared/`, `core/` | `react`, `renderer/`, `main/` |
+| `preload/` | `shared/` (**só tipos**), `electron` | `core/`, `main/`, `renderer/` |
+| `renderer/` | `shared/` (só tipos), `core/`, `react` | `electron`, `main/`, `preload/` |
 
-**CSP** (*Content Security Policy*) é uma política que declara de onde a página pode carregar recursos. Aqui, `'self'` significa "apenas da própria origem" — nenhum script de domínio externo executa, mesmo que alguém consiga injetar uma tag `<script>`.
+Duas linhas merecem atenção.
 
-É mais uma camada de defesa, complementar ao isolamento de contexto. E é a razão de você não conseguir simplesmente colar um `<script src="https://cdn...">` e esperar que funcione.
+**`renderer/` nunca importa `electron`.** É o erro mais comum e mais silencioso em Electron, porque o TypeScript *aceita* — o pacote está instalado e os tipos resolvem. A falha só aparece em execução, no navegador, como `require is not defined`.
 
-### `main.tsx` e `App.tsx`
+**`preload/` importa `shared/` só por tipo.** Tipo desaparece na compilação; valor não. É a regra que o `channels.ts` existe para respeitar.
 
-```tsx
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-)
-```
-
-React padrão, sem nada de Electron. É o ponto: o renderer é uma aplicação web comum. Todo conhecimento de React se aplica sem tradução.
-
-A única linha que revela o contexto Electron está em `App.tsx`:
-
-```tsx
-const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
-```
-
-### `components/Versions.tsx`
-
-```tsx
-const [versions] = useState(window.electron.process.versions)
-```
-
-É esse componente que desenha a barra inferior com Electron v42.8.0, Chromium v148 e Node v24.18.0.
-
-Vale reparar: `window.electron.process` **não é** o `process` global do Node. É uma cópia limitada, exposta deliberadamente pelo preload. O renderer não tem o `process` de verdade — só o que a ponte permitiu passar. É o modelo de segurança funcionando na prática, visível num componente de cinco linhas.
+E o detalhe que faz diferença: **essa tabela é verificada por lint**, não por revisão de código. Regra que existe só em documento é regra que se descobre violada seis arquivos depois.
 
 ---
 
-## Os três `tsconfig`
+## Os `tsconfig`
 
-Talvez a parte mais confusa do template para quem chega, e uma das mais instrutivas.
+Talvez a parte mais confusa para quem chega, e uma das mais instrutivas. São quatro arquivos, três projetos.
 
-**`tsconfig.json`** — não configura nada:
+**`tsconfig.json`** não configura nada — só aponta:
 
 ```json
 {
   "files": [],
   "references": [
     { "path": "./tsconfig.node.json" },
-    { "path": "./tsconfig.web.json" }
+    { "path": "./tsconfig.web.json" },
+    { "path": "./tsconfig.e2e.json" }
   ]
 }
 ```
 
-Isso é **project references**, um recurso do TypeScript para dividir uma base de código em projetos independentes. O arquivo raiz só aponta para os dois reais.
+Isso é **project references**, um recurso do TypeScript para dividir uma base de código em projetos independentes.
 
-**`tsconfig.node.json`** cobre `src/main` e `src/preload`. Herda de uma base voltada a Node: tipos de `fs`, `path`, `process` disponíveis; APIs de navegador, não.
+| Projeto | Cobre | Ambiente |
+|---|---|---|
+| `tsconfig.node.json` | `main`, `preload`, `shared`, `core`, `workers`, `config` | Node: `fs`, `path`, `process` |
+| `tsconfig.web.json` | `renderer`, `shared`, `core`, `test` | navegador: `document`, `window`, `fetch` |
+| `tsconfig.e2e.json` | `e2e` | testes que dirigem o aplicativo real |
 
-**`tsconfig.web.json`** cobre `src/renderer`. Herda de uma base voltada ao navegador: `document`, `window`, `fetch` disponíveis; `fs` e `path`, não.
+**Por que separar?** Porque a separação *é* a arquitetura. Com um `tsconfig` só, você poderia escrever `import fs from 'fs'` num componente React e o compilador aprovaria; o erro apareceria em execução. Com projetos separados, isso vira erro de compilação imediato.
 
-**Por que separar?** Porque a separação *é* a arquitetura. Se houvesse um tsconfig só, você poderia escrever `import fs from 'fs'` num componente React e o TypeScript aprovaria. Só descobriria o erro quando a aplicação quebrasse em execução.
-
-Com dois projetos separados, essa tentativa vira erro de compilação imediato. **O sistema de tipos passa a reforçar o modelo de segurança do Electron** — a fronteira entre os processos deixa de ser convenção e vira algo verificado por máquina.
-
-É por isso que o `package.json` tem dois comandos de verificação:
-
-```json
-"typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
-"typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-"typecheck": "npm run typecheck:node && npm run typecheck:web"
-```
-
-`--noEmit` significa "verifique os tipos, mas não gere JavaScript" — a geração é trabalho do Vite. Rodar só um dos dois dá cobertura parcial com aparência de cobertura total.
+**O sistema de tipos passa a reforçar o modelo de segurança do Electron** — a fronteira entre processos deixa de ser convenção e vira algo verificado por máquina. É por isso que `pnpm typecheck` roda os três: verificar um só dá cobertura parcial com aparência de cobertura total.
 
 ---
 
-## `electron.vite.config.ts`
+## Os aliases
+
+Um arquivo pequeno com efeito desproporcional (`config/aliases.ts`):
 
 ```ts
-export default defineConfig({
-  main: {},
-  preload: {},
-  renderer: {
-    resolve: {
-      alias: { '@renderer': resolve('src/renderer/src') }
-    },
-    plugins: [react()]
-  }
-})
+export const aliases = {
+  '@shared': resolve('src/shared'),
+  '@core': resolve('src/core'),
+  '@renderer': resolve('src/renderer/src')
+}
 ```
 
-Três chaves, uma por alvo de compilação. `main` e `preload` estão vazias — os padrões bastam.
+Sem isso, um arquivo fundo na árvore importaria o contrato como `../../../../../shared/ipc`, e qualquer arquivo que mudasse de lugar quebraria a contagem de pontos.
 
-O renderer precisa de duas coisas: o plugin do React (para transformar JSX) e um **alias**, que permite escrever `import Botao from '@renderer/components/Botao'` em vez de contar `../../..`.
+⚠️ O ponto interessante é **por que este arquivo existe em vez de a lista estar escrita direto na configuração do bundler**: o mesmo alias precisa ser conhecido pelo bundler (para resolver na hora de compilar) e pelo TypeScript (para resolver na hora de checar). São ferramentas diferentes lendo arquivos diferentes. Um arquivo único que ambos consomem é o que impede que divirjam — e alias divergente produz um sintoma desconcertante: o editor reclama mas o build funciona, ou o contrário.
 
-⚠️ O alias precisa ser declarado **em dois lugares**: aqui (para o Vite resolver na hora de compilar) e em `tsconfig.web.json`, no campo `paths` (para o TypeScript resolver na hora de checar). Esquecer um dos dois produz um erro desconcertante — o editor reclama mas o build funciona, ou o contrário.
-
----
-
-## `electron-builder.yml`
-
-Configuração de empacotamento. Dois pontos que vão importar em breve:
-
-```yaml
-asarUnpack:
-  - resources/**
-```
-
-**ASAR** é um formato de arquivo compactado onde o electron-builder guarda o código da aplicação. O problema: bibliotecas nativas (`.node`) **não carregam de dentro de um ASAR** — o sistema operacional precisa de um arquivo real no disco para carregar código binário. `asarUnpack` lista o que fica de fora.
-
-Quando o DuckDB entrar, essa lista provavelmente vai precisar de uma entrada. Fica anotado.
-
-```yaml
-npmRebuild: false
-```
-
-Desliga a recompilação automática de módulos nativos durante o empacotamento — porque isso já é feito antes, pelo `postinstall` do `package.json`:
-
-```json
-"postinstall": "electron-builder install-app-deps"
-```
-
-É esse comando que você viu rodar em todo `pnpm install`, imprimindo `executing @electron/rebuild electronVersion=42.8.0`. Ele garante que módulos nativos batam com a ABI do Electron. **É o mesmo mecanismo que o DuckDB vai exercitar** — e é bom que já esteja provado funcionando.
+`@renderer` só existe no projeto web, deliberadamente: `main/` e `workers/` não devem importar do renderer, e a ausência do atalho é mais uma barreira.
 
 ---
 
 ## O que ler primeiro
 
-Se for gastar meia hora com o código antes de seguir, a sugestão é seguir o caminho do botão "Send IPC":
+Se for gastar meia hora com o código, siga o caminho de uma operação real — abrir um arquivo de dados. São seis paradas, e elas são o projeto inteiro em miniatura:
 
-1. `src/renderer/src/App.tsx` — onde o clique dispara
-2. `src/preload/index.ts` — a ponte que tornou a chamada possível
-3. `src/main/index.ts` — onde a mensagem chega (procure por `ipcMain.on`)
+1. `src/renderer/src/features/open-dataset/OpenDatasetPanel.tsx` — onde o clique começa
+2. `src/renderer/src/features/open-dataset/useOpenDataset.ts` — quem orquestra a operação
+3. `src/shared/ipc.ts` — o contrato que descreve o que pode ser pedido
+4. `src/preload/index.ts` — a travessia
+5. `src/main/ipc/register-all.ts` — onde o pedido encontra quem o atende
+6. `src/core/dataset/scan.ts` — o trabalho de verdade, em função pura
 
-São três arquivos e umas dez linhas relevantes. Mas esse trajeto é o Electron inteiro em miniatura, e tudo que este projeto fizer com dados vai percorrer exatamente o mesmo caminho.
+Repare no que acontece na terceira parada: o contrato é lido pelos dois lados. Essa é a diferença central entre este projeto e o exemplo de IPC que a maioria dos tutoriais mostra — e é o assunto do [caderno 07](07-camadas-e-contrato.md).
 
 ---
 
-**Anterior:** [02 — A stack e o porquê](02-a-stack-e-o-porque.md) · **Próximo:** [04 — Diário de bordo](04-diario-de-bordo.md)
+**Anterior:** [02 — Como escolher a stack](02-a-stack-e-o-porque.md) · **Índice:** [README](README.md) · **Próximo:** [04 — Diário de bordo](04-diario-de-bordo.md)

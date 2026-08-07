@@ -96,10 +96,10 @@ Repare no formato do que atravessa: **uma função de domínio** (`api.app.info(
 **Passo 2 — o renderer usa a ponte** (`src/renderer/src/components/Versions.tsx`):
 
 ```tsx
-const info = await window.api.app.info()
+window.api.app.info().then(setInfo)
 ```
 
-O React não sabe nada sobre Electron. Ele só vê um objeto global chamado `window.api`, que apareceu ali graças ao preload. A chamada devolve uma `Promise` — a resposta vem de outro processo, e isso leva tempo.
+O React não sabe nada sobre Electron. Ele só vê um objeto global chamado `window.api`, que apareceu ali graças ao preload. A chamada devolve uma `Promise` — a resposta vem de outro processo, e isso leva tempo, então o componente desenha primeiro e preenche depois.
 
 **Passo 3 — o main responde** (`src/main/ipc/register-all.ts`):
 
