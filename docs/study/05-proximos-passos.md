@@ -1,6 +1,6 @@
 # 05 — Próximos passos
 
-A base está validada: janela abre, HMR funciona, IPC de exemplo responde, `pnpm typecheck` passa limpo nos dois ambientes. Este documento descreve para onde o projeto vai e — mais importante — **por que o desenho é esse**.
+A fundação está construída: contrato de comunicação tipado, fronteira de segurança fechada, cinco níveis de teste, uma feature atravessando os três processos de ponta a ponta e o aplicativo empacotado verificado. Este documento descreve o que vem em seguida — a camada de dados — e, mais importante, **por que o desenho é esse**.
 
 Nada aqui está implementado ainda. É um plano com justificativa, para ser conferido contra a realidade quando a implementação acontecer.
 
@@ -31,7 +31,7 @@ Se você colocar uma query de dez segundos no main, o que congela não é só a 
 
 O sistema operacional provavelmente vai marcar o app como "não está respondendo". E não há como cancelar, porque o código que responderia ao clique de cancelamento está na fila atrás da query.
 
-O renderer também não serve. Ele é um navegador: sem acesso a arquivos, e módulos nativos não carregam ali — ainda mais com `sandbox: true`, que é para onde queremos ir.
+O renderer também não serve. Ele é um navegador: sem acesso a arquivos, e módulos nativos não carregam ali — menos ainda com o sandbox ligado, que é o estado atual da fronteira.
 
 **A solução é um terceiro lugar.**
 
@@ -67,9 +67,9 @@ O DuckDB é **orientado a colunas**: guarda cada coluna em bloco contíguo. Uma 
 
 **Por que não Python com pandas:** foi uma opção considerada. Rodar um processo Python paralelo daria acesso ao ecossistema científico maduro. O custo é dobrar a complexidade: dois runtimes para empacotar, duas cadeias de dependências, um protocolo entre eles, e o desafio nada trivial de distribuir um interpretador Python dentro de um instalador. Num projeto cujo objetivo declarado é aprender Electron, essa complexidade compete com o aprendizado em vez de servi-lo.
 
-**O pacote:** `@duckdb/node-api`, versão 1.5.5.
+**O pacote:** `@duckdb/node-api`. A versão a fixar fica em [`CLAUDE.md`](../../CLAUDE.md) quando a instalação acontecer.
 
-⚠️ Existe um pacote antigo chamado apenas `duckdb`. Ele está **descontinuado** — os mantenedores anunciaram que a série 1.5.x não sairia mais por ali. Use o `@duckdb/node-api`.
+⚠️ Existe um pacote mais antigo chamado apenas `duckdb`, que aparece primeiro em muita busca e em tutorial desatualizado. Ele foi **descontinuado** em favor do `@duckdb/node-api`. Vale conferir a data do que você estiver lendo antes de copiar o comando de instalação.
 
 ### Por que ele não vai exigir recompilação
 
@@ -152,9 +152,11 @@ Sim, contrariando tudo que foi dito acima. O objetivo é isolar variáveis: apre
 
 Agora sim. Query já funcionando, muda-se apenas o *onde*. Se quebrar, o problema está claramente na comunicação entre processos.
 
-**4. Ligar ao renderer via IPC tipado**
+**4. Ligar ao renderer pelo contrato**
 
-Expandir o `api = {}` do preload e a interface em `src/preload/index.d.ts`. Uma função só: `executarQuery(sql)`.
+Diferente do que este documento previa quando foi escrito: não há mais um `api = {}` vazio para preencher. O contrato tipado existe desde a fase 02, e estender é acrescentar uma entrada em `src/shared/ipc.ts` — o canal, o formato dos argumentos e o formato do resultado — e registrar o handler correspondente. O preload e o tipo de `window.api` derivam daí sozinhos.
+
+Uma operação só, para começar. O caminho completo está no [caderno 07](07-camadas-e-contrato.md).
 
 **5. Arrow no transporte**
 
@@ -168,15 +170,15 @@ Cada etapa termina com `pnpm dev` funcionando e um commit. Seis pontos de retorn
 
 ---
 
-## Pendências de segurança antes de qualquer distribuição
+## A armadilha que só aparece no instalador
 
-Registradas no `CLAUDE.md`, repetidas aqui porque é fácil deixar para depois:
+Uma pendência específica desta etapa merece destaque, porque tem um padrão de falha traiçoeiro: **o `.node` do DuckDB provavelmente vai precisar de entrada em `asarUnpack`.**
 
-- **`sandbox: false`** em `src/main/index.ts` — herdado do template, não é decisão nossa. Revisitar.
-- **`shamefullyHoist: true`** — abre mão da proteção contra dependência fantasma. Foi um recuo por compatibilidade com o electron-builder.
-- **`asarUnpack`** — o `.node` do DuckDB provavelmente vai precisar de entrada, senão o app empacotado não carrega a biblioteca. Vai aparecer só no primeiro `pnpm build:win`, não em desenvolvimento.
+Biblioteca nativa não carrega de dentro do arquivo compactado em que o empacotador guarda o código — o sistema operacional precisa de um arquivo real no disco para carregar código binário. Sem essa entrada, o aplicativo funciona perfeitamente em desenvolvimento e falha só depois de empacotado.
 
-Essa última é clássica: funciona perfeitamente em `pnpm dev` e falha no instalador. Sabendo de antemão, o diagnóstico é imediato.
+Saber disso de antemão transforma uma tarde de investigação em cinco minutos. E é a razão de o projeto ter construído o teste do aplicativo empacotado **antes** de instalar o primeiro módulo nativo: quando o DuckDB chegar, a falha vem com o dedo apontado, em vez de misturada a dez outras coisas novas.
+
+As demais pendências desta etapa — incluindo a que decide o layout de `node_modules` — estão no [`ROADMAP.md`](../ROADMAP.md), com o evento que reabre cada uma.
 
 ---
 
