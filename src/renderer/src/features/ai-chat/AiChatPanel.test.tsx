@@ -127,8 +127,12 @@ describe('AiChatPanel — markdown da resposta', () => {
     const { container } = await reply('<img src=x onerror=alert(1)> fim')
 
     await screen.findByText(/fim/)
+    // Without rehype-raw, react-markdown renders the raw HTML as literal text —
+    // inert, never a DOM element. Asserting the `onerror` string is present (not
+    // just that <img> is absent) is what catches someone adding rehype-raw later.
     expect(container.querySelector('img')).toBeNull()
     expect(container.querySelector('script')).toBeNull()
+    expect(container.textContent).toContain('onerror')
   })
 
   it('keeps the user message literal, even with markdown syntax', async () => {
