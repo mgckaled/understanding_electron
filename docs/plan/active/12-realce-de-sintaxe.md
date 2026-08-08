@@ -118,6 +118,8 @@ O custo é uma transição visível quando o bloco fecha. É aceitável e provav
 
 Sete gramáticas entram: `sql`, `json`, `python`, `javascript`, `typescript`, `css`, `xml` (que cobre HTML). Seis funcionam bem. `.tsx` não.
 
+> **Revisto na execução (ago/2026):** entram as **37** do `common`, não sete. O `rehype-highlight` importa `common` do `lowlight` no escopo do módulo, então restringir a opção `languages` não tira um byte do bundle — medição no diário. As sete continuam sendo as que este app exercita, e o parágrafo abaixo sobre `.tsx` não muda.
+
 A limitação é [documentada pelos mantenedores](https://github.com/highlightjs/highlight.js/issues/2998) e é **de projeto, não bug pendente**: o `highlight.js` faz correspondência de padrões deliberadamente, não constrói parser de gramática completo. Dentro de fragmento JSX ele não trata comentário nem JS embutido, e função genérica com parâmetro de tipo logo após o nome perde o realce do nome.
 
 Peso disso aqui: o assistente deste app gera **SQL e JSON**. `.tsx` na resposta do modelo é hipótese, não caso de uso. `.ts` puro está bem.
@@ -249,8 +251,10 @@ E a validação manual do passo 6, que é a que importa.
 |---|---|
 | [`ROADMAP § 2`](../../ROADMAP.md) | a linha do `--syntax-*` (gatilho da D10.5/D11.5) sai — foi cumprida; entra o estopim do `.tsx` (D12.7) |
 | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) | a família `--syntax-*` e o fato de ser **camada única**, com o porquê (D12.4) — é regra de primeira linha para quem for tocar em `tokens.css` |
-| [`HISTORY.md`](../../HISTORY.md) § Armadilhas | **o tema `github.css` do `highlight.js` está desatualizado e reprova AA em dois grupos no tema claro** (D12.3) — armadilha que custa tempo de novo, e vai custar em qualquer projeto que importe o arquivo pronto confiando no nome |
-| [`HISTORY.md`](../../HISTORY.md) § Decisões | `shiki` descartado por acoplamento à CSP, não por peso (D12.1) — é a alternativa que qualquer sessão futura vai propor primeiro |
+| [`HISTORY.md`](../../HISTORY.md) § Armadilhas | ✅ **escrito (ago/2026)** — duas entradas: o `github.css` desatualizado reprovando AA (D12.3) e a opção `languages` do `rehype-highlight` que não encolhe o bundle |
+| [`HISTORY.md`](../../HISTORY.md) § Decisões | ✅ **escrito (ago/2026)** — `shiki` descartado por acoplamento à CSP, não por peso (D12.1); é a alternativa que qualquer sessão futura vai propor primeiro |
+
+> ⚠️ **Ao mover este plano para `implemented/`:** as três entradas acima linkam para `plan/active/12-realce-de-sintaxe.md`. Repontar para `plan/implemented/`. Elas foram escritas antes da conclusão porque a regra de escalonamento é *na mesma sessão*, e o caminho é o único preço disso.
 
 Nada muda no [`ESCOPO.md`](../../ESCOPO.md): esta fase não altera o que o app faz.
 
@@ -262,7 +266,7 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| | | | |
+| 2026-08-08 | 1–5 | **passo 6 pendente** | Passos 1–5 implementados; `pnpm check:fast` verde (**148 testes**, eram 128) e `pnpm build` limpo. **Contraste (passo 1):** todos os 14 passam. Escuro, o mais apertado é `comment` `#9198a1` a **6,72:1**; claro, `keyword` `#cf222e` a **4,95:1** — confirma a D12.3, já que os valores equivalentes do `github.css` do hljs dariam 4,2:1 e 3,2:1. **Bundle (passo 2):** renderer JS **951,35 → 1.301,28 kB**, CSS **16,99 → 19,45 kB**, módulos 309 → 516. São ~350 kB, da mesma ordem dos ~378 kB que a D11.2 aceitou pelo `react-markdown`. **A D12.7 foi revista por medição:** restringir `languages` às sete gramáticas deu **1.301,28 kB** contra **1.301,17 kB** das 37 do `common` — os mesmos 516 módulos, ou seja, o import fino custou 0,11 kB *a mais* e sete imports. Causa: `rehype-highlight` faz `import {common} from 'lowlight'` no escopo do módulo (`lib/index.js:30`), então as 37 entram de qualquer jeito. Opção removida; encolher de verdade exigiria plugin próprio sobre `createLowlight`. **Armadilha do CSS Modules:** as classes `hljs-*` são escritas pelo plugin, não pelo `.module.css`, então cada seletor precisa de `:global()` — sem isso o bundler renomeia e o sintoma é "cor nenhuma", silencioso. **Aliases confirmados no manifesto instalado**, não presumidos: `typescript`→`tsx`, `xml`→`html`, `javascript`→`jsx`, `python`→`py`. **Observação fora do escopo:** `pnpm lint` acusa 485 avisos `Delete ␍` em arquivos não tocados — `core.autocrlf=true` sem `.gitattributes` faz o working tree ser CRLF e o Prettier esperar LF. ESLint sai 0, então `check:fast` passa; é pré-existente, não desta fase. **Passo 6 não executado:** exige Ollama no ar e conferência visual nos dois temas — em especial o item 4 (copiar de dentro de bloco colorido, agora fragmentado em dezenas de `<span>`). |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
