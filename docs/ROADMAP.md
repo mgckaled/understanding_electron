@@ -11,16 +11,19 @@ O que ainda falta. Documento **vivo**: item concluído sai daqui e vira entrada 
 O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
 
 ```
-▶ fundação — 8 fases            plan/active/README.md          ← estamos aqui
+  fundação — 8 fases            plan/implemented/              concluída (ago/2026)
+▶ interface: cor e markdown     plan/active/README.md          ← estamos aqui
   camada de dados               study/05-proximos-passos.md
   pipeline de passos, camada 1  ESCOPO.md
   receitas salvas
   JSON/NDJSON · Excel
   catálogo camada 2
-  camada de IA                  plan/active/09-camada-de-ia.md
+  camada de IA — fatias 2 a 6   plan/active/09-camada-de-ia.md  fatia 1 concluída
 ```
 
 Cada etapa depende da anterior por razão real, não por ordem arbitrária. As dependências estão nos documentos linkados.
+
+**Duas saíram de ordem, e as duas por motivo registrado.** A fatia 1 da camada de IA (chat local via Ollama) rodou antes de tudo o que a precede no diagrama porque sua única dependência real era o registro de jobs da [fase 06](plan/implemented/06-primeira-feature.md) — as fatias 2 a 6 seguem dependendo da camada de dados e do pipeline. E a linha de interface nasceu dela: renderizar a resposta do modelo e consertar o contraste dos tokens são dívidas que a fatia 1 tornou visíveis, não etapas novas do produto. Nenhuma das duas move o `ESCOPO.md`.
 
 ---
 

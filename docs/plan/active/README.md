@@ -35,5 +35,7 @@ Cada adiamento tem um **evento** que o reabre, não uma data. A lista consolidad
 ## Onde o trabalho continua
 
 - **Camada de dados** — DuckDB em `utilityProcess`, Arrow, tabela virtualizada: [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md) é o próximo passo real.
-- **Camada de IA e ML** — decisões já tomadas, ainda não executável: [`09-camada-de-ia.md`](09-camada-de-ia.md), que segue neste diretório por ser o único plano ainda aberto.
+- **Camada de IA e ML** — decisões tomadas, fatia 1 (chat local) implementada, fatias 2–6 ainda bloqueadas pela camada de dados: [`09-camada-de-ia.md`](09-camada-de-ia.md).
+- **Cor: contraste medido e tema claro** — nove pares de token abaixo do limite WCAG AA, medidos; **executável já**: [`10-cor-contraste-e-tema-claro.md`](10-cor-contraste-e-tema-claro.md).
+- **Markdown na resposta do assistente** — borda de apresentação que a fatia 1 deixou incompleta; **executável já**, não depende de camada de dados nem de pipeline: [`11-markdown-na-resposta-do-assistente.md`](11-markdown-na-resposta-do-assistente.md). Vem **depois** da 10 porque é o maior produtor de superfície colorida nova do projeto, e calibrar tipografia contra tokens quebrados produz decisão de design a desfazer, não só uma linha de CSS a trocar.
 - **A sequência até o produto** do [`ESCOPO.md`](../../ESCOPO.md) está no [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência).
