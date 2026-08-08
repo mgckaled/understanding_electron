@@ -36,7 +36,7 @@
 
 .input:focus-visible,
 .textarea:focus-visible {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-text);
   outline: none;
 }
 
@@ -90,6 +90,6 @@
 
 .unavailable {
   margin: 0 0 var(--space-5);
-  color: var(--color-warn);
+  color: var(--color-warn-text);
   font-size: var(--font-size-sm);
 }

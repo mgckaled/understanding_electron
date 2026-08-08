@@ -68,7 +68,7 @@
 
 .danger {
   background: var(--color-danger);
-  color: var(--color-on-accent);
+  color: var(--color-on-danger);
 }
 
 .danger:hover:not(:disabled) {
