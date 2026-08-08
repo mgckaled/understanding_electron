@@ -133,3 +133,73 @@
   border-radius: 0;
   font-size: var(--font-size-xs);
 }
+
+/*
+ * Syntax highlighting (D12.3). The GROUPING below is highlight.js's own github
+ * theme, which is worth copying — it already knows that selector-pseudo belongs
+ * with name. The COLOURS are not: that file still ships GitHub's pre-2021
+ * values, and two of them fail this project's AA threshold over
+ * --color-surface-sunken in the light theme. They live in tokens.css, measured
+ * by tokens.contrast.test.ts.
+ *
+ * :global() is not optional. The hljs-* classes are written by rehype-highlight
+ * into the hast tree; CSS Modules would rename the selectors here and match
+ * nothing, failing as "no colour at all" — silent, and only visible in this one
+ * component.
+ */
+.codeBlock :global(.hljs-doctag),
+.codeBlock :global(.hljs-keyword),
+.codeBlock :global(.hljs-meta .hljs-keyword),
+.codeBlock :global(.hljs-template-tag),
+.codeBlock :global(.hljs-template-variable),
+.codeBlock :global(.hljs-type),
+.codeBlock :global(.hljs-variable.language_) {
+  color: var(--syntax-keyword);
+}
+
+.codeBlock :global(.hljs-title),
+.codeBlock :global(.hljs-title.class_),
+.codeBlock :global(.hljs-title.class_.inherited__),
+.codeBlock :global(.hljs-title.function_) {
+  color: var(--syntax-entity);
+}
+
+.codeBlock :global(.hljs-attr),
+.codeBlock :global(.hljs-attribute),
+.codeBlock :global(.hljs-literal),
+.codeBlock :global(.hljs-meta),
+.codeBlock :global(.hljs-number),
+.codeBlock :global(.hljs-operator),
+.codeBlock :global(.hljs-variable),
+.codeBlock :global(.hljs-selector-attr),
+.codeBlock :global(.hljs-selector-class),
+.codeBlock :global(.hljs-selector-id) {
+  color: var(--syntax-constant);
+}
+
+.codeBlock :global(.hljs-regexp),
+.codeBlock :global(.hljs-string),
+.codeBlock :global(.hljs-meta .hljs-string) {
+  color: var(--syntax-string);
+}
+
+.codeBlock :global(.hljs-built_in),
+.codeBlock :global(.hljs-symbol) {
+  color: var(--syntax-builtin);
+}
+
+.codeBlock :global(.hljs-comment),
+.codeBlock :global(.hljs-code),
+.codeBlock :global(.hljs-formula) {
+  color: var(--syntax-comment);
+}
+
+/* --syntax-tag is the one that diverges from Primer in the light theme, and
+   this group is why: highlight.js keeps name/selector-tag apart from
+   attr/selector-class, so the two must not resolve to the same colour. */
+.codeBlock :global(.hljs-name),
+.codeBlock :global(.hljs-quote),
+.codeBlock :global(.hljs-selector-tag),
+.codeBlock :global(.hljs-selector-pseudo) {
+  color: var(--syntax-tag);
+}
