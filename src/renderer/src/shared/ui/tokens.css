@@ -49,15 +49,24 @@
   --color-surface-sunken: var(--gray-1);
   --color-border: var(--gray-5);
   --color-border-strong: var(--gray-7);
+  /* Three text levels, all legible over surface; the hierarchy reads by weight,
+     not by one of them being too faint to read (text-faint carries the chat's
+     authorship label and the Field hint — information, not decoration). */
   --color-text: var(--gray-12);
-  --color-text-muted: var(--gray-10);
-  --color-text-faint: var(--gray-8);
+  --color-text-muted: var(--gray-11);
+  --color-text-faint: var(--gray-10);
+  /* Each colour: solid fill, its white-ish label, and its text form over surface. */
   --color-accent: var(--blue-9);
   --color-accent-hover: var(--blue-10);
   --color-on-accent: var(--gray-12);
+  --color-accent-text: var(--blue-11-dark);
   --color-danger: var(--red-9);
+  --color-on-danger: var(--gray-12);
+  --color-danger-text: var(--red-11-dark);
   --color-warn: var(--amber-9);
+  --color-warn-text: var(--amber-11-dark);
   --color-ok: var(--green-9);
+  --color-ok-text: var(--green-11-dark);
 
   /* Space */
   --space-1: 2px;
