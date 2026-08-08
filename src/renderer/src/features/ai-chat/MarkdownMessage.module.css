@@ -1,0 +1,135 @@
+/*
+ * Typography for the assistant's markdown reply. Only semantic tokens — guard.mjs
+ * blocks a #hex or a --gray-N here. See docs/plan/implemented/11-markdown-*.md.
+ * No syntax highlighting on purpose (D11.5): a code block is mono, a sunken
+ * surface, a border and horizontal scroll — legible, honest about not being coloured.
+ */
+
+.markdown {
+  /* base.css turns selection off at the root; the reply is copyable data (fase 05). */
+  user-select: text;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* Markdown starts and ends with a block whose outer margin would push against the
+   Panel and break the vertical rhythm. */
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown p {
+  margin: 0 0 var(--space-5);
+}
+
+/* The LLM uses # generously; a 28px title inside a chat panel shouts. Headings
+   stay close to body size, told apart by weight. */
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  margin: var(--space-6) 0 var(--space-4);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.markdown h1 {
+  font-size: var(--font-size-lg);
+}
+
+.markdown h2 {
+  font-size: var(--font-size-md);
+}
+
+.markdown h3 {
+  font-size: var(--font-size-sm);
+}
+
+/* Three-level nesting is common in these replies. */
+.markdown ul,
+.markdown ol {
+  margin: 0 0 var(--space-5);
+  padding-left: var(--space-7);
+}
+
+.markdown li {
+  margin: var(--space-2) 0;
+}
+
+/* Inline code: a chip that separates a column name from the prose around it. */
+.markdown code {
+  padding: 0 var(--space-2);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.markdown a {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+}
+
+.markdown blockquote {
+  margin: 0 0 var(--space-5);
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* GFM tables. display:block makes the table its own scroll container, so a wide
+   row scrolls instead of stretching the whole panel. */
+.markdown table {
+  display: block;
+  overflow-x: auto;
+  margin: 0 0 var(--space-5);
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.markdown th {
+  font-weight: 600;
+}
+
+/* Code block: the wrapper carries the surface, border and radius; the language
+   label is its header, outside <pre> so it is never part of a text selection. */
+.codeBlock {
+  margin: 0 0 var(--space-5);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.lang {
+  display: block;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+}
+
+.codeBlock pre {
+  margin: 0;
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+
+/* Undo the inline-code chip for code sitting inside a block. */
+.codeBlock pre code {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  font-size: var(--font-size-xs);
+}
