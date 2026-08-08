@@ -6,6 +6,8 @@ import Button from '../../shared/ui/Button/Button'
 import Field from '../../shared/ui/Field/Field'
 import { errorMessage } from '../../shared/ui/messages'
 import { useAiChat } from './useAiChat'
+import MarkdownMessage from './MarkdownMessage'
+import { completePartial } from './completePartial'
 import styles from './AiChatPanel.module.css'
 
 const DEFAULT_MODEL = 'gemma3:4b'
@@ -69,16 +71,20 @@ function AiChatPanel(): React.JSX.Element {
           {turns.map((turn, index) => (
             <li key={index} className={turn.role === 'user' ? styles.user : styles.assistant}>
               <span className={styles.role}>{turn.role === 'user' ? 'Você' : 'Assistente'}</span>
-              <p className={styles.content}>{turn.content}</p>
+              {turn.role === 'assistant' ? (
+                <MarkdownMessage text={turn.content} />
+              ) : (
+                <p className={styles.content}>{turn.content}</p>
+              )}
             </li>
           ))}
         </ol>
       )}
 
       {isLoading && streaming !== '' && (
-        <p className={styles.streaming} aria-live="polite">
-          {streaming}
-        </p>
+        <div className={styles.streaming} aria-live="polite">
+          <MarkdownMessage text={completePartial(streaming)} />
+        </div>
       )}
       {state.status === 'error' && (
         <p className={styles.unavailable} role="alert">
