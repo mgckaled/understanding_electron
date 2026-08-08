@@ -68,6 +68,21 @@
   --color-ok: var(--green-9);
   --color-ok-text: var(--green-11-dark);
 
+  /* Syntax highlighting — imported as a set from @primer/primitives (GitHub),
+     values current in ago/2026. Single layer on purpose (D12.4): no primitive
+     underneath, because the palette arrives already calibrated as a whole, and
+     seven primitives with one consumer each buy no option. Each name says what
+     it colours in the highlight.js grammar, NOT what Primer calls it — Primer's
+     `variable` colours built_in/symbol here, while .hljs-variable falls in the
+     constant group, so inheriting that name would point at the wrong class. */
+  --syntax-keyword: #ff7b72;
+  --syntax-entity: #d2a8ff;
+  --syntax-constant: #79c0ff;
+  --syntax-string: #a5d6ff;
+  --syntax-builtin: #ffa657;
+  --syntax-comment: #9198a1;
+  --syntax-tag: #7ee787;
+
   /* Space */
   --space-1: 2px;
   --space-2: 4px;
@@ -134,5 +149,21 @@
     --color-ok-text: var(--green-11-light);
     --color-on-accent: var(--gray-13);
     --color-on-danger: var(--gray-13);
+
+    /* Syntax: Primer's light values, with one deliberate divergence (D12.4).
+       Primer collapses entityTag onto constant in light (both #0550ae) while
+       keeping them apart in dark. highlight.js does not collapse: it puts
+       name/selector-tag in a different group from attr/selector-class. Following
+       Primer literally would render `<div class="x">` with div and class in the
+       same colour in light and different colours in dark. --syntax-tag takes
+       Primer's stringRegexp green instead, which keeps the pair distinct in
+       both themes without leaving the palette. */
+    --syntax-keyword: #cf222e;
+    --syntax-entity: #6639ba;
+    --syntax-constant: #0550ae;
+    --syntax-string: #0a3069;
+    --syntax-builtin: #953800;
+    --syntax-comment: #59636e;
+    --syntax-tag: #116329;
   }
 }

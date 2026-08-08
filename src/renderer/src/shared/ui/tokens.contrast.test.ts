@@ -12,7 +12,12 @@
  * Why the registry is hand-written: no static analysis of tokens.css knows that
  * `--color-warn` is used as *text* over `--color-surface` — that lives in the
  * component CSS. The registry is where each token's intent is declared: the row
- * `['warn-text', 'surface', 4.5]` asserts that token exists to be text.
+ * `['--color-warn-text', '--color-surface', 4.5]` asserts that token exists to
+ * be text.
+ *
+ * Rows carry the full token name rather than a bare suffix: the `--syntax-*`
+ * family (D12.4) is not under the `--color-` prefix, and a registry that can
+ * only express one prefix would have needed a second copy of this whole file.
  */
 
 import { readFileSync } from 'node:fs'
@@ -85,16 +90,27 @@ const lightTokens = new Map([...base, ...declarationsIn(lightBlock)])
 // --- 3. Pair registry -------------------------------------------------------
 
 const PAIRS = [
-  ['text', 'surface', 4.5],
-  ['text-muted', 'surface', 4.5],
-  ['text-faint', 'surface', 4.5],
-  ['accent-text', 'surface', 4.5],
-  ['danger-text', 'surface', 4.5],
-  ['warn-text', 'surface', 4.5],
-  ['ok-text', 'surface', 4.5],
-  ['on-accent', 'accent', 4.5],
-  ['on-accent', 'accent-hover', 4.5],
-  ['on-danger', 'danger', 4.5]
+  ['--color-text', '--color-surface', 4.5],
+  ['--color-text-muted', '--color-surface', 4.5],
+  ['--color-text-faint', '--color-surface', 4.5],
+  ['--color-accent-text', '--color-surface', 4.5],
+  ['--color-danger-text', '--color-surface', 4.5],
+  ['--color-warn-text', '--color-surface', 4.5],
+  ['--color-ok-text', '--color-surface', 4.5],
+  ['--color-on-accent', '--color-accent', 4.5],
+  ['--color-on-accent', '--color-accent-hover', 4.5],
+  ['--color-on-danger', '--color-danger', 4.5],
+  // Syntax palette (D12.3): every token sits on --color-surface-sunken, which
+  // is the code block's surface. These are imported from @primer/primitives
+  // rather than from the theme highlight.js ships, whose light `keyword` and
+  // `built_in` are stale enough to fail this very threshold.
+  ['--syntax-keyword', '--color-surface-sunken', 4.5],
+  ['--syntax-entity', '--color-surface-sunken', 4.5],
+  ['--syntax-constant', '--color-surface-sunken', 4.5],
+  ['--syntax-string', '--color-surface-sunken', 4.5],
+  ['--syntax-builtin', '--color-surface-sunken', 4.5],
+  ['--syntax-comment', '--color-surface-sunken', 4.5],
+  ['--syntax-tag', '--color-surface-sunken', 4.5]
 ] as const
 
 const THEMES = [
@@ -110,11 +126,11 @@ const minText = (n: number): string => String(n).replace('.', ',')
 for (const [themeName, tokens] of THEMES) {
   describe(`contraste — tema ${themeName}`, () => {
     for (const [foreground, background, minimum] of PAIRS) {
-      it(`--color-${foreground} sobre --color-${background} atinge ${minText(minimum)}:1`, () => {
-        const fg = resolveToken(`--color-${foreground}`, tokens)
-        const bg = resolveToken(`--color-${background}`, tokens)
+      it(`${foreground} sobre ${background} atinge ${minText(minimum)}:1`, () => {
+        const fg = resolveToken(foreground, tokens)
+        const bg = resolveToken(background, tokens)
         if (fg === undefined || bg === undefined) {
-          const missing = fg === undefined ? `--color-${foreground}` : `--color-${background}`
+          const missing = fg === undefined ? foreground : background
           throw new Error(`${missing} não resolve para um #hex em tokens.css`)
         }
         const ratio = contrastRatio(fg, bg)
