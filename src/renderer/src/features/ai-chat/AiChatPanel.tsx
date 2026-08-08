@@ -83,7 +83,7 @@ function AiChatPanel(): React.JSX.Element {
 
       {isLoading && streaming !== '' && (
         <div className={styles.streaming} aria-live="polite">
-          <MarkdownMessage text={completePartial(streaming)} />
+          <MarkdownMessage text={completePartial(streaming)} highlight={false} />
         </div>
       )}
       {state.status === 'error' && (
