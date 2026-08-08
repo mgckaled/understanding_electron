@@ -102,18 +102,28 @@
   --font-mono: ui-monospace, 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
 }
 
-/* Light theme redefines only the semantic layer — primitives stay fixed */
+/* Light theme redefines only the semantic layer — primitives stay fixed. It
+   maps by intent, not by mirroring the dark scale (D10.3): elevation goes toward
+   white (surface and raised are both --gray-13, distinguished by border), and
+   each state -text token picks the -light primitive legible over white.
+   Accepted: --color-bg and --color-surface-sunken share #f5f6f7 — contexts that
+   never sit adjacent without a border (window ground vs. field interior). */
 @media (prefers-color-scheme: light) {
   :root {
     --color-bg: var(--gray-12);
-    --color-surface: var(--gray-11);
-    --color-surface-raised: var(--gray-10);
+    --color-surface: var(--gray-13);
+    --color-surface-raised: var(--gray-13);
     --color-surface-sunken: var(--gray-12);
-    --color-border: var(--gray-8);
-    --color-border-strong: var(--gray-6);
+    --color-border: var(--gray-11);
+    --color-border-strong: var(--gray-9);
     --color-text: var(--gray-1);
-    --color-text-muted: var(--gray-3);
-    --color-text-faint: var(--gray-5);
-    --color-on-accent: var(--gray-1);
+    --color-text-muted: var(--gray-6);
+    --color-text-faint: var(--gray-8);
+    --color-accent-text: var(--blue-11-light);
+    --color-danger-text: var(--red-11-light);
+    --color-warn-text: var(--amber-11-light);
+    --color-ok-text: var(--green-11-light);
+    --color-on-accent: var(--gray-13);
+    --color-on-danger: var(--gray-13);
   }
 }
