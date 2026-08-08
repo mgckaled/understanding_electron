@@ -20,7 +20,21 @@ Densidade, seleção de texto, rolagem, duração de animação — cada diferen
 
 Componente escreve `var(--color-surface)`, nunca `var(--gray-N)`, nunca um `#hex` solto. **Regra sem exceção** (fora espessura de borda de 1–2px, hairline universal que nenhum design system tokeniza): `src/renderer/src/shared/ui/tokens.css` é a única fonte, e `grep` por `#` seguido de hex em `*.module.css` fora desse arquivo é o teste.
 
-`--gray-1` a `--gray-12` é a escala fixa (não muda com tema). Tema claro (`@media (prefers-color-scheme: light)`) redefine **só a camada semântica**, espelhando a escala (`--gray-N` vira `--gray-(13-N)` na atribuição) — os primitivos permanecem os mesmos números em ambos os temas.
+`--gray-1` a `--gray-13` é a escala fixa (não muda com tema; `--gray-13: #ffffff` é o topo que o tema claro usa para elevação). Tema claro (`@media (prefers-color-scheme: light)`) redefine **só a camada semântica** — mas mapeia por **intenção**, escrita à mão, e **não** por espelhamento mecânico da escala. A escala é calibrada dark-first e não tem resolução na ponta clara, então no claro a elevação vai em direção ao branco (`--color-surface` e `--color-surface-raised` compartilham `--gray-13`, distinguidos por borda). Os primitivos permanecem os mesmos números em ambos os temas. Ver [fase 10](../../../docs/plan/active/10-cor-contraste-e-tema-claro.md) (D10.3).
+
+## Cor de estado tem duas formas: sólido e texto são dois tokens (D10.1)
+
+Um token de cor de estado serve a **duas** funções físicas opostas, e um único valor não serve às duas: um fundo sólido precisa ser **escuro** o bastante para carregar texto branco; uma cor de texto precisa ser **clara** o bastante para viver sobre superfície escura. `--accent-9: #4c8dff` era literalmente uma cor de texto sendo usada como fundo de botão — 2,96:1 com rótulo branco. A separação virou estrutura de nome:
+
+```css
+--color-accent        /* sólido — preenche fundo (Button primário) */
+--color-on-accent     /* rótulo sobre esse fundo sólido */
+--color-accent-text   /* texto e foco sobre superfície (anel, borda, link) */
+```
+
+E o mesmo para `danger`, `warn`, `ok`. **Regra de primeira linha:** ao pintar `color:`, `border-color:` ou `outline:` com uma cor de estado, use a variante `-text`; o sólido (`--color-accent`, `--color-danger`) é só para `background`/`accent-color`. O rótulo sobre um fundo sólido é o terceiro caso: `--color-on-accent`/`--color-on-danger`.
+
+O que garante isso não é o CSS — é o teste `tokens.contrast.test.ts`, que resolve cada `var()` até o `#hex` e mede WCAG AA nos dois temas, para uma lista de pares **escrita à mão** (`[primeiro-plano, fundo, razão-mínima]`). Esse registro é a fonte da **intenção** de cada token: a linha `['warn-text', 'surface', 4.5]` afirma que `--color-warn-text` existe para ser primeiro plano sobre superfície — nenhuma análise estática de `tokens.css` sabe disso, porque o uso vive no CSS do componente. Cor nova (inclusive `--syntax-*` quando chegar) nasce com sua linha lá.
 
 ## Tema pelo sistema operacional, sem alternador
 
