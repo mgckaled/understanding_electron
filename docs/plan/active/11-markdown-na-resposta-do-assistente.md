@@ -1,8 +1,8 @@
 # 11 — Markdown na resposta do assistente
 
-**Depende de:** [10 — Cor](10-cor-contraste-e-tema-claro.md), [09 — fatia 1](09-camada-de-ia.md) (implementada), [03](../implemented/03-sandbox-e-seguranca.md), [05](../implemented/05-design-tokens.md), [06](../implemented/06-primeira-feature.md) · **Entrega:** a resposta do modelo renderizada como markdown, com link seguro, imagem neutralizada e streaming que não quebra a formatação
+**Depende de:** [10 — Cor](../implemented/10-cor-contraste-e-tema-claro.md), [09 — fatia 1](09-camada-de-ia.md) (implementada), [03](../implemented/03-sandbox-e-seguranca.md), [05](../implemented/05-design-tokens.md), [06](../implemented/06-primeira-feature.md) · **Entrega:** a resposta do modelo renderizada como markdown, com link seguro, imagem neutralizada e streaming que não quebra a formatação
 
-> **Por que depois da [10](10-cor-contraste-e-tema-claro.md):** esta fatia é o maior produtor de superfície colorida nova do projeto — bloco de código, código inline, citação, borda de tabela e **link**, que é o primeiro uso real de cor de acento como texto. Escrita antes, a tipografia do passo 3 seria calibrada contra um tema claro em que `--color-surface` é cinza médio e `--color-surface-sunken` é mais **claro** que ele: o bloco de código "afundado" pareceria elevado, e a resposta natural seria trocar o token — uma decisão de design tomada contra um fundo errado, que é mais cara de desfazer do que a linha de CSS que a originou.
+> **Por que depois da [10](../implemented/10-cor-contraste-e-tema-claro.md):** esta fatia é o maior produtor de superfície colorida nova do projeto — bloco de código, código inline, citação, borda de tabela e **link**, que é o primeiro uso real de cor de acento como texto. Escrita antes, a tipografia do passo 3 seria calibrada contra um tema claro em que `--color-surface` é cinza médio e `--color-surface-sunken` é mais **claro** que ele: o bloco de código "afundado" pareceria elevado, e a resposta natural seria trocar o token — uma decisão de design tomada contra um fundo errado, que é mais cara de desfazer do que a linha de CSS que a originou.
 
 > Este plano **não decide nada sobre a camada de IA** — provedores, gate, privacidade e sequência de fatias continuam sendo do [`09-camada-de-ia.md`](09-camada-de-ia.md). Aqui é só a borda de apresentação da fatia 1, que ficou incompleta.
 
@@ -114,7 +114,7 @@ Fica ao lado do componente, com teste de nível 2 — é a única parte desta fa
 
 **Um tema de realce é um conjunto de cores literais.** `tokens.css` é a fonte única de cor neste projeto, e o [`guard.mjs`](../../../.claude/hooks/guard.mjs) bloqueia `#hex` em qualquer `*.module.css`. Adotar realce exige uma família nova de primitivos (`--syntax-keyword`, `--syntax-string`, …) mapeada em dois temas — decisão de design system inteira, dentro de uma fatia que é sobre outra coisa.
 
-A [fase 10](10-cor-contraste-e-tema-claro.md) já deixou o terreno pronto e chegou à mesma conclusão pelo outro lado: calibrar cores de sintaxe **sem SQL real na tela** é decidir no escuro. Quando a paleta chegar, cada cor nasce com sua linha no registro de pares e o teste de contraste a cobre desde o primeiro commit.
+A [fase 10](../implemented/10-cor-contraste-e-tema-claro.md) já deixou o terreno pronto e chegou à mesma conclusão pelo outro lado: calibrar cores de sintaxe **sem SQL real na tela** é decidir no escuro. Quando a paleta chegar, cada cor nasce com sua linha no registro de pares e o teste de contraste a cobre desde o primeiro commit.
 
 Nesta fatia, bloco de código é: `--font-mono`, fundo `--color-surface-sunken`, borda, `overflow-x: auto` e o nome da linguagem visível quando a cerca o traz. Legível, e honesto sobre não ser colorido.
 
@@ -197,7 +197,7 @@ O que precisa estar lá, e por quê:
 | `h1`–`h3` próximos do tamanho do corpo | LLM usa `#` com generosidade; título de 28 px dentro de um painel de chat grita |
 | Recuo de lista em `--space-*` | aninhamento de três níveis é comum nessas respostas |
 | `code` inline com fundo e `--radius-sm` | distinguir `nome_da_coluna` do texto ao redor é metade do valor aqui |
-| link em `--color-accent-text` | **não** `--color-accent`: aquele é o sólido de fundo, e como texto falha AA nos dois temas — [D10.1](10-cor-contraste-e-tema-claro.md) |
+| link em `--color-accent-text` | **não** `--color-accent`: aquele é o sólido de fundo, e como texto falha AA nos dois temas — [D10.1](../implemented/10-cor-contraste-e-tema-claro.md) |
 | citação com borda em `--color-border` | o modelo usa `>` para destacar ressalvas |
 
 **Nenhum `#hex` e nenhum `var(--gray-N)`** — só tokens semânticos. O `guard.mjs` roda a cada edição e bloqueia os dois; se algum estado pedir uma cor que não existe, ela nasce em `tokens.css`, não aqui.
@@ -311,4 +311,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [10 — Cor: contraste medido e tema claro](10-cor-contraste-e-tema-claro.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)
+**Anterior:** [10 — Cor: contraste medido e tema claro](../implemented/10-cor-contraste-e-tema-claro.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)

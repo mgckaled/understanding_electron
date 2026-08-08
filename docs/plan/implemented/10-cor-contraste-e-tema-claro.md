@@ -1,6 +1,6 @@
 # 10 — Cor: contraste medido e tema claro
 
-**Depende de:** [05](../implemented/05-design-tokens.md) · **Entrega:** todo par de cor declarado acima do limite WCAG AA nos dois temas, e um teste que reprova o próximo par que cair
+**Depende de:** [05](05-design-tokens.md) · **Entrega:** todo par de cor declarado acima do limite WCAG AA nos dois temas, e um teste que reprova o próximo par que cair
 
 > Escopo deliberadamente estreito: **cor**. Storybook, primitivos que faltam (`Dialog`, `Select`, `Tooltip`), auditoria de teclado e regressão visual **não** entram — a skill [`architecture`](../../../.claude/skills/architecture/SKILL.md) já os classifica como *barato de adiar*, e continuam custando o mesmo daqui a seis meses. Cor não: toda cor nova herda o defeito, e todo componente escrito contra token quebrado precisa ser revisitado. É o critério do projeto, não preferência.
 
@@ -8,7 +8,7 @@
 
 ## Por que esta fase existe
 
-A [fase 05](../implemented/05-design-tokens.md) entregou dois níveis de token, tema claro por `prefers-color-scheme` e a regra de nenhum componente tocar primitivo. A estrutura está certa. **Os valores não foram medidos**, e nove pares em uso hoje estão abaixo do limite.
+A [fase 05](05-design-tokens.md) entregou dois níveis de token, tema claro por `prefers-color-scheme` e a regra de nenhum componente tocar primitivo. A estrutura está certa. **Os valores não foram medidos**, e nove pares em uso hoje estão abaixo do limite.
 
 Auditoria de todos os pares semânticos contra WCAG 2.1 AA (4,5:1 para texto):
 
@@ -72,7 +72,7 @@ E o mesmo para `danger`, `warn` e `ok`. É o que Radix, Material e Tailwind faze
 
 ### D10.2 — Primitivo continua sendo fato; o tema escolhe qual fato usar
 
-A [fase 05](../implemented/05-design-tokens.md) fixou que "primitivos permanecem os mesmos números em ambos os temas" e que o tema claro redefine só a camada semântica. **A regra continua de pé e não é relaxada.**
+A [fase 05](05-design-tokens.md) fixou que "primitivos permanecem os mesmos números em ambos os temas" e que o tema claro redefine só a camada semântica. **A regra continua de pé e não é relaxada.**
 
 O que muda é a quantidade de primitivos: uma cor de texto legível sobre fundo escuro e uma legível sobre fundo branco são **duas cores diferentes**, e as duas existem o tempo todo. Declarar as duas não é "primitivo que muda com o tema" — é a camada semântica escolhendo entre dois fatos:
 
@@ -114,11 +114,11 @@ Duas alternativas descartadas:
 
 ### D10.5 — `--syntax-*` fica de fora
 
-A [fase 11](11-markdown-na-resposta-do-assistente.md) vai colocar bloco de código na tela, e a paleta de realce cairia aqui por associação — é cor, e mexe em `tokens.css`. Mesmo assim não entra, e a razão é a mesma que ordenou as duas fases: **decidir cor exige ver a cor no seu contexto real.**
+A [fase 11](../active/11-markdown-na-resposta-do-assistente.md) vai colocar bloco de código na tela, e a paleta de realce cairia aqui por associação — é cor, e mexe em `tokens.css`. Mesmo assim não entra, e a razão é a mesma que ordenou as duas fases: **decidir cor exige ver a cor no seu contexto real.**
 
 Calibrar cinco a oito cores de sintaxe **sem SQL real na tela** é decidir no escuro; o resultado seria revisto na primeira vez que alguém olhasse um `SELECT` de verdade. O que este plano entrega para ela é a estrutura: quando a paleta chegar, cada cor nasce com sua linha no registro de pares e o teste do passo 1 a cobre desde o primeiro commit.
 
-**Gatilho:** a fatia 2 do [plano 09](09-camada-de-ia.md) (NL→passo) gerando SQL para revisão.
+**Gatilho:** a fatia 2 do [plano 09](../active/09-camada-de-ia.md) (NL→passo) gerando SQL para revisão.
 
 ---
 
@@ -149,7 +149,7 @@ const PAIRS = [
 
 Cada par roda nos dois temas. A mensagem de falha precisa trazer **o valor resolvido e a razão medida** — `text-faint #5c5f68 sobre surface #1e2023 = 2,56:1, mínimo 4,5` — porque o próximo a ler isso não vai ter esta auditoria à mão.
 
-> ⚠️ Escreva o teste **antes** de tocar em `tokens.css` e confirme que ele reprova os nove pares desta fase. Teste de invariante que nunca foi visto vermelho não se sabe se está ligado — é a mesma provocação que a [fase 08](../implemented/08-automacao-e-registro.md) usou e que pegou o `--reporter basic` do Vitest.
+> ⚠️ Escreva o teste **antes** de tocar em `tokens.css` e confirme que ele reprova os nove pares desta fase. Teste de invariante que nunca foi visto vermelho não se sabe se está ligado — é a mesma provocação que a [fase 08](08-automacao-e-registro.md) usou e que pegou o `--reporter basic` do Vitest.
 
 **Aceite:** `pnpm test` **vermelho**, com as nove falhas nomeadas e os valores medidos na saída.
 **Commit:** `test(renderer): contraste dos tokens verificado nos dois temas`
@@ -292,10 +292,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-08 | 1–5 + docs | código verde, **validação visual pendente** | Passos 1–5 implementados; `pnpm check:fast` e `pnpm build` verdes, 20/20 do contraste. Achado do Passo 1: o teste nasceu com **13** falhas, não 9 — os `PAIRS` usam os nomes-alvo (`-text`, `on-danger`) que ainda não existiam, então 3 falhas medidas + 10 de token inexistente; ambos vermelho legítimo. Divergência do plano: a ilustração da D10.4 mostra `['warn-text','surface','text']`, mas o registro real (e o bloco de código do Passo 1) usa a razão mínima, `['warn-text','surface',4.5]` — o skill `design-system` segue o código. Bugs de ambiente pegos pelo `test_related` antes do vermelho pretendido: `import.meta.url` é `http:` sob jsdom (troquei por `process.cwd()`), e colisão do nome `resolve` com o de `node:path`. Botão primário: apliquei `--blue-9: #0d5bd9` (padrão do plano, 5,52:1); a alternativa `#4c8dff` + `--gray-1` (6,11:1) fica registrada para a decisão estética no item 2 da validação visual. Docs feitas: skill `design-system` (D10.1 + registro de pares, e correção da regra de espelhamento morta), `ROADMAP §2` (gatilho `--syntax-*`), e a **armadilha escalada ao `HISTORY.md` nesta sessão**. Falta o usuário conferir os 5 itens visuais (toggle de tema do Windows); só então mover para `implemented/` e criar a entrada de marco. `--color-bg` escuro inalterado — invariante com `src/main/index.ts:27` (`#16171a`) mantido. |
+| 2026-08-08 | 1–5 + docs + arquivamento | **concluída** | Passos 1–5 implementados; `pnpm check:fast` e `pnpm build` verdes, 20/20 do contraste. Achado do Passo 1: o teste nasceu com **13** falhas, não 9 — os `PAIRS` usam os nomes-alvo (`-text`, `on-danger`) que ainda não existiam, então 3 falhas medidas + 10 de token inexistente; ambos vermelho legítimo. Divergência do plano: a ilustração da D10.4 mostra `['warn-text','surface','text']`, mas o registro real (e o bloco de código do Passo 1) usa a razão mínima, `['warn-text','surface',4.5]` — o skill `design-system` segue o código. Bugs de ambiente pegos pelo `test_related` antes do vermelho pretendido: `import.meta.url` é `http:` sob jsdom (troquei por `process.cwd()`), e colisão do nome `resolve` com o de `node:path`. Botão primário: apliquei `--blue-9: #0d5bd9` (padrão do plano, 5,52:1); a alternativa `#4c8dff` + `--gray-1` (6,11:1) fica registrada para a decisão estética no item 2 da validação visual. Docs feitas: skill `design-system` (D10.1 + registro de pares, e correção da regra de espelhamento morta), `ROADMAP §2` (gatilho `--syntax-*`), e a **armadilha escalada ao `HISTORY.md` nesta sessão**. Validação visual **conferida pelo usuário**, que aceitou a prova automática (o teste mede o contraste real dos tokens enviados) como suficiente; `--blue-9: #0d5bd9` mantido como cor final do botão, a alternativa não foi adotada. Plano movido para `implemented/` e marco criado nesta mesma sessão. `--color-bg` escuro inalterado — invariante com `src/main/index.ts:27` (`#16171a`) mantido. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Índice:** [README](README.md) · **Próximo:** [11 — Markdown na resposta do assistente](11-markdown-na-resposta-do-assistente.md)
+**Índice:** [README](../active/README.md) · **Próximo:** [11 — Markdown na resposta do assistente](../active/11-markdown-na-resposta-do-assistente.md)
