@@ -305,7 +305,7 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| | | | |
+| 2026-08-08 | 1–5 | código verde, **validação ao vivo (passo 6) pendente** | Passos 1–5 implementados; `pnpm check:fast` verde (128 testes) e `pnpm build` limpo. **Bundle** (número do passo 1): renderer JS **573,47 → 951,35 kB**, CSS **11,99 → 15,42 kB**, módulos 52 → 309 — `react-markdown` + `remark-gfm` e o ecossistema `unified`/`micromark`/`mdast`/`hast` somam ~378 kB, custo assumido pela D11.2 (segurança por não gerar HTML). **ESM:** o `react-markdown` (`type: module`) processou sob o Vitest 4 jsdom **sem** `server.deps.inline` — o plano previu que poderia precisar; não precisou, e override desnecessário no Vitest é o tipo de config que ninguém depois ousa remover. Rótulo de linguagem do bloco: renderizado no `pre` **fora** do `<pre>` (lido de `node.children[0].properties.className`) para não entrar na seleção de cópia. Falta o usuário rodar o passo 6 (Ollama de verdade: streaming sem piscar, `<pre>` rolando, link abrindo no navegador, frame < 16 ms) e, na conclusão, ROADMAP §2 (2 gatilhos), mover para `implemented/` e o marco. As armadilhas da imagem/CSP e do link mudo só se registram **se observadas** no passo 6. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
