@@ -28,13 +28,15 @@ const rehypePlugins: Options['rehypePlugins'] = [
   // nobody defends when a later reader wonders why blocks look inconsistent.
   //
   // `languages` is deliberately NOT narrowed, and that is a measurement, not a
-  // preference: restricting it to the seven grammars this app expects built to
-  // 1.301,28 kB against 1.301,17 kB for the default `common` — the same 516
-  // modules. rehype-highlight imports `common` from lowlight at module scope
-  // (lib/index.js:30), so all 37 grammars land in the bundle whether the option
-  // is passed or not. It filters what gets highlighted; it is not a bundle
-  // lever. Seven imports to gain 0,11 kB and lose thirty languages is a bad
-  // trade. Shrinking this for real means a small plugin over `createLowlight`.
+  // preference. Narrowing it to the seven grammars this app expects built to
+  // the SAME 516 modules as the default `common` (37), with every variant
+  // landing inside 1 kB of 1.301 kB — noise, not a saving. The reason is in
+  // rehype-highlight itself: `import {common} from 'lowlight'` sits at module
+  // scope (lib/index.js:30) and is consumed as `settings.languages || common`,
+  // so all 37 grammars are reachable for the bundler no matter what is passed.
+  // The option filters what gets highlighted; it is not a bundle lever. Seven
+  // imports for no saving and thirty fewer languages is a bad trade. Shrinking
+  // this for real means a small plugin over `createLowlight`.
   [rehypeHighlight, { detect: false }]
 ]
 
