@@ -1,10 +1,28 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
-import type { Api, ChatReply, Result } from '@shared/ipc'
+import type { Api, ChatReply, JobEvent, Result } from '@shared/ipc'
 import AiChatPanel from './AiChatPanel'
 
 const ready = { ok: true, value: { service: 'ollama', version: '0.5.1' } } as const
+
+const PROMPT = 'Pergunte algo ao modelo…'
+
+/** Drives a full send and resolves the reply, returning the rendered container. */
+async function reply(
+  content: string,
+  prompt = 'oi'
+): Promise<{ api: Api; container: HTMLElement }> {
+  const api = installApiMock()
+  vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+  vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content } })
+  const user = userEvent.setup()
+  const { container } = render(<AiChatPanel />)
+  await screen.findByText('Ollama 0.5.1')
+  await user.type(screen.getByPlaceholderText(PROMPT), prompt)
+  await user.click(screen.getByRole('button', { name: 'Enviar' }))
+  return { api, container }
+}
 
 describe('AiChatPanel', () => {
   it('shows the hint and disables the input when Ollama is unavailable', async () => {
@@ -64,21 +82,6 @@ describe('AiChatPanel', () => {
 // The assistant reply is markdown; these assert the structure produced, queried
 // by role rather than by whole phrase (D11.7). The user's own message stays raw.
 describe('AiChatPanel — markdown da resposta', () => {
-  async function reply(
-    content: string,
-    prompt = 'oi'
-  ): Promise<{ api: Api; container: HTMLElement }> {
-    const api = installApiMock()
-    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
-    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content } })
-    const user = userEvent.setup()
-    const { container } = render(<AiChatPanel />)
-    await screen.findByText('Ollama 0.5.1')
-    await user.type(screen.getByPlaceholderText('Pergunte algo ao modelo…'), prompt)
-    await user.click(screen.getByRole('button', { name: 'Enviar' }))
-    return { api, container }
-  }
-
   it('renders bold and a list, with no raw asterisk on screen', async () => {
     await reply('**forte** com:\n\n- um\n- dois')
 
@@ -139,5 +142,80 @@ describe('AiChatPanel — markdown da resposta', () => {
     await reply('resposta', '**oi**')
 
     expect(await screen.findByText('**oi**')).toBeInTheDocument()
+  })
+})
+
+// Syntax highlighting (fase 12). The palette's contrast is measured elsewhere,
+// in tokens.contrast.test.ts; what these assert is that the right hljs-* class
+// lands on the right token — the half that CSS cannot fix if it is wrong.
+describe('AiChatPanel — realce de sintaxe', () => {
+  it('colours SQL keywords in a closed fenced block', async () => {
+    const { container } = await reply('```sql\nSELECT name FROM users\n```')
+
+    await screen.findByText('sql')
+    expect(container.querySelector('.hljs-keyword')?.textContent).toBe('SELECT')
+  })
+
+  it('keeps a fence with no language uncoloured, and its text intact', async () => {
+    const { container } = await reply('```\nSELECT 1\n```')
+
+    // D12.5: no info string, no colour — the same rule GitHub applies, and what
+    // keeps `detect` off from being a silent guess on a two-line snippet.
+    expect(await screen.findByText('SELECT 1')).toBeInTheDocument()
+    expect(container.querySelector('[class^="hljs-"]')).toBeNull()
+  })
+
+  it('puts an html tag and its attribute in different groups', async () => {
+    const { container } = await reply('```html\n<div class="x">a</div>\n```')
+
+    await screen.findByText('html')
+    // This pair is the whole reason --syntax-tag diverges from Primer's light
+    // theme (D12.4): Primer collapses entityTag onto constant there, which would
+    // paint `div` and `class` the same colour while highlight.js keeps them apart.
+    expect(container.querySelector('.hljs-name')?.textContent).toBe('div')
+    expect(container.querySelector('.hljs-attr')?.textContent).toBe('class')
+  })
+
+  it('resolves a language alias — py reaches the python grammar', async () => {
+    const { container } = await reply('```py\ndef soma(a, b):\n    return a + b\n```')
+
+    await screen.findByText('py')
+    expect(container.querySelector('.hljs-keyword')?.textContent).toBe('def')
+    expect(container.querySelector('.hljs-title')?.textContent).toBe('soma')
+  })
+
+  it('still renders a script inside a fence as inert text', async () => {
+    const { container } = await reply('```html\n<script>alert(1)</script>\n```')
+
+    await screen.findByText('html')
+    // The fase 11 guarantee must survive a rehype plugin being added (D12.2):
+    // rehype-highlight only decorates the tree, so this stays text, not a node.
+    expect(container.querySelector('script')).toBeNull()
+    expect(container.textContent).toContain('alert(1)')
+  })
+
+  it('leaves a still-streaming block uncoloured until the reply lands', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockReturnValue(new Promise<Result<ChatReply>>(() => {}))
+    let emit: ((event: JobEvent) => void) | undefined
+    vi.mocked(api.job.onEvent).mockImplementation((listener) => {
+      emit = listener
+      return vi.fn()
+    })
+    const user = userEvent.setup()
+
+    const { container } = render(<AiChatPanel />)
+    await screen.findByText('Ollama 0.5.1')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
+    act(() => emit?.({ jobId, type: 'chunk', text: '```sql\nSELECT nam' }))
+
+    // completePartial closes the fence, so this IS a well-formed block — the
+    // absence of colour comes from highlight={false}, not from broken markdown.
+    expect(container.querySelector('pre')?.textContent).toContain('SELECT nam')
+    expect(container.querySelector('[class^="hljs-"]')).toBeNull()
   })
 })
