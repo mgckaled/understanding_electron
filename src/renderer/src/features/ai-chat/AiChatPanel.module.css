@@ -1,0 +1,95 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.controls {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.controls > *:first-child {
+  flex: 1;
+}
+
+.number {
+  width: 96px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.input:focus-visible,
+.textarea:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.user,
+.assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.role {
+  font-size: var(--font-size-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+}
+
+/* Model output is copyable data — opt back into selection (base.css disables it
+   at the root for the desktop feel). */
+.content,
+.streaming {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: var(--font-size-sm);
+  user-select: text;
+}
+
+.content {
+  color: var(--color-text);
+}
+
+.streaming {
+  margin-bottom: var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.status {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.unavailable {
+  margin: 0 0 var(--space-5);
+  color: var(--color-warn);
+  font-size: var(--font-size-sm);
+}

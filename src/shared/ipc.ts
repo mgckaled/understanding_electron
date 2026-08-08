@@ -40,6 +40,40 @@ export type DatasetRef = {
   path: string
 }
 
+// AI layer (plano 09, fatia 1). aiServiceSchema is the single source for the
+// set of providers — z.infer keeps the type from being written in parallel.
+// Cloud providers (gemini, glm) join this enum in step 3, never before.
+export const aiServiceSchema = z.enum(['ollama'])
+export type AiService = z.infer<typeof aiServiceSchema>
+
+export const chatMessageSchema = z.object({
+  role: z.enum(['system', 'user', 'assistant']),
+  content: z.string()
+})
+export type ChatRole = ChatMessage['role']
+export type ChatMessage = z.infer<typeof chatMessageSchema>
+
+export type ChatRequest = {
+  service: AiService
+  model: string
+  messages: ChatMessage[]
+  // Optional cap on the CPU threads Ollama uses for this call's inference —
+  // maps to the request's options.num_thread. Undefined lets Ollama decide.
+  numThread?: number
+}
+
+// The final, authoritative reply. Live tokens arrive first as JobEvent 'chunk'
+// payloads; this is the assembled whole, mirroring how dataset:scan emits
+// progress events yet still returns the final DatasetSummary as its Result.
+export type ChatReply = {
+  content: string
+}
+
+export type AiAvailability = {
+  service: AiService
+  version: string
+}
+
 // job:event is not an invoke/handle channel — ipcMain never `.handle()`s it,
 // so it has no entry in argsSchema/IpcContract. main broadcasts JobEvent
 // payloads through it and preload subscribes with ipcRenderer.on. Its name
@@ -50,7 +84,15 @@ export const argsSchema = {
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
   'dataset:scan': z.object({ path: z.string(), jobId: z.string() }),
-  'job:cancel': z.object({ jobId: z.string() })
+  'job:cancel': z.object({ jobId: z.string() }),
+  'ai:isAvailable': z.object({ service: aiServiceSchema }),
+  'ai:chat': z.object({
+    service: aiServiceSchema,
+    model: z.string().min(1),
+    messages: z.array(chatMessageSchema).min(1),
+    numThread: z.number().int().positive().optional(),
+    jobId: z.string()
+  })
 } as const
 
 export type IpcContract = {
@@ -68,6 +110,14 @@ export type IpcContract = {
     result: Result<DatasetSummary>
   }
   'job:cancel': { args: z.infer<(typeof argsSchema)['job:cancel']>; result: void }
+  'ai:isAvailable': {
+    args: z.infer<(typeof argsSchema)['ai:isAvailable']>
+    result: Result<AiAvailability>
+  }
+  'ai:chat': {
+    args: z.infer<(typeof argsSchema)['ai:chat']>
+    result: Result<ChatReply>
+  }
 }
 
 export type Channel = keyof IpcContract
@@ -84,5 +134,11 @@ export type Api = {
   job: {
     cancel(jobId: JobId): Promise<void>
     onEvent(cb: (event: JobEvent) => void): () => void
+  }
+  ai: {
+    isAvailable(service: AiService): Promise<Result<AiAvailability>>
+    // Live tokens stream through job.onEvent as 'chunk' events keyed by jobId;
+    // the resolved Result carries the assembled whole.
+    chat(request: ChatRequest, jobId: JobId): Promise<Result<ChatReply>>
   }
 }

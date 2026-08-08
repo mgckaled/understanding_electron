@@ -35,5 +35,5 @@ test('exposes window.api and nothing beyond it', async () => {
   expect(result.electron).toBeUndefined()
   expect(result.requireFn).toBeUndefined()
   expect(result.process).toBeUndefined()
-  expect(result.apiKeys).toEqual(['app', 'dataset', 'job', 'shell'])
+  expect(result.apiKeys).toEqual(['ai', 'app', 'dataset', 'job', 'shell'])
 })

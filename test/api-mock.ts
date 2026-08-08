@@ -10,7 +10,8 @@ export function createApiMock(): Api {
     // cleanup calls the returned function would otherwise call undefined()
     // and throw, breaking every test that mounts it — not just the ones
     // about unsubscribing.
-    job: { cancel: vi.fn(), onEvent: vi.fn().mockReturnValue(vi.fn()) }
+    job: { cancel: vi.fn(), onEvent: vi.fn().mockReturnValue(vi.fn()) },
+    ai: { isAvailable: vi.fn(), chat: vi.fn() }
   } satisfies Api
 }
 

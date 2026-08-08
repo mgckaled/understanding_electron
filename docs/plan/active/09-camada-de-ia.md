@@ -1,6 +1,8 @@
-# 09 — Camada de IA e ML (backlog)
+# 09 — Camada de IA e ML
 
-> **Não executável ainda.** Este documento não está em `active/` de propósito: o que ele descreve depende da camada de dados ([`docs/study/05-proximos-passos.md`](../../study/05-proximos-passos.md)) e do pipeline de passos ([`docs/ESCOPO.md`](../../ESCOPO.md)), que por sua vez dependem das oito fases de fundação. O que está aqui são **as decisões**, tomadas enquanto o contexto está fresco, para que a implementação não precise redescobri-las.
+> **Fatia 1 implementada em 2026-08-07** — o *gate* de disponibilidade, o provedor Ollama e o chat local em fluxo (a primeira linha da [ordem sugerida](#ordem-sugerida)). O documento **continua em `active/`** porque as fatias 2–6 seguem no backlog: NL→passo, nuvem, cartão de dados, RAG e ML dependem da camada de dados ([`docs/study/05-proximos-passos.md`](../../study/05-proximos-passos.md)) e do pipeline de passos ([`docs/ESCOPO.md`](../../ESCOPO.md)), que ainda não existem. A fatia 1 não precisou de nenhuma das duas: sua única dependência real é o registro de jobs da [fase 06](../implemented/06-primeira-feature.md), como a própria [ordem sugerida](#ordem-sugerida) explicita.
+>
+> O que está aqui são **as decisões**, tomadas enquanto o contexto estava fresco; a fatia 1 as seguiu (D9.1, D9.2, D9.3) sem redescobri-las. As fatias seguintes herdam o mesmo registro de decisões.
 >
 > Referência do que se pretende portar: o `CLAUDE.md` e a skill `ml-rag` do projeto **mill.tools**. O que define o produto é o [escopo](../../ESCOPO.md) — este documento decide como a IA se encaixa nele, nunca o contrário.
 
@@ -155,6 +157,6 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| — | — | não iniciada | — |
+| 2026-08-07 | Fatia 1 — gate + provedor Ollama + chat local em fluxo | concluída | Vertical `core`→`main`→`preload`→`renderer`: `core/ai` (`ChatFn`/`ProbeFn`/`runChat` puros), adaptador Ollama por `fetch` cru contra `127.0.0.1:11434` (zero dependência nova — `ollama` npm descartado), handlers com dois timeouts (ping 10s / chat 300s) e a flag `timedOut` separando cancelamento de estouro de prazo no mesmo `AbortController`. Streaming pela variante `chunk` de `JobEvent` (primeiro consumidor dela) + hook `useJobChunks`. Reusou `AppError` `unavailable`/`upstream` sem novos `kind`. Modelo padrão `gemma3:4b`; teto de threads de CPU (`options.num_thread`) configurável na UI, default 4 — a inferência roda no processo do Ollama, então esse é o único controle que o app tem sobre o apetite de CPU. `check:fast` verde (93 testes; os avisos `␍` do ESLint são CRLF pré-existentes em arquivos não tocados), build limpo (preload 1,15 kB, sem arrastar `zod`) e e2e dev 4/4. **Validado ao vivo**: `gemma3:4b` servido de `C:\ollama-models` (o path é config do `ollama serve` via `OLLAMA_MODELS`; o app é agnóstico a ele), streaming em tempo real ~4-6 tok/s, `ollama-server` ~52% de CPU com `num_thread=4`. **Aberto para próximas sessões**: (a) injeção do esquema do dataset no chat — colunas, nunca linhas (D9.4); exige o 1º estado compartilhado entre features + registro da regra de privacidade no `CLAUDE.md`; (b) gate via `/api/tags` para verificar o modelo específico e popular um dropdown. Fatias 2–6 seguem bloqueadas pela camada de dados + pipeline. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.

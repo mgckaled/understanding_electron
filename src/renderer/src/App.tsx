@@ -5,6 +5,7 @@ import Toolbar from './shared/ui/Toolbar/Toolbar'
 import Button from './shared/ui/Button/Button'
 import Versions from './components/Versions'
 import OpenDatasetPanel from './features/open-dataset/OpenDatasetPanel'
+import AiChatPanel from './features/ai-chat/AiChatPanel'
 import styles from './App.module.css'
 
 function App(): React.JSX.Element {
@@ -31,6 +32,7 @@ function App(): React.JSX.Element {
         <p>Built with React and TypeScript.</p>
       </Panel>
       <OpenDatasetPanel />
+      <AiChatPanel />
       <Versions />
     </div>
   )

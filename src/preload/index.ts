@@ -25,6 +25,12 @@ const api: Api = {
       ipcRenderer.on(JOB_EVENT_CHANNEL, listener)
       return () => ipcRenderer.off(JOB_EVENT_CHANNEL, listener)
     }
+  },
+  ai: {
+    isAvailable: (service) => invoke('ai:isAvailable', { service }),
+    // Live tokens surface through api.job.onEvent as 'chunk' events; this
+    // resolves with the assembled reply. No new preload channel needed.
+    chat: (request, jobId) => invoke('ai:chat', { ...request, jobId })
   }
 }
 
