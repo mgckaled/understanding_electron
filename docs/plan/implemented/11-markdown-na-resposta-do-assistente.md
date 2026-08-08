@@ -1,10 +1,10 @@
 # 11 — Markdown na resposta do assistente
 
-**Depende de:** [10 — Cor](../implemented/10-cor-contraste-e-tema-claro.md), [09 — fatia 1](09-camada-de-ia.md) (implementada), [03](../implemented/03-sandbox-e-seguranca.md), [05](../implemented/05-design-tokens.md), [06](../implemented/06-primeira-feature.md) · **Entrega:** a resposta do modelo renderizada como markdown, com link seguro, imagem neutralizada e streaming que não quebra a formatação
+**Depende de:** [10 — Cor](10-cor-contraste-e-tema-claro.md), [09 — fatia 1](../active/09-camada-de-ia.md) (implementada), [03](03-sandbox-e-seguranca.md), [05](05-design-tokens.md), [06](06-primeira-feature.md) · **Entrega:** a resposta do modelo renderizada como markdown, com link seguro, imagem neutralizada e streaming que não quebra a formatação
 
-> **Por que depois da [10](../implemented/10-cor-contraste-e-tema-claro.md):** esta fatia é o maior produtor de superfície colorida nova do projeto — bloco de código, código inline, citação, borda de tabela e **link**, que é o primeiro uso real de cor de acento como texto. Escrita antes, a tipografia do passo 3 seria calibrada contra um tema claro em que `--color-surface` é cinza médio e `--color-surface-sunken` é mais **claro** que ele: o bloco de código "afundado" pareceria elevado, e a resposta natural seria trocar o token — uma decisão de design tomada contra um fundo errado, que é mais cara de desfazer do que a linha de CSS que a originou.
+> **Por que depois da [10](10-cor-contraste-e-tema-claro.md):** esta fatia é o maior produtor de superfície colorida nova do projeto — bloco de código, código inline, citação, borda de tabela e **link**, que é o primeiro uso real de cor de acento como texto. Escrita antes, a tipografia do passo 3 seria calibrada contra um tema claro em que `--color-surface` é cinza médio e `--color-surface-sunken` é mais **claro** que ele: o bloco de código "afundado" pareceria elevado, e a resposta natural seria trocar o token — uma decisão de design tomada contra um fundo errado, que é mais cara de desfazer do que a linha de CSS que a originou.
 
-> Este plano **não decide nada sobre a camada de IA** — provedores, gate, privacidade e sequência de fatias continuam sendo do [`09-camada-de-ia.md`](09-camada-de-ia.md). Aqui é só a borda de apresentação da fatia 1, que ficou incompleta.
+> Este plano **não decide nada sobre a camada de IA** — provedores, gate, privacidade e sequência de fatias continuam sendo do [`09-camada-de-ia.md`](../active/09-camada-de-ia.md). Aqui é só a borda de apresentação da fatia 1, que ficou incompleta.
 
 ---
 
@@ -27,7 +27,7 @@ A cerca de código aparece como três crases literais, o `**` aparece como quatr
 Não é cosmético por dois motivos concretos:
 
 1. **A fatia 2 (NL→passo) vai emitir SQL.** Um bloco ` ```sql ` sem monoespaçado, sem fundo próprio e sem rolagem horizontal é ilegível na largura de um painel. O problema chega junto com o maior retorno da camada de IA — melhor resolvê-lo antes, com respostas de chat de baixo risco.
-2. **A resposta é dado copiável.** A [fase 05](../implemented/05-design-tokens.md) já reconheceu isso com `user-select: text` no `.content`. Copiar um bloco de código de dentro de um parágrafo corrido, sem fronteira visual, é acertar o começo e o fim no olho.
+2. **A resposta é dado copiável.** A [fase 05](05-design-tokens.md) já reconheceu isso com `user-select: text` no `.content`. Copiar um bloco de código de dentro de um parágrafo corrido, sem fronteira visual, é acertar o começo e o fim no olho.
 
 ### O que muda na tela
 
@@ -48,7 +48,7 @@ Não é cosmético por dois motivos concretos:
 
 Existe uma tensão real aqui, e ela é registrada em vez de resolvida em silêncio.
 
-O argumento para `shared/ui/Markdown/` é bom: markdown é vocabulário de apresentação, não de feature, e o cartão de dados (fatia 4 do plano 09) vai querer o mesmo. O argumento contra é a regra que o próprio projeto já fixou na [D6.1](../implemented/06-primeira-feature.md): **sobe para `shared/` a partir do terceiro uso; antes disso, é abstração prematura.** Hoje há **um** consumidor.
+O argumento para `shared/ui/Markdown/` é bom: markdown é vocabulário de apresentação, não de feature, e o cartão de dados (fatia 4 do plano 09) vai querer o mesmo. O argumento contra é a regra que o próprio projeto já fixou na [D6.1](06-primeira-feature.md): **sobe para `shared/` a partir do terceiro uso; antes disso, é abstração prematura.** Hoje há **um** consumidor.
 
 A regra ganha. `src/renderer/src/features/ai-chat/MarkdownMessage.tsx` e seu `.module.css` ao lado. O custo de mover depois é um `git mv` e dois imports — que é exatamente a resposta que a régua *"quantos arquivos toco depois?"* precisa dar para justificar o adiamento.
 
@@ -69,7 +69,7 @@ Alternativas descartadas, com o motivo:
 | Descartado | Por quê |
 |---|---|
 | `marked`/`markdown-it` + `DOMPurify` + `dangerouslySetInnerHTML` | Reintroduz a superfície de injeção que o resto da arquitetura passou três fases estreitando. Um sanitizador é uma lista de negação a manter; "não gerar HTML" não é. |
-| Parser próprio em `core/` | Tentador pelo "zero dependência nova" que a [fase 06](../implemented/06-primeira-feature.md) celebrou. Mas ali a lógica era **nossa** (dedução de separador, ~150 linhas, casos conhecidos). Markdown tem código dentro de lista, ênfase aninhada, cerca com til, tabela GFM — e a entrada é gerada por um modelo, ou seja, não é possível restringir o que aparece. Seriam centenas de linhas cujos defeitos se manifestam como texto quebrado na tela do usuário. |
+| Parser próprio em `core/` | Tentador pelo "zero dependência nova" que a [fase 06](06-primeira-feature.md) celebrou. Mas ali a lógica era **nossa** (dedução de separador, ~150 linhas, casos conhecidos). Markdown tem código dentro de lista, ênfase aninhada, cerca com til, tabela GFM — e a entrada é gerada por um modelo, ou seja, não é possível restringir o que aparece. Seriam centenas de linhas cujos defeitos se manifestam como texto quebrado na tela do usuário. |
 | `streamdown` | Resolve markdown incompleto durante o streaming — o problema real da D11.4. Mas traz Tailwind e um conjunto grande de dependências transitivas, num projeto que [descartou Tailwind por ora](../../HISTORY.md). A parte útil cabe em vinte linhas próprias e testáveis. |
 | `rehype-raw` / `rehype-sanitize` | Só fazem sentido para *permitir* HTML. Não queremos permitir. |
 
@@ -81,11 +81,11 @@ Markdown é o primeiro produtor de URLs arbitrárias neste app. Duas coisas queb
 
 **Imagem remota.** A CSP é `img-src 'self' data:`. Um `![gráfico](https://exemplo.com/g.png)` na resposta é bloqueado pelo Chromium e deixa um espaço vazio — sem erro no terminal, só no DevTools. Decisão: `urlTransform` devolve `null` para `key === 'src'`, o que remove o atributo e faz o **texto alternativo aparecer** no lugar. Falha visível é melhor que falha muda, e a alternativa (afrouxar a CSP para `img-src https:`) trocaria uma imagem que ninguém pediu por permissão de rede no renderer.
 
-**Link clicado.** A [fase 03](../implemented/03-sandbox-e-seguranca.md) nega navegação para fora da origem no `will-navigate`. Um `<a href="https://…">` clicado dentro do app não abre nada e não avisa nada. O caminho correto é `preventDefault()` e `window.api.shell.openExternal(href)`.
+**Link clicado.** A [fase 03](03-sandbox-e-seguranca.md) nega navegação para fora da origem no `will-navigate`. Um `<a href="https://…">` clicado dentro do app não abre nada e não avisa nada. O caminho correto é `preventDefault()` e `window.api.shell.openExternal(href)`.
 
-E aqui há um detalhe que morde: `argsSchema['shell:openExternal']` é `z.object({ url: z.string().url() })`, e payload fora do schema **lança** — [decisão D2.2](../implemented/02-contrato-ipc.md), deliberada. Um link relativo do markdown (`[doc](/guia)`) viraria exceção no renderer, não `Result`.
+E aqui há um detalhe que morde: `argsSchema['shell:openExternal']` é `z.object({ url: z.string().url() })`, e payload fora do schema **lança** — [decisão D2.2](02-contrato-ipc.md), deliberada. Um link relativo do markdown (`[doc](/guia)`) viraria exceção no renderer, não `Result`.
 
-A solução já existe no repositório e é a mesma lição que a [armadilha da lista branca](../../HISTORY.md) deixou: **`checkExternalUrl` mora em `src/core/url.ts` justamente porque mais de um chamador precisa da decisão.** O renderer pode importar `core/` (tabela da [fase 01](../implemented/01-camadas-e-fronteiras.md)), então o componente usa a **mesma função pura** que o main usa para decidir se aquilo é um link:
+A solução já existe no repositório e é a mesma lição que a [armadilha da lista branca](../../HISTORY.md) deixou: **`checkExternalUrl` mora em `src/core/url.ts` justamente porque mais de um chamador precisa da decisão.** O renderer pode importar `core/` (tabela da [fase 01](01-camadas-e-fronteiras.md)), então o componente usa a **mesma função pura** que o main usa para decidir se aquilo é um link:
 
 - `checkExternalUrl(href).ok === true` → renderiza `<a>` que chama `openExternal` no clique;
 - caso contrário → renderiza o texto do link, sem `<a>`.
@@ -106,7 +106,7 @@ Duas saídas, e a fácil é ruim aqui:
 
 Fica ao lado do componente, com teste de nível 2 — é a única parte desta fatia com lógica de verdade.
 
-**Custo a medir, não a presumir:** re-parsear e reconciliar a árvore a cada token. A [D6.4](../implemented/06-primeira-feature.md) já enfrentou o análogo do outro lado da fronteira e resolveu com limite de 10 emissões por segundo. Aqui o passo 6 mede primeiro; se o frame passar de 16 ms, o mesmo remédio se aplica no renderer — e o número medido vai para o diário de qualquer jeito.
+**Custo a medir, não a presumir:** re-parsear e reconciliar a árvore a cada token. A [D6.4](06-primeira-feature.md) já enfrentou o análogo do outro lado da fronteira e resolveu com limite de 10 emissões por segundo. Aqui o passo 6 mede primeiro; se o frame passar de 16 ms, o mesmo remédio se aplica no renderer — e o número medido vai para o diário de qualquer jeito.
 
 ### D11.5 — Sem realce de sintaxe nesta fatia
 
@@ -114,7 +114,7 @@ Fica ao lado do componente, com teste de nível 2 — é a única parte desta fa
 
 **Um tema de realce é um conjunto de cores literais.** `tokens.css` é a fonte única de cor neste projeto, e o [`guard.mjs`](../../../.claude/hooks/guard.mjs) bloqueia `#hex` em qualquer `*.module.css`. Adotar realce exige uma família nova de primitivos (`--syntax-keyword`, `--syntax-string`, …) mapeada em dois temas — decisão de design system inteira, dentro de uma fatia que é sobre outra coisa.
 
-A [fase 10](../implemented/10-cor-contraste-e-tema-claro.md) já deixou o terreno pronto e chegou à mesma conclusão pelo outro lado: calibrar cores de sintaxe **sem SQL real na tela** é decidir no escuro. Quando a paleta chegar, cada cor nasce com sua linha no registro de pares e o teste de contraste a cobre desde o primeiro commit.
+A [fase 10](10-cor-contraste-e-tema-claro.md) já deixou o terreno pronto e chegou à mesma conclusão pelo outro lado: calibrar cores de sintaxe **sem SQL real na tela** é decidir no escuro. Quando a paleta chegar, cada cor nasce com sua linha no registro de pares e o teste de contraste a cobre desde o primeiro commit.
 
 Nesta fatia, bloco de código é: `--font-mono`, fundo `--color-surface-sunken`, borda, `overflow-x: auto` e o nome da linguagem visível quando a cerca o traz. Legível, e honesto sobre não ser colorido.
 
@@ -132,7 +132,7 @@ Com markdown, o texto deixa de ser um nó só. `**Bold** e texto` vira três nó
 
 A técnica: consultar por **papel** (`getByRole('list')`, `getByRole('table')`, `getByRole('link')`) e por conteúdo de elemento específico, não por frase inteira. O teste passa a verificar *que estrutura foi produzida*, que é justamente o que esta fatia entrega.
 
-O caso mais valioso é o de segurança, no mesmo espírito do `security-boundary.spec.ts` da [fase 07](../implemented/07-e2e-e-empacotamento.md): **uma resposta contendo `<img src=x onerror=…>` ou `<script>` precisa aparecer como texto literal na tela**, não como elemento no DOM. É o teste que pega alguém adicionando `rehype-raw` daqui a seis meses para "fazer funcionar aquele HTML".
+O caso mais valioso é o de segurança, no mesmo espírito do `security-boundary.spec.ts` da [fase 07](07-e2e-e-empacotamento.md): **uma resposta contendo `<img src=x onerror=…>` ou `<script>` precisa aparecer como texto literal na tela**, não como elemento no DOM. É o teste que pega alguém adicionando `rehype-raw` daqui a seis meses para "fazer funcionar aquele HTML".
 
 ---
 
@@ -197,7 +197,7 @@ O que precisa estar lá, e por quê:
 | `h1`–`h3` próximos do tamanho do corpo | LLM usa `#` com generosidade; título de 28 px dentro de um painel de chat grita |
 | Recuo de lista em `--space-*` | aninhamento de três níveis é comum nessas respostas |
 | `code` inline com fundo e `--radius-sm` | distinguir `nome_da_coluna` do texto ao redor é metade do valor aqui |
-| link em `--color-accent-text` | **não** `--color-accent`: aquele é o sólido de fundo, e como texto falha AA nos dois temas — [D10.1](../implemented/10-cor-contraste-e-tema-claro.md) |
+| link em `--color-accent-text` | **não** `--color-accent`: aquele é o sólido de fundo, e como texto falha AA nos dois temas — [D10.1](10-cor-contraste-e-tema-claro.md) |
 | citação com borda em `--color-border` | o modelo usa `>` para destacar ressalvas |
 
 **Nenhum `#hex` e nenhum `var(--gray-N)`** — só tokens semânticos. O `guard.mjs` roda a cada edição e bloqueia os dois; se algum estado pedir uma cor que não existe, ela nasce em `tokens.css`, não aqui.
@@ -295,7 +295,7 @@ Ao concluir, além de mover o arquivo para `implemented/` e escrever a entrada e
 | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) | uma linha sobre onde a tipografia de markdown mora — **só se** o componente subir para `shared/ui/`; enquanto for da fatia, não é vocabulário do design system |
 | [`HISTORY.md`](../../HISTORY.md) § Armadilhas | a imagem bloqueada pela CSP e o link mudo do `will-navigate`, **se** forem observados de fato no passo 6 — armadilha se registra medida, não prevista |
 
-Nada muda no [`ESCOPO.md`](../../ESCOPO.md) nem no [`09-camada-de-ia.md`](09-camada-de-ia.md): esta fatia não altera o que o app faz nem como a IA se encaixa nele.
+Nada muda no [`ESCOPO.md`](../../ESCOPO.md) nem no [`09-camada-de-ia.md`](../active/09-camada-de-ia.md): esta fatia não altera o que o app faz nem como a IA se encaixa nele.
 
 ---
 
@@ -305,10 +305,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-08 | 1–5 | código verde, **validação ao vivo (passo 6) pendente** | Passos 1–5 implementados; `pnpm check:fast` verde (128 testes) e `pnpm build` limpo. **Bundle** (número do passo 1): renderer JS **573,47 → 951,35 kB**, CSS **11,99 → 15,42 kB**, módulos 52 → 309 — `react-markdown` + `remark-gfm` e o ecossistema `unified`/`micromark`/`mdast`/`hast` somam ~378 kB, custo assumido pela D11.2 (segurança por não gerar HTML). **ESM:** o `react-markdown` (`type: module`) processou sob o Vitest 4 jsdom **sem** `server.deps.inline` — o plano previu que poderia precisar; não precisou, e override desnecessário no Vitest é o tipo de config que ninguém depois ousa remover. Rótulo de linguagem do bloco: renderizado no `pre` **fora** do `<pre>` (lido de `node.children[0].properties.className`) para não entrar na seleção de cópia. Falta o usuário rodar o passo 6 (Ollama de verdade: streaming sem piscar, `<pre>` rolando, link abrindo no navegador, frame < 16 ms) e, na conclusão, ROADMAP §2 (2 gatilhos), mover para `implemented/` e o marco. As armadilhas da imagem/CSP e do link mudo só se registram **se observadas** no passo 6. |
+| 2026-08-08 | 1–6 + arquivamento | **concluída** | Passos 1–5 implementados; `pnpm check:fast` verde (128 testes) e `pnpm build` limpo. **Bundle** (número do passo 1): renderer JS **573,47 → 951,35 kB**, CSS **11,99 → 15,42 kB**, módulos 52 → 309 — `react-markdown` + `remark-gfm` e o ecossistema `unified`/`micromark`/`mdast`/`hast` somam ~378 kB, custo assumido pela D11.2 (segurança por não gerar HTML). **ESM:** o `react-markdown` (`type: module`) processou sob o Vitest 4 jsdom **sem** `server.deps.inline` — o plano previu que poderia precisar; não precisou, e override desnecessário no Vitest é o tipo de config que ninguém depois ousa remover. Rótulo de linguagem do bloco: renderizado no `pre` **fora** do `<pre>` (lido de `node.children[0].properties.className`) para não entrar na seleção de cópia. Passo 6 **conferido pelo usuário** (capturas de tela): resposta estruturada com títulos, listas aninhadas, negrito e **tabela GFM**; bloco de código monoespaçado com o rótulo de linguagem ("python") no topo. Frame não medido formalmente, mas o streaming rodou fluido — o limitador da D11.4 fica adiado até haver número que o peça. Conclusão nesta sessão: `ROADMAP §2` ganhou 2 gatilhos (realce fundido na linha do `--syntax-*`; subida para `shared/ui/` em linha nova), plano movido para `implemented/`, marco criado. As armadilhas de imagem/CSP e link mudo **não** foram registradas — não foram testadas (nenhuma resposta trouxe imagem remota ou link). |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [10 — Cor: contraste medido e tema claro](../implemented/10-cor-contraste-e-tema-claro.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)
+**Anterior:** [10 — Cor: contraste medido e tema claro](10-cor-contraste-e-tema-claro.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)

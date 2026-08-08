@@ -41,7 +41,8 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Design system estável | Endurecer a CSP (hoje permite `style-src 'unsafe-inline'`) | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
 | ~~`check:fast` passar de 10s~~ **disparado** — 21,5s (ago/2026) e **27s** medido na fase 08, agora que roda a cada resposta no `Stop` hook, bem acima da meta de 15s da skill `testing`. Investigar antes de empilhar mais teste | Medir a duração do ciclo de retorno | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
 | Existirem cartões de dados suficientes | RAG sobre cartões e receitas | [`09-camada-de-ia`](plan/active/09-camada-de-ia.md) |
-| Fatia 2 do [`09`](plan/active/09-camada-de-ia.md) (NL→passo) gerando SQL para revisão | Calibrar a paleta `--syntax-*` de realce — cor só se decide vendo SQL real na tela | [`10-cor`](plan/implemented/10-cor-contraste-e-tema-claro.md) |
+| Fatia 2 do [`09`](plan/active/09-camada-de-ia.md) (NL→passo) gerando SQL para revisão | Realce de sintaxe: calibrar a paleta `--syntax-*` **e** ligá-la no bloco de código do markdown — cor só se decide vendo SQL real na tela | [`10-cor`](plan/implemented/10-cor-contraste-e-tema-claro.md) · [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
+| Segundo consumidor de markdown fora de `ai-chat` (cartão de dados, receita) | Subir `MarkdownMessage` + a tipografia de bloco para `shared/ui/` (D11.1) | [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
 
 ---
 

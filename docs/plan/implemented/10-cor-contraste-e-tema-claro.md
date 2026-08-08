@@ -114,7 +114,7 @@ Duas alternativas descartadas:
 
 ### D10.5 — `--syntax-*` fica de fora
 
-A [fase 11](../active/11-markdown-na-resposta-do-assistente.md) vai colocar bloco de código na tela, e a paleta de realce cairia aqui por associação — é cor, e mexe em `tokens.css`. Mesmo assim não entra, e a razão é a mesma que ordenou as duas fases: **decidir cor exige ver a cor no seu contexto real.**
+A [fase 11](11-markdown-na-resposta-do-assistente.md) vai colocar bloco de código na tela, e a paleta de realce cairia aqui por associação — é cor, e mexe em `tokens.css`. Mesmo assim não entra, e a razão é a mesma que ordenou as duas fases: **decidir cor exige ver a cor no seu contexto real.**
 
 Calibrar cinco a oito cores de sintaxe **sem SQL real na tela** é decidir no escuro; o resultado seria revisto na primeira vez que alguém olhasse um `SELECT` de verdade. O que este plano entrega para ela é a estrutura: quando a paleta chegar, cada cor nasce com sua linha no registro de pares e o teste do passo 1 a cobre desde o primeiro commit.
 
@@ -298,4 +298,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Índice:** [README](../active/README.md) · **Próximo:** [11 — Markdown na resposta do assistente](../active/11-markdown-na-resposta-do-assistente.md)
+**Índice:** [README](../active/README.md) · **Próximo:** [11 — Markdown na resposta do assistente](11-markdown-na-resposta-do-assistente.md)
