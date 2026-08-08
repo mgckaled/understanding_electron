@@ -5,7 +5,8 @@
  */
 
 :root {
-  /* Primitives — neutral cold scale, 12 steps, dark-first (1 darkest, 12 lightest) */
+  /* Primitives — neutral cold scale, dark-first (1 darkest, higher = lighter).
+     1–12 are the base scale; 13 is pure white, the top the light theme elevates to. */
   --gray-1: #0b0c0e;
   --gray-2: #16171a;
   --gray-3: #1e2023;
@@ -18,15 +19,26 @@
   --gray-10: #9a9da5;
   --gray-11: #c4c6cb;
   --gray-12: #f5f6f7;
+  --gray-13: #ffffff;
 
-  /* Primitives — accent, the one taste choice in this file */
-  --accent-9: #4c8dff;
-  --accent-10: #6ba0ff;
-
-  /* Primitives — state */
-  --red-9: #e5484d;
+  /* Primitives — colour, solid fill vs. text (D10.1). A colour dark enough to
+     carry white text as a fill and one legible as text over a surface are two
+     different colours: 9/10 are the solid fills, 11 is the text form. The
+     -dark/-light suffix is the text form legible over the dark theme's surface
+     vs. over white. Blue is the one taste choice; the rest are conventional. */
+  --blue-9: #0d5bd9;
+  --blue-10: #1d4ed8;
+  --blue-11-dark: #4c8dff;
+  --blue-11-light: #0d74ce;
+  --red-9: #c62a2f;
+  --red-11-dark: #ff6369;
+  --red-11-light: #ce2c31;
   --amber-9: #f5a524;
+  --amber-11-dark: #f5a524;
+  --amber-11-light: #946800;
   --green-9: #30a46c;
+  --green-11-dark: #30a46c;
+  --green-11-light: #1a7f4f;
 
   /* Semantic — dark theme (default) */
   /* --color-bg must match backgroundColor in src/main/index.ts — the one
@@ -40,8 +52,8 @@
   --color-text: var(--gray-12);
   --color-text-muted: var(--gray-10);
   --color-text-faint: var(--gray-8);
-  --color-accent: var(--accent-9);
-  --color-accent-hover: var(--accent-10);
+  --color-accent: var(--blue-9);
+  --color-accent-hover: var(--blue-10);
   --color-on-accent: var(--gray-12);
   --color-danger: var(--red-9);
   --color-warn: var(--amber-9);
