@@ -3,6 +3,7 @@ import type { AppError } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
 import Field from '../../shared/ui/Field/Field'
 import { errorMessage } from '../../shared/ui/messages'
+import { useSettings } from '../settings/settingsContext'
 import { useActiveConversation } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
 import { useStickToBottom } from './useStickToBottom'
@@ -11,11 +12,11 @@ import Composer from './Composer'
 import { completePartial } from './completePartial'
 import styles from './ConversationView.module.css'
 
+// The model is conversation scale (D13.4), so it stays here. num_thread is
+// machine scale and moved to Configurações — reopening an old conversation must
+// not restore a thread count that belongs to a different computer. The model
+// selector proper, reading /api/tags, is plano 15.
 const DEFAULT_MODEL = 'gemma3:4b'
-// Capped for a laptop already running VS Code, a browser and this agent — the
-// inference lives in the Ollama process, so this is the one lever the app has
-// over its CPU appetite (maps to options.num_thread). See plano 09 D9.1.
-const DEFAULT_NUM_THREAD = 4
 
 // The unavailable gate carries a specific hint (D9.3); other errors fall back
 // to the shared generic message.
@@ -25,11 +26,11 @@ function availabilityText(error: AppError): string {
 
 function ConversationView(): React.JSX.Element {
   const conversation = useActiveConversation()
+  const { settings } = useSettings()
   const [model, setModel] = useState(DEFAULT_MODEL)
-  const [numThread, setNumThread] = useState(DEFAULT_NUM_THREAD)
   const { availability, streaming, lastRequestId, state, send, cancel } = useConversationChat(
     model,
-    numThread
+    settings.numThread
   )
 
   const messages = conversation?.messages ?? []
@@ -54,16 +55,6 @@ function ConversationView(): React.JSX.Element {
               className={styles.input}
               value={model}
               onChange={(event) => setModel(event.target.value)}
-              disabled={isLoading}
-            />
-          </Field>
-          <Field label="Threads de CPU" hint="Núcleos que o Ollama pode usar nesta máquina.">
-            <input
-              className={`${styles.input} ${styles.number}`}
-              type="number"
-              min={1}
-              value={numThread}
-              onChange={(event) => setNumThread(Math.max(1, Number(event.target.value) || 1))}
               disabled={isLoading}
             />
           </Field>

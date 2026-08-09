@@ -6,6 +6,8 @@ import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
 import ConversationsProvider from './features/conversation/ConversationsProvider'
 import NewConversationButton from './features/conversation/NewConversationButton'
+import SettingsProvider from './features/settings/SettingsProvider'
+import Settings from './features/settings/Settings'
 
 /*
  * Composition only: which component goes in which slot (D13.1). The shell knows
@@ -13,28 +15,35 @@ import NewConversationButton from './features/conversation/NewConversationButton
  * from features/, and what keeps the settings surface and the reviewable-steps
  * block of plano 18 out of the shell's source.
  *
- * The provider wraps the whole shell because both columns read from it: the
+ * The providers wrap the whole shell because both columns read from them: the
  * list lives in the sidebar and the view in the main region.
  */
 function App(): React.JSX.Element {
   return (
-    <ConversationsProvider>
-      <AppShell
-        sidebar={
-          <Sidebar
-            nav={<NewConversationButton />}
-            content={
-              <>
-                <ConversationList />
-                <OpenDatasetPanel />
-              </>
-            }
-            footer={<Versions />}
-          />
-        }
-        main={<ConversationView />}
-      />
-    </ConversationsProvider>
+    <SettingsProvider>
+      <ConversationsProvider>
+        <AppShell
+          sidebar={
+            <Sidebar
+              nav={
+                <>
+                  <NewConversationButton />
+                  <Settings />
+                </>
+              }
+              content={
+                <>
+                  <ConversationList />
+                  <OpenDatasetPanel />
+                </>
+              }
+              footer={<Versions />}
+            />
+          }
+          main={<ConversationView />}
+        />
+      </ConversationsProvider>
+    </SettingsProvider>
   )
 }
 

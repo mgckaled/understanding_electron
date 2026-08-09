@@ -75,6 +75,19 @@ export default defineConfig(
     }
   },
   {
+    files: ['src/renderer/**/*.tsx'],
+    rules: {
+      // eslint-plugin-react checks JSX props against a hand-maintained list of
+      // DOM properties, and that list lags the platform. `closedby` on <dialog>
+      // (light dismiss) is in Chromium since 134, is declared in @types/react,
+      // and is confirmed present in the Chromium 148 this Electron embeds — the
+      // plugin simply has not caught up. Listing it here beats a per-line
+      // disable: the next platform attribute lands in one place instead of
+      // scattering suppressions through components.
+      'react/no-unknown-property': ['error', { ignore: ['closedby'] }]
+    }
+  },
+  {
     files: ['**/*.test.{ts,tsx}', 'test/**/*.{ts,tsx}'],
     languageOptions: {
       globals: {

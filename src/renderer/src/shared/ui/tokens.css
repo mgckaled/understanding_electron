@@ -67,6 +67,12 @@
   --color-warn-text: var(--amber-11-dark);
   --color-ok: var(--green-9);
   --color-ok-text: var(--green-11-dark);
+  /* The modal scrim. Single layer, like --syntax-*: one consumer, one meaning,
+     and a primitive underneath would buy no option. It carries alpha on purpose
+     — a scrim is the surface below, dimmed; an opaque value would be a second
+     background rather than a veil. No row in tokens.contrast.test.ts because
+     nothing sits on top of it: there is no pair to measure. */
+  --color-backdrop: rgb(0 0 0 / 55%);
 
   /* Syntax highlighting — imported as a set from @primer/primitives (GitHub),
      values current in ago/2026. Single layer on purpose (D12.4): no primitive
@@ -162,6 +168,9 @@
     --color-ok-text: var(--green-11-light);
     --color-on-accent: var(--gray-13);
     --color-on-danger: var(--gray-13);
+    /* Lighter over a white ground: the same 55% that reads as a veil over the
+       dark theme reads as a blackout here. */
+    --color-backdrop: rgb(0 0 0 / 35%);
 
     /* Syntax: Primer's light values, with one deliberate divergence (D12.4).
        Primer collapses entityTag onto constant in light (both #0550ae) while

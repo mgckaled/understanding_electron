@@ -1,7 +1,10 @@
+import type { ReactNode } from 'react'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
 import type { Api, ChatReply, JobEvent, Result } from '@shared/ipc'
+import SettingsProvider from '../settings/SettingsProvider'
+import Settings from '../settings/Settings'
 import ConversationsProvider from './ConversationsProvider'
 import ConversationList from './ConversationList'
 import ConversationView from './ConversationView'
@@ -11,23 +14,30 @@ const ready = { ok: true, value: { service: 'ollama', version: '0.5.1' } } as co
 
 const PROMPT = 'Pergunte algo ao modelo…'
 
-/** The view alone, under the store it now reads from. */
-function renderView(): HTMLElement {
-  return render(
-    <ConversationsProvider>
-      <ConversationView />
-    </ConversationsProvider>
-  ).container
+function providers(children: ReactNode): React.JSX.Element {
+  return (
+    <SettingsProvider>
+      <ConversationsProvider>{children}</ConversationsProvider>
+    </SettingsProvider>
+  )
 }
 
-/** The view plus the sidebar pieces, for anything about switching conversations. */
+/** The view alone, under the stores it now reads from. */
+function renderView(): HTMLElement {
+  return render(providers(<ConversationView />)).container
+}
+
+/** The view plus the sidebar pieces, for anything about switching or settings. */
 function renderShell(): void {
   render(
-    <ConversationsProvider>
-      <NewConversationButton />
-      <ConversationList />
-      <ConversationView />
-    </ConversationsProvider>
+    providers(
+      <>
+        <NewConversationButton />
+        <Settings />
+        <ConversationList />
+        <ConversationView />
+      </>
+    )
   )
 }
 
@@ -220,6 +230,43 @@ describe('ConversationView — troca de conversa', () => {
 
     expect(screen.queryByRole('button', { name: 'Excluir Nova conversa' })).not.toBeInTheDocument()
     expect(await screen.findByText('resposta A')).toBeInTheDocument()
+  })
+})
+
+// Settings is machine scale (D13.4) and a modal, not a destination (D13.8).
+// That it does not unmount the conversation is verified live, with a reply
+// actually streaming; what is asserted here is the half a unit test can see —
+// the new value reaching the next call, and the conversation still on screen.
+describe('Configurações', () => {
+  it('applies the new num_thread to the next call, leaving the transcript in place', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'r1' } })
+    const user = userEvent.setup()
+
+    renderShell()
+    await screen.findByText('Ollama 0.5.1')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'p1')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('r1')
+
+    expect(vi.mocked(api.ai.chat).mock.calls[0]?.[0].numThread).toBe(4)
+
+    await user.click(screen.getByRole('button', { name: 'Configurações' }))
+    const threads = screen.getByLabelText('Threads de CPU')
+    await user.clear(threads)
+    await user.type(threads, '2')
+    await user.click(screen.getByRole('button', { name: 'Fechar' }))
+
+    // The conversation was never replaced — the reply is still there.
+    expect(screen.getByText('r1')).toBeInTheDocument()
+
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'r2' } })
+    await user.type(screen.getByPlaceholderText(PROMPT), 'p2')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('r2')
+
+    expect(vi.mocked(api.ai.chat).mock.calls[1]?.[0].numThread).toBe(2)
   })
 })
 
