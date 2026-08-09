@@ -108,6 +108,13 @@
   --font-size-lg: 16px;
   --font-size-xl: 20px;
   --font-size-2xl: 28px;
+  /* Off the t-shirt scale on purpose. That scale sizes UI chrome, which is
+     scanned; this sizes a reading surface — a model's answer is read for a
+     minute straight, and 13 is tiring at that length. Forcing 18 in between
+     --font-size-lg and -xl would have renamed every step above it for one
+     consumer. Its own token also means "make the chat bigger" stays one number
+     instead of a sweep through the feature CSS. */
+  --font-size-reading: 18px;
 
   /* Control and table row heights */
   --control-height-sm: 24px;

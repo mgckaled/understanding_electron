@@ -70,7 +70,9 @@
   margin: 0;
   white-space: pre-wrap;
   line-height: 1.5;
-  font-size: var(--font-size-sm);
+  /* Same reading size as the assistant's markdown: the two sit adjacent in the
+     thread, and a question smaller than its answer reads as an afterthought. */
+  font-size: var(--font-size-reading);
   user-select: text;
 }
 

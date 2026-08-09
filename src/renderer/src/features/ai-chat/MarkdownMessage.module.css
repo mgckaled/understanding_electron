@@ -9,7 +9,7 @@
   /* base.css turns selection off at the root; the reply is copyable data (fase 05). */
   user-select: text;
   color: var(--color-text);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-reading);
   line-height: 1.5;
 }
 
@@ -37,16 +37,17 @@
   line-height: 1.3;
 }
 
+/* Re-proportioned for the 18px reading size. The scale has no step between
+   --font-size-lg (16) and -xl (20), so h2 and h3 both land on the body size and
+   are told apart by weight alone — the shape the comment above already
+   describes, now taken to its limit. Resolving that is for the typography plan. */
 .markdown h1 {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
 }
 
-.markdown h2 {
-  font-size: var(--font-size-md);
-}
-
+.markdown h2,
 .markdown h3 {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-reading);
 }
 
 /* Three-level nesting is common in these replies. */
@@ -66,7 +67,9 @@
   background: var(--color-surface-sunken);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  /* Mono reads visually smaller than the UI face at the same px, so it sits one
+     step under the body rather than matching it. */
+  font-size: var(--font-size-lg);
 }
 
 .markdown a {
@@ -131,7 +134,7 @@
   padding: 0;
   background: none;
   border-radius: 0;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-lg);
 }
 
 /*
