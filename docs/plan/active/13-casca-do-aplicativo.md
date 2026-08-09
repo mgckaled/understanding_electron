@@ -1,6 +1,6 @@
 # 13 — Casca do aplicativo
 
-**Depende de:** [12 — Realce de sintaxe](12-realce-de-sintaxe.md) · **Entrega:** `App.tsx` deixa de ser pilha de painéis. Duas colunas, sidebar recolhível em três regiões por slot, conversa em altura cheia, composer fixo. Cria conversa, troca entre elas, some ao fechar.
+**Depende de:** [12 — Realce de sintaxe](../implemented/12-realce-de-sintaxe.md) · **Entrega:** `App.tsx` deixa de ser pilha de painéis. Duas colunas, sidebar recolhível em três regiões por slot, conversa em altura cheia, composer fixo. Cria conversa, troca entre elas, some ao fechar.
 
 > Primeiro plano do [arco conversacional](README.md#o-arco-conversacional-1319), nascido da [virada de ago/2026](../../HISTORY.md). **Renderer puro: nenhum canal de IPC novo.** Se `argsSchema` ou `IpcContract` aparecerem no diff, algo escorregou do plano 14 para dentro deste.
 
@@ -118,7 +118,7 @@ O commit da superfície de leitura (18px, `--font-size-reading`) tomou em silên
 | Chrome | compacta, fase 05 | sidebar, nav, rodapé, controles do composer, toolbar |
 | Leitura | `--font-size-reading` | mensagem do usuário, resposta do assistente, artefatos |
 
-E o efeito colateral que o mesmo commit deixou: com o corpo em 18px, `h2` e `h3` caem os dois no tamanho do corpo, porque a escala não tem degrau entre 16 e 20. **O conserto não é acrescentar degrau** — título de superfície de leitura é proporcional ao **tamanho de leitura**, não à escala de chrome:
+E o efeito colateral que o mesmo commit deixou: com o corpo em 18px, `h2` e `h3` caem os dois no tamanho do corpo, porque a escala não tem degrau entre 16 e 20. **A conferência visual do passo 6 da [fase 12](../implemented/12-realce-de-sintaxe.md) mostrou que isso não aparece na prática** — a diferença de peso basta nessa superfície. Então o que segue é **refinamento opcional, não conserto**; e se for feito, não é acrescentando degrau à escala — título de superfície de leitura é proporcional ao **tamanho de leitura**, não à escala de chrome:
 
 ```css
 .markdown h1 { font-size: 1.4em; }
@@ -252,4 +252,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [12 — Realce de sintaxe](12-realce-de-sintaxe.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)
+**Anterior:** [12 — Realce de sintaxe](../implemented/12-realce-de-sintaxe.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)

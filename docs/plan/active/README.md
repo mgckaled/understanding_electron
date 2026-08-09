@@ -10,7 +10,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 | # | Plano | Estado |
 |---|---|---|
-| [12](12-realce-de-sintaxe.md) | Realce de sintaxe com `highlight.js` | passos 1–5 feitos, em fechamento |
+| [13](13-casca-do-aplicativo.md) | Casca do aplicativo | escrito, nenhum passo iniciado |
 
 ---
 
@@ -62,6 +62,7 @@ Do scaffold do electron-vite a uma base pronta para o resto. Uma linha por fase;
 | [08](../implemented/08-automacao-e-registro.md) | Hooks de verificação, `CLAUDE.md` pós-fundação, três skills |
 | [10](../implemented/10-cor-contraste-e-tema-claro.md) | Contraste medido nos dois temas, tema claro mapeado por intenção |
 | [11](../implemented/11-markdown-na-resposta-do-assistente.md) | Markdown na resposta do assistente, com HTML cru inerte |
+| [12](../implemented/12-realce-de-sintaxe.md) | Realce de sintaxe por classes semânticas, sem estilo inline |
 
 As decisões estruturais viraram as skills [`architecture`](../../../.claude/skills/architecture/SKILL.md), [`design-system`](../../../.claude/skills/design-system/SKILL.md) e [`testing`](../../../.claude/skills/testing/SKILL.md) — carregadas quando o assunto aparece, em vez de ocuparem contexto em toda sessão.
 

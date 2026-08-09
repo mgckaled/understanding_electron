@@ -8,7 +8,7 @@
 
 ## Por que agora, e não no gatilho que estava escrito
 
-O gatilho combinado das duas fases era **a fatia 2 do [plano 09](09-camada-de-ia.md) gerando SQL na tela**. Ele não disparou. Este plano anda mesmo assim, e o argumento precisa ficar registrado porque contraria um adiamento tomado duas vezes.
+O gatilho combinado das duas fases era **a fatia 2 do [plano 09](../active/09-camada-de-ia.md) gerando SQL na tela**. Ele não disparou. Este plano anda mesmo assim, e o argumento precisa ficar registrado porque contraria um adiamento tomado duas vezes.
 
 O medo das duas decisões era o mesmo e está citado literalmente: *"calibrar cores de sintaxe sem SQL real na tela é decidir no escuro"*. Esse medo mira em **inventar** uma paleta. Não é o que vai acontecer aqui — a paleta é **importada** do `@primer/primitives`, já calibrada, para uma superfície quase idêntica à de origem:
 
@@ -270,8 +270,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | 2026-08-09 | — (nenhum passo desta fase) | **passo 6 segue pendente** | Sessão de planejamento do arco conversacional; a fase 12 não avançou. Registrado porque **muda o passo 6**: a superfície de leitura da resposta subiu de `--font-size-sm` (13px) para `--font-size-reading` (18px), em commit à parte, então a conferência visual do realce nos dois temas passa a ser contra o tamanho novo — inclusive o item 4 (copiar de dentro do bloco colorido), já que o `code` do markdown foi junto de `--font-size-xs` para `--font-size-lg`. Vai um achado a conferir na mesma passada: com o corpo em 18, `h2` e `h3` caem os dois no tamanho do corpo, porque a escala não tem degrau entre 16 e 20 — distinguidos só pelo peso. O conserto (títulos em `em` relativos ao corpo, sem token novo) está roteado para o plano 13. |
 
+| 2026-08-09 | 6 | **concluída** | Conferência visual ao vivo, com o Ollama no ar, nos dois temas: **as sete linguagens saíram legíveis** — a paleta importada do `@primer/primitives` (D12.3) não precisou de ajuste depois do teste de contraste. **Copiar de dentro do bloco colorido funciona**, apesar de o conteúdo estar fragmentado em dezenas de `<span>`: a seleção atravessa os nós e o texto sai íntegro, o que era o risco real do passo 5. **O `h2`/`h3` colapsado não aparece na prática** — a diferença de peso basta na superfície de leitura de 18px, então o conserto em `em` roteado para o plano 13 é **refinamento opcional, não defeito**. Fase encerrada e movida para `implemented/`. |
+
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [11 — Markdown na resposta do assistente](../implemented/11-markdown-na-resposta-do-assistente.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)
+**Anterior:** [11 — Markdown na resposta do assistente](../implemented/11-markdown-na-resposta-do-assistente.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)
