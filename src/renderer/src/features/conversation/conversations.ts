@@ -1,4 +1,5 @@
 import type { Conversation, Message } from '@shared/ipc'
+import { messageText } from '@core/ai/messages'
 
 /*
  * Client state for conversations: the reducer, kept pure and free of React.
@@ -34,14 +35,6 @@ export type ConversationsAction =
 export const initialConversationsState: ConversationsState = {
   conversations: [],
   activeId: null
-}
-
-/** All the text a message carries, in order. */
-export function messageText(message: Message): string {
-  return message.parts
-    .filter((part) => part.kind === 'text')
-    .map((part) => part.text)
-    .join('')
 }
 
 /**

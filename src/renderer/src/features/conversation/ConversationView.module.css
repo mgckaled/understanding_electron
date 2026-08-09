@@ -1,0 +1,127 @@
+/*
+ * The conversation fills the main region: header and composer are fixed, and
+ * only the thread scrolls (D13.5). The document never does — that is settled by
+ * the shell.
+ */
+.view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Chrome density (D13.6): compact, the fase 05 desktop scale. */
+.header {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-7);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+  /* A title taken from the first message can be long; the header must not grow. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.input {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+}
+
+.input:focus-visible {
+  border-color: var(--color-accent-text);
+  outline: none;
+}
+
+.number {
+  width: 72px;
+}
+
+/* The one scrolling surface of the main region. */
+.thread {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-7);
+  overflow-y: auto;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.user,
+.assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.role {
+  font-size: var(--font-size-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+}
+
+/* Reading density (D13.6). Model output is copyable data — opt back into
+   selection, which base.css turns off at the root for the desktop feel. */
+.content,
+.streaming {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: var(--font-size-reading);
+  user-select: text;
+}
+
+.content {
+  color: var(--color-text);
+}
+
+.streaming {
+  margin-top: var(--space-7);
+  color: var(--color-text-muted);
+}
+
+.status {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-text-faint);
+  font-size: var(--font-size-reading);
+}
+
+.unavailable {
+  margin: 0 0 var(--space-5);
+  color: var(--color-warn-text);
+  font-size: var(--font-size-sm);
+}

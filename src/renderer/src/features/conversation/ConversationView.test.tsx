@@ -2,11 +2,34 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
 import type { Api, ChatReply, JobEvent, Result } from '@shared/ipc'
-import AiChatPanel from './AiChatPanel'
+import ConversationsProvider from './ConversationsProvider'
+import ConversationList from './ConversationList'
+import ConversationView from './ConversationView'
+import NewConversationButton from './NewConversationButton'
 
 const ready = { ok: true, value: { service: 'ollama', version: '0.5.1' } } as const
 
 const PROMPT = 'Pergunte algo ao modelo…'
+
+/** The view alone, under the store it now reads from. */
+function renderView(): HTMLElement {
+  return render(
+    <ConversationsProvider>
+      <ConversationView />
+    </ConversationsProvider>
+  ).container
+}
+
+/** The view plus the sidebar pieces, for anything about switching conversations. */
+function renderShell(): void {
+  render(
+    <ConversationsProvider>
+      <NewConversationButton />
+      <ConversationList />
+      <ConversationView />
+    </ConversationsProvider>
+  )
+}
 
 /** Drives a full send and resolves the reply, returning the rendered container. */
 async function reply(
@@ -17,25 +40,25 @@ async function reply(
   vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
   vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content } })
   const user = userEvent.setup()
-  const { container } = render(<AiChatPanel />)
+  const container = renderView()
   await screen.findByText('Ollama 0.5.1')
   await user.type(screen.getByPlaceholderText(PROMPT), prompt)
   await user.click(screen.getByRole('button', { name: 'Enviar' }))
   return { api, container }
 }
 
-describe('AiChatPanel', () => {
-  it('shows the hint and disables the input when Ollama is unavailable', async () => {
+describe('ConversationView', () => {
+  it('shows the hint and disables the composer when Ollama is unavailable', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue({
       ok: false,
       error: { kind: 'unavailable', service: 'ollama', hint: 'Rode ollama serve na porta 11434.' }
     })
 
-    render(<AiChatPanel />)
+    renderView()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('ollama serve')
-    expect(screen.getByPlaceholderText('Pergunte algo ao modelo…')).toBeDisabled()
+    expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
   })
 
   it('sends the prompt and renders the assistant reply', async () => {
@@ -44,13 +67,17 @@ describe('AiChatPanel', () => {
     vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'Olá!' } })
     const user = userEvent.setup()
 
-    render(<AiChatPanel />)
+    renderView()
     await screen.findByText('Ollama 0.5.1')
-    await user.type(screen.getByPlaceholderText('Pergunte algo ao modelo…'), 'oi')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
     expect(await screen.findByText('Olá!')).toBeInTheDocument()
-    expect(screen.getByText('oi')).toBeInTheDocument()
+    // The title is the first user message truncated (D13.9), so the text is on
+    // screen twice — as the heading and as the message. Both are asserted: the
+    // heading is the behaviour, the <p> is the message itself.
+    expect(screen.getByRole('heading', { name: 'oi' })).toBeInTheDocument()
+    expect(screen.getByText('oi', { selector: 'p' })).toBeInTheDocument()
     expect(api.ai.chat).toHaveBeenCalledWith(
       {
         service: 'ollama',
@@ -68,20 +95,137 @@ describe('AiChatPanel', () => {
     vi.mocked(api.ai.chat).mockReturnValue(new Promise<Result<ChatReply>>(() => {}))
     const user = userEvent.setup()
 
-    render(<AiChatPanel />)
+    renderView()
     await screen.findByText('Ollama 0.5.1')
-    await user.type(screen.getByPlaceholderText('Pergunte algo ao modelo…'), 'oi')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
     await user.click(await screen.findByRole('button', { name: 'Cancelar' }))
 
     const usedJobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1]
     expect(api.job.cancel).toHaveBeenCalledWith(usedJobId)
   })
+
+  it('carries the whole history into the next call, not just the new prompt', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'r1' } })
+    const user = userEvent.setup()
+
+    renderView()
+    await screen.findByText('Ollama 0.5.1')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'p1')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('r1')
+
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'r2' } })
+    await user.type(screen.getByPlaceholderText(PROMPT), 'p2')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('r2')
+
+    // The turns come from the store now, so this is the assertion that the
+    // store round-trip did not lose the conversation.
+    expect(vi.mocked(api.ai.chat).mock.calls[1]?.[0].messages).toEqual([
+      { role: 'user', content: 'p1' },
+      { role: 'assistant', content: 'r1' },
+      { role: 'user', content: 'p2' }
+    ])
+  })
+})
+
+// The level-2 test the plan asks for: two conversations, each history its own.
+describe('ConversationView — troca de conversa', () => {
+  it('preserves each conversation history when switching between them', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'resposta A' } })
+    const user = userEvent.setup()
+
+    renderShell()
+    await screen.findByText('Ollama 0.5.1')
+
+    await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('resposta A')
+
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'resposta B' } })
+    await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
+    await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta B')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('resposta B')
+
+    expect(screen.queryByText('resposta A')).not.toBeInTheDocument()
+
+    // The title comes from the first user message (D13.9), so the row is
+    // findable by what was typed into it.
+    await user.click(screen.getByRole('button', { name: 'pergunta A' }))
+
+    expect(await screen.findByText('resposta A')).toBeInTheDocument()
+    expect(screen.queryByText('resposta B')).not.toBeInTheDocument()
+  })
+
+  it('keeps a stream out of a conversation it does not belong to', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockReturnValue(new Promise<Result<ChatReply>>(() => {}))
+    let emit: ((event: JobEvent) => void) | undefined
+    vi.mocked(api.job.onEvent).mockImplementation((listener) => {
+      emit = listener
+      return vi.fn()
+    })
+    const user = userEvent.setup()
+
+    renderShell()
+    await screen.findByText('Ollama 0.5.1')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
+    act(() => emit?.({ jobId, type: 'chunk', text: 'chegando' }))
+    expect(screen.getByText('chegando')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
+
+    // The reply is addressed to the conversation it was sent from — showing it
+    // under the new one would be the answer landing in the wrong transcript.
+    expect(screen.queryByText('chegando')).not.toBeInTheDocument()
+  })
+
+  it('renames a conversation from the sidebar', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    const user = userEvent.setup()
+
+    renderShell()
+    await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
+    await user.click(screen.getByRole('button', { name: 'Renomear Nova conversa' }))
+    await user.type(screen.getByLabelText('Novo título da conversa'), 'Vendas{Enter}')
+
+    expect(screen.getByRole('button', { name: 'Nova conversaVendas' })).toBeInTheDocument()
+  })
+
+  it('removes a conversation and elects the remaining one', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'resposta A' } })
+    const user = userEvent.setup()
+
+    renderShell()
+    await screen.findByText('Ollama 0.5.1')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('resposta A')
+    await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
+
+    await user.click(screen.getByRole('button', { name: 'Excluir Nova conversa' }))
+
+    expect(screen.queryByRole('button', { name: 'Excluir Nova conversa' })).not.toBeInTheDocument()
+    expect(await screen.findByText('resposta A')).toBeInTheDocument()
+  })
 })
 
 // The assistant reply is markdown; these assert the structure produced, queried
 // by role rather than by whole phrase (D11.7). The user's own message stays raw.
-describe('AiChatPanel — markdown da resposta', () => {
+describe('ConversationView — markdown da resposta', () => {
   it('renders bold and a list, with no raw asterisk on screen', async () => {
     await reply('**forte** com:\n\n- um\n- dois')
 
@@ -141,14 +285,16 @@ describe('AiChatPanel — markdown da resposta', () => {
   it('keeps the user message literal, even with markdown syntax', async () => {
     await reply('resposta', '**oi**')
 
-    expect(await screen.findByText('**oi**')).toBeInTheDocument()
+    // Scoped to the <p>: the heading carries the same text, since the title is
+    // derived from this very message (D13.9).
+    expect(await screen.findByText('**oi**', { selector: 'p' })).toBeInTheDocument()
   })
 })
 
 // Syntax highlighting (fase 12). The palette's contrast is measured elsewhere,
 // in tokens.contrast.test.ts; what these assert is that the right hljs-* class
 // lands on the right token — the half that CSS cannot fix if it is wrong.
-describe('AiChatPanel — realce de sintaxe', () => {
+describe('ConversationView — realce de sintaxe', () => {
   it('colours SQL keywords in a closed fenced block', async () => {
     const { container } = await reply('```sql\nSELECT name FROM users\n```')
 
@@ -205,7 +351,7 @@ describe('AiChatPanel — realce de sintaxe', () => {
     })
     const user = userEvent.setup()
 
-    const { container } = render(<AiChatPanel />)
+    const container = renderView()
     await screen.findByText('Ollama 0.5.1')
     await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
