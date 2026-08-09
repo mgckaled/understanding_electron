@@ -28,7 +28,7 @@
 }
 
 /* The LLM uses # generously; a 28px title inside a chat panel shouts. Headings
-   stay close to body size, told apart by weight. */
+   stay close to body size, told apart by weight and by a small step. */
 .markdown h1,
 .markdown h2,
 .markdown h3 {
@@ -37,17 +37,26 @@
   line-height: 1.3;
 }
 
-/* Re-proportioned for the 18px reading size. The scale has no step between
-   --font-size-lg (16) and -xl (20), so h2 and h3 both land on the body size and
-   are told apart by weight alone — the shape the comment above already
-   describes, now taken to its limit. Resolving that is for the typography plan. */
+/*
+ * Relative to the reading size, not to the chrome scale (D13.6). `em` inside
+ * .markdown resolves against --font-size-reading, which is already on the
+ * parent — so the day the reading size changes, the headings follow on their
+ * own, and no token is spent.
+ *
+ * The alternative was adding an 18 step to the t-shirt scale, which would have
+ * renamed every step above it for the sake of one consumer. The scale sizes UI
+ * chrome; this is a reading surface, and the two are different systems.
+ */
 .markdown h1 {
-  font-size: var(--font-size-xl);
+  font-size: 1.4em;
 }
 
-.markdown h2,
+.markdown h2 {
+  font-size: 1.2em;
+}
+
 .markdown h3 {
-  font-size: var(--font-size-reading);
+  font-size: 1.05em;
 }
 
 /* Three-level nesting is common in these replies. */
@@ -68,8 +77,10 @@
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   /* Mono reads visually smaller than the UI face at the same px, so it sits one
-     step under the body rather than matching it. */
-  font-size: var(--font-size-lg);
+     step under the body rather than matching it. Relative for the same reason
+     the headings are: an absolute 16px inside a 25px h1 reads as a mistake, and
+     0.9em is the same rendered size in body text. */
+  font-size: 0.9em;
 }
 
 .markdown a {
@@ -134,7 +145,7 @@
   padding: 0;
   background: none;
   border-radius: 0;
-  font-size: var(--font-size-lg);
+  font-size: 0.9em;
 }
 
 /*
