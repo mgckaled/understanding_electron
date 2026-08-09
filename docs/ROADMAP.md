@@ -24,8 +24,11 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    19 gráfico como artefato
    ── depois do arco ──────────────────────────────────────────────────────────────
    receitas salvas · JSON/NDJSON · Excel · catálogo camada 2
+   observatório                      ← ver abaixo
    nuvem, RAG e ML                   plan/active/09-camada-de-ia.md   fatias 3, 5 e 6
 ```
+
+**Observatório** — ideia portada do mill.tools, sem portar o que ele observa. Um lugar onde o app **se observa**: read-only, local, com um canto que roda avaliação. O que faz valer aqui é a [falha silenciosa](HISTORY.md) do SQL gerado — a verificação pós-execução avisa caso a caso, mas só uma taxa (*"8 de 30 propostas produziram coluna inteiramente nula"*) diz se o cartão de dados e o prompt estão funcionando. Junto dela, o que este projeto já sabe que precisa medir: tokens/s de prefill contra geração por modelo, e o que o SQLite e os anexos ocupam em `userData`. Entra depois do plano 18, que é quem produz o que há para observar.
 
 Cada etapa depende da anterior por razão real, não por ordem arbitrária. As dependências estão nos documentos linkados, e o arco 13–19 tem índice próprio em [`plan/active/README.md`](plan/active/README.md).
 
