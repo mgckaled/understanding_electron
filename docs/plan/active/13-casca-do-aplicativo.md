@@ -15,7 +15,7 @@ O alvo é uma **casca**: a conversa é o aplicativo, o resto orbita. É o que o 
 Duas coisas que este plano entrega além de layout, e que estão aqui por serem caras de retrofitar:
 
 - **A forma de `Message`**, que atravessa `shared/ipc.ts`, preload, renderer e main. Mudá-la no plano 16 tocaria as quatro camadas mais as linhas já gravadas.
-- **A prova de que a casca abriga mais de uma coisa.** Sem ela, "slot" é afirmação não verificada — e casca que só provou abrigar conversa é indistinguível de casca que fixa conversa.
+- **O primitivo de modal**, que não existe e que o arco vai reusar — confirmação de sobrescrita, detalhe de artefato. Ver [D13.8](#d138--configurações-é-modal-não-destino-de-navegação).
 
 **Fora deste plano:** persistência (14), orçamento de contexto e escolha de modelo (15), anexo (16). O composer continua enviando texto para o `useAiChat` que já existe.
 
@@ -136,6 +136,25 @@ E o efeito colateral que o mesmo commit deixou: com o corpo em 18px, `h2` e `h3`
 | `OpenDatasetPanel` | **seção da sidebar**, inalterado por dentro — perde só o embrulho `Panel` | `e2e/dev/open-dataset.spec.ts:27` clica em `'Escolher arquivo'` e espera o resumo visível. **Não é preferência: é um nível 4 verde que ficaria vermelho.** O plano 16 o move para o composer quando anexo virar escopo de conversa; mover um componente entre dois slots é barato |
 | `Versions` | **rodapé da sidebar**, uma linha compacta | É onde o Claude Desktop põe a conta do usuário. Preserva o teste de nível 2 existente |
 
+### D13.8 — Configurações é modal, não destino de navegação
+
+Revisão da forma prevista no passo 5, feita antes de qualquer linha de código.
+
+**Configuração é desvio, não destino.** Abre-se por causa do que se está fazendo — *"o modelo está lento, deixa eu baixar as threads"* — e volta-se exatamente ao mesmo ponto. Um destino de navegação **desmonta** o `ConversationView`; um modal o mantém visível atrás, e "não perdi meu lugar" deixa de ser algo em que confiar e passa a ser algo que se vê. É o que Claude Desktop e mill.tools fazem, e é a convenção da plataforma: configuração em rota é padrão de web, e a skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) abre dizendo *"app de desktop não é site"*.
+
+**O custo disto, que é o ponto honesto:** o aceite do passo 5 era *"a casca abriga duas coisas no mesmo slot"*. Com o modal, **nada além da conversa ocupa o `main` neste plano** — e todo o resto do arco (16, 18, 19) acontece *dentro* da conversa. O slot da D13.1 fica, porque custa zero linha; mas **deixa de ser reivindicado como provado**. Inventar uma segunda tela só para exercitá-lo seria exatamente a cerimônia que a [regra de flexibilidade](../../HISTORY.md#decisão-flexibilidade-é-forma-de-dado-e-slot-nunca-ponto-de-extensão) recusa — slot é a recusa a fixar, não um recurso a demonstrar.
+
+O aceite passa a ser o **comportamento do modal**, que é verificável e entrega um primitivo que o arco reusa:
+
+- **`<dialog>` nativo com `showModal()`** — camada superior, foco preso, `Esc` fecha, `::backdrop` estilizável. O Chromium 148 do Electron 42 tem tudo, e isso significa **nenhuma dependência**: mesma linha em que a [fase 10](../implemented/10-cor-contraste-e-tema-claro.md) recusou uma biblioteca de contraste por quinze linhas de aritmética.
+- **Abrir não desmonta o `ConversationView`** — o modal é irmão na árvore, não substituto. É o que torna o aceite observável: uma resposta em fluxo continua chegando atrás.
+- **Fechar não altera nada da camada de baixo**, e o foco volta ao gatilho.
+- `prefers-reduced-motion` zera a transição, como a base da [fase 05](../implemented/05-design-tokens.md) já exige.
+
+O primitivo nasce em `shared/ui/Dialog/` e não na feature: diferente do `MarkdownMessage` (que a D11.1 manteve dentro de `ai-chat` por ter um consumidor só), este já tem consumidor previsto fora — a confirmação de sobrescrita que o [`ESCOPO.md`](../../ESCOPO.md) exige antes de gravar sobre o arquivo de origem.
+
+> ⚠️ Confirmar no Chromium do Electron 42 se o atributo `closedby` (fechar clicando fora sem handler próprio) está disponível — **ler o comportamento real, não o artigo**, na forma da lição registrada em [`HISTORY.md`](../../HISTORY.md). Se não estiver, o clique no `::backdrop` é tratado à mão.
+
 ---
 
 ## Passos
@@ -178,14 +197,14 @@ E a ancoragem da rolagem (D13.5): gruda no fim durante o fluxo, solta se o usuá
 **Aceite:** criar duas conversas, conversar nas duas, alternar entre elas e ver cada histórico preservado; rolar para cima durante uma resposta e a lista **não** puxar de volta; teste de nível 2 da troca de conversa.
 **Commit:** `feat(renderer): lista de conversas com troca e rolagem ancorada`
 
-### Passo 5 — Nav e a tela de Configurações
+### Passo 5 — O primitivo de modal e as configurações gerais
 
-A região de nav ganha *Conversas* e *Configurações*, e o `main` passa a renderizar um ou outro. **A tela de Configurações não é vazia: ela recebe o `num_thread`**, que sai do `AiChatPanel` (D13.4) e não tem outro lugar para ir.
+`shared/ui/Dialog/` nasce com `<dialog>` nativo (D13.8). A região de nav da sidebar ganha *Nova conversa* e o gatilho de Configurações; o `main` continua sendo a conversa, sempre.
 
-Este é o aceite do plano: a casca abriga duas coisas diferentes no mesmo slot, provado por construção e não por afirmação.
+O conteúdo do modal recebe o `num_thread`, que sai do painel de chat (D13.4) e não tem outro lugar para ir — então a tela nasce fazendo alguma coisa, não como espaço reservado.
 
-**Aceite:** alternar entre Conversas e Configurações sem perder a conversa ativa; alterar `num_thread` em Configurações e ver o valor chegar na próxima chamada ao Ollama (verificação ao vivo, com o serviço no ar).
-**Commit:** `feat(renderer): navegação da casca e tela de configurações gerais`
+**Aceite** — o mais importante do plano, porque é exatamente o que um destino de navegação quebraria: com uma resposta **em fluxo**, abrir Configurações, alterar `num_thread` e fechar; a resposta segue chegando atrás, sem remontagem e sem perder um token. Somado a: `Esc` fecha, o foco volta ao gatilho, e o valor novo chega na chamada seguinte ao Ollama (verificação ao vivo, com o serviço no ar).
+**Commit:** `feat(renderer): primitivo de modal e configurações gerais`
 
 ### Passo 6 — A superfície de leitura
 
