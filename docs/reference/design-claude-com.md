@@ -298,6 +298,55 @@ components:
     padding: 64px
 ---
 
+## Leitura do data-lab — o que aproveitar e o que não
+
+**Data:** 2026-08-09 · **Motivou:** o arco 13–19 constrói uma interface de conversa, e este extrato (obtido em [getdesign.md](https://getdesign.md/claude/design-md)) descreve o sistema visual da Anthropic. Abaixo desta seção, o extrato segue **verbatim**; esta moldura existe para que ninguém precise ler 590 linhas para achar as cinco coisas úteis.
+
+> ⚠️ **Isto é o site de marketing `claude.com`, não a interface do produto.** O próprio extrato diz, em *Known Gaps*: *"the actual claude.ai chat interface... adds many product-specific components (chat bubbles, message tools, file upload chips, conversation history sidebar) that are out of scope for this marketing-surface document."* **Todos** os componentes que o plano 13 precisa estão nessa lista de fora de escopo.
+
+### Medido antes de opinar: a paleta reprova a régua deste projeto
+
+Rodei a mesma aritmética WCAG do [`tokens.contrast.test.ts`](../../src/renderer/src/shared/ui/tokens.contrast.test.ts) sobre a paleta acima. **Seis de treze pares abaixo de 4,5:1**:
+
+| Par | Razão | |
+|---|---|---|
+| Texto principal `ink` sobre `canvas` | 17,50 | ✅ |
+| Corpo `body` sobre `canvas` | 10,34 | ✅ |
+| Sub-título `muted` sobre `canvas` | 5,13 | ✅ |
+| Texto na superfície escura | 17,00 | ✅ |
+| Secundário no escuro | 6,62 | ✅ |
+| Erro sobre `canvas` | 4,59 | ✅ |
+| **Rótulo branco no botão coral** | **3,28** | ❌ |
+| Legenda `muted-soft` sobre `canvas` | 3,23 | ❌ |
+| Link coral inline sobre `canvas` | 3,11 | ❌ |
+| Sucesso sobre `canvas` | 2,33 | ❌ |
+| Aviso sobre `canvas` | 2,25 | ❌ |
+| Teal sobre `canvas` | 2,25 | ❌ |
+
+A primeira linha vermelha é **exatamente a D10.1** outra vez: o `#cc785c` é uma cor de **texto** sendo usada como fundo sólido, e a fase 10 inteira existiu para consertar `--accent-9: #4c8dff` a 2,96:1 na mesma posição. Não é defeito do extrato — página de marketing tem outra régua, e ali coral com branco funciona porque o texto é grande. **Num aplicativo, não.**
+
+### O que transfere
+
+| Ideia | Por quê |
+|---|---|
+| **"Color-block first, shadow rare"** — profundidade por contraste de superfície, não por sombra | É o que o projeto já faz (`surface` · `surface-raised` · `surface-sunken` + borda de 1px). Vale como confirmação e como nome para a regra |
+| **Raio codifica classe de componente**, não decoração — 8px botão/input, 12px card de conteúdo, 16px contêiner grande, pill para badge | Regra portável, e o arco vai criar `Dialog`, `Disclosure` e cards de sugestão |
+| **"Never document hover. Default and Active/Pressed only"** | Casa com a decisão de `:focus-visible` da fase 05 e evita estado inventado componente a componente |
+| **Serifa no display, humanista no corpo** | Numa conversa, `h1`/`h2` da resposta em serifa seria distintivo e legível. Ortogonal à D13.6, que já pôs os títulos em `em` |
+| **Neutro quente como direção** | A fase 05 fixou "escala neutra **fria** de 12 degraus". Quente é alternativa legítima e diferenciaria o app — mas trocar a escala primitiva **exige rerodar o teste de contraste inteiro**. É mudança real com custo real, não troca de token |
+
+### O que não transfere
+
+Banda de herói, cartões de preço, banda de CTA, rodapé, banner de cookie, ritmo de seção de 96px, largura máxima de 1200px, grades 3-up/4-up, estratégia de breakpoints e alvos de toque — **é vocabulário de página web**, e a skill [`design-system`](../../.claude/skills/design-system/SKILL.md) abre dizendo que app de desktop não é site. A escala tipográfica também não: `display-xl` de 64px e `section` de 96px desfariam a densidade de desktop fixada na fase 05.
+
+E as duas fontes que carregam a tese central do documento — Copernicus e StyreneB — **são licenciadas da Anthropic e não existem publicamente**. O próprio extrato registra isso.
+
+### A regra ao usar este arquivo
+
+> Nada daqui vira token sem passar pelo [`tokens.contrast.test.ts`](../../src/renderer/src/shared/ui/tokens.contrast.test.ts), com sua linha de par declarada à mão nos **dois** temas. Este documento é atmosfera e vocabulário — a régua de cor continua sendo a medição.
+
+---
+
 ## Overview
 
 Claude.com is the warmest, most editorial interface in the AI-product category. The base atmosphere is a **tinted cream canvas** (`{colors.canvas}` — #faf9f5) — distinctly warm, deliberately not the cool gray-white that every other AI brand uses. Headlines run a **slab-serif display** ("Copernicus" / Tiempos Headline) at weight 400 with negative letter-spacing, paired with **StyreneB / Inter** body sans. The combination feels like a literary publication, not a SaaS marketing page.

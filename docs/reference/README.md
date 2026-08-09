@@ -5,6 +5,7 @@ Documentos de **consulta estável**: comparativos, medições, especificações 
 | Documento | Data | O que responde |
 |---|---|---|
 | [Arte anterior — as skills do mill.tools](arte-anterior-milltools.md) | ago/2026 | O que o projeto irmão já resolveu, o que convergiu sem cópia, o que vale trazer e para qual plano — e o que **não** trazer |
+| [Sistema visual do claude.com](design-claude-com.md) | ago/2026 | Extrato de terceiro do **site de marketing** da Anthropic, com a leitura do data-lab por cima: 6 de 13 pares reprovam AA, e o que transfere são cinco regras de forma, não a paleta |
 
 ---
 
