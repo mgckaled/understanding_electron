@@ -1,0 +1,25 @@
+/*
+ * Structural scroll (D13.5): in a shell the document never scrolls. The root is
+ * already height:100% in base.css; this grid fills it and clips its own
+ * overflow, so no child can push the page taller than the window. Scrolling
+ * stops being a side effect of the document growing and becomes a decision each
+ * region makes for itself.
+ */
+
+.shell {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+/* min-width:0 is what lets a wide child (a code block, a table) scroll inside
+   this column instead of stretching the grid track past the window. */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}

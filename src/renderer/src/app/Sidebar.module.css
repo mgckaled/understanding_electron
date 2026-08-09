@@ -1,0 +1,47 @@
+.sidebar {
+  display: grid;
+  /* chrome · nav · content · footer. The content track is minmax(0, 1fr) and not
+     1fr: a plain 1fr floors at min-content, so a long conversation list would
+     stretch the track instead of scrolling inside it. */
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: var(--sidebar-width);
+  height: 100%;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: width var(--duration-base) ease;
+}
+
+.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+.chrome {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-3);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+/* The only region of the sidebar that scrolls. */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+  padding: 0 var(--space-4);
+  overflow-y: auto;
+}
+
+.footer {
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+}

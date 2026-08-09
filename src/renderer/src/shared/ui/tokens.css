@@ -122,6 +122,12 @@
   --control-height-lg: 34px;
   --table-row-height: 28px;
 
+  /* Shell layout. Tokens rather than two numbers inside one CSS file because
+     three consumers read the same pair: the sidebar's own width, the collapse
+     transition, and the width plano 14 will persist. */
+  --sidebar-width: 264px;
+  --sidebar-width-collapsed: 44px;
+
   /* Motion */
   --duration-fast: 120ms;
   --duration-base: 200ms;

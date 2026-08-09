@@ -1,4 +1,8 @@
-.app {
+/* The template's panel stack, unchanged, now living inside the shell's main
+   region. It owns its own scroll so the shell itself never does (D13.5). Step 2
+   dissolves it — the panels move to the sidebar and the conversation takes the
+   region at full height. */
+.stack {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
