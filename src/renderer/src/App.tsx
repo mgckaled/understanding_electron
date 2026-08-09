@@ -3,6 +3,7 @@ import Sidebar from './app/Sidebar'
 import Versions from './components/Versions'
 import OpenDatasetPanel from './features/open-dataset/OpenDatasetPanel'
 import AiChatPanel from './features/conversation/AiChatPanel'
+import ConversationsProvider from './features/conversation/ConversationsProvider'
 import styles from './App.module.css'
 
 /*
@@ -17,14 +18,18 @@ import styles from './App.module.css'
  */
 function App(): React.JSX.Element {
   return (
-    <AppShell
-      sidebar={<Sidebar content={<OpenDatasetPanel />} footer={<Versions />} />}
-      main={
-        <div className={styles.conversation}>
-          <AiChatPanel />
-        </div>
-      }
-    />
+    // The provider wraps the whole shell because both columns read from it:
+    // the list lives in the sidebar and the view in the main region.
+    <ConversationsProvider>
+      <AppShell
+        sidebar={<Sidebar content={<OpenDatasetPanel />} footer={<Versions />} />}
+        main={
+          <div className={styles.conversation}>
+            <AiChatPanel />
+          </div>
+        }
+      />
+    </ConversationsProvider>
   )
 }
 

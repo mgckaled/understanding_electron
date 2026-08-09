@@ -74,6 +74,46 @@ export type AiAvailability = {
   version: string
 }
 
+// The application's conversation (D13.3). Distinct from ChatMessage above,
+// which is the provider's wire shape and stays exactly as it is — a pure
+// function translates one into the other, and that function is where plano 16
+// hangs the three-level privacy boundary.
+//
+// The decision this encodes is that a message is a LIST OF TYPED PARTS, not a
+// string with attachments hung beside it. Only 'text' is written here; the
+// other variants ('image', 'dataset', 'proposal', 'result') are not features
+// this plan builds. What is decided now is the SHAPE, because retrofitting it
+// would touch this file, preload, renderer, main, and — from plano 14 on — the
+// rows already written to disk. Case 1 of the rule in docs/HISTORY.md
+// § flexibilidade é forma de dado e slot.
+//
+// No zod schema and no channel on purpose: a schema exists to validate an IPC
+// payload, and there is no IPC here yet. Both are born in plano 14, together.
+export type MessagePart = { kind: 'text'; text: string }
+
+export type MessageRole = 'user' | 'assistant'
+
+export type Message = {
+  id: string
+  role: MessageRole
+  parts: MessagePart[]
+  createdAt: number
+  // The model that produced this message, recorded per message and not only
+  // per conversation (D13.4). The model is deliberately NOT locked after the
+  // first reply — on a local-model app "this 4B failed, move up to qwen 7B" is
+  // the main recovery action — so a transcript can carry mixed authorship.
+  // That is resolved with data, not with a prohibition.
+  model?: string
+}
+
+export type Conversation = {
+  id: string
+  title: string
+  messages: Message[]
+  createdAt: number
+  updatedAt: number
+}
+
 // job:event is not an invoke/handle channel — ipcMain never `.handle()`s it,
 // so it has no entry in argsSchema/IpcContract. main broadcasts JobEvent
 // payloads through it and preload subscribes with ipcRenderer.on. Its name
