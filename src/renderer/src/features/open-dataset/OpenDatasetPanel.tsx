@@ -1,30 +1,34 @@
-import Panel from '../../shared/ui/Panel/Panel'
 import Toolbar from '../../shared/ui/Toolbar/Toolbar'
 import Button from '../../shared/ui/Button/Button'
 import StateView from '../../shared/ui/StateView'
 import { useOpenDataset } from './useOpenDataset'
 import styles from './OpenDatasetPanel.module.css'
 
+/*
+ * A sidebar section rather than a Panel (D13.7): the shell's chrome supplies
+ * the surface, so the card would be a border inside a border. Nothing else
+ * changed on purpose — e2e/dev/open-dataset.spec.ts clicks 'Escolher arquivo'
+ * and waits for the summary, and that green level-4 test is what decided the
+ * component moves instead of being rewritten. Plano 16 moves it into the
+ * composer, when attaching a file becomes a property of the conversation.
+ */
 function OpenDatasetPanel(): React.JSX.Element {
   const { state, pick, cancel } = useOpenDataset()
   const isLoading = state.status === 'loading'
 
   return (
-    <Panel
-      title="Abrir arquivo"
-      actions={
-        <Toolbar>
-          <Button variant="primary" onClick={pick} loading={isLoading} disabled={isLoading}>
-            Escolher arquivo
+    <section className={styles.section}>
+      <h2 className={styles.title}>Abrir arquivo</h2>
+      <Toolbar>
+        <Button variant="primary" onClick={pick} loading={isLoading} disabled={isLoading}>
+          Escolher arquivo
+        </Button>
+        {isLoading && (
+          <Button variant="secondary" onClick={cancel}>
+            Cancelar
           </Button>
-          {isLoading && (
-            <Button variant="secondary" onClick={cancel}>
-              Cancelar
-            </Button>
-          )}
-        </Toolbar>
-      }
-    >
+        )}
+      </Toolbar>
       <StateView
         state={state}
         emptyMessage="Nenhum arquivo aberto ainda."
@@ -45,7 +49,7 @@ function OpenDatasetPanel(): React.JSX.Element {
           </dl>
         )}
       />
-    </Panel>
+    </section>
   )
 }
 

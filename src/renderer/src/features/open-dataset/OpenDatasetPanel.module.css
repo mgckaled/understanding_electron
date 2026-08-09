@@ -1,9 +1,26 @@
+/* Chrome density (D13.6): this lives in the sidebar, not on the reading
+   surface, so it keeps the compact desktop scale from fase 05. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+}
+
 .summary {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: var(--space-3) var(--space-6);
+  gap: var(--space-3) var(--space-5);
   margin: 0;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
 }
 
 .summary div {

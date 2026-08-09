@@ -1,17 +1,10 @@
-/* The template's panel stack, unchanged, now living inside the shell's main
-   region. It owns its own scroll so the shell itself never does (D13.5). Step 2
-   dissolves it — the panels move to the sidebar and the conversation takes the
-   region at full height. */
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  height: 100%;
+/* The conversation has the main region to itself. It still carries the scroll
+   here; step 4 moves it onto the message list alone, with the composer pinned
+   (D13.5). min-height:0 is what makes overflow work inside the flex column the
+   shell's main region sets up. */
+.conversation {
+  flex: 1;
+  min-height: 0;
   padding: var(--space-7);
-  overflow: auto;
-}
-
-.error {
-  margin: 0;
-  color: var(--color-danger-text);
+  overflow-y: auto;
 }
