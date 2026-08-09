@@ -15,8 +15,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    cor e markdown                    plan/implemented/10, 11          concluída (ago/2026)
    0  revisão de escopo              ESCOPO.md · HISTORY.md           concluída (ago/2026)
    12 realce de sintaxe              plan/implemented/12-...          concluída (ago/2026)
-▶  13 casca conversacional           plan/active/13-...               ← estamos aqui
-   14 persistência das conversas
+   13 casca conversacional           plan/implemented/13-...          concluída (ago/2026)
+▶  14 persistência das conversas                                      ← estamos aqui
    15 orçamento de contexto e modelo
    16 anexo: esquema e perfil
    17 camada de dados (DuckDB)       study/05-proximos-passos.md
@@ -53,10 +53,11 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Sexta fatia em `features/` | `eslint-plugin-boundaries` no lugar do `no-restricted-imports` | [`01-camadas`](plan/implemented/01-camadas-e-fronteiras.md) |
 | Vigésimo canal em `shared/ipc.ts` | Skill própria para IPC, separada de `architecture` | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
 | Design system estável | Endurecer a CSP (hoje permite `style-src 'unsafe-inline'`) | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
-| ~~`check:fast` passar de 10s~~ **disparado** — 21,5s (ago/2026) e **27s** medido na fase 08, agora que roda a cada resposta no `Stop` hook, bem acima da meta de 15s da skill `testing`. Investigar antes de empilhar mais teste | Medir a duração do ciclo de retorno | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
+| ~~`check:fast` passar de 10s~~ **disparado** — 21,5s (ago/2026) e **27s** medido na fase 08, agora que roda a cada resposta no `Stop` hook, bem acima da meta de 15s da skill `testing`. A fase 13 remediu com 24 arquivos e 172 testes: **16 a 23s**, variando com o cache do Vite, e a maior fatia é `environment` (a subida do jsdom por arquivo), não os testes — 9,4s dos ~16s. Isso muda o alvo da investigação: o custo é de ambiente, não de asserção | Medir a duração do ciclo de retorno | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
+| Um spec de nível 4 precisar verificar **cor** | O Playwright emula `prefers-color-scheme` e o padrão dele é `'light'`, então nenhum e2e de hoje exercita o tema escuro. Use `page.emulateMedia({ colorScheme })` — `nativeTheme.themeSource` não chega ao renderer sob teste | [`HISTORY`](HISTORY.md) § armadilhas |
 | Existirem cartões de dados suficientes | RAG sobre cartões e receitas | [`09-camada-de-ia`](plan/active/09-camada-de-ia.md) |
 | ~~Fatia 2 do `09` (NL→passo) gerando SQL para revisão~~ **disparado por antecipação e resolvido** — a [fase 12](plan/implemented/12-realce-de-sintaxe.md) andou antes porque a paleta é **importada** e medida, não inventada; o gatilho protegia contra escolher cor por gosto, e o teste de contraste protege melhor | Realce de sintaxe: calibrar `--syntax-*` e ligá-la no bloco de código | [`10-cor`](plan/implemented/10-cor-contraste-e-tema-claro.md) · [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
-| ~~Segundo consumidor de markdown fora de `ai-chat`~~ **data marcada: plano 16** — o cartão de dados é o segundo consumidor | Subir `MarkdownMessage` + a tipografia de bloco para `shared/ui/` (D11.1) | [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
+| ~~Segundo consumidor de markdown fora de `features/conversation/`~~ (a fatia chamava-se `ai-chat` quando o gatilho foi escrito) — **data marcada: plano 16**, o cartão de dados é o segundo consumidor | Subir `MarkdownMessage` + a tipografia de bloco para `shared/ui/` (D11.1) | [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
 
 ---
 

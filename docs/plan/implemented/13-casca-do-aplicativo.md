@@ -2,7 +2,7 @@
 
 **Depende de:** [12 — Realce de sintaxe](../implemented/12-realce-de-sintaxe.md) · **Entrega:** `App.tsx` deixa de ser pilha de painéis. Duas colunas, sidebar recolhível em três regiões por slot, conversa em altura cheia, composer fixo. Cria conversa, troca entre elas, some ao fechar.
 
-> Primeiro plano do [arco conversacional](README.md#o-arco-conversacional-1319), nascido da [virada de ago/2026](../../HISTORY.md). **Renderer puro: nenhum canal de IPC novo.** Se `argsSchema` ou `IpcContract` aparecerem no diff, algo escorregou do plano 14 para dentro deste.
+> Primeiro plano do [arco conversacional](../active/README.md#o-arco-conversacional-1319), nascido da [virada de ago/2026](../../HISTORY.md). **Renderer puro: nenhum canal de IPC novo.** Se `argsSchema` ou `IpcContract` aparecerem no diff, algo escorregou do plano 14 para dentro deste.
 
 ---
 
@@ -65,7 +65,7 @@ A escolha usa a régua do projeto — *se eu adiar, quantos arquivos toco depois
 
 Props seriam honestas: com a composição por slots a árvore tem dois níveis, não há *drilling* profundo. Mas elas são reescritas de qualquer forma no plano 14, quando cada componente passar a chamar o cache de servidor direto. O selo custa ~40 linhas agora e faz o 14 tocar um arquivo.
 
-**O texto em fluxo não entra no store.** O `useAiChat` de hoje já separa `streaming` de `turns` ([`useAiChat.ts:21-22`](../../../src/renderer/src/features/ai-chat/useAiChat.ts)); essa separação é preservada, e o `streaming` fica local ao `ConversationView`. Só o turno concluído é commitado. Sem isso, cada token re-renderiza a lista de conversas inteira — não é otimização prematura, é não desfazer o que já está certo.
+**O texto em fluxo não entra no store.** O `useAiChat` de hoje já separa `streaming` de `turns` (o arquivo virou [`useConversationChat.ts`](../../../src/renderer/src/features/conversation/useConversationChat.ts) neste mesmo plano); essa separação é preservada, e o `streaming` fica local ao `ConversationView`. Só o turno concluído é commitado. Sem isso, cada token re-renderiza a lista de conversas inteira — não é otimização prematura, é não desfazer o que já está certo.
 
 **A divisão que vale para o arco todo:** estado de **cliente** (conversa ativa, sidebar recolhida, rascunho, `jobId` em voo) fica no Context para sempre; **cache de servidor** (lista de conversas, mensagens) migra para TanStack Query no plano 14. Store de cliente guardando dado de servidor que envelhece sem ninguém saber é o erro que produz reescrita.
 
@@ -167,7 +167,7 @@ A lista da sidebar precisa mostrar alguma coisa, e a conversa nasce antes de exi
 
 Adotado: `"Nova conversa"` enquanto está vazia, substituído pela primeira mensagem truncada no envio, e **renomear disponível sempre**. O título é o campo que a D13.4 manda ser **coluna** (a sidebar o lista), não `settings`.
 
-Título gerado por modelo não está descartado — está **caro**. O Claude e o ChatGPT fazem isso porque a ida ao servidor deles é barata; numa CPU sem GPU ela não é. **Gatilho para reabrir:** provedor de nuvem em uso (fatia 3 do [plano 09](09-camada-de-ia.md)), quando a ida deixa de competir com a resposta.
+Título gerado por modelo não está descartado — está **caro**. O Claude e o ChatGPT fazem isso porque a ida ao servidor deles é barata; numa CPU sem GPU ela não é. **Gatilho para reabrir:** provedor de nuvem em uso (fatia 3 do [plano 09](../active/09-camada-de-ia.md)), quando a ida deixa de competir com a resposta.
 
 ---
 
@@ -246,10 +246,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| | | | |
+| 9 ago 2026 | 1–6 | **concluído** | Plano inteiro numa sessão. `check:fast` verde (172 testes, 24 arquivos), `test:e2e` 4/4 em cada passo. Quatro achados subiram para o [`HISTORY.md`](../../HISTORY.md) na mesma sessão: a corrida do listener de `scroll` na ancoragem, o `<dialog>` ausente do jsdom, a emulação de `prefers-color-scheme` do Playwright, e o `core.autocrlf` sem `.gitattributes`. Três desvios do plano, todos deliberados: **(a)** *Nova conversa* entrou no passo 4, não no 5 — o aceite do 4 é "criar duas conversas e alternar", e sem o botão não há como chegar à segunda; **(b)** o composer ganhou Enter-para-enviar, além da letra do plano, porque um composer em que Enter não faz nada é defeito achado no primeiro minuto; **(c)** o `.gitattributes` foi feito fora do plano, em commit isolado, a pedido — 485 avisos de lint que não eram do repositório. O ponto aberto da D13.8 fechou por medição: Chromium 148.0.7778.280, `closedBy` no IDL, reflete `"any"` — nenhum tratamento manual de clique no `::backdrop`. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [12 — Realce de sintaxe](../implemented/12-realce-de-sintaxe.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)
+**Anterior:** [12 — Realce de sintaxe](../implemented/12-realce-de-sintaxe.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)

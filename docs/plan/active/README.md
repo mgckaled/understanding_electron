@@ -8,9 +8,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 ## Em execução
 
-| # | Plano | Estado |
-|---|---|---|
-| [13](13-casca-do-aplicativo.md) | Casca do aplicativo | escrito, nenhum passo iniciado |
+*Nenhum. O próximo do arco é o **14 — persistência das conversas**, e o documento dele nasce na sessão em que ele começa.*
 
 ---
 
@@ -18,12 +16,12 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 Nasceu da [virada de ago/2026](../../HISTORY.md), que fez do chat a porta de entrada do aplicativo. Sete planos, cada um de uma a três sessões, na ordem em que se destravam.
 
-> ⚠️ **Os arquivos 13–19 ainda não existem, e isso é de propósito.** Um plano é escrito quando é o próximo a ser executado — escrever os sete agora produziria seis documentos envelhecendo enquanto o primeiro é executado, que é a dívida que a convenção de fonte única existe para evitar. Esta tabela é o contrato do arco; o documento de cada plano nasce na sessão em que ele começa.
+> ⚠️ **Os arquivos 14–19 ainda não existem, e isso é de propósito.** Um plano é escrito quando é o próximo a ser executado — escrever os seis agora produziria cinco documentos envelhecendo enquanto o primeiro é executado, que é a dívida que a convenção de fonte única existe para evitar. Esta tabela é o contrato do arco; o documento de cada plano nasce na sessão em que ele começa.
 
 | # | Entrega | A decisão que o plano carrega |
 |---|---|---|
-| [**13**](13-casca-do-aplicativo.md) | **Casca do aplicativo.** Layout de duas colunas, sidebar em três regiões por slot (nav · conteúdo · rodapé), conversa em altura cheia, composer fixo. Tudo em memória — cria conversa, troca entre elas, some ao fechar. Zero canal de IPC novo. Configurações em **modal** (`<dialog>` nativo, primitivo novo), não em rota. **Aceite:** com uma resposta em fluxo, abrir o modal, mexer no `num_thread` e fechar — a resposta segue chegando atrás, sem remontagem. É exatamente o que um destino de navegação quebraria. | Onde mora o estado compartilhado; o que acontece com `OpenDatasetPanel` (preso por e2e ao rótulo "Escolher arquivo") e `Versions`; se `features/ai-chat/` vira `features/conversation/`; a rolagem (só a lista rola, e ancora no fim exceto se o usuário subiu); e os títulos do markdown, hoje colapsados por falta de degrau na escala — resolvidos em `em` relativos ao corpo, sem token novo |
-| **14** | **Persistência das conversas.** `node:sqlite` em `userData`, esquema com migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir. A mesma tela do 13, agora sobrevivendo ao fechamento. | O que se grava de uma resposta **cancelada** ou estourada por prazo — a flag `timedOut` da fatia 1 já separa os dois casos |
+| [~~**13**~~](../implemented/13-casca-do-aplicativo.md) | ✅ **Casca do aplicativo** — concluída em ago/2026. Duas colunas, sidebar em três regiões por slot, conversa em altura cheia, composer fixo, Configurações em modal. Entrada em [`HISTORY.md`](../../HISTORY.md) | — |
+| **14** | **Persistência das conversas.** `node:sqlite` em `userData`, esquema com migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir. A mesma tela do 13, agora sobrevivendo ao fechamento. | O que se grava de uma resposta **cancelada** ou estourada por prazo — a flag `timedOut` da fatia 1 já separa os dois casos. **Herdado do 13:** `settings` como JSON e não coluna por botão; o modelo registrado por mensagem; `Message` como lista de partes; e o corpo de `useConversations()`/`useActiveConversation()` como único ponto de troca para o cache de servidor |
 | **15** | **Orçamento de contexto e modelo por conversa.** `num_ctx` exposto, política de truncamento medida, contador visível, lista de modelos por `/api/tags` **guardando as `capabilities`, não só os nomes** — é o que permite ligar anexo de imagem só para modelo com `vision` sem refazer lista e armazenamento depois. | A política de truncamento — janela deslizante invalida o prefixo em cache e força reprocessar o prompt inteiro a cada turno, que na CPU é o custo dominante |
 | **16** | **Anexo: esquema e perfil.** Anexar arquivo → o `dataset:scan` da [fase 06](../implemented/06-primeira-feature.md) vira cartão no contexto. Níveis 1 e 2 de exposição. | Onde a regra de privacidade vira teste: um nível 1 sobre o construtor de contexto que falha se um valor-sentinela do arquivo aparecer no payload |
 | **17** | **Camada de dados.** DuckDB em `utilityProcess`, Arrow, tabela virtualizada — [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md) é o dono. O cartão raso vira perfil real: tipos, nulos, cardinalidade, `SUMMARIZE`. | Dispara o gatilho do `shamefullyHoist`; o endurecimento (`lock_configuration`) nasce aqui, antes de existir SQL gerado |
