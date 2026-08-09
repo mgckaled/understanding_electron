@@ -2,7 +2,9 @@
 
 Documentos de **consulta estável**: comparativos, medições, especificações externas e relatórios de investigação. Nem plano, nem história, nem tutorial.
 
-*Vazia por enquanto.*
+| Documento | Data | O que responde |
+|---|---|---|
+| [Arte anterior — as skills do mill.tools](arte-anterior-milltools.md) | ago/2026 | O que o projeto irmão já resolveu, o que convergiu sem cópia, o que vale trazer e para qual plano — e o que **não** trazer |
 
 ---
 
