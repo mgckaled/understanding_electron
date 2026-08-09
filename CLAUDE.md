@@ -1,6 +1,6 @@
 # data-lab
 
-Aplicação **Electron** para limpeza e transformação de arquivos de dados (CSV, Parquet, Excel, JSON) por meio de um pipeline de passos que compila para SQL do DuckDB. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
+Aplicação **Electron**: uma bancada local de dados **operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado. O motor é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
 
 ---
 
@@ -161,6 +161,8 @@ Código em inglês, sempre — identificador, comentário, docstring e log, sem 
 - Tipos do contrato IPC ficam declarados em `src/shared/ipc.ts`, e todo canal novo passa por lá
 - Decisão de segurança que dois processos precisam tomar nasce em `core/`, nunca ao lado de um dos chamadores — validação colocada junto de um deles vira bypass no segundo, ver [`docs/HISTORY.md`](docs/HISTORY.md)
 - Segredo é de mão única: o renderer grava e consulta se existe, **nunca lê** — ver [`docs/HISTORY.md`](docs/HISTORY.md)
+- O que a IA vê do dado tem **três níveis** — esquema · perfil agregado · amostra de linhas. Os níveis 1 e 2 são livres; o nível 3 é opt-in por anexo e **bloqueado na nuvem**. A montagem do contexto mora em `core/`, com teste que falha se um valor do arquivo vazar nos níveis 1 e 2. Dono: [`docs/ESCOPO.md`](docs/ESCOPO.md)
+- SQL gerado por modelo roda com o **motor restringido** (`allowed_directories`, `enable_external_access = false`, `lock_configuration = true`), nunca com o texto inspecionado por expressão regular — ver [`docs/HISTORY.md`](docs/HISTORY.md)
 
 Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented/03-sandbox-e-seguranca.md):
 

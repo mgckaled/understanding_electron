@@ -1,14 +1,53 @@
-# Plano de fundação — encerrado (ago/2026)
+# Planos — backlog vivo
 
-As oito fases de fundação estão **concluídas e arquivadas** em [`../implemented/`](../implemented/). Este diretório (`active/`) é o backlog vivo do [ciclo de vida de plano](../../README.md); a fundação saiu dele, e o que resta aqui é o próximo plano ainda não executável.
+Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../README.md): um plano nasce aqui, ganha uma linha no diário a cada sessão, e ao concluir **move** para [`../implemented/`](../implemented/) com uma entrada em [`HISTORY.md`](../../HISTORY.md).
 
 > Plano em `implemented/` é registro histórico, não fonte viva. Se o repositório contradisser um plano arquivado, o **repositório ganha**. A fonte viva de cada assunto está na tabela de fonte única do [`README de docs`](../../README.md).
 
 ---
 
-## O que a fundação entregou
+## Em execução
 
-Do scaffold do electron-vite a uma base pronta para a camada de dados. Uma linha por fase; o "por quê" de cada uma está em [`HISTORY.md`](../../HISTORY.md), e o documento completo em [`implemented/`](../implemented/).
+| # | Plano | Estado |
+|---|---|---|
+| [12](12-realce-de-sintaxe.md) | Realce de sintaxe com `highlight.js` | passos 1–5 feitos, em fechamento |
+
+---
+
+## O arco conversacional (13–19)
+
+Nasceu da [virada de ago/2026](../../HISTORY.md), que fez do chat a porta de entrada do aplicativo. Sete planos, cada um de uma a três sessões, na ordem em que se destravam.
+
+> ⚠️ **Os arquivos 13–19 ainda não existem, e isso é de propósito.** Um plano é escrito quando é o próximo a ser executado — escrever os sete agora produziria seis documentos envelhecendo enquanto o primeiro é executado, que é a dívida que a convenção de fonte única existe para evitar. Esta tabela é o contrato do arco; o documento de cada plano nasce na sessão em que ele começa.
+
+| # | Entrega | A decisão que o plano carrega |
+|---|---|---|
+| **13** | **Casca do aplicativo.** Layout de duas colunas, sidebar recolhível, conversa em altura cheia, composer fixo. Tudo em memória — cria conversa, troca entre elas, some ao fechar. Zero canal de IPC novo. | Onde mora o estado compartilhado; o que acontece com `OpenDatasetPanel` e `Versions`, hoje painéis irmãos |
+| **14** | **Persistência das conversas.** `node:sqlite` em `userData`, esquema com migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir. A mesma tela do 13, agora sobrevivendo ao fechamento. | O que se grava de uma resposta **cancelada** ou estourada por prazo — a flag `timedOut` da fatia 1 já separa os dois casos |
+| **15** | **Orçamento de contexto e modelo por conversa.** `num_ctx` exposto, política de truncamento medida, contador visível, lista de modelos por `/api/tags` filtrada por capability. | A política de truncamento — janela deslizante invalida o prefixo em cache e força reprocessar o prompt inteiro a cada turno, que na CPU é o custo dominante |
+| **16** | **Anexo: esquema e perfil.** Anexar arquivo → o `dataset:scan` da [fase 06](../implemented/06-primeira-feature.md) vira cartão no contexto. Níveis 1 e 2 de exposição. | Onde a regra de privacidade vira teste: um nível 1 sobre o construtor de contexto que falha se um valor-sentinela do arquivo aparecer no payload |
+| **17** | **Camada de dados.** DuckDB em `utilityProcess`, Arrow, tabela virtualizada — [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md) é o dono. O cartão raso vira perfil real: tipos, nulos, cardinalidade, `SUMMARIZE`. | Dispara o gatilho do `shamefullyHoist`; o endurecimento (`lock_configuration`) nasce aqui, antes de existir SQL gerado |
+| **18** | **Propor: consulta e passos.** `core/pipeline/`, o schema zod alimentando `format` e `.parse()`, a união discriminada `query \| steps`, e a verificação pós-execução. | Onde a lista de passos aparece: dentro da mensagem do assistente, ou numa região própria |
+| **19** | **Gráfico como artefato.** Um gráfico derivado de um resultado que já está na conversa. | Paleta categórica que funcione nos **dois temas**, com cada cor nascendo com sua linha em `tokens.contrast.test.ts` |
+
+**A ordem não é arbitrária.** 13 não depende de nada; 14 tem no 13 seu consumidor; 16 precisa do composer do 13 e do armazenamento do 14; 18 precisa do perfil do 17 para não repetir a [falha silenciosa](../../HISTORY.md) registrada nas armadilhas; 19 não tem o que plotar antes do 18.
+
+**Duas restrições que atravessam o arco**, decididas cedo porque são caras de retrofitar:
+
+- **A forma do tipo `Message` nasce no 13/14, com `artifacts` incluído** — ela atravessa `shared/ipc.ts`, preload e renderer, e mudá-la depois toca três camadas. O **armazenamento** pode começar como JSON numa coluna e virar tabela própria no 18; migração de armazenamento o `PRAGMA user_version` resolve.
+- **A conversa nunca guarda o resultado**, só pergunta, proposta e veredito. Sem isso, o arquivo do SQLite cresce com cada tabela de cada consulta de cada conversa.
+
+---
+
+## Fora do arco, ainda em `active/`
+
+- [**09 — camada de IA e ML**](09-camada-de-ia.md). Continua sendo o **dono das decisões D9.1–D9.6**. A fatia 1 (chat local) está implementada; as fatias 2 e 4 foram absorvidas pelo arco (planos 18 e 16/17); restam as fatias 3 (nuvem opt-in e segredos), 5 (RAG sobre cartões e receitas) e 6 (ML item a item), todas depois do 19.
+
+---
+
+## A fundação, encerrada (ago/2026)
+
+Do scaffold do electron-vite a uma base pronta para o resto. Uma linha por fase; o "por quê" está em [`HISTORY.md`](../../HISTORY.md).
 
 | # | Entrega |
 |---|---|
@@ -20,7 +59,9 @@ Do scaffold do electron-vite a uma base pronta para a camada de dados. Uma linha
 | [05](../implemented/05-design-tokens.md) | `tokens.css`, primitivos, densidade de desktop, `StateView` |
 | [06](../implemented/06-primeira-feature.md) | `open-dataset` de ponta a ponta, com progresso e cancelamento |
 | [07](../implemented/07-e2e-e-empacotamento.md) | Playwright em dev e contra o instalador |
-| [08](../implemented/08-automacao-e-registro.md) | Hooks de verificação, `CLAUDE.md` pós-fundação, três skills, este arquivamento |
+| [08](../implemented/08-automacao-e-registro.md) | Hooks de verificação, `CLAUDE.md` pós-fundação, três skills |
+| [10](../implemented/10-cor-contraste-e-tema-claro.md) | Contraste medido nos dois temas, tema claro mapeado por intenção |
+| [11](../implemented/11-markdown-na-resposta-do-assistente.md) | Markdown na resposta do assistente, com HTML cru inerte |
 
 As decisões estruturais viraram as skills [`architecture`](../../../.claude/skills/architecture/SKILL.md), [`design-system`](../../../.claude/skills/design-system/SKILL.md) e [`testing`](../../../.claude/skills/testing/SKILL.md) — carregadas quando o assunto aparece, em vez de ocuparem contexto em toda sessão.
 
@@ -28,14 +69,6 @@ As decisões estruturais viraram as skills [`architecture`](../../../.claude/ski
 
 ## O que ficou adiado
 
-Cada adiamento tem um **evento** que o reabre, não uma data. A lista consolidada é dona de [`ROADMAP § 2`](../../ROADMAP.md#2-gatilhos-de-revisão) — não se repete aqui, para não envelhecer em dois lugares. Os de maior alcance: `shamefullyHoist: false` quando o DuckDB entrar, `eslint-plugin-boundaries` na sexta fatia de `features/`, uma skill própria de IPC no vigésimo canal, e o `check:fast` a investigar antes de empilhar mais teste — agora ele roda a cada resposta, no `Stop` hook da fase 08.
+Cada adiamento tem um **evento** que o reabre, não uma data. A lista consolidada é dona de [`ROADMAP § 2`](../../ROADMAP.md#2-gatilhos-de-revisão) — não se repete aqui, para não envelhecer em dois lugares. Os de maior alcance neste arco: `shamefullyHoist: false` no plano 17, TanStack Query no 14, `MarkdownMessage` subindo para `shared/ui/` no 16, e o `check:fast` a investigar antes de empilhar mais teste.
 
----
-
-## Onde o trabalho continua
-
-- **Camada de dados** — DuckDB em `utilityProcess`, Arrow, tabela virtualizada: [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md) é o próximo passo real.
-- **Camada de IA e ML** — decisões tomadas, fatia 1 (chat local) implementada, fatias 2–6 ainda bloqueadas pela camada de dados: [`09-camada-de-ia.md`](09-camada-de-ia.md).
-- **Cor: contraste medido e tema claro** — **concluída** (ago/2026), em [`../implemented/10-cor-contraste-e-tema-claro.md`](../implemented/10-cor-contraste-e-tema-claro.md); o marco está no [`HISTORY.md`](../../HISTORY.md).
-- **Markdown na resposta do assistente** — **concluída** (ago/2026), em [`../implemented/11-markdown-na-resposta-do-assistente.md`](../implemented/11-markdown-na-resposta-do-assistente.md); o marco está no [`HISTORY.md`](../../HISTORY.md). Foi **depois** da 10 porque é o maior produtor de superfície colorida nova do projeto, e calibrar tipografia contra tokens quebrados produziria decisão de design a desfazer.
-- **A sequência até o produto** do [`ESCOPO.md`](../../ESCOPO.md) está no [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência).
+A sequência completa até o produto do [`ESCOPO.md`](../../ESCOPO.md) está no [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência).
