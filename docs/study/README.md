@@ -1,6 +1,6 @@
 # Caderno de estudos — Electron
 
-Esta pasta documenta a construção do `data-lab` do zero, com um objetivo específico: **explicar o porquê, não só o como**.
+Esta pasta documenta a construção do `crivo` do zero, com um objetivo específico: **explicar o porquê, não só o como**.
 
 Tutorial de Electron é o que não falta na internet. O que costuma faltar é o registro honesto das decisões e dos erros — por que essa escolha e não a outra, o que quebrou, como foi diagnosticado. É isso que estes documentos guardam.
 

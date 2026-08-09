@@ -1,4 +1,4 @@
-# Roadmap — data-lab
+# Roadmap — crivo
 
 O que ainda falta. Documento **vivo**: item concluído sai daqui e vira entrada em [`HISTORY.md`](HISTORY.md); item que ganha plano próprio sai daqui e vira arquivo em [`plan/active/`](plan/active/).
 
@@ -90,7 +90,7 @@ Só faz sentido com distribuição. Registrado para não ser confundido com esqu
 `pnpm exec prettier --check` reprova **os 28 arquivos `.md` de `docs/`**, e isso é anterior a qualquer sessão recente — o `.prettierignore` não exclui `docs/`, mas ninguém rodou o formatador sobre eles. A consequência é uma armadilha armada: **`pnpm format` reformata toda a documentação de uma vez**, e quem rodar o comando de boa-fé vai produzir um diff de dezenas de arquivos misturado ao que estava fazendo. Duas saídas, e a escolha é de gosto: formatar tudo num commit isolado e só de formatação, ou acrescentar `docs/**/*.md` ao `.prettierignore` assumindo que a formatação da prosa é manual. O que não serve é deixar como está, porque o próximo `pnpm format` decide sozinho.
 
 ### `dist/win-unpacked` travado por um handle do sistema
-Durante a auditoria de ago/2026, `electron-builder` passou a falhar com `EBUSY: resource busy or locked` ao substituir `dist/win-unpacked/resources/app.asar`, e `rm -rf` falha no mesmo arquivo. Nenhum processo `node`, `pnpm` ou `data-lab` estava em execução — o handle é do sistema, e o suspeito é a proteção em tempo real do Defender (`Get-MpComputerStatus` confirma ativa; conferir as exclusões exige terminal como administrador, que não foi usado). Contorno que funcionou: empacotar noutro destino com `electron-builder --dir -c.directories.output=<dir>`. Reiniciar a máquina libera o handle. **Se voltar a acontecer, reconferir as exclusões do Defender do [`CLAUDE.md`](../CLAUDE.md) — elas não viajam com o repositório e podem ter se perdido.**
+Durante a auditoria de ago/2026, `electron-builder` passou a falhar com `EBUSY: resource busy or locked` ao substituir `dist/win-unpacked/resources/app.asar`, e `rm -rf` falha no mesmo arquivo. Nenhum processo `node`, `pnpm` ou `crivo` estava em execução — o handle é do sistema, e o suspeito é a proteção em tempo real do Defender (`Get-MpComputerStatus` confirma ativa; conferir as exclusões exige terminal como administrador, que não foi usado). Contorno que funcionou: empacotar noutro destino com `electron-builder --dir -c.directories.output=<dir>`. Reiniciar a máquina libera o handle. **Se voltar a acontecer, reconferir as exclusões do Defender do [`CLAUDE.md`](../CLAUDE.md) — elas não viajam com o repositório e podem ter se perdido.**
 
 ---
 

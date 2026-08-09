@@ -12,7 +12,7 @@ O gatilho combinado das duas fases era **a fatia 2 do [plano 09](../active/09-ca
 
 O medo das duas decisões era o mesmo e está citado literalmente: *"calibrar cores de sintaxe sem SQL real na tela é decidir no escuro"*. Esse medo mira em **inventar** uma paleta. Não é o que vai acontecer aqui — a paleta é **importada** do `@primer/primitives`, já calibrada, para uma superfície quase idêntica à de origem:
 
-| | GitHub | data-lab (`--color-surface-sunken`) |
+| | GitHub | crivo (`--color-surface-sunken`) |
 |---|---|---|
 | Fundo do código, claro | `#f6f8fa` | `#f5f6f7` |
 | Fundo do código, escuro | `#0d1117` | `#0b0c0e` |

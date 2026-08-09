@@ -2,7 +2,7 @@ import { APP_ID, APP_NAME } from './meta'
 
 describe('APP_NAME', () => {
   it('is the human-readable product name', () => {
-    expect(APP_NAME).toBe('data-lab')
+    expect(APP_NAME).toBe('crivo')
   })
 })
 
@@ -11,6 +11,6 @@ describe('APP_ID', () => {
   // and nothing else compares the two. A change here without a change there
   // desynchronises the shortcut from the running process on Windows.
   it('is the AppUserModelId, in reverse-domain form, matching electron-builder.yml', () => {
-    expect(APP_ID).toBe('com.mgckaled.datalab')
+    expect(APP_ID).toBe('com.mgckaled.crivo')
   })
 })

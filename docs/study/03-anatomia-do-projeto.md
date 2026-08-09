@@ -11,7 +11,7 @@ A distinção importa. Um scaffold é um chute educado: alguém que não conhece
 ## Mapa geral
 
 ```text
-data-lab/
+crivo/
 ├── src/
 │   ├── shared/      contrato e vocabulário — os três processos conhecem
 │   ├── core/        lógica pura — sem electron, sem react

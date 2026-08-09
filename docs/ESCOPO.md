@@ -1,4 +1,4 @@
-# Escopo — data-lab
+# Escopo — crivo
 
 O que o aplicativo faz, o que ele não faz, e as consequências arquiteturais de cada decisão.
 

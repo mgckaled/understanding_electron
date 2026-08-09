@@ -1,5 +1,5 @@
 {
-  "name": "data-lab",
+  "name": "crivo",
   "version": "1.0.0",
   "description": "Local workbench for cleaning and transforming data files through a step pipeline that compiles to DuckDB SQL",
   "main": "./out/main/index.js",

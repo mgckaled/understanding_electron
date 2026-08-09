@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Claude Code PostToolUse hook: enforce data-lab hard invariants.
+ * Claude Code PostToolUse hook: enforce crivo hard invariants.
  *
  * Port of `guard.py` from the mill.tools project. Inspects the file that was
  * just edited for regressions that either cannot be expressed in ESLint, or
@@ -176,7 +176,7 @@ if (isModuleCss) {
 
 if (violations.length > 0) {
   console.error(
-    `[guard] Violação de invariante do data-lab em ${path.basename(file)}:\n` +
+    `[guard] Violação de invariante do crivo em ${path.basename(file)}:\n` +
       violations.map((v) => `  - ${v}`).join('\n')
   )
   process.exit(2)

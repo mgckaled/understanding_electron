@@ -124,7 +124,7 @@ Alias configurado errado só se descobre no primeiro import real, que pode ser s
 Crie `src/shared/meta.ts`:
 
 ```ts
-export const APP_ID = 'data-lab'
+export const APP_ID = 'crivo'
 ```
 
 Importe-o com `@shared/meta` em `src/main/index.ts` e em `src/renderer/src/App.tsx`, use o valor em algum lugar visível (o `setAppUserModelId` do main serve; um atributo no JSX serve), rode `pnpm dev` e confirme.

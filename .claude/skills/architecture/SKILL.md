@@ -1,9 +1,9 @@
 ---
 name: architecture
-description: Decisões estruturais do data-lab — fronteira de processo (main/preload/renderer/core/shared/workers), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), o sandbox do renderer e a fronteira de segurança, convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada um arquivo vai, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing) — ainda não escritas.
+description: Decisões estruturais do crivo — fronteira de processo (main/preload/renderer/core/shared/workers), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), o sandbox do renderer e a fronteira de segurança, convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada um arquivo vai, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing) — ainda não escritas.
 ---
 
-# Arquitetura — data-lab
+# Arquitetura — crivo
 
 > Escrito nas fases [00](../../../docs/plan/implemented/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md), [02](../../../docs/plan/implemented/02-contrato-ipc.md), [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação, o contrato IPC, a fronteira de segurança do sandbox e o registro de jobs canceláveis, já em vigor. Fonte completa, com o porquê de cada decisão: os cinco documentos linkados acima, mais [`docs/HISTORY.md`](../../../docs/HISTORY.md) para as armadilhas de runtime que a fase 06 diagnosticou.
 

@@ -106,7 +106,7 @@ O mill.tools usa scikit-learn atrás do extra `[ml]`. No ecossistema JavaScript 
 
 Cada capacidade tem um caminho próprio nesta stack:
 
-| Capacidade | Caminho no data-lab |
+| Capacidade | Caminho no crivo |
 |---|---|
 | Detecção de *outliers* | SQL no DuckDB (quartis, desvio) — sem biblioteca |
 | Perfil e estatística descritiva | `SUMMARIZE` do DuckDB — nativo |

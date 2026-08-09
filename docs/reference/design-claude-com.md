@@ -298,7 +298,7 @@ components:
     padding: 64px
 ---
 
-## Leitura do data-lab — o que aproveitar e o que não
+## Leitura do crivo — o que aproveitar e o que não
 
 **Data:** 2026-08-09 · **Motivou:** o arco 13–19 constrói uma interface de conversa, e este extrato (obtido em [getdesign.md](https://getdesign.md/claude/design-md)) descreve o sistema visual da Anthropic. Abaixo desta seção, o extrato segue **verbatim**; esta moldura existe para que ninguém precise ler 590 linhas para achar as cinco coisas úteis.
 

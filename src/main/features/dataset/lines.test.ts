@@ -13,7 +13,7 @@ describe('readLines', () => {
   let dir: string
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'data-lab-lines-'))
+    dir = await mkdtemp(join(tmpdir(), 'crivo-lines-'))
   })
 
   afterEach(async () => {

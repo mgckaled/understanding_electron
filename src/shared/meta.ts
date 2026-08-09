@@ -1,5 +1,5 @@
 /** Human-readable product name — window titles, panel headings. */
-export const APP_NAME = 'data-lab'
+export const APP_NAME = 'crivo'
 
 /**
  * AppUserModelID, used by `electronApp.setAppUserModelId`.
@@ -13,4 +13,4 @@ export const APP_NAME = 'data-lab'
  * Reverse-domain form is the platform convention, and it is why this is not the
  * same constant as APP_NAME: that one is shown to the user, this one never is.
  */
-export const APP_ID = 'com.mgckaled.datalab'
+export const APP_ID = 'com.mgckaled.crivo'

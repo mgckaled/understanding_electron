@@ -1,9 +1,9 @@
 ---
 name: testing
-description: Estratégia de teste do data-lab — a pirâmide de cinco níveis e onde cada um roda, por que handlers de IPC precisam ser funções exportadas (não closures) para serem testáveis sem subir o Electron, a armadilha de importar 'electron' por valor em código testável, o mock de window.api derivado do contrato via satisfies, Playwright/_electron para os níveis 4-5, a verificação real do que vai para dentro do app.asar, e o que não vale a pena testar. Use ao escrever um teste novo, decidir se algo precisa de mock, avaliar se um handler está estruturado de forma testável, escrever um spec E2E, ajustar o files do electron-builder.yml, ou julgar se vale perseguir cobertura em renderer/ ou main/.
+description: Estratégia de teste do crivo — a pirâmide de cinco níveis e onde cada um roda, por que handlers de IPC precisam ser funções exportadas (não closures) para serem testáveis sem subir o Electron, a armadilha de importar 'electron' por valor em código testável, o mock de window.api derivado do contrato via satisfies, Playwright/_electron para os níveis 4-5, a verificação real do que vai para dentro do app.asar, e o que não vale a pena testar. Use ao escrever um teste novo, decidir se algo precisa de mock, avaliar se um handler está estruturado de forma testável, escrever um spec E2E, ajustar o files do electron-builder.yml, ou julgar se vale perseguir cobertura em renderer/ ou main/.
 ---
 
-# Testes — data-lab
+# Testes — crivo
 
 > Escrito nas fases [04](../../../docs/plan/implemented/04-testes-rapidos.md) e [07](../../../docs/plan/implemented/07-e2e-e-empacotamento.md) do plano de fundação. Fonte completa, com o porquê de cada decisão: os dois documentos linkados acima.
 

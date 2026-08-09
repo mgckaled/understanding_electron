@@ -1,9 +1,9 @@
 ---
 name: design-system
-description: Tokens de design do data-lab — os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, tema pelo sistema operacional sem alternador manual, densidade e comportamento de desktop (seleção de texto, foco, movimento), os quatro primitivos (Button, Field, Panel, Toolbar) em CSS Modules, ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor ou medida, decidir onde um estado de UI mora, ou tratar um AppError na interface.
+description: Tokens de design do crivo — os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, tema pelo sistema operacional sem alternador manual, densidade e comportamento de desktop (seleção de texto, foco, movimento), os quatro primitivos (Button, Field, Panel, Toolbar) em CSS Modules, ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor ou medida, decidir onde um estado de UI mora, ou tratar um AppError na interface.
 ---
 
-# Design tokens — data-lab
+# Design tokens — crivo
 
 > Escrito na fase [05](../../../docs/plan/implemented/05-design-tokens.md) do plano de fundação. Fonte completa, com o porquê de cada decisão: o documento linkado acima.
 

@@ -1,7 +1,7 @@
 # Must stay identical to APP_ID in src/shared/meta.ts — see that file for what
 # breaks on Windows when the two drift apart.
-appId: com.mgckaled.datalab
-productName: data-lab
+appId: com.mgckaled.crivo
+productName: crivo
 directories:
   buildResources: build
 # Deny-by-default, and that inversion is the whole point.
@@ -29,7 +29,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: data-lab
+  executableName: crivo
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -42,8 +42,8 @@ mac:
     # a permission an app does not exercise prompts the user for no reason and is
     # grounds for App Store rejection. Only the two folders a data file is
     # realistically opened from are left.
-    - NSDocumentsFolderUsageDescription: data-lab reads the data files you open from your Documents folder.
-    - NSDownloadsFolderUsageDescription: data-lab reads the data files you open from your Downloads folder.
+    - NSDocumentsFolderUsageDescription: crivo reads the data files you open from your Documents folder.
+    - NSDownloadsFolderUsageDescription: crivo reads the data files you open from your Downloads folder.
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}

@@ -1,4 +1,4 @@
-# data-lab
+# crivo
 
 Bancada local para **limpar e transformar arquivos de dados**, construída com **Electron**, **React** e **TypeScript**.
 

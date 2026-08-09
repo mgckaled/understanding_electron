@@ -1,4 +1,4 @@
-# data-lab
+# crivo
 
 Aplicação **Electron**: uma bancada local de dados **operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado. O motor é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
 

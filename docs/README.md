@@ -1,4 +1,4 @@
-# Documentação — data-lab
+# Documentação — crivo
 
 Esta pasta é a documentação versionada do projeto, organizada **por finalidade**: escopo, história, roadmap, estudo, referência e planos por estado.
 
