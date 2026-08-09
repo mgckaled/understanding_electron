@@ -16,7 +16,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    0  revisão de escopo              ESCOPO.md · HISTORY.md           concluída (ago/2026)
    12 realce de sintaxe              plan/implemented/12-...          concluída (ago/2026)
    13 casca conversacional           plan/implemented/13-...          concluída (ago/2026)
-▶  14 persistência das conversas                                      ← estamos aqui
+▶  14 persistência das conversas      plan/active/14-...               ← estamos aqui
    15 orçamento de contexto e modelo
    16 anexo: esquema e perfil
    17 camada de dados (DuckDB)       study/05-proximos-passos.md
@@ -46,8 +46,8 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Quando acontecer | Revisitar | Registrado em |
 |---|---|---|
 | DuckDB instalado e carregando | `shamefullyHoist: false` no `pnpm-workspace.yaml` | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
-| ~~Primeira query reexecutada sobre o mesmo dataset~~ **data marcada: plano 14** — a lista de conversas é refeita após cada resposta, que é a consulta repetida que faltava | Adotar TanStack Query para o **cache de servidor**, mantendo o estado de cliente (conversa ativa, sidebar, rascunho) em Context | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
-| Busca em texto completo sobre todo o histórico (FTS5) | Tirar o SQLite síncrono do main — até lá, listar e inserir são operações indexadas de microssegundos | [`HISTORY`](HISTORY.md) § Decisão: persistência em `node:sqlite` |
+| ~~Primeira query reexecutada sobre o mesmo dataset~~ · ~~data marcada: plano 14~~ **decidido na D14.4** — adotar, com o corpo de `useConversations()`/`useActiveConversation()` como único ponto de troca; falta executar | Adotar TanStack Query para o **cache de servidor**, mantendo o estado de cliente (conversa ativa, sidebar, rascunho) em Context | [`14-persistencia`](plan/active/14-persistencia-das-conversas.md) |
+| Busca em texto completo sobre todo o histórico (FTS5) — **disponibilidade confirmada** no binário do Electron 42.8.0 (SQLite 3.53.1), então o gatilho é só de "quando", não mais de "se dá" | Tirar o SQLite síncrono do main — até lá, listar e inserir são operações indexadas de microssegundos | [`HISTORY`](HISTORY.md) § Decisão: persistência em `node:sqlite` |
 | Máquina com GPU ou RAM que comporte um modelo com `tools` folgado | Reavaliar *tool calling* — foi descartado pela RAM desta máquina, não pelo mérito; a saída estruturada validada continua funcionando de qualquer forma | [`HISTORY`](HISTORY.md) § A virada |
 | Segunda janela do app | Progresso endereçado ao remetente, em vez de transmitido a todas | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
 | Sexta fatia em `features/` | `eslint-plugin-boundaries` no lugar do `no-restricted-imports` | [`01-camadas`](plan/implemented/01-camadas-e-fronteiras.md) |

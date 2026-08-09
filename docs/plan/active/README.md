@@ -8,7 +8,9 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 ## Em execução
 
-*Nenhum. O próximo do arco é o **14 — persistência das conversas**, e o documento dele nasce na sessão em que ele começa.*
+| # | Plano | Estado |
+|---|---|---|
+| [14](14-persistencia-das-conversas.md) | Persistência das conversas | escrito, nenhum passo iniciado |
 
 ---
 
@@ -16,12 +18,12 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 Nasceu da [virada de ago/2026](../../HISTORY.md), que fez do chat a porta de entrada do aplicativo. Sete planos, cada um de uma a três sessões, na ordem em que se destravam.
 
-> ⚠️ **Os arquivos 14–19 ainda não existem, e isso é de propósito.** Um plano é escrito quando é o próximo a ser executado — escrever os seis agora produziria cinco documentos envelhecendo enquanto o primeiro é executado, que é a dívida que a convenção de fonte única existe para evitar. Esta tabela é o contrato do arco; o documento de cada plano nasce na sessão em que ele começa.
+> ⚠️ **Os arquivos 15–19 ainda não existem, e isso é de propósito.** Um plano é escrito quando é o próximo a ser executado — escrever os cinco agora produziria quatro documentos envelhecendo enquanto o primeiro é executado, que é a dívida que a convenção de fonte única existe para evitar. Esta tabela é o contrato do arco; o documento de cada plano nasce na sessão em que ele começa.
 
 | # | Entrega | A decisão que o plano carrega |
 |---|---|---|
 | [~~**13**~~](../implemented/13-casca-do-aplicativo.md) | ✅ **Casca do aplicativo** — concluída em ago/2026. Duas colunas, sidebar em três regiões por slot, conversa em altura cheia, composer fixo, Configurações em modal. Entrada em [`HISTORY.md`](../../HISTORY.md) | — |
-| **14** | **Persistência das conversas.** `node:sqlite` em `userData`, esquema com migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir. A mesma tela do 13, agora sobrevivendo ao fechamento. | O que se grava de uma resposta **cancelada** ou estourada por prazo — a flag `timedOut` da fatia 1 já separa os dois casos. **Herdado do 13:** `settings` como JSON e não coluna por botão; o modelo registrado por mensagem; `Message` como lista de partes; e o corpo de `useConversations()`/`useActiveConversation()` como único ponto de troca para o cache de servidor |
+| [**14**](14-persistencia-das-conversas.md) | **Persistência das conversas.** `node:sqlite` em `userData`, esquema com migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir. A mesma tela do 13, agora sobrevivendo ao fechamento. | ✅ escrito. Resposta interrompida **grava o parcial com marcador** (D14.3); TanStack Query entra para o cache de servidor, com o corpo dos dois hooks como único ponto de troca (D14.4); a escada de migração nasce **exercitada em dois degraus** (D14.2); e o cartão de dados fica para o 16 por não ter escritor, mas com a forma já decidida — dentro de `parts` (D14.9) |
 | **15** | **Orçamento de contexto e modelo por conversa.** `num_ctx` exposto, política de truncamento medida, contador visível, lista de modelos por `/api/tags` **guardando as `capabilities`, não só os nomes** — é o que permite ligar anexo de imagem só para modelo com `vision` sem refazer lista e armazenamento depois. | A política de truncamento — janela deslizante invalida o prefixo em cache e força reprocessar o prompt inteiro a cada turno, que na CPU é o custo dominante |
 | **16** | **Anexo: esquema e perfil.** Anexar arquivo → o `dataset:scan` da [fase 06](../implemented/06-primeira-feature.md) vira cartão no contexto. Níveis 1 e 2 de exposição. | Onde a regra de privacidade vira teste: um nível 1 sobre o construtor de contexto que falha se um valor-sentinela do arquivo aparecer no payload |
 | **17** | **Camada de dados.** DuckDB em `utilityProcess`, Arrow, tabela virtualizada — [`study/05-proximos-passos.md`](../../study/05-proximos-passos.md) é o dono. O cartão raso vira perfil real: tipos, nulos, cardinalidade, `SUMMARIZE`. | Dispara o gatilho do `shamefullyHoist`; o endurecimento (`lock_configuration`) nasce aqui, antes de existir SQL gerado |
