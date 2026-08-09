@@ -1,0 +1,19 @@
+# Line endings are a property of the repository, not of the machine.
+#
+# `core.autocrlf` lives in the developer's git config and does NOT travel with a
+# clone — the same category as the Windows Defender exclusions that CLAUDE.md
+# has to write down by hand. This file travels, and it wins over that setting.
+#
+# Without it, `core.autocrlf=true` writes CRLF into the working tree at checkout
+# while .editorconfig (`end_of_line = lf`) and Prettier (`endOfLine: lf`, the
+# default) both expect LF. The index was always LF; only the working copy
+# diverged — which is why ESLint reported a `Delete ␍` warning on every line of
+# every file that had ever been checked out, 485 of them across nine files, with
+# nothing actually wrong in the repository.
+*                text=auto eol=lf
+
+# Binary: never normalised, never diffed as text. `text=auto` already detects
+# these, but naming them means a corrupt icon can never be one heuristic away.
+*.png            binary
+*.ico            binary
+*.icns           binary
