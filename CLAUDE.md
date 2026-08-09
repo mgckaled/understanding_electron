@@ -119,6 +119,27 @@ Add-MpPreference -ExclusionProcess "node.exe"
 
 *Ao trocar de máquina:* precisa ser refeito, e os caminhos provavelmente mudam.
 
+**Máquina e modelos locais** — registrado aqui porque **decide escolhas do aplicativo** e não deixa rastro no repositório (medido em ago/2026):
+
+| | |
+|---|---|
+| CPU | Intel i5-8265U — 4 núcleos / 8 threads |
+| RAM | 16 GB, com ~4,4 GB livres em uso típico |
+| GPU | **sem aceleração para inferência — tudo roda em CPU** |
+| Ollama | 0.32.6, servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
+
+| Modelo | Tamanho | `capabilities` | Papel |
+|---|---|---|---|
+| `gemma3:4b` | 3,3 GB | `completion`, `vision` | **default** — 131.072 de contexto treinado, janela deslizante de 1024 |
+| `gemma3:1b` | 815 MB | `completion` | fallback de baixa RAM, fraco em síntese |
+| `qwen2.5:7b` | ~4,7 GB | `completion`, **`tools`** | qualidade máxima; **mal cabe na RAM livre** |
+| `phi4-mini` | 2,5 GB | `completion`, **`tools`** | alternativa com `tools`, mais leve |
+| `nomic-embed-text` | 274 MB | `embedding` | 768 dims — o embedder da D9.5 já está instalado |
+
+⚠️ **O teto de contexto não é do Ollama nem do modelo — é da máquina.** O `gemma3:4b` declara 131.072; o default de 4k é do Ollama (`< 24 GiB VRAM`). Numa CPU sem GPU o custo dominante de contexto grande **não é memória, é o prefill a cada turno** — medir antes de escolher.
+
+Estes números decidiram o default de `num_thread`, o modelo padrão e a recusa de *tool calling* (ver [`docs/HISTORY.md`](docs/HISTORY.md)). **Ao trocar de máquina, refazer a medição antes de reaproveitar qualquer uma dessas decisões.**
+
 ### Pendente
 
 **Perfil do VS Code.** A extensão do Python continua ativa e carregando neste workspace; `python.analysis.exclude` silencia os avisos do node-gyp, mas não impede o carregamento. Um perfil (`File → Preferences → Profiles`) contendo só ESLint, Prettier e EditorConfig resolveria de verdade. Note que perfil é configuração de máquina — não viaja no repositório.

@@ -155,6 +155,20 @@ O primitivo nasce em `shared/ui/Dialog/` e não na feature: diferente do `Markdo
 
 > ⚠️ Confirmar no Chromium do Electron 42 se o atributo `closedby` (fechar clicando fora sem handler próprio) está disponível — **ler o comportamento real, não o artigo**, na forma da lição registrada em [`HISTORY.md`](../../HISTORY.md). Se não estiver, o clique no `::backdrop` é tratado à mão.
 
+### D13.9 — O título vem da primeira mensagem, truncado; não do modelo
+
+A lista da sidebar precisa mostrar alguma coisa, e a conversa nasce antes de existir resposta. Três formas, e a escolha é de **custo**, não de gosto:
+
+| Forma | Custo |
+|---|---|
+| `"Nova conversa"` + renomear na mão | grátis, mas uma sidebar de dez "Nova conversa" não distingue nada |
+| **Primeira mensagem do usuário, truncada** | grátis, instantâneo, e é o que o usuário acabou de escrever |
+| Pedir ao modelo um título | uma ida ao modelo a 4–6 tok/s, **competindo com a resposta que o usuário está esperando** |
+
+Adotado: `"Nova conversa"` enquanto está vazia, substituído pela primeira mensagem truncada no envio, e **renomear disponível sempre**. O título é o campo que a D13.4 manda ser **coluna** (a sidebar o lista), não `settings`.
+
+Título gerado por modelo não está descartado — está **caro**. O Claude e o ChatGPT fazem isso porque a ida ao servidor deles é barata; numa CPU sem GPU ela não é. **Gatilho para reabrir:** provedor de nuvem em uso (fatia 3 do [plano 09](09-camada-de-ia.md)), quando a ida deixa de competir com a resposta.
+
 ---
 
 ## Passos
