@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: Decisões estruturais do crivo — fronteira de processo (main/preload/renderer/core/shared/workers), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), o sandbox do renderer e a fronteira de segurança, convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada um arquivo vai, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing) — ainda não escritas.
+description: Decisões estruturais do crivo — fronteira de processo (main/preload/renderer/core/shared/workers), a estrutura interna do renderer (app/ vs features/ vs shared/ui/, e a casca que não importa de features/), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), o sandbox do renderer e a fronteira de segurança, convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada ou pasta um arquivo vai, compor uma tela nova na casca, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing).
 ---
 
 # Arquitetura — crivo
@@ -48,6 +48,23 @@ src/
 
 **Verificada por lint, não só por revisão.** `no-restricted-imports` em `eslint.config.mjs`: um bloco para `src/shared/**` + `src/core/**` (nunca `electron`, nunca `react`, nunca camada acima), outro para `src/renderer/**` (nunca `electron` direto, nunca cruzar para `main/preload/workers`). Regra que só existe em documento é regra que se descobre violada em revisão, seis arquivos depois.
 
+## Dentro do renderer há três pastas, e a casca não importa de `features/` (D13.1)
+
+`src/renderer/src/` tem `shared/ui/` (um de cada primitivo reusável), `features/` (uma por assunto) e — desde a fase 13 — `app/`, que não é nenhum dos dois: **existe uma só e não tem domínio.** Ali moram `AppShell` (o grid de regiões) e `Sidebar` (o chrome: recolher, três regiões, rodapé).
+
+```
+app/AppShell.tsx        grid de regiões — recebe sidebar e main por slot
+app/Sidebar.tsx         chrome: recolher, nav · conteúdo · rodapé
+features/<assunto>/     conversation, open-dataset, settings
+App.tsx                 só composição — quem entra em qual slot
+```
+
+> **`app/` nunca importa de `features/`.** Quem compõe é o `App.tsx`. É a regra que faz a casca sobreviver ao arco: tela de configurações, bloco de passos revisáveis e o que vier entram por composição, sem tocar o fonte da casca — e a régua de 250 linhas do [`CLAUDE.md`](../../../CLAUDE.md) nunca é gasta com ela.
+
+**Slot não é ponto de extensão.** Um `AppShell` que recebe `main` como prop tem exatamente o mesmo número de linhas que um que renderiza a conversa direto — é o mesmo código, menos acoplado. A distinção que impede isto de virar OCP disfarçado está em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*: **slot é a recusa a fixar**, não um recurso a demonstrar. Não invente uma segunda tela para provar que o slot funciona.
+
+**Entre `features/` a importação é livre**, e acontece: `conversation` lê `useSettings()` de `features/settings/` porque a chamada ao modelo precisa do teto de threads da máquina. O que a tabela acima restringe é travessia de **processo**, não vizinhança dentro do renderer. Gatilho de revisão em [`ROADMAP § 2`](../../../docs/ROADMAP.md): a sexta fatia em `features/` troca o `no-restricted-imports` por `eslint-plugin-boundaries` (hoje são três).
+
 ## Aliases, nunca caminho relativo entre camadas
 
 `@shared`, `@core`, `@renderer`. Declarados uma vez em `config/aliases.ts` e importados pelos três blocos do `electron.vite.config.ts` e pelos dois `tsconfig` — `@renderer` só existe no `tsconfig.web.json`, porque `main/` e `workers/` não devem importar do renderer. Sem alias único, `src/renderer/src/features/x/hooks/useY.ts` importaria o contrato como `../../../../../shared/ipc`, e qualquer arquivo que se mova quebra a contagem de pontos.
@@ -85,6 +102,10 @@ window.api.invoke('app:info') // não — reintroduz a superfície larga do temp
 ```
 
 `src/main/ipc/registry.ts` é o único arquivo que conhece `ipcMain.handle`; handlers nascem como funções exportadas em `src/main/features/<x>/handlers.ts`, nunca como closures dentro do registro — é o que os torna alcançáveis por teste em Node puro, sem subir o Electron.
+
+**O IPC ainda não tem skill própria, e isso é medido, não esquecimento.** São **7 canais** hoje (`app:info`, `shell:openExternal`, `dataset:pick`, `dataset:scan`, `job:cancel`, `ai:isAvailable`, `ai:chat`); o [`ROADMAP § 2`](../../../docs/ROADMAP.md) só reabre a questão no **vigésimo**. O plano 14 acrescenta os `conversation:*` e o de configurações, e ainda fica na casa dos quinze — conte antes de propor a separação.
+
+⚠️ **Tipo em `shared/ipc.ts` não implica canal.** `Conversation`/`Message`/`MessagePart` entraram na fase 13 **sem schema zod e sem canal**, de propósito: schema existe para validar payload de IPC, e não havia IPC. O que se decide cedo é a **forma do dado** que atravessa camadas; o canal nasce quando alguém o chama. Ver [`docs/HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
 
 ## Validação: zod nos argumentos, nunca na saída
 

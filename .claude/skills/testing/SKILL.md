@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Estratégia de teste do crivo — a pirâmide de cinco níveis e onde cada um roda, por que handlers de IPC precisam ser funções exportadas (não closures) para serem testáveis sem subir o Electron, a armadilha de importar 'electron' por valor em código testável, o mock de window.api derivado do contrato via satisfies, Playwright/_electron para os níveis 4-5, a verificação real do que vai para dentro do app.asar, e o que não vale a pena testar. Use ao escrever um teste novo, decidir se algo precisa de mock, avaliar se um handler está estruturado de forma testável, escrever um spec E2E, ajustar o files do electron-builder.yml, ou julgar se vale perseguir cobertura em renderer/ ou main/.
+description: Estratégia de teste do crivo — a pirâmide de cinco níveis e onde cada um roda, por que handlers de IPC precisam ser funções exportadas (não closures) para serem testáveis sem subir o Electron, a armadilha de importar 'electron' por valor em código testável, o mock de window.api derivado do contrato via satisfies, os limites do jsdom (não implementa dialog; defeito que depende de layout ou de tempo real de chegada só se prova ao vivo), Playwright/_electron para os níveis 4-5 e a emulação de prefers-color-scheme que o padrão dele impõe, a verificação real do que vai para dentro do app.asar, e o que não vale a pena testar. Use ao escrever um teste novo, decidir se algo precisa de mock, decidir se um comportamento é verificável em jsdom ou exige o app real, avaliar se um handler está estruturado de forma testável, escrever um spec E2E, ajustar o files do electron-builder.yml, ou julgar se vale perseguir cobertura em renderer/ ou main/.
 ---
 
 # Testes — crivo
@@ -36,6 +36,18 @@ Handler como **função exportada**, registrada por um `handle()` genérico (ver
 Nível 5 usa `electron-playwright-helpers`: `findLatestBuild('dist')` + `parseElectronApp(buildDir)`. A doc do pacote descreve a convenção como `out/<nome>-<plataforma>`, mas a função na prática aceita qualquer nome de pasta cujo split por hífen contenha um token de plataforma reconhecido — `win-unpacked` (saída padrão do `electron-builder --dir` no Windows) bate, porque contém `win`. Confirmado lendo `find_parse_builds.js` antes de escrever o teste, não supondo pela doc.
 
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
+
+## O jsdom não é um navegador, e três coisas da fase 13 provaram isso caro
+
+O nível 2 cobre muito, e a linha onde ele para não é óbvia. Três achados, em ordem de quanto custam se descobertos tarde:
+
+**1. Existe defeito que só existe onde ele não é testável.** A lista de mensagens que acompanha o texto do modelo perdia uma corrida real: o DOM despacha `scroll` de forma **assíncrona**, então um token que chega antes do evento faz o efeito ler `pinned` desatualizado e desfazer a rolagem do usuário. Em jsdom não há cadência de token nem layout — `scrollHeight` e `clientHeight` são zero —, então **nenhum teste de nível 2 poderia ter pego**. A regra que sai disto: quando o comportamento depende de *tempo real de chegada* ou de *layout*, a verificação ao vivo (Playwright dirigindo o app com o Ollama no ar) não é reforço, é o **único** nível que prova. Diagnóstico completo em [`docs/HISTORY.md`](../../../docs/HISTORY.md).
+
+**2. O jsdom não implementa `<dialog>`.** No 30.0.1, `HTMLDialogElement` é subclasse **vazia** de `HTMLElement` — sem `show`, sem `showModal`, sem `close`, e sem flag (lido em `lib/jsdom/living/nodes/HTMLDialogElement-impl.js`, não no changelog). O sintoma é `TypeError: node.showModal is not a function` matando o arquivo inteiro. Há um polyfill mínimo em `test/setup-renderer.ts`, e o que ele **não** substitui está escrito nele: camada superior, foco preso, `Esc`, `closedby` e `::backdrop` não têm equivalente, e asseverá-los ali seria testar o shim.
+
+**3. O Playwright emula `prefers-color-scheme`, e o padrão dele é `'light'`.** Não é "não interfere" — é emular claro ativamente, por CDP, e essa emulação **ganha do `nativeTheme.themeSource`**: o main reporta `shouldUseDarkColors: true` e o renderer continua respondendo claro. Consequência que vale saber antes de escrever qualquer spec sobre cor: **nenhum e2e deste repositório exercita o tema escuro.** Para verificar tema, `page.emulateMedia({ colorScheme: 'dark' })`.
+
+Forma comum às três: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Para saber o que ele suporta, leia o `lib/` instalado — a matriz do jsdom é grande o bastante para dar a impressão errada por omissão.
 
 ## Armadilha grave: `electron-builder` empacota direto do disco, não do que o git rastreia
 
@@ -75,7 +87,7 @@ Dentro de `shared/`, nem tudo é lógica: um arquivo de só-constante (`APP_ID`)
 
 ## `pnpm build` não roda teste; `check:fast` é o portão
 
-`build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição (fase 08) e o pré-commit vão chamar — um lugar para manter alinhado, não três configs espalhadas. Meta: `check:fast` abaixo de 15s nesta altura do projeto: se já estiver mais lento, é hora de investigar antes de empilhar mais teste em cima.
+`build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição (fase 08) e o pré-commit vão chamar — um lugar para manter alinhado, não três configs espalhadas. Meta: `check:fast` abaixo de 15s nesta altura do projeto: se já estiver mais lento, é hora de investigar antes de empilhar mais teste em cima. **Estava em 16–23s ao fim da fase 13** (24 arquivos, 172 testes), e a medição redireciona a investigação: a maior fatia é `environment` — a subida do jsdom, uma por arquivo —, não as asserções. Gatilho e número em [`ROADMAP § 2`](../../../docs/ROADMAP.md); não abra uma segunda lista aqui.
 
 ## Globals do Vitest declarados manualmente no ESLint
 
