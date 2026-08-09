@@ -3,6 +3,8 @@
 O que o aplicativo faz, o que ele não faz, e as consequências arquiteturais de cada decisão.
 
 > Este documento é a **definição de produto**. O [`CLAUDE.md`](../CLAUDE.md) diz como o código é escrito; o [`ROADMAP § 1`](ROADMAP.md#1-a-sequência) diz em que ordem construir; o [caderno de estudos](study/README.md) explica o Electron. Aqui está o que se está construindo, e por quê.
+>
+> ⚠️ **O escopo descreve o produto de hoje, não um teto para a arquitetura.** A seção [Fora do escopo](#fora-do-escopo) é firme sobre o que **não se constrói agora** — e continua firme. O que ela não autoriza é estrutura que só saiba abrigar o que está escrito aqui: o aplicativo já roda um modelo com capacidade de visão que ele ignora, e vai ganhar tela de configurações e provedores de nuvem. O critério que separa "não construir" de "não impedir" é dono de [`HISTORY.md`](HISTORY.md) § *flexibilidade é forma de dado e slot*, e o resumo dele é a régua da fase 00: forma de dado que atravessa camadas e costura que custa zero decidem-se agora; feature constrói-se quando existir.
 
 ---
 
