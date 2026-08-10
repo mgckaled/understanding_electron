@@ -1,4 +1,5 @@
-import { DEFAULT_TITLE, stoppedFromError, titleFromText } from './conversations'
+import type { AiModel } from '@shared/ipc'
+import { DEFAULT_TITLE, resolveModel, stoppedFromError, titleFromText } from './conversations'
 
 /*
  * The reducer tests that used to live here are gone with the reducer: the list
@@ -37,5 +38,43 @@ describe('stoppedFromError', () => {
     expect(
       stoppedFromError({ kind: 'upstream', service: 'ollama', status: 500, message: 'x' })
     ).toBeNull()
+  })
+})
+
+describe('resolveModel', () => {
+  function model(name: string): AiModel {
+    return {
+      provider: 'ollama',
+      name,
+      parameterSize: '',
+      sizeBytes: 0,
+      capabilities: [],
+      contextLength: null,
+      attention: null
+    }
+  }
+
+  const catalog = [model('gemma3:4b'), model('qwen2.5-coder:3b')]
+
+  it('keeps the chosen model when it is installed', () => {
+    expect(resolveModel('qwen2.5-coder:3b', catalog)).toBe('qwen2.5-coder:3b')
+  })
+
+  it('falls back to the first installed model when nothing was chosen', () => {
+    // There is no hardcoded default any more (D15.2). The old constant was how
+    // the app could confidently send `gemma3:4b` to an Ollama that never had it.
+    expect(resolveModel(undefined, catalog)).toBe('gemma3:4b')
+  })
+
+  it('falls back when the chosen model was uninstalled', () => {
+    // Nothing about the transcript is lost: each message records the model that
+    // produced it (D13.4), so history keeps saying what it was written with.
+    expect(resolveModel('mistral:7b', catalog)).toBe('gemma3:4b')
+  })
+
+  it('is null when the machine has no model at all', () => {
+    // A state the selector draws — not one the send path should work around.
+    expect(resolveModel('gemma3:4b', [])).toBeNull()
+    expect(resolveModel(undefined, [])).toBeNull()
   })
 })

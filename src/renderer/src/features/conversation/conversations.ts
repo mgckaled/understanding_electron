@@ -1,4 +1,4 @@
-import type { AppError, Conversation, Message, MessageStopped } from '@shared/ipc'
+import type { AiModel, AppError, Conversation, Message, MessageStopped } from '@shared/ipc'
 
 /*
  * What survived the move to storage (plano 14).
@@ -53,4 +53,28 @@ export function stoppedFromError(error: AppError): MessageStopped | null {
   if (error.kind === 'cancelled') return 'cancelled'
   if (error.kind === 'timeout') return 'timeout'
   return null
+}
+
+/**
+ * Which model a conversation will actually be sent with (D15.2).
+ *
+ * There is no hardcoded default any more. It used to be `gemma3:4b` written
+ * into a component, which meant the app could confidently send a model name to
+ * an Ollama that had never pulled it — and get back a generic `upstream` error
+ * with nothing pointing at the cause.
+ *
+ * A conversation whose chosen model was UNINSTALLED falls back to the first
+ * installed one rather than failing on send. Nothing about the transcript is
+ * lost by doing so: every message already records the model that produced it
+ * (D13.4), so the history keeps saying what it was written with.
+ *
+ * `null` means the machine has no model at all — a state the selector draws,
+ * not one the send path should try to work around.
+ *
+ * It lives here and not in `core/` for the same reason `titleFromText` does:
+ * main has no opinion about which model a UI should preselect.
+ */
+export function resolveModel(chosen: string | undefined, catalog: AiModel[]): string | null {
+  if (chosen !== undefined && catalog.some((model) => model.name === chosen)) return chosen
+  return catalog[0]?.name ?? null
 }

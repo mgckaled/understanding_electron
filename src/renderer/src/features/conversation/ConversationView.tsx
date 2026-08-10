@@ -1,22 +1,21 @@
 import { useState } from 'react'
-import type { AppError, MessageStopped } from '@shared/ipc'
+import type { AiModel, AppError, MessageStopped } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
-import Field from '../../shared/ui/Field/Field'
 import { errorMessage } from '../../shared/ui/messages'
 import { useSettings } from '../settings/settingsContext'
-import { useActiveConversation } from './conversationsContext'
+import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
+import { useAiModels } from './useAiModels'
+import { resolveModel } from './conversations'
 import { useStickToBottom } from './useStickToBottom'
 import MarkdownMessage from './MarkdownMessage'
+import ModelSelector from './ModelSelector'
 import Composer from './Composer'
 import { completePartial } from './completePartial'
 import styles from './ConversationView.module.css'
 
-// The model is conversation scale (D13.4), so it stays here. num_thread is
-// machine scale and moved to Configurações — reopening an old conversation must
-// not restore a thread count that belongs to a different computer. The model
-// selector proper, reading /api/tags, is plano 15.
-const DEFAULT_MODEL = 'gemma3:4b'
+/** Stable identity, so a catalog that is loading does not re-run memos. */
+const EMPTY_CATALOG: AiModel[] = []
 
 // The unavailable gate carries a specific hint (D9.3); other errors fall back
 // to the shared generic message.
@@ -34,8 +33,28 @@ const STOPPED_LABEL: Record<MessageStopped, string> = {
 
 function ConversationView(): React.JSX.Element {
   const conversation = useActiveConversation()
+  const { updateSettings } = useConversations()
   const { settings } = useSettings()
-  const [model, setModel] = useState(DEFAULT_MODEL)
+  const { state: catalog, reload } = useAiModels()
+
+  // Held ONLY for the window in which no conversation exists yet — on a fresh
+  // database there is no row to write a setting into.
+  const [pending, setPending] = useState<string | undefined>(undefined)
+  const installed = catalog.status === 'ready' ? catalog.data : EMPTY_CATALOG
+
+  // Note the branch rather than `conversation?.settings.model ?? pending`: that
+  // spelling leaks. A conversation that has chosen nothing yields `undefined`,
+  // which falls through to whatever was last clicked in a DIFFERENT
+  // conversation — so creating a second one silently inherited the first one's
+  // model. Once a conversation exists, only that conversation decides.
+  const chosen = conversation === null ? pending : conversation.settings.model
+  const model = resolveModel(chosen, installed)
+
+  const chooseModel = (name: string): void => {
+    setPending(name)
+    if (conversation !== null) updateSettings(conversation.id, { model: name })
+  }
+
   const { availability, streaming, lastRequestId, state, send, cancel } = useConversationChat(
     model,
     settings.numThread
@@ -58,14 +77,16 @@ function ConversationView(): React.JSX.Element {
       <header className={styles.header}>
         <h1 className={styles.title}>{conversation?.title ?? 'Assistente local'}</h1>
         <div className={styles.controls}>
-          <Field label="Modelo">
-            <input
-              className={styles.input}
-              value={model}
-              onChange={(event) => setModel(event.target.value)}
-              disabled={isLoading}
-            />
-          </Field>
+          <ModelSelector
+            state={catalog}
+            selected={model}
+            // Changing model mid-answer would leave the reply in flight
+            // attributed to a model that is no longer selected. Switching
+            // between turns is the point (D15.7) and stays open.
+            disabled={isLoading}
+            onSelect={chooseModel}
+            onReload={reload}
+          />
           {isReady && <span className={styles.status}>Ollama {availability.data.version}</span>}
         </div>
       </header>
@@ -124,7 +145,14 @@ function ConversationView(): React.JSX.Element {
         )}
       </div>
 
-      <Composer disabled={!isReady} loading={isLoading} onSend={send} onCancel={cancel} />
+      {/* No model installed is as blocking as no service: there is nothing to
+          address the call to, so the composer says so by being closed. */}
+      <Composer
+        disabled={!isReady || model === null}
+        loading={isLoading}
+        onSend={send}
+        onCancel={cancel}
+      />
     </section>
   )
 }

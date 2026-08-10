@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Conversation, Message } from '@shared/ipc'
+import type { Conversation, ConversationSettings, Message } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
 import { DEFAULT_TITLE, titleFromText, type ConversationWithMessages } from './conversations'
 
@@ -48,6 +48,8 @@ export type ConversationsApi = {
   rename: (id: string, title: string) => void
   remove: (id: string) => void
   append: (id: string, message: NewMessage) => void
+  /** Merge-patches one conversation's settings — model, num_ctx (D15.2). */
+  updateSettings: (id: string, patch: ConversationSettings) => void
 }
 
 function useConversationsContext(): ConversationsContextValue {
@@ -97,6 +99,16 @@ export function useConversations(): ConversationsApi {
       window.api.conversation.append(args.id, args.message, args.title),
     onSuccess: invalidate
   })
+  // Same scope as the rest, which matters here for a concrete reason: picking a
+  // model and sending the first message are two writes to the same row, and the
+  // send reads `settings` back from the list. Serialised, the order is the one
+  // the user performed.
+  const updateSettings = useMutation({
+    scope,
+    mutationFn: (args: { id: string; patch: ConversationSettings }) =>
+      window.api.conversation.updateSettings(args.id, args.patch),
+    onSuccess: invalidate
+  })
 
   // On first open, the most recent conversation (D14.6). It costs zero columns:
   // the list already arrives ORDER BY updated_at DESC, so `[0]` IS that one.
@@ -139,9 +151,22 @@ export function useConversations(): ConversationsApi {
           message: full,
           ...(renames ? { title: titleFromText(messageText(full)) } : {})
         })
+      },
+      updateSettings: (id: string, patch: ConversationSettings) => {
+        updateSettings.mutate({ id, patch })
       }
     }),
-    [conversations, activeId, selectedId, setSelectedId, create, rename, remove, append]
+    [
+      conversations,
+      activeId,
+      selectedId,
+      setSelectedId,
+      create,
+      rename,
+      remove,
+      append,
+      updateSettings
+    ]
   )
 }
 

@@ -1,6 +1,23 @@
 import { vi } from 'vitest'
-import type { Api } from '@shared/ipc'
+import type { AiModel, Api } from '@shared/ipc'
 import { createStoreApi } from './store-api'
+
+/**
+ * One real model, so a mounted ConversationView has something to select.
+ *
+ * Values are the ones measured on the development machine, and gemma3:4b is
+ * first on purpose: it is what the app used to hardcode, so every test written
+ * before the catalog existed keeps asserting the model it always asserted.
+ */
+export const TEST_MODEL: AiModel = {
+  provider: 'ollama',
+  name: 'gemma3:4b',
+  parameterSize: '4.3B',
+  sizeBytes: 3_338_801_804,
+  capabilities: ['completion', 'vision'],
+  contextLength: 131072,
+  attention: { blockCount: 34, headCountKv: 4, headDim: 256, slidingWindow: 1024 }
+}
 
 export function createApiMock(): Api {
   return {
@@ -12,7 +29,15 @@ export function createApiMock(): Api {
     // and throw, breaking every test that mounts it — not just the ones
     // about unsubscribing.
     job: { cancel: vi.fn(), onEvent: vi.fn().mockReturnValue(vi.fn()) },
-    ai: { isAvailable: vi.fn(), models: vi.fn(), chat: vi.fn() },
+    ai: {
+      isAvailable: vi.fn(),
+      // Resolves a real catalog by default, for exactly the reason job.onEvent
+      // returns a no-op above: a bare vi.fn() resolves `undefined`, which the
+      // selector reads as "the catalog failed" — and that would break every
+      // test that merely mounts the view, not only the ones about models.
+      models: vi.fn().mockResolvedValue({ ok: true, value: [TEST_MODEL] }),
+      chat: vi.fn()
+    },
     // Not bare vi.fn()s: these two are the surfaces the renderer READS BACK
     // after writing, so a mock that forgets everything would make every test
     // about switching, renaming, history or a persisted setting vacuous.

@@ -15,8 +15,14 @@ import { toConversation, toMessage } from './rows'
  */
 
 export function listConversations(_args: void, db: DatabaseSync): Conversation[] {
+  // `settings` rides along (D15.6): it is a couple of hundred bytes already in
+  // the row, and the active conversation needs the model before it can send
+  // anything. A separate read would be a second trip for data that arrived.
   return db
-    .prepare('SELECT id, title, created_at, updated_at FROM conversations ORDER BY updated_at DESC')
+    .prepare(
+      `SELECT id, title, created_at, updated_at, settings FROM conversations
+       ORDER BY updated_at DESC`
+    )
     .all()
     .map(toConversation)
 }
@@ -60,6 +66,25 @@ export function removeConversation({ id }: Args<'conversation:remove'>, db: Data
   // userData/attachments/<hash> is the opposite (shared between conversations),
   // and plano 16 cannot reuse this cascade for it.
   db.prepare('DELETE FROM conversations WHERE id = ?').run(id)
+}
+
+export function updateConversationSettings(
+  { id, patch }: Args<'conversation:settings'>,
+  db: DatabaseSync
+): void {
+  // json_patch merges in one statement, so two settings written from different
+  // controls cannot clobber each other through a read-modify-write window. A
+  // null value removes its key (RFC 7386), which is how a setting goes back to
+  // the app default — and how the contract expresses "unset" without a second
+  // channel. Verified against the embedded SQLite (3.53) before being used.
+  //
+  // An unknown id touches zero rows and is dropped, exactly as appendMessage
+  // does: settings arriving for a conversation the user just deleted is a race,
+  // not a defect.
+  db.prepare('UPDATE conversations SET settings = json_patch(settings, ?) WHERE id = ?').run(
+    JSON.stringify(patch),
+    id
+  )
 }
 
 export function appendMessage(

@@ -16,7 +16,13 @@ const SERVICE = 'ollama' as const
  * the fatia-1 hook already had right.
  */
 export function useConversationChat(
-  model: string,
+  /**
+   * `null` means the machine has no model installed at all (D15.2). It is a
+   * parameter and not an assumption because the alternative — defaulting to a
+   * name — is exactly what let the app send `gemma3:4b` to an Ollama that had
+   * never pulled it, and get back a generic upstream error.
+   */
+  model: string | null,
   numThread?: number
 ): {
   availability: ViewState<AiAvailability>
@@ -32,7 +38,7 @@ export function useConversationChat(
   send: (prompt: string) => Promise<void>
   cancel: () => void
 } {
-  const { activeId, create, append } = useConversations()
+  const { activeId, create, append, updateSettings } = useConversations()
   // The history now comes from the transcript query rather than from a list
   // that carried every message inside it (D14.1).
   const active = useActiveConversation()
@@ -79,10 +85,19 @@ export function useConversationChat(
     async (prompt: string): Promise<void> => {
       const text = prompt.trim()
       if (text === '') return
+      // Nothing installed: there is no model to address the call to. The
+      // composer is already disabled in this state, so this is the guard behind
+      // the guard rather than the user-facing one.
+      if (model === null) return
 
       // A conversation exists before there is any reply (D13.9). Typing into an
       // empty app creates one instead of demanding the user make one first.
       const conversationId = activeId ?? create()
+      // A conversation born here has empty settings, so it would fall back to
+      // the catalog's first model on reopen — while its transcript says it was
+      // answered by whatever was selected. Recording the model now keeps the
+      // row and the messages telling the same story.
+      if (activeId === null) updateSettings(conversationId, { model })
       // A conversation just created by the line above is not the active one
       // yet, and its history is empty by definition — comparing the ids is what
       // keeps the previous conversation's turns out of a brand new one.
@@ -130,7 +145,7 @@ export function useConversationChat(
         stopped
       })
     },
-    [activeId, active, create, append, clearStreaming, model, numThread, run]
+    [activeId, active, create, append, updateSettings, clearStreaming, model, numThread, run]
   )
 
   const cancel = useCallback((): void => {

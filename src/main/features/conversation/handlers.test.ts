@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite'
-import type { Message } from '@shared/ipc'
+import type { ConversationSettings, Message } from '@shared/ipc'
 import { openDatabase } from '../../db/open'
 import {
   appendMessage,
@@ -7,7 +7,8 @@ import {
   listConversations,
   readMessages,
   removeConversation,
-  renameConversation
+  renameConversation,
+  updateConversationSettings
 } from './handlers'
 
 /*
@@ -70,8 +71,77 @@ describe('createConversation', () => {
       id: 'c1',
       title: 'Nova conversa',
       createdAt: 1234,
-      updatedAt: 1234
+      updatedAt: 1234,
+      // Nothing chosen yet, and the column's own DEFAULT '{}' is what makes
+      // that true without the insert having to say so.
+      settings: {}
     })
+  })
+})
+
+describe('updateConversationSettings', () => {
+  function created(id = 'c1'): void {
+    createConversation({ id, title: 'Nova conversa', createdAt: 1000 }, db)
+  }
+
+  function settingsOf(id = 'c1'): ConversationSettings {
+    return listConversations(undefined, db).find((c) => c.id === id)!.settings
+  }
+
+  it('writes a setting and returns it on the list row (D15.6)', () => {
+    created()
+
+    updateConversationSettings({ id: 'c1', patch: { model: 'gemma3:4b' } }, db)
+
+    expect(settingsOf()).toEqual({ model: 'gemma3:4b' })
+  })
+
+  it('merges instead of replacing, so two controls cannot clobber each other', () => {
+    created()
+
+    updateConversationSettings({ id: 'c1', patch: { model: 'gemma3:4b' } }, db)
+    updateConversationSettings({ id: 'c1', patch: { numCtx: 32768 } }, db)
+
+    expect(settingsOf()).toEqual({ model: 'gemma3:4b', numCtx: 32768 })
+  })
+
+  it('drops a key when patched with null, which is how a setting goes back to the default', () => {
+    created()
+    updateConversationSettings({ id: 'c1', patch: { model: 'gemma3:4b', numCtx: 32768 } }, db)
+
+    // `null` is not in the contract's type (the fields are `?:`), but it is what
+    // the wire carries for "unset" and json_patch is what acts on it.
+    updateConversationSettings({ id: 'c1', patch: { numCtx: null } as never }, db)
+
+    expect(settingsOf()).toEqual({ model: 'gemma3:4b' })
+  })
+
+  it('leaves other conversations alone', () => {
+    created('c1')
+    created('c2')
+
+    updateConversationSettings({ id: 'c1', patch: { model: 'gemma3:4b' } }, db)
+
+    expect(settingsOf('c2')).toEqual({})
+  })
+
+  it('drops settings addressed to a conversation that is gone', () => {
+    // Same race as appendMessage: the user changes the model and deletes the
+    // conversation before the write lands. Nothing about it is a defect.
+    expect(() =>
+      updateConversationSettings({ id: 'ausente', patch: { model: 'gemma3:4b' } }, db)
+    ).not.toThrow()
+  })
+
+  it('does not count as activity, so choosing a model does not reorder the sidebar', () => {
+    // Same reasoning as renameConversation: picking a model is configuration,
+    // not conversation. `updated_at` is what the sidebar sorts by.
+    created('old')
+    createConversation({ id: 'new', title: 'Nova', createdAt: 2000 }, db)
+
+    updateConversationSettings({ id: 'old', patch: { model: 'gemma3:4b' } }, db)
+
+    expect(listConversations(undefined, db).map((c) => c.id)).toEqual(['new', 'old'])
   })
 })
 

@@ -40,7 +40,8 @@ const api: Api = {
     rename: (id, title) => invoke('conversation:rename', { id, title }),
     remove: (id) => invoke('conversation:remove', { id }),
     append: (conversationId, message, title) =>
-      invoke('conversation:append', { conversationId, message, title })
+      invoke('conversation:append', { conversationId, message, title }),
+    updateSettings: (id, patch) => invoke('conversation:settings', { id, patch })
   },
   settings: {
     read: () => invoke('settings:read'),

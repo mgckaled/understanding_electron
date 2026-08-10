@@ -1,4 +1,12 @@
-import type { Conversation, Message, MessagePart, MessageRole, MessageStopped } from '@shared/ipc'
+import type {
+  Conversation,
+  ConversationSettings,
+  Message,
+  MessagePart,
+  MessageRole,
+  MessageStopped
+} from '@shared/ipc'
+import { conversationSettingsSchema } from '@shared/ipc'
 
 /*
  * node:sqlite hands back `Record<string, null | number | bigint | string |
@@ -24,7 +32,30 @@ export function toConversation(row: Row): Conversation {
     // `number`, but a value above 2^53 would arrive as BigInt and silently
     // break every comparison downstream.
     createdAt: Number(row['created_at']),
-    updatedAt: Number(row['updated_at'])
+    updatedAt: Number(row['updated_at']),
+    settings: toConversationSettings(row['settings'])
+  }
+}
+
+/**
+ * The one read in this file that IS validated, and it is the same exception
+ * readSettings makes for app_settings rather than a new one: these bytes came
+ * off DISK, possibly written by an older build, and the migration ladder has
+ * nothing to migrate for a schemaless JSON blob. Validating here IS the
+ * migration path.
+ *
+ * Note what it degrades to. A blob this build cannot read becomes "nothing
+ * chosen", which is precisely what a brand-new conversation looks like, so the
+ * app falls back to its own defaults. The alternative — throwing, as `parts`
+ * does — would make one bad row take down the whole sidebar, and unlike a
+ * corrupted transcript there is nothing here that cannot simply be picked again.
+ */
+function toConversationSettings(value: unknown): ConversationSettings {
+  try {
+    const parsed = conversationSettingsSchema.safeParse(JSON.parse(String(value ?? '{}')))
+    return parsed.success ? parsed.data : {}
+  } catch {
+    return {}
   }
 }
 

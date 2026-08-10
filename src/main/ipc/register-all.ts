@@ -22,7 +22,8 @@ import {
   listConversations,
   readMessages,
   removeConversation,
-  renameConversation
+  renameConversation,
+  updateConversationSettings
 } from '../features/conversation/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
 
@@ -62,6 +63,7 @@ export function registerAll(): () => void {
   handle('conversation:rename', (args) => renameConversation(args, db))
   handle('conversation:remove', (args) => removeConversation(args, db))
   handle('conversation:append', (args) => appendMessage(args, db))
+  handle('conversation:settings', (args) => updateConversationSettings(args, db))
 
   handle('settings:read', (args) => readSettings(args, db))
   handle('settings:write', (args) => writeSettings(args, db))

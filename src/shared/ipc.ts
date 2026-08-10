@@ -180,11 +180,39 @@ export const messageSchema = z.object({
 export type Message = z.infer<typeof messageSchema>
 
 /**
+ * What a conversation chooses for itself (D15.2). Conversation scale and not
+ * machine scale by the D13.4 ruler: both of these change WHAT THE MODEL
+ * ANSWERS — `numCtx` changes how much of its own history it can see — whereas
+ * `numThread` is a property of this computer.
+ *
+ * Every field is optional, and that is the whole design: absent means "the
+ * app's default", so a conversation created before a setting existed needs no
+ * migration and no backfill. It lands in the `settings` JSON column that D14.1
+ * created empty, which is why this plan adds no CREATE TABLE.
+ *
+ * Plano 15 writes two keys; the system prompt joins them the day there is
+ * something to put in it.
+ */
+export const conversationSettingsSchema = z.object({
+  model: z.string().min(1).optional(),
+  /** Context window reserved for this conversation — maps to options.num_ctx. */
+  numCtx: z.number().int().positive().optional()
+})
+export type ConversationSettings = z.infer<typeof conversationSettingsSchema>
+
+/**
  * A conversation ROW — the shape of a line in the `conversations` table, and
  * what the sidebar lists. The transcript is a separate read (D14.1: a message
  * is a row, not an item inside a conversation blob), so `messages` is
  * deliberately absent here: loading every transcript to draw a list of titles
  * is the cost the relational shape exists to avoid.
+ *
+ * `settings` DOES ride along (D15.6), and that is a different question from the
+ * one D14.1 answered. It is a couple of hundred bytes already sitting in the
+ * row, and the active conversation needs it before any send — a separate read
+ * would be a second trip for data that already arrived. The trigger to split it
+ * is written down: `settings` growing to hold a long system prompt, at which
+ * point the list would carry kilobytes per conversation to draw titles.
  *
  * The renderer composes this with `conversation:messages` for the active
  * conversation; that composite type belongs to the renderer, not here, because
@@ -195,6 +223,7 @@ export type Conversation = {
   title: string
   createdAt: number
   updatedAt: number
+  settings: ConversationSettings
 }
 
 /*
@@ -268,6 +297,16 @@ export const argsSchema = {
     message: messageSchema,
     title: z.string().optional()
   }),
+  // A merge patch, like settings:write and for the same reason: a key added
+  // later is written by whoever owns it, without every writer having to know
+  // the full shape. Applied with SQLite's json_patch so it is one atomic
+  // statement instead of read-modify-write — and a null value removes its key,
+  // which is RFC 7386 merge-patch semantics and how a setting goes back to the
+  // app default.
+  'conversation:settings': z.object({
+    id: z.string().min(1),
+    patch: conversationSettingsSchema
+  }),
   'settings:read': z.void(),
   // A patch, not the whole object: a setting added later is written by whoever
   // owns it, without every writer having to know the full shape.
@@ -335,6 +374,10 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['conversation:append']>
     result: void
   }
+  'conversation:settings': {
+    args: z.infer<(typeof argsSchema)['conversation:settings']>
+    result: void
+  }
   'settings:read': { args: z.infer<(typeof argsSchema)['settings:read']>; result: AppSettings }
   'settings:write': { args: z.infer<(typeof argsSchema)['settings:write']>; result: void }
 }
@@ -367,10 +410,14 @@ export type Api = {
     list(): Promise<Conversation[]>
     /** The transcript of one conversation, oldest first. */
     messages(conversationId: string): Promise<Message[]>
-    create(conversation: Omit<Conversation, 'updatedAt'>): Promise<void>
+    // `settings` is omitted, not defaulted: the column already defaults to an
+    // empty object, so a caller passing one would be duplicating that decision.
+    create(conversation: Omit<Conversation, 'updatedAt' | 'settings'>): Promise<void>
     rename(id: string, title: string): Promise<void>
     remove(id: string): Promise<void>
     append(conversationId: string, message: Message, title?: string): Promise<void>
+    /** Merge-patches this conversation's settings; absent keys are untouched. */
+    updateSettings(id: string, patch: ConversationSettings): Promise<void>
   }
   settings: {
     read(): Promise<AppSettings>
