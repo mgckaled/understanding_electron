@@ -12,6 +12,9 @@ import styles from './Settings.module.css'
  * the conversation; a modal keeps it visible behind, and "I did not lose my
  * place" stops being something to trust and becomes something you can see.
  *
+ * Since plano 14 the value survives the close: it lives in app_settings, in the
+ * same database as the conversations (D14.7).
+ *
  * The trigger and the dialog live together because the open state is theirs and
  * nothing else reads it. The dialog is a SIBLING in the tree, never a
  * replacement — that is what makes a reply keep streaming behind it.
@@ -52,6 +55,7 @@ function ThreadsField(): React.JSX.Element {
 
 function Settings(): React.JSX.Element {
   const [open, setOpen] = useState(false)
+  const { loaded } = useSettings()
 
   return (
     <>
@@ -62,7 +66,16 @@ function Settings(): React.JSX.Element {
         <p className={styles.scope}>
           Ajustes desta máquina. Valem para todas as conversas e não mudam o que o modelo responde.
         </p>
-        <ThreadsField />
+        {/*
+         * Two conditions, and both are load-bearing since plano 14. `open`,
+         * because <dialog> keeps its children in the DOM when closed, so the
+         * field's initial useState would otherwise run at boot. `loaded`,
+         * because that initial useState copies the value — mounting before the
+         * database answered would freeze the DEFAULT into the field and show a
+         * number that is simply not the one in storage, with nothing on screen
+         * suggesting anything is wrong.
+         */}
+        {open && loaded && <ThreadsField />}
       </Dialog>
     </>
   )

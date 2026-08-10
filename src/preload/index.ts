@@ -40,6 +40,10 @@ const api: Api = {
     remove: (id) => invoke('conversation:remove', { id }),
     append: (conversationId, message, title) =>
       invoke('conversation:append', { conversationId, message, title })
+  },
+  settings: {
+    read: () => invoke('settings:read'),
+    write: (patch) => invoke('settings:write', patch)
   }
 }
 

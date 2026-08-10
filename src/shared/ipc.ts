@@ -144,6 +144,27 @@ export type Conversation = {
   updatedAt: number
 }
 
+/*
+ * Machine-scale configuration (D13.4/D14.7). The criterion is not "rarely
+ * changed": it is a property OF THIS COMPUTER. Stored per conversation,
+ * reopening an old one would restore a thread count belonging to a different
+ * machine — hence its own key-value table, and not a conversation column.
+ *
+ * The table is key-value so a new setting costs no migration (plano 17 adds
+ * the loaded-model policy as a new key). The CONTRACT is typed anyway: the
+ * flexibility that pays is in storage, not in what crosses the boundary.
+ */
+export const appSettingsSchema = z.object({
+  /** Cap on the CPU threads Ollama may use — maps to options.num_thread. */
+  numThread: z.number().int().positive()
+})
+export type AppSettings = z.infer<typeof appSettingsSchema>
+
+// Capped for a laptop already running VS Code, a browser and this agent. The
+// inference lives in the Ollama process, so this is the one lever the app has
+// over its CPU appetite. See plano 09 D9.1.
+export const DEFAULT_APP_SETTINGS: AppSettings = { numThread: 4 }
+
 // job:event is not an invoke/handle channel — ipcMain never `.handle()`s it,
 // so it has no entry in argsSchema/IpcContract. main broadcasts JobEvent
 // payloads through it and preload subscribes with ipcRenderer.on. Its name
@@ -186,7 +207,11 @@ export const argsSchema = {
     conversationId: z.string().min(1),
     message: messageSchema,
     title: z.string().optional()
-  })
+  }),
+  'settings:read': z.void(),
+  // A patch, not the whole object: a setting added later is written by whoever
+  // owns it, without every writer having to know the full shape.
+  'settings:write': appSettingsSchema.partial()
 } as const
 
 export type IpcContract = {
@@ -243,6 +268,8 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['conversation:append']>
     result: void
   }
+  'settings:read': { args: z.infer<(typeof argsSchema)['settings:read']>; result: AppSettings }
+  'settings:write': { args: z.infer<(typeof argsSchema)['settings:write']>; result: void }
 }
 
 export type Channel = keyof IpcContract
@@ -275,5 +302,9 @@ export type Api = {
     rename(id: string, title: string): Promise<void>
     remove(id: string): Promise<void>
     append(conversationId: string, message: Message, title?: string): Promise<void>
+  }
+  settings: {
+    read(): Promise<AppSettings>
+    write(patch: Partial<AppSettings>): Promise<void>
   }
 }

@@ -7,7 +7,6 @@ import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
 import ConversationsProvider from './features/conversation/ConversationsProvider'
 import NewConversationButton from './features/conversation/NewConversationButton'
-import SettingsProvider from './features/settings/SettingsProvider'
 import Settings from './features/settings/Settings'
 import { createQueryClient } from './shared/queryClient'
 
@@ -28,7 +27,6 @@ const queryClient = createQueryClient()
 function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
-      <SettingsProvider>
         <ConversationsProvider>
           <AppShell
             sidebar={
@@ -51,7 +49,6 @@ function App(): React.JSX.Element {
             main={<ConversationView />}
           />
         </ConversationsProvider>
-      </SettingsProvider>
     </QueryClientProvider>
   )
 }

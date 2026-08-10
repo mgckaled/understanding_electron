@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
 import type { Api, AppError, ChatReply, JobEvent, Result } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
-import SettingsProvider from '../settings/SettingsProvider'
 import Settings from '../settings/Settings'
 import ConversationsProvider from './ConversationsProvider'
 import ConversationList from './ConversationList'
@@ -25,9 +24,7 @@ const PROMPT = 'Pergunte algo ao modelo…'
 function providers(children: ReactNode): React.JSX.Element {
   return (
     <QueryClientProvider client={createQueryClient()}>
-      <SettingsProvider>
         <ConversationsProvider>{children}</ConversationsProvider>
-      </SettingsProvider>
     </QueryClientProvider>
   )
 }
@@ -309,6 +306,26 @@ describe('Configurações', () => {
     await screen.findByText('r2')
 
     expect(vi.mocked(api.ai.chat).mock.calls[1]?.[0].numThread).toBe(2)
+  })
+
+  it('keeps the value across a remount — the level-2 shadow of reopening the app', async () => {
+    const api = installApiMock()
+    const user = userEvent.setup()
+
+    const first = render(providers(<Settings />))
+    await user.click(screen.getByRole('button', { name: 'Configurações' }))
+    await user.clear(screen.getByLabelText('Threads de CPU'))
+    await user.type(screen.getByLabelText('Threads de CPU'), '2')
+    await waitFor(() => expect(api.settings.write).toHaveBeenCalledWith({ numThread: 2 }))
+    first.unmount()
+
+    // Same window.api, so the same database — but a brand new tree and a brand
+    // new QueryClient. That is as close as level 2 gets to closing the app; the
+    // real close-and-reopen is the level-4 spec, and only it can prove the rest.
+    render(providers(<Settings />))
+    await user.click(screen.getByRole('button', { name: 'Configurações' }))
+
+    expect(await screen.findByLabelText('Threads de CPU')).toHaveValue(2)
   })
 })
 

@@ -20,6 +20,7 @@ import {
   removeConversation,
   renameConversation
 } from '../features/conversation/handlers'
+import { readSettings, writeSettings } from '../features/settings/handlers'
 
 function broadcastJobEvent(event: JobEvent): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -56,6 +57,9 @@ export function registerAll(): () => void {
   handle('conversation:rename', (args) => renameConversation(args, db))
   handle('conversation:remove', (args) => removeConversation(args, db))
   handle('conversation:append', (args) => appendMessage(args, db))
+
+  handle('settings:read', (args) => readSettings(args, db))
+  handle('settings:write', (args) => writeSettings(args, db))
 
   return () => db.close()
 }

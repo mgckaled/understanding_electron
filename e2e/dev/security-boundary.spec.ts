@@ -38,5 +38,13 @@ test('exposes window.api and nothing beyond it', async () => {
   // An exact list, not a subset: the point is that a new key has to be added
   // here on purpose. A surface that grows silently is the one contextIsolation
   // exists to keep narrow.
-  expect(result.apiKeys).toEqual(['ai', 'app', 'conversation', 'dataset', 'job', 'shell'])
+  expect(result.apiKeys).toEqual([
+    'ai',
+    'app',
+    'conversation',
+    'dataset',
+    'job',
+    'settings',
+    'shell'
+  ])
 })

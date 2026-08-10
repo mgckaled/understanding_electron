@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 import type { Api } from '@shared/ipc'
-import { createConversationApi } from './conversation-store'
+import { createStoreApi } from './store-api'
 
 export function createApiMock(): Api {
   return {
@@ -13,10 +13,10 @@ export function createApiMock(): Api {
     // about unsubscribing.
     job: { cancel: vi.fn(), onEvent: vi.fn().mockReturnValue(vi.fn()) },
     ai: { isAvailable: vi.fn(), chat: vi.fn() },
-    // Not bare vi.fn()s: conversations are the one surface the renderer READS
-    // BACK after writing, so a mock that forgets everything would make every
-    // test about switching, renaming or history vacuous. See conversation-store.
-    conversation: createConversationApi()
+    // Not bare vi.fn()s: these two are the surfaces the renderer READS BACK
+    // after writing, so a mock that forgets everything would make every test
+    // about switching, renaming, history or a persisted setting vacuous.
+    ...createStoreApi()
   } satisfies Api
 }
 
