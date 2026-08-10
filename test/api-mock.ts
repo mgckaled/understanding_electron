@@ -12,7 +12,7 @@ export function createApiMock(): Api {
     // and throw, breaking every test that mounts it — not just the ones
     // about unsubscribing.
     job: { cancel: vi.fn(), onEvent: vi.fn().mockReturnValue(vi.fn()) },
-    ai: { isAvailable: vi.fn(), chat: vi.fn() },
+    ai: { isAvailable: vi.fn(), models: vi.fn(), chat: vi.fn() },
     // Not bare vi.fn()s: these two are the surfaces the renderer READS BACK
     // after writing, so a mock that forgets everything would make every test
     // about switching, renaming, history or a persisted setting vacuous.

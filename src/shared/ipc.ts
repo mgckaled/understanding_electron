@@ -74,6 +74,59 @@ export type AiAvailability = {
   version: string
 }
 
+/**
+ * The attention parameters that decide what a context window COSTS in RAM
+ * (D15.2). They ride along for free: the same /api/show response that carries
+ * `contextLength` carries these, so reading them adds no network call.
+ *
+ * Without them the selector would offer whatever ceiling the model declares —
+ * and phi4-mini declares 131072, which is 16 GB of KV cache on a 16 GB machine.
+ * The true datum and the right answer diverge, which is exactly the case a
+ * derived bound exists for.
+ *
+ * `null` when model_info has no usable attention block — an embedder, or a
+ * shape this build does not recognize. Absence is data: the budget math simply
+ * declines to bound such a model instead of guessing.
+ */
+export type AiModelAttention = {
+  blockCount: number
+  headCountKv: number
+  /** attention.key_length when present, else embedding_length / head_count. */
+  headDim: number
+  /**
+   * Declaring a window is NOT enough to be cheap: phi4-mini declares 262144,
+   * double its own context ceiling, so the window never closes over anything.
+   * Whoever consumes this compares it against contextLength — see core/ai.
+   */
+  slidingWindow: number | null
+}
+
+/**
+ * A model the app can talk to, normalized away from any one provider's wire
+ * shape (D15.1).
+ *
+ * `capabilities` is string[] and not a closed union on purpose, and that stopped
+ * being a precaution in ago/2026: the qwen2.5-coder models arrived declaring
+ * `insert`, a fourth capability no model in the fleet had. A z.enum would have
+ * turned a newly installed model into a parse error for the whole catalog.
+ * Enumerating a third party's vocabulary is a bet that the third party stopped
+ * working. Ask about a capability through core/ai, never by indexing this.
+ *
+ * `provider` carries one value today (D15.9). It exists now because adding it
+ * later would touch this file, preload, renderer, main and every settings blob
+ * already on disk — the same argument that made Message a list of parts.
+ */
+export type AiModel = {
+  provider: AiService
+  name: string
+  /** '4.3B' — details.parameter_size, shown as-is; never parsed. */
+  parameterSize: string
+  sizeBytes: number
+  capabilities: string[]
+  contextLength: number | null
+  attention: AiModelAttention | null
+}
+
 // The application's conversation (D13.3). Distinct from ChatMessage above,
 // which is the provider's wire shape and stays exactly as it is — a pure
 // function translates one into the other, and that function is where plano 16
@@ -177,6 +230,13 @@ export const argsSchema = {
   'dataset:scan': z.object({ path: z.string(), jobId: z.string() }),
   'job:cancel': z.object({ jobId: z.string() }),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
+  // N+1 requests behind one channel (D15.1): /api/tags does not report `vision`
+  // and does not report any context ceiling, so each model needs its own
+  // /api/show. Measured at 4,9 s for 14 models, and it loads nothing — the cost
+  // is latency, not RAM. Cached by the renderer with an infinite staleTime and
+  // a reload button, because installing a model is a system event the app has
+  // no way to observe.
+  'ai:models': z.object({ service: aiServiceSchema }),
   'ai:chat': z.object({
     service: aiServiceSchema,
     model: z.string().min(1),
@@ -232,6 +292,13 @@ export type IpcContract = {
   'ai:isAvailable': {
     args: z.infer<(typeof argsSchema)['ai:isAvailable']>
     result: Result<AiAvailability>
+  }
+  // Result, unlike the conversation channels: the provider being down is a
+  // failure the UI has to react to (empty selector with a hint), not a
+  // programming defect. Same reasoning as ai:isAvailable.
+  'ai:models': {
+    args: z.infer<(typeof argsSchema)['ai:models']>
+    result: Result<AiModel[]>
   }
   'ai:chat': {
     args: z.infer<(typeof argsSchema)['ai:chat']>
@@ -289,6 +356,8 @@ export type Api = {
   }
   ai: {
     isAvailable(service: AiService): Promise<Result<AiAvailability>>
+    /** The installed models, with capabilities and context ceiling (D15.1). */
+    models(service: AiService): Promise<Result<AiModel[]>>
     // Live tokens stream through job.onEvent as 'chunk' events keyed by jobId;
     // the resolved Result carries the assembled whole.
     chat(request: ChatRequest, jobId: JobId): Promise<Result<ChatReply>>

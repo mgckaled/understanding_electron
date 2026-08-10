@@ -1,7 +1,7 @@
 import { afterEach, vi } from 'vitest'
 import type { ChatMessage } from '@shared/ipc'
 import { UpstreamError } from '@core/ai/types'
-import { ollamaChat, ollamaProbe } from './ollama'
+import { ollamaChat, ollamaModels, ollamaProbe } from './ollama'
 
 const messages: ChatMessage[] = [{ role: 'user', content: 'oi' }]
 
@@ -31,6 +31,79 @@ function requestBody(fetchMock: ReturnType<typeof vi.fn>): Record<string, unknow
 }
 
 afterEach(() => vi.unstubAllGlobals())
+
+describe('ollamaModels', () => {
+  // Routes by URL because the catalog is N+1 calls to two different endpoints —
+  // a single-response stub would hide whether /api/show was consulted at all,
+  // which is the entire point of the extra request.
+  function stubCatalog(
+    tags: unknown,
+    showByModel: Record<string, unknown>
+  ): ReturnType<typeof vi.fn> {
+    const fetchMock = vi.fn(async (url: string, init?: { body?: string }) => {
+      if (url.endsWith('/api/tags')) {
+        return { ok: true, status: 200, json: async () => tags }
+      }
+      const { model } = JSON.parse(init?.body ?? '{}') as { model: string }
+      return { ok: true, status: 200, json: async () => showByModel[model] }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  it('asks /api/show once per model and normalizes with what it returns', async () => {
+    const fetchMock = stubCatalog(
+      {
+        models: [
+          { name: 'gemma3:4b', size: 3_338_801_804, details: { parameter_size: '4.3B' } },
+          { name: 'qwen2.5-coder:3b', size: 1_929_000_000, details: { parameter_size: '3.1B' } }
+        ]
+      },
+      {
+        // As measured: /api/tags reports gemma3:4b without `vision`, and only
+        // /api/show admits it. The catalog must carry the /api/show answer.
+        'gemma3:4b': {
+          capabilities: ['completion', 'vision'],
+          model_info: { 'gemma3.context_length': 131072 }
+        },
+        'qwen2.5-coder:3b': {
+          capabilities: ['completion', 'tools', 'insert'],
+          model_info: { 'qwen2.context_length': 32768 }
+        }
+      }
+    )
+
+    const models = await ollamaModels({})
+
+    // 1 for /api/tags plus 1 per model — the N+1 the decision accepted.
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(models.map((m) => m.name)).toEqual(['gemma3:4b', 'qwen2.5-coder:3b'])
+    expect(models[0].capabilities).toContain('vision')
+    expect(models[0].contextLength).toBe(131072)
+    expect(models[1].capabilities).toContain('insert')
+  })
+
+  it('returns an empty list when the daemon has no model pulled', async () => {
+    stubCatalog({ models: [] }, {})
+
+    expect(await ollamaModels({})).toEqual([])
+  })
+
+  it('survives a tags payload with no models field at all', async () => {
+    stubCatalog({}, {})
+
+    expect(await ollamaModels({})).toEqual([])
+  })
+
+  it('throws UpstreamError when the daemon answers non-2xx', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 503 }))
+    )
+
+    await expect(ollamaModels({})).rejects.toBeInstanceOf(UpstreamError)
+  })
+})
 
 describe('ollamaChat', () => {
   it('assembles content across chunks and forwards each piece to onChunk', async () => {

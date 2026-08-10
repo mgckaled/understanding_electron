@@ -10,8 +10,12 @@ import { openExternal } from '../features/shell/handlers'
 import { pickDataset, scanDataset } from '../features/dataset/handlers'
 import { cancelJob } from '../features/job/handlers'
 import { readLines } from '../features/dataset/lines'
-import { chat as aiChat, isAvailable as aiIsAvailable } from '../features/ai/handlers'
-import { ollamaChat, ollamaProbe } from '../features/ai/providers/ollama'
+import {
+  chat as aiChat,
+  isAvailable as aiIsAvailable,
+  models as aiModels
+} from '../features/ai/handlers'
+import { ollamaChat, ollamaModels, ollamaProbe } from '../features/ai/providers/ollama'
 import {
   appendMessage,
   createConversation,
@@ -49,6 +53,7 @@ export function registerAll(): () => void {
   // Step 3 (cloud opt-in) replaces the fixed adapters with a service→provider
   // resolver; nothing else in this file changes.
   handle('ai:isAvailable', (args) => aiIsAvailable(args, ollamaProbe))
+  handle('ai:models', (args) => aiModels(args, ollamaModels))
   handle('ai:chat', (args) => aiChat(args, ollamaChat, broadcastJobEvent))
 
   handle('conversation:list', (args) => listConversations(args, db))

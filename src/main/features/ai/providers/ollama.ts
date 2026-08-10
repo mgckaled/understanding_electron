@@ -1,5 +1,7 @@
-import type { ChatFn, ProbeFn } from '@core/ai/types'
+import type { AiModel } from '@shared/ipc'
+import type { ChatFn, ModelsFn, ProbeFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
+import { normalizeOllamaModel, type OllamaShow, type OllamaTag } from '@core/ai/models'
 
 // 127.0.0.1, not localhost: skips the DNS lookup and dodges the IPv6/IPv4
 // resolution race that makes `localhost` intermittently slow on Windows.
@@ -21,6 +23,45 @@ export const ollamaProbe: ProbeFn = async ({ signal }) => {
   if (!response.ok) throw new UpstreamError(response.status, `HTTP ${response.status}`)
   const body = (await response.json()) as { version?: string }
   return body.version ?? 'unknown'
+}
+
+// Both catalog endpoints answer with one JSON body — no streaming, unlike
+// /api/chat — so they share this. Non-2xx becomes UpstreamError for the handler
+// to classify, exactly as ollamaProbe does.
+async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
+  const response = await fetch(`${OLLAMA_HOST}${path}`, init)
+  if (!response.ok) throw new UpstreamError(response.status, `HTTP ${response.status}`)
+  return (await response.json()) as T
+}
+
+/**
+ * The catalog: /api/tags once, then /api/show per model (D15.1).
+ *
+ * The N+1 is deliberate, because one call does not answer the question.
+ * /api/tags reports neither `vision` nor any context ceiling, so a selector
+ * built on it alone would mislabel every model. Measured at ~4,9 s for 14
+ * models, and it loads nothing — /api/ps stays empty across the whole sweep,
+ * so the cost is latency, not RAM.
+ *
+ * Sequential, not Promise.all: this hits a local server that is also the one
+ * running inference. Firing fourteen parallel requests at a process that may be
+ * mid-generation would buy a few seconds and contend with the thing the user is
+ * actually waiting for. The renderer pays this once and caches it.
+ */
+export const ollamaModels: ModelsFn = async ({ signal }) => {
+  const tags = await requestJson<{ models?: OllamaTag[] }>('/api/tags', { signal })
+
+  const models: AiModel[] = []
+  for (const tag of tags.models ?? []) {
+    const show = await requestJson<OllamaShow>('/api/show', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: tag.name }),
+      signal
+    })
+    models.push(normalizeOllamaModel(tag, show))
+  }
+  return models
 }
 
 export const ollamaChat: ChatFn = async (messages, { model, numThread, signal, onChunk }) => {

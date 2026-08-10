@@ -1,5 +1,6 @@
 import type {
   AiAvailability,
+  AiModel,
   AiService,
   AppError,
   ChatMessage,
@@ -8,7 +9,7 @@ import type {
   JobId,
   Result
 } from '@shared/ipc'
-import type { ChatFn, ProbeFn } from '@core/ai/types'
+import type { ChatFn, ModelsFn, ProbeFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { runChat } from '@core/ai/chat'
 import { ok, err } from '@core/result'
@@ -18,6 +19,10 @@ import * as jobs from '../../jobs'
 // without the split, the status card hangs for minutes when Ollama is down.
 const PING_TIMEOUT_MS = 10_000
 const CHAT_TIMEOUT_MS = 300_000
+// Between the two: the catalog is N+1 requests (4,9 s for 14 models, measured)
+// and grows with the fleet, but it never runs inference, so minutes would only
+// mean the service is wedged.
+const CATALOG_TIMEOUT_MS = 60_000
 
 const HINTS: Record<AiService, string> = {
   ollama: 'Verifique se o Ollama está em execução (ollama serve) na porta 11434.'
@@ -34,6 +39,22 @@ export async function isAvailable(
     // Service down and a missing key look identical to the UI (D9.3): one card,
     // disabled, carrying the hint — no path breaks.
     return err({ kind: 'unavailable', service, hint: HINTS[service] })
+  }
+}
+
+/**
+ * The catalog (D15.1). Result, not a throw: Ollama being down leaves the
+ * selector empty with a hint, which is a state the UI draws — the same shape as
+ * the availability gate, and not a programming defect.
+ */
+export async function models(
+  { service }: { service: AiService },
+  modelsFn: ModelsFn
+): Promise<Result<AiModel[]>> {
+  try {
+    return ok(await modelsFn({ signal: AbortSignal.timeout(CATALOG_TIMEOUT_MS) }))
+  } catch (error) {
+    return err(mapProviderError(error, service))
   }
 }
 
@@ -69,14 +90,16 @@ export async function chat(
   } catch (error) {
     if (timedOut) return err({ kind: 'timeout', afterMs: CHAT_TIMEOUT_MS })
     if (controller.signal.aborted) return err({ kind: 'cancelled' })
-    return err(mapChatError(error, service))
+    return err(mapProviderError(error, service))
   } finally {
     clearTimeout(timeout)
     jobs.finish(jobId)
   }
 }
 
-function mapChatError(error: unknown, service: AiService): AppError {
+// Shared by chat and the catalog: both talk to the same provider over the same
+// transport, so both fail in the same two ways.
+function mapProviderError(error: unknown, service: AiService): AppError {
   if (error instanceof UpstreamError) {
     return { kind: 'upstream', service, status: error.status, message: error.message }
   }
