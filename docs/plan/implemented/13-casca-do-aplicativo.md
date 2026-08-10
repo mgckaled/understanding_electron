@@ -2,7 +2,7 @@
 
 **Depende de:** [12 — Realce de sintaxe](../implemented/12-realce-de-sintaxe.md) · **Entrega:** `App.tsx` deixa de ser pilha de painéis. Duas colunas, sidebar recolhível em três regiões por slot, conversa em altura cheia, composer fixo. Cria conversa, troca entre elas, some ao fechar.
 
-> Primeiro plano do [arco conversacional](../active/README.md#o-arco-conversacional-1319), nascido da [virada de ago/2026](../../HISTORY.md). **Renderer puro: nenhum canal de IPC novo.** Se `argsSchema` ou `IpcContract` aparecerem no diff, algo escorregou do plano 14 para dentro deste.
+> Primeiro plano do [arco conversacional](../active/README.md#o-arco-conversacional-1320), nascido da [virada de ago/2026](../../HISTORY.md). **Renderer puro: nenhum canal de IPC novo.** Se `argsSchema` ou `IpcContract` aparecerem no diff, algo escorregou do plano 14 para dentro deste.
 
 ---
 

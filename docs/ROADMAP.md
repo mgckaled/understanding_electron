@@ -16,26 +16,30 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    0  revisão de escopo              ESCOPO.md · HISTORY.md           concluída (ago/2026)
    12 realce de sintaxe              plan/implemented/12-...          concluída (ago/2026)
    13 casca conversacional           plan/implemented/13-...          concluída (ago/2026)
+   0  revisão de escopo: documento    ESCOPO.md · HISTORY.md           concluída (ago/2026)
 ▶  14 persistência das conversas      plan/active/14-...               ← estamos aqui
    15 orçamento de contexto e modelo
-   16 anexo: esquema e perfil
-   17 camada de dados (DuckDB)       study/05-proximos-passos.md
-   18 propor: consulta e passos
-   19 gráfico como artefato
+   16 anexo: mecanismo + dataset
+   17 anexo: documento e imagem
+   18 camada de dados (DuckDB)       study/05-proximos-passos.md
+   19 propor: consulta e passos
+   20 gráfico como artefato
    ── depois do arco ──────────────────────────────────────────────────────────────
    receitas salvas · JSON/NDJSON · Excel · catálogo camada 2
    observatório                      ← ver abaixo
    nuvem, RAG e ML                   plan/active/09-camada-de-ia.md   fatias 3, 5 e 6
 ```
 
-**Observatório** — ideia portada do mill.tools, sem portar o que ele observa. Um lugar onde o app **se observa**: read-only, local, com um canto que roda avaliação. O que faz valer aqui é a [falha silenciosa](HISTORY.md) do SQL gerado — a verificação pós-execução avisa caso a caso, mas só uma taxa (*"8 de 30 propostas produziram coluna inteiramente nula"*) diz se o cartão de dados e o prompt estão funcionando. Junto dela, o que este projeto já sabe que precisa medir: tokens/s de prefill contra geração por modelo, e o que o SQLite e os anexos ocupam em `userData`. Entra depois do plano 18, que é quem produz o que há para observar.
+**O arco ganhou um plano em ago/2026**, com a [entrada de escopo de documento e imagem](HISTORY.md). O 16 passa a construir o **mecanismo** de anexo de forma genérica — o clipe no composer, `userData/attachments/<hash>`, as variantes de `MessagePart` — e o dataset é só o seu primeiro consumidor; o 17 acrescenta os extratores de documento e imagem sobre esse mesmo mecanismo. A ordem importa por um motivo concreto: mecanismo de anexo desenhado sabendo que só existe dataset nasce com forma de dataset, e o 17 o reescreveria.
 
-Cada etapa depende da anterior por razão real, não por ordem arbitrária. As dependências estão nos documentos linkados, e o arco 13–19 tem índice próprio em [`plan/active/README.md`](plan/active/README.md).
+**Observatório** — ideia portada do mill.tools, sem portar o que ele observa. Um lugar onde o app **se observa**: read-only, local, com um canto que roda avaliação. O que faz valer aqui é a [falha silenciosa](HISTORY.md) do SQL gerado — a verificação pós-execução avisa caso a caso, mas só uma taxa (*"8 de 30 propostas produziram coluna inteiramente nula"*) diz se o cartão de dados e o prompt estão funcionando. Junto dela, o que este projeto já sabe que precisa medir: tokens/s de prefill contra geração por modelo, e o que o SQLite e os anexos ocupam em `userData`. Entra depois do plano 19, que é quem produz o que há para observar — **exceto o primeiro medidor, que se antecipa por necessidade**: o que o `/api/ps` reporta (modelo residente, tamanho, tempo até descarregar) entra em Configurações no plano 17, porque anexo de imagem torna a gerência de modelo carregado um problema de RAM, não de curiosidade.
+
+Cada etapa depende da anterior por razão real, não por ordem arbitrária. As dependências estão nos documentos linkados, e o arco 13–20 tem índice próprio em [`plan/active/README.md`](plan/active/README.md).
 
 **A sequência foi refeita pela [virada de ago/2026](HISTORY.md)**, que tornou o chat a porta de entrada do aplicativo. Duas consequências que não se leem no diagrama:
 
-- **A camada de IA deixou de ser a última etapa e virou a interface.** O [plano 09](plan/active/09-camada-de-ia.md) segue vivo, mas suas fatias foram absorvidas pelo arco: a fatia 2 (NL→passo) é o plano 18, agora com um segundo verbo ao lado; a fatia 4 (cartão de dados) se divide entre os planos 16 e 17. Só as fatias 3 (nuvem), 5 (RAG) e 6 (ML) continuam no fim da fila. O documento continua sendo o dono das decisões D9.1–D9.6.
-- **A ordem antiga colocava a camada de dados antes de tudo; agora ela vem no meio.** Não é adiamento gratuito: os planos 13–16 constroem a casca, a persistência e o anexo, e o anexo já produz um cartão útil com o `dataset:scan` que a [fase 06](plan/implemented/06-primeira-feature.md) entregou. O DuckDB entra para transformar esse cartão raso em perfil real — e chega com consumidor pronto, em vez de esperar por um.
+- **A camada de IA deixou de ser a última etapa e virou a interface.** O [plano 09](plan/active/09-camada-de-ia.md) segue vivo, mas suas fatias foram absorvidas pelo arco: a fatia 2 (NL→passo) é o plano 19, agora com um segundo verbo ao lado; a fatia 4 (cartão de dados) se divide entre os planos 16 e 18. Só as fatias 3 (nuvem), 5 (RAG) e 6 (ML) continuam no fim da fila — a **5 ganhou escopo** com a entrada de documento: além de cartões e receitas, ela indexa documento grande e a descrição de imagem, pelos motivos da [decisão sobre RAG](HISTORY.md). O documento continua sendo o dono das decisões D9.1–D9.6.
+- **A ordem antiga colocava a camada de dados antes de tudo; agora ela vem no meio.** Não é adiamento gratuito: os planos 13–17 constroem a casca, a persistência e o anexo, e o anexo já produz um cartão útil com o `dataset:scan` que a [fase 06](plan/implemented/06-primeira-feature.md) entregou. O DuckDB entra para transformar esse cartão raso em perfil real — e chega com consumidor pronto, em vez de esperar por um.
 
 ---
 
@@ -49,6 +53,10 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | ~~Primeira query reexecutada sobre o mesmo dataset~~ · ~~data marcada: plano 14~~ **decidido na D14.4** — adotar, com o corpo de `useConversations()`/`useActiveConversation()` como único ponto de troca; falta executar | Adotar TanStack Query para o **cache de servidor**, mantendo o estado de cliente (conversa ativa, sidebar, rascunho) em Context | [`14-persistencia`](plan/active/14-persistencia-das-conversas.md) |
 | Busca em texto completo sobre todo o histórico (FTS5) — **disponibilidade confirmada** no binário do Electron 42.8.0 (SQLite 3.53.1), então o gatilho é só de "quando", não mais de "se dá" | Tirar o SQLite síncrono do main — até lá, listar e inserir são operações indexadas de microssegundos | [`HISTORY`](HISTORY.md) § Decisão: persistência em `node:sqlite` |
 | Máquina com GPU ou RAM que comporte um modelo com `tools` folgado | Reavaliar *tool calling* — foi descartado pela RAM desta máquina, não pelo mérito; a saída estruturada validada continua funcionando de qualquer forma | [`HISTORY`](HISTORY.md) § A virada |
+| **Máquina com GPU para inferência** | Os ~80 s de prefill por imagem caem para segundos, e todo o desenho de "anexar é um job com progresso e cancelamento" fica superdimensionado. A recusa a OCR e o teto de ~8k tokens por documento também foram medidos **nesta** CPU — os três se reabrem juntos | [`HISTORY`](HISTORY.md) § o anexo custa ~80 s |
+| **Existir modelo local com `vision` e `tools` ao mesmo tempo** | Hoje não existe na máquina: o único com `vision` é o `gemma3:4b`, e os dois com `tools` (`qwen2.5:7b`, `phi4-mini`) não enxergam. Enquanto for assim, anexar imagem e usar ferramentas são caminhos mutuamente exclusivos, e o gate de capacidade precisa dizer isso | [`ESCOPO`](ESCOPO.md) § gate de capacidade |
+| **O Ollama passar a aceitar WebP em container VP8X** | Some a conversão para PNG no caminho do WebP. A rasterização de SVG **continua** necessária de qualquer forma — é outro motivo, não o mesmo | [`HISTORY`](HISTORY.md) § três formatos de imagem |
+| **Um documento anexado passar de ~8k tokens** | RAG deixa de ser desperdício e vira a única opção — é a fatia 5 do [plano 09](plan/active/09-camada-de-ia.md), não um mecanismo novo. Abaixo desse teto, indexar **perde** para mandar o documento inteiro | [`HISTORY`](HISTORY.md) § RAG entra por capacidade |
 | Segunda janela do app | Progresso endereçado ao remetente, em vez de transmitido a todas | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
 | Sexta fatia em `features/` | `eslint-plugin-boundaries` no lugar do `no-restricted-imports` | [`01-camadas`](plan/implemented/01-camadas-e-fronteiras.md) |
 | Vigésimo canal em `shared/ipc.ts` | Skill própria para IPC, separada de `architecture` | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
@@ -57,7 +65,7 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Um spec de nível 4 precisar verificar **cor** | O Playwright emula `prefers-color-scheme` e o padrão dele é `'light'`, então nenhum e2e de hoje exercita o tema escuro. Use `page.emulateMedia({ colorScheme })` — `nativeTheme.themeSource` não chega ao renderer sob teste | [`HISTORY`](HISTORY.md) § armadilhas |
 | Existirem cartões de dados suficientes | RAG sobre cartões e receitas | [`09-camada-de-ia`](plan/active/09-camada-de-ia.md) |
 | ~~Fatia 2 do `09` (NL→passo) gerando SQL para revisão~~ **disparado por antecipação e resolvido** — a [fase 12](plan/implemented/12-realce-de-sintaxe.md) andou antes porque a paleta é **importada** e medida, não inventada; o gatilho protegia contra escolher cor por gosto, e o teste de contraste protege melhor | Realce de sintaxe: calibrar `--syntax-*` e ligá-la no bloco de código | [`10-cor`](plan/implemented/10-cor-contraste-e-tema-claro.md) · [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
-| ~~Segundo consumidor de markdown fora de `features/conversation/`~~ (a fatia chamava-se `ai-chat` quando o gatilho foi escrito) — **data marcada: plano 16**, o cartão de dados é o segundo consumidor | Subir `MarkdownMessage` + a tipografia de bloco para `shared/ui/` (D11.1) | [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
+| ~~Segundo consumidor de markdown fora de `features/conversation/`~~ (a fatia chamava-se `ai-chat` quando o gatilho foi escrito) — **data marcada: plano 16**, o cartão de dados é o segundo consumidor, e o **17 traz o terceiro** (documento `.md` anexado renderiza como markdown) | Subir `MarkdownMessage` + a tipografia de bloco para `shared/ui/` (D11.1) | [`11-markdown`](plan/implemented/11-markdown-na-resposta-do-assistente.md) |
 
 ---
 
@@ -97,4 +105,4 @@ Durante a auditoria de ago/2026, `electron-builder` passou a falhar com `EBUSY: 
 
 ## 5. Fora de escopo
 
-Não são pendências. Estão em [`ESCOPO.md`](ESCOPO.md) com justificativa: visualização e BI, edição célula a célula, banco de dados remoto, execução agendada sem interface, colaboração multiusuário, versionamento de dados.
+Não são pendências. Estão em [`ESCOPO.md`](ESCOPO.md) com justificativa: visualização e BI, edição célula a célula, banco de dados remoto, execução agendada sem interface, colaboração multiusuário, versionamento de dados, PDF escaneado e OCR, `.docx`/`.pptx`, edição ou exportação de documento, e índice vetorial de imagens.

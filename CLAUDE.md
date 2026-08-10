@@ -69,10 +69,11 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 | TypeScript | 5.9.3 | migração para 6 planejada, ver abaixo |
 | electron-builder | 26.x | empacotamento e instaladores |
 
-### Camada de dados (planejada, ainda não instalada)
+### Planejadas, ainda não instaladas
 
 - `@duckdb/node-api` — DuckDB via N-API, roda em `utilityProcess`, **nunca** no renderer
 - `apache-arrow` — transporte de resultados main → renderer sem serializar para JSON
+- `unpdf` — extração da camada de texto de PDF, no plano 17. **Zero dependências**, 2 MB, sem módulo nativo. O `peerDependency` `@napi-rs/canvas` serve só para **renderizar** página como imagem, é módulo nativo e **não entra** — o que mantém fechado o gatilho do `shamefullyHoist` até o DuckDB
 
 ---
 

@@ -4,21 +4,46 @@ O que o aplicativo faz, o que ele não faz, e as consequências arquiteturais de
 
 > Este documento é a **definição de produto**. O [`CLAUDE.md`](../CLAUDE.md) diz como o código é escrito; o [`ROADMAP § 1`](ROADMAP.md#1-a-sequência) diz em que ordem construir; o [caderno de estudos](study/README.md) explica o Electron. Aqui está o que se está construindo, e por quê.
 >
-> ⚠️ **O escopo descreve o produto de hoje, não um teto para a arquitetura.** A seção [Fora do escopo](#fora-do-escopo) é firme sobre o que **não se constrói agora** — e continua firme. O que ela não autoriza é estrutura que só saiba abrigar o que está escrito aqui: o aplicativo já roda um modelo com capacidade de visão que ele ignora, e vai ganhar tela de configurações e provedores de nuvem. O critério que separa "não construir" de "não impedir" é dono de [`HISTORY.md`](HISTORY.md) § *flexibilidade é forma de dado e slot*, e o resumo dele é a régua da fase 00: forma de dado que atravessa camadas e costura que custa zero decidem-se agora; feature constrói-se quando existir.
+> ⚠️ **O escopo descreve o produto de hoje, não um teto para a arquitetura.** A seção [Fora do escopo](#fora-do-escopo) é firme sobre o que **não se constrói agora** — e continua firme. O que ela não autoriza é estrutura que só saiba abrigar o que está escrito aqui. O critério que separa "não construir" de "não impedir" é dono de [`HISTORY.md`](HISTORY.md) § *flexibilidade é forma de dado e slot*, e o resumo dele é a régua da fase 00: forma de dado que atravessa camadas e costura que custa zero decidem-se agora; feature constrói-se quando existir.
+>
+> Esse critério já foi cobrado uma vez e pagou. Quando a decisão citada acima foi escrita, "descrição de imagem por VLM" era o exemplo de feature futura que justificava `Message` nascer como **lista de partes tipadas** em vez de `content: string`. Em ago/2026 a leitura de documento e imagem [entrou no escopo](#duas-classes-de-arquivo-e-a-linha-entre-elas) — e a estrutura que a recebe já estava lá, sem retrofit. Registrado porque é o argumento empírico de que a régua funciona, e não uma previsão de sorte.
 
 ---
 
 ## Em uma frase
 
-**Uma bancada de dados local, operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre ele em português, e sair com uma resposta ou com o arquivo tratado.
+**Uma bancada de dados local, operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre ele em português, e sair com uma resposta ou com o arquivo tratado. E, na mesma conversa, trazer o documento que explica aquele dado: o `.md` da especificação, o PDF do contrato, a captura de tela da planilha que alguém mandou.
 
-Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa, para você entender um resultado que já está na tela; painel, relatório e atualização automática continuam fora. E não é um chat genérico com um leitor de arquivo pregado ao lado: o motor é o DuckDB, o trabalho é o de sempre — deixar o dado utilizável, que hoje se faz em planilha na mão ou em script Python descartável —, e a conversa é a interface que substitui a bancada de painéis.
+Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa, para você entender um resultado que já está na tela; painel, relatório e atualização automática continuam fora.
+
+E não é um chat genérico com um leitor de arquivo pregado ao lado — mas essa distinção deixou de ser óbvia quando documento e imagem entraram, então ela virou seção própria logo abaixo. O resumo: **há um motor, e o documento não passa por ele.** O trabalho continua sendo deixar o dado utilizável — o que hoje se faz em planilha na mão ou em script Python descartável —, e a conversa é a interface que substitui a bancada de painéis.
+
+---
+
+## Duas classes de arquivo, e a linha entre elas
+
+O aplicativo abre duas coisas muito diferentes. Confundi-las é o que transformaria a bancada no tal chat genérico.
+
+| | **Dado tabular** | **Documento** |
+|---|---|---|
+| Formatos | CSV, Parquet, JSON/NDJSON, Excel | `.txt`, `.md`, `.pdf` com texto · `.png`, `.jpeg`, `.svg`, `.webp` |
+| Relação | *perguntar* e *tratar* — os dois verbos abaixo | **ler como contexto**, e nada mais |
+| Motor | DuckDB | nenhum: vai direto ao modelo |
+| Produz | consulta, passos, receita, resultado, gráfico | texto no contexto da conversa |
+| Vira arquivo de saída? | sim — é o ponto do aplicativo | **nunca** |
+| Exposição ao modelo | três níveis, o terceiro opt-in | sempre integral — ver adiante |
+
+Ninguém deduplica um PNG por CPF. **Os dois verbos valem para dado tabular**; documento tem uma terceira relação, mais fraca: material de contexto, que entra na conversa para ser lido e sai dela sem virar arquivo.
+
+**Por que está no escopo:** são os arquivos com que se trabalha diariamente, e a pergunta real quase nunca é só sobre o CSV — é sobre o CSV **e** a especificação que diz o que cada coluna deveria conter. Manter as duas coisas em duas ferramentas é exatamente o atrito que este aplicativo existe para remover.
+
+**O que isto não autoriza:** editar, anotar, converter ou exportar documento. Um `.pdf` entra e não sai; um `.png` entra e não sai. No dia em que "salvar o PDF anotado" for pedido, a resposta é que isso é outro produto — a mesma resposta que o painel de BI já recebe.
 
 ---
 
 ## Os dois verbos
 
-Toda pergunta dirigida a um arquivo de dados cai em um de dois verbos, e eles pedem respostas de **formatos diferentes**. Confundi-los é a origem da maior parte do que dá errado numa ferramenta assim.
+Toda pergunta dirigida a um arquivo **de dado tabular** cai em um de dois verbos, e eles pedem respostas de **formatos diferentes**. Confundi-los é a origem da maior parte do que dá errado numa ferramenta assim.
 
 | | **Perguntar** | **Tratar** |
 |---|---|---|
@@ -74,8 +99,10 @@ Uma mensagem não é só texto em markdown. Ela carrega **artefatos** — blocos
 
 | Artefato | Nasce de | Ação que oferece |
 |---|---|---|
-| pré-visualização | anexar um arquivo | — |
+| pré-visualização | anexar um arquivo de dado tabular | — |
 | cartão de dados | avaliação do arquivo pela IA | indexar para busca |
+| **documento** | anexar `.txt`, `.md` ou `.pdf` | — |
+| **imagem** | anexar ou colar uma imagem | — |
 | proposta de consulta | pergunta que virou SQL | executar |
 | proposta de passos | pedido que virou tratamento | executar · salvar como receita |
 | resultado | execução de uma proposta | plotar |
@@ -83,9 +110,11 @@ Uma mensagem não é só texto em markdown. Ela carrega **artefatos** — blocos
 
 Isso substitui as abas fixas de uma bancada tradicional: o que seria "aba de pré-visualização" é um bloco preso à mensagem em que o arquivo foi anexado, e some da vista junto com ela.
 
-Duas regras decorrem, e as duas existem para o aplicativo não engordar em silêncio:
+Três regras decorrem, e as três existem para o aplicativo não engordar em silêncio:
 
 > **A conversa guarda a pergunta, a proposta e o veredito — nunca o resultado.** Resultado é rederivável a partir do arquivo e pode ser enorme. Dele guarda-se apenas o resumo: contagem de linhas, duração, nomes de coluna e os avisos de sanidade.
+
+> **O anexo é guardado por conteúdo, não por caminho.** O arquivo é copiado para `userData/attachments/<hash>` e a conversa guarda a referência. Ao contrário do resultado, os bytes de um PDF **não** são rederiváveis — o arquivo original pode ter sido movido, renomeado ou apagado —, então guardar o caminho seria guardar uma promessa. Guardar por hash traz dois efeitos de graça: o mesmo arquivo anexado duas vezes ocupa espaço uma vez, e excluir uma conversa precisa conferir se outro anexo ainda aponta para aquele hash.
 
 > **Resultado passa por verificação antes de virar resposta.** Coluna inteiramente nula, zero linhas, conversão que anulou tudo — cada um vira **aviso visível**, nunca uma tabela apresentada como se estivesse certa. SQL válido que executa sem erro e devolve a resposta errada é o modo de falha que o usuário não tem como detectar sozinho.
 
@@ -106,6 +135,18 @@ O nível 2 é o `SUMMARIZE` do DuckDB, e é o que produz uma avaliação de qual
 - **Top-N só para coluna de baixa cardinalidade.** Os cinco valores mais frequentes de `cidade` são estatística; os cinco mais frequentes de `cpf` são vazamento com outro nome. O limiar é relativo à contagem de linhas, e a decisão mora em `core/`, nunca ao lado de um chamador — ver [`HISTORY.md`](HISTORY.md) § Armadilhas.
 - **O nível 3 é opt-in por anexo, e o padrão depende do provedor.** Local (Ollama, na sua máquina) pode liberá-lo a um clique. Nuvem tem o nível 3 **bloqueado**, com a mesma dica acionável do gate de disponibilidade.
 - **Um cartão de dados só.** `core/ai/dataCard.ts` produz um objeto, consumido por todos os caminhos — conversa, consulta, passos, busca. Contexto montado por feature é como se produzem duas qualidades de resposta sobre o mesmo arquivo.
+
+### Documento e imagem são nível 3 por construção
+
+Os três níveis funcionam porque dado tabular **pode ser agregado**: existe uma descrição do arquivo que é útil e não expõe valor nenhum. Documento e imagem não têm esse meio-termo — não existe "perfil agregado" de um `.md`, e ou o modelo vê os pixels ou não vê.
+
+Logo, **todo anexo de documento ou imagem herda a regra do nível 3**: opt-in explícito, liberado no provedor local, **bloqueado na nuvem**, com a mesma dica acionável do gate de disponibilidade. Nenhum mecanismo novo — a mesma porta.
+
+### O gate de capacidade é correção, não cortesia
+
+Anexo de imagem exige modelo que declare `vision` nas `capabilities` do `/api/tags`. Se o modelo selecionado não declara, o aplicativo **recusa o envio** — não envia sem a imagem, não avisa depois.
+
+O motivo não é elegância de interface. Medido em ago/2026: dado o prompt *"descreva o conteúdo desta imagem"* **sem imagem nenhuma**, o `gemma3:4b` descreveu um gráfico de barras inteiro, com quatro produtos e quatro números, todos inventados, sem uma palavra de hesitação. É a mesma classe da [falha silenciosa do NL→SQL](HISTORY.md) — num caminho gerado por modelo, o perigo não é a exceção, é o sucesso. Anexo que falha em silêncio não produz erro: produz resposta convincente sobre um arquivo que o modelo nunca viu.
 
 ---
 
@@ -144,7 +185,9 @@ Juntar dois datasets (*join*) · empilhar (*union*) · pivotar e despivotar · d
 
 ## Formatos
 
-Todos os quatro são entrada **e** saída. Três deles são quase de graça; um não é.
+### Dado tabular — entrada **e** saída
+
+Todos os quatro são os dois. Três deles são quase de graça; um não é.
 
 | Formato | Leitura | Escrita | Observação |
 |---|---|---|---|
@@ -152,6 +195,21 @@ Todos os quatro são entrada **e** saída. Três deles são quase de graça; um 
 | **Parquet** | nativa | nativa | Colunar, tipado, comprimido — a saída natural do app |
 | **JSON / NDJSON** | nativa | nativa | NDJSON é direto; JSON aninhado exige achatamento |
 | **Excel (`.xlsx`)** | extensão `excel` do DuckDB, ou biblioteca à parte | idem | **Assimétrico — ver abaixo** |
+
+### Documento — entrada apenas
+
+A coluna "Escrita" não está vazia por adiamento: documento **nunca** é saída, pela regra da seção [Duas classes de arquivo](#duas-classes-de-arquivo-e-a-linha-entre-elas).
+
+| Formato | Leitura | Escrita | Observação |
+|---|---|---|---|
+| **`.txt`, `.md`** | direta | — | detecção de encoding como no CSV; cp1252 é comum no Windows brasileiro |
+| **`.pdf` com camada de texto** | `unpdf` | — | zero dependências, sem módulo nativo |
+| **`.pdf` escaneado** | **recusado** | — | sem texto selecionável — ver [Fora do escopo](#fora-do-escopo) |
+| **`.png`, `.jpeg`** | direta ao modelo | — | exige modelo que declare `vision` |
+| **`.svg`** | rasterizado para PNG | — | o `nativeImage` do Electron **não** decodifica SVG; o Chromium sim |
+| **`.webp`** | convertido para PNG | — | o Ollama rejeita o container VP8X, que é o que o Chromium produz |
+
+> **Tudo que não é PNG ou JPEG é normalizado para PNG num ponto só, antes de sair do aplicativo.** SVG rasterizado, WebP convertido, e a decisão de qual caminho tomar mora em `core/`. Espalhar essa conversão pelos chamadores repetiria a falha já registrada em [`HISTORY.md`](HISTORY.md) para a lista branca de esquemas: **validação que mora junto de um chamador vira bypass no segundo**.
 
 ### CSV é onde mora a sujeira
 
@@ -193,6 +251,25 @@ Adotada desde o início, ela custa zero e o teto passa a ser o disco. Retrofitad
 
 **Configuração decorrente:** `memory_limit` do DuckDB fixado explicitamente em ~4 GB — não o padrão de 80% da RAM, que brigaria com o Chromium do próprio app — e `temp_directory` apontando para `app.getPath('userData')`, para que o derramamento tenha onde acontecer.
 
+### O teto do documento é tempo, não tamanho
+
+Dado tabular tem teto de bytes; documento tem teto de **segundos de prefill**, e ele é muito mais baixo. Medido contra o Ollama real em ago/2026, na máquina registrada em [`CLAUDE.md`](../CLAUDE.md) — CPU sem aceleração, `gemma3:4b`:
+
+| | |
+|---|---|
+| prefill de texto | **25–29 tokens/s** |
+| português | **3,7 caracteres por token** (pior que o ~4,0 do inglês) |
+| uma imagem | **+270 tokens e ~80 s**, quaisquer que sejam as dimensões |
+| turnos seguintes, mesmo anexo | **~3 s** — o prefixo fica em cache |
+
+Três consequências de produto, e a primeira dá a forma da interface:
+
+**Anexar é um job, não uma escolha de arquivo.** O custo é pago uma vez, é grande, e por isso precisa de progresso e cancelamento — a mesma forma do `dataset:scan` da [fase 06](plan/implemented/06-primeira-feature.md), com a mesma infraestrutura.
+
+**Reduzir a imagem não economiza tempo.** O Gemma 3 redimensiona tudo para 896×896 antes do encoder de visão; 280×161 custou o mesmo que 800×460. Reduzir economiza disco e RAM, nunca segundos.
+
+**O teto prático de um documento é ~8k tokens, cerca de 30 kB de português.** Acima disso o prefill passa de cinco minutos e não é tolerável nem uma vez — e é aí que RAG deixa de ser otimização e vira a única opção. Abaixo disso, RAG **perde**: os trechos recuperados mudam a cada pergunta, o que descarta o cache de prefixo e paga tokens novos para sempre, enquanto o documento inteiro paga uma vez. Gatilho em [`ROADMAP § 2`](ROADMAP.md).
+
 ---
 
 ## Escrita e segurança do dado
@@ -221,6 +298,10 @@ Registrado explicitamente para não ser confundido com "ainda não":
 - **Execução agendada / ETL sem interface** — receitas são reaplicáveis pela interface, não por linha de comando ou agendador.
 - **Colaboração e multiusuário** — aplicativo de uma pessoa, uma máquina.
 - **Versionamento de dados** — sem histórico de versões do dataset.
+- **PDF escaneado e OCR** — PDF sem camada de texto é recusado, com o motivo dito na tela ("este PDF não tem texto selecionável"). Rasterizar e passar por visão custaria ~80 s **por página** e traria um módulo nativo (`@napi-rs/canvas`) para dentro do projeto. Recusar é mais honesto que entregar um anexo vazio, que cai direto na falha silenciosa descrita acima.
+- **`.docx`, `.pptx` e o resto do escritório** — cada um é um parser e um mundo de casos próprios, como o Excel já demonstra na seção de formatos.
+- **Editar, anotar ou exportar documento** — decorre de [Duas classes de arquivo](#duas-classes-de-arquivo-e-a-linha-entre-elas): documento entra como contexto e não sai como arquivo.
+- **Índice vetorial de imagens** — busca por semelhança visual não é pergunta que este aplicativo tenha. O que serve é buscar pela **descrição** que o modelo de visão já produziu no anexo, e isso é texto, indexado pelo embedder que já existe. Ver [`HISTORY.md`](HISTORY.md) para o que foi medido.
 
 ### Onde passa a linha do gráfico
 
@@ -252,6 +333,24 @@ Antes eram as receitas. Tudo até aqui é derivado de arquivo do usuário; a con
 
 A frase "o modelo recebe o esquema, nunca as linhas" era disciplina lembrada. Com os três níveis acima ela vira caminho de código em `core/`, com teste de nível 1 que falha se um valor-sentinela do arquivo de teste aparecer no payload dos níveis 1 e 2.
 
+### O extrator é o único lugar que sabe de `.pdf`, `.svg` e `.webp`
+
+Um anexo não é um arquivo: é uma **leitura materializada**. O que varia por tipo é só o extrator; o resto do caminho é um só, e o extrator roda **uma vez**, no momento do anexo, com o resultado persistido junto da mensagem.
+
+```
+arquivo → extrator por tipo → MessagePart tipada → userData/attachments/<hash>
+                  ↑
+     o único lugar que conhece .pdf, .svg, .webp
+```
+
+Nunca se relê o PDF a cada turno. É o mesmo princípio do cache de prefixo do Ollama e a mesma forma do "um cartão de dados só": paga-se caro uma vez, e o resultado é dado de primeira classe daí em diante.
+
+### O modelo carregado é recurso da máquina, e o aplicativo o administra
+
+Um modelo residente ocupa RAM na ordem de gigabytes (números por modelo em [`CLAUDE.md`](../CLAUDE.md)), e a [fase 13](plan/implemented/13-casca-do-aplicativo.md) permite trocar de modelo **por mensagem** — então dois residentes é um estado alcançável, e nesta máquina isso é *swap*, não lentidão.
+
+**Regra:** ao trocar de modelo, o aplicativo descarrega o anterior antes de chamar o novo. Custa zero no caso comum, porque trocar de modelo já invalida o cache de prefixo de qualquer forma; o custo real (recarga do disco) só aparece em quem volta ao modelo anterior. O estado fica visível em Configurações, com o que o `/api/ps` reporta — e é o primeiro medidor do observatório do [`ROADMAP § 1`](ROADMAP.md) a se pagar sozinho.
+
 ---
 
 ## Ordem de construção
@@ -260,7 +359,8 @@ A frase "o modelo recebe o esquema, nunca as linhas" era disciplina lembrada. Co
 fundação (8 fases) ──► casca conversacional ──► persistência das conversas
                                                        │
                                                        ├─► orçamento de contexto e modelo
-                                                       ├─► anexo: esquema e perfil
+                                                       ├─► anexo: mecanismo + dataset (esquema e perfil)
+                                                       ├─► anexo: documento e imagem
                                                        ├─► camada de dados (DuckDB, Arrow, virtualização)
                                                        ├─► propor: consulta e passos
                                                        ├─► gráfico como artefato

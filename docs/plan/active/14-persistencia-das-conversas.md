@@ -2,7 +2,7 @@
 
 **Depende de:** [13 — Casca do aplicativo](../implemented/13-casca-do-aplicativo.md) · **Entrega:** a mesma tela do 13, sobrevivendo ao fechamento. `node:sqlite` em `userData`, esquema com escada de migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir — e a resposta interrompida gravada com o que chegou.
 
-> Segundo plano do [arco conversacional](README.md#o-arco-conversacional-1319). **Primeiro plano do arco que atravessa a fronteira de processo:** ele cria canais, handlers e o primeiro dado que o aplicativo escreve por conta própria. Se um componente do renderer aparecer no diff sem que um hook tenha mudado antes, algo passou por cima da D14.6.
+> Segundo plano do [arco conversacional](README.md#o-arco-conversacional-1320). **Primeiro plano do arco que atravessa a fronteira de processo:** ele cria canais, handlers e o primeiro dado que o aplicativo escreve por conta própria. Se um componente do renderer aparecer no diff sem que um hook tenha mudado antes, algo passou por cima da D14.6.
 
 ---
 
@@ -16,7 +16,9 @@ O plano 13 preparou o terreno de propósito, e três coisas dele são a fundaç�
 - **`useConversations()` e `useActiveConversation()` são o único ponto de troca** (D13.2). Nenhum componente chama `useContext` direto, e é isso que faz o passo 3 tocar um arquivo em vez de quatro.
 - **`Message` já é lista de partes tipadas** (D13.3). O que vai para a coluna JSON já tem forma.
 
-**Fora deste plano:** orçamento de contexto e seletor de modelo (15), anexo e cartão de dados (16), DuckDB (17). Busca em texto completo também fica fora — ver [D14.9](#d149--o-cartão-de-dados-não-nasce-aqui-porque-não-há-escritor).
+**Fora deste plano:** orçamento de contexto e seletor de modelo (15), mecanismo de anexo e cartão de dados (16), anexo de documento e imagem (17), DuckDB (18). Busca em texto completo também fica fora — ver [D14.9](#d149--o-cartão-de-dados-não-nasce-aqui-porque-não-há-escritor).
+
+> ⚠️ **Revisado em ago/2026, depois da [entrada de documento e imagem no escopo](../../HISTORY.md).** A revisão criou o plano 17 e empurrou o DuckDB para 18 — os números acima já refletem isso. **Nada do esquema mudou**, e essa é a informação útil: uma ampliação de escopo que acrescenta duas classes de anexo passou por este plano sem tocar um `CREATE TABLE`. Os pontos onde ela encosta estão marcados na D14.1, na D14.9 e na seção final.
 
 ---
 
@@ -59,7 +61,9 @@ Dois índices: `messages(conversation_id, created_at)` e `conversations(updated_
 
 **A régua que separa coluna de JSON é a D13.4, e ela já está decidida: o que a sidebar lista vira coluna; o que só a chamada ao modelo lê vira `settings` JSON.** Título e `updated_at` são coluna. `num_ctx`, temperatura e prompt de sistema — que o plano 15 vai criar — vivem no JSON, e é isso que impede cada botão novo de custar uma migração.
 
-`parts` é JSON pelo mesmo motivo, com uma consequência que vale escrever: **a variante `dataset` do plano 16 não vai exigir migração nenhuma.** É a flexibilidade que o `HISTORY` chama de legítima — "metadados que variam por mensagem" —, não *schemaless* disfarçado, porque tudo que se consulta é coluna.
+`parts` é JSON pelo mesmo motivo, com uma consequência que vale escrever: **as variantes `dataset` (plano 16) e `document`/`image` (plano 17) não vão exigir migração nenhuma.** É a flexibilidade que o `HISTORY` chama de legítima — "metadados que variam por mensagem" —, não *schemaless* disfarçado, porque tudo que se consulta é coluna.
+
+A segunda dessas variantes é evidência, não previsão: ela **não existia** quando esta decisão foi escrita. A revisão de escopo de ago/2026 acrescentou duas classes de anexo dias depois, e o custo em esquema foi zero. Uma aposta dessas confirmada uma vez é sorte; a régua que a produziu está no [`HISTORY`](../../HISTORY.md) § *flexibilidade é forma de dado e slot*, e é ela que se cita, não o acerto.
 
 ### D14.2 — A escada de migração nasce **exercitada**, não só escrita
 
@@ -149,6 +153,8 @@ Registrado porque é a primeira coisa que uma sessão futura vai querer acrescen
 2. **Ele não é rederivável na prática.** A regra "a conversa guarda a pergunta, a proposta e o veredito, nunca o resultado" vale porque resultado se recomputa do arquivo — *se* o arquivo ainda existir e não tiver mudado. Reabrir uma conversa de um mês atrás e ver referência a colunas que não se pode mais consultar é pior do que gravar alguns KB.
 3. Custa **zero** a este plano: `parts` já é JSON opaco.
 
+A revisão de escopo de ago/2026 **endureceu a razão 2 e acrescentou uma quarta**. O anexo de documento e imagem do plano 17 não é rederivável *na prática*, como o cartão — é irrecuperável **por natureza**: os bytes de um PDF não se recomputam de arquivo nenhum se o original foi movido ou apagado. Daí a regra do [`ESCOPO.md`](../../ESCOPO.md) de guardar o arquivo em `userData/attachments/<hash>` e a mensagem guardar a referência. **A quarta razão é essa:** as três variantes de anexo — `dataset`, `document`, `image` — passam a ter a mesma forma, uma parte tipada apontando para conteúdo endereçado por hash, e uma forma só é o que permite ao construtor de contexto de `core/` tratar as três no mesmo caminho, com uma fronteira de privacidade só.
+
 ⚠️ A objeção honesta, registrada para não ser redescoberta: com o cartão dentro do JSON, RAG sobre cartões (fatia 5 do [plano 09](09-camada-de-ia.md)) e o observatório precisariam varrer o JSON de toda mensagem — o próprio argumento do `HISTORY` de que *schemaless* move a migração para o caminho de leitura. **A resposta é a D14.2:** quando existirem cartões suficientes, promover de JSON para tabela própria com backfill por `json_extract` é *operação normal* — desde que a escada exista **e tenha sido exercitada**. É por isso que o passo 1 gasta um teste nela.
 
 ---
@@ -207,13 +213,16 @@ Um spec de e2e que **fecha e reabre o aplicativo**: envia, encerra o `electronAp
 
 ---
 
-## O que este plano deixa registrado para o 15 e o 16
+## O que este plano deixa registrado para o 15, o 16 e o 17
 
 - **`settings` JSON por conversa já existe como coluna** (D14.1) — `num_ctx`, temperatura e prompt de sistema entram lá sem migração.
-- **`parts` é JSON opaco** — a variante `dataset` do plano 16 não custa migração; o que custa é promovê-la a tabela, e o gatilho para isso é RAG (D14.9).
+- **`parts` é JSON opaco** — as variantes `dataset` (16) e `document`/`image` (17) não custam migração; o que custa é promovê-las a tabela, e o gatilho para isso é RAG (D14.9).
+- **`app_settings` é chave-valor** (D14.7), então a política de modelo carregado que o plano 17 traz — descarregar o anterior ao trocar, e o que o `/api/ps` mostra em Configurações — entra como chave nova, sem tocar o esquema.
 - **A escada tem dois degraus provados** (D14.2), então tabela nova é operação normal e não uma crise.
 - **O modelo por mensagem já está gravado** — o seletor do plano 15 pode trocar de modelo no meio sem perder a autoria do que já foi respondido.
 - **FTS5 está disponível neste binário** — o gatilho de busca do [`ROADMAP § 2`](../../ROADMAP.md) deixa de carregar a incerteza de disponibilidade e passa a ser só uma decisão de quando.
+
+> ⚠️ **A armadilha que este plano arma para o 16, e que ele não pode resolver sozinho: `ON DELETE CASCADE` resolve mensagem e não vai resolver anexo.** Aqui a cascata está certa — mensagem pertence a uma conversa e a nenhuma outra, então apagar a conversa apaga as mensagens e acabou. Um arquivo em `userData/attachments/<hash>` é o oposto: **endereçado por conteúdo, e por isso compartilhável entre conversas** — o mesmo PDF anexado em duas conversas é um arquivo, não dois. Apagar uma conversa não pode apagar o blob sem antes perguntar se a outra ainda o usa, e o `ON DELETE CASCADE` não sabe fazer essa pergunta. Contagem de referência é problema de quem cria a tabela, mas quem lê este plano precisa saber que a cascata resolvida aqui **não** se estende — a semelhança de forma esconde uma diferença de posse.
 
 ---
 
