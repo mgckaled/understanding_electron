@@ -26,10 +26,13 @@ src/
 ├── shared/     contrato e tipos de domínio. Conhecido pelos três processos.
 ├── core/       lógica pura. Sem electron, sem react.
 ├── main/       ciclo de vida, janelas, roteamento de IPC. Fino.
+│   └── db/     node:sqlite: abertura, escada de migração, transação (fase 14)
 ├── workers/    entrypoints de utilityProcess. Vazia até o DuckDB.
 ├── preload/    a única superfície exposta ao renderer.
 └── renderer/   React.
 ```
+
+`main/db/` não importa `electron`: `openDatabase()` recebe o caminho por parâmetro, e quem resolve `app.getPath('userData')` é o composition root. É a mesma aplicação de DIP que torna os handlers testáveis — todo o armazenamento roda contra `:memory:` em Node puro. Desde a fase 14 `registerAll()` **retorna o `close` do banco**, e `main/index.ts` o liga em `will-quit`: o registro cuida da costura, o índice cuida do ciclo de vida, e fechar limpo é o que consolida `-wal`/`-shm` de volta no arquivo.
 
 **Não usar Clean Architecture** (entities/usecases/repositories). A justificativa dessas camadas é isolar de infraestrutura que pode mudar — e o DuckDB não vai ser trocado, ele é o produto. Um repositório sobre ele jogaria fora o que ele tem de bom.
 
@@ -103,7 +106,9 @@ window.api.invoke('app:info') // não — reintroduz a superfície larga do temp
 
 `src/main/ipc/registry.ts` é o único arquivo que conhece `ipcMain.handle`; handlers nascem como funções exportadas em `src/main/features/<x>/handlers.ts`, nunca como closures dentro do registro — é o que os torna alcançáveis por teste em Node puro, sem subir o Electron.
 
-**O IPC ainda não tem skill própria, e isso é medido, não esquecimento.** São **7 canais** hoje (`app:info`, `shell:openExternal`, `dataset:pick`, `dataset:scan`, `job:cancel`, `ai:isAvailable`, `ai:chat`); o [`ROADMAP § 2`](../../../docs/ROADMAP.md) só reabre a questão no **vigésimo**. O plano 14 acrescenta os `conversation:*` e o de configurações, e ainda fica na casa dos quinze — conte antes de propor a separação.
+**O IPC ainda não tem skill própria, e isso é medido, não esquecimento.** São **15 canais** desde a fase 14 — `app:info`, `shell:openExternal`, `dataset:pick`, `dataset:scan`, `job:cancel`, `ai:isAvailable`, `ai:chat`, os seis `conversation:*` (`list`, `messages`, `create`, `rename`, `remove`, `append`) e `settings:read`/`settings:write`. O [`ROADMAP § 2`](../../../docs/ROADMAP.md) só reabre a questão no **vigésimo**; conte antes de propor a separação.
+
+**Nem todo canal retorna `Result`, e a fase 14 é o precedente a citar.** Os seis de conversa e os dois de configuração **não** retornam — uma leitura ou um `INSERT` indexado num arquivo SQLite local não tem falha que a UI precise distinguir; o que resta é defeito de programação, que deve lançar e doer no console. Ausência vira dado em vez de erro: lista vazia, e um `append` endereçado a uma conversa já excluída é descartado pelo `changes` do próprio `UPDATE`, sem violar chave estrangeira. A régua continua a do `app:info` — embrulhar tudo treina o leitor a ignorar o `ok`.
 
 ⚠️ **Tipo em `shared/ipc.ts` não implica canal.** `Conversation`/`Message`/`MessagePart` entraram na fase 13 **sem schema zod e sem canal**, de propósito: schema existe para validar payload de IPC, e não havia IPC. O que se decide cedo é a **forma do dado** que atravessa camadas; o canal nasce quando alguém o chama. Ver [`docs/HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
 

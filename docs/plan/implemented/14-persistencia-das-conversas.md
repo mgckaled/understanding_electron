@@ -1,6 +1,6 @@
 # 14 — Persistência das conversas
 
-**Depende de:** [13 — Casca do aplicativo](../implemented/13-casca-do-aplicativo.md) · **Entrega:** a mesma tela do 13, sobrevivendo ao fechamento. `node:sqlite` em `userData`, esquema com escada de migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir — e a resposta interrompida gravada com o que chegou.
+**Depende de:** [13 — Casca do aplicativo](13-casca-do-aplicativo.md) · **Entrega:** a mesma tela do 13, sobrevivendo ao fechamento. `node:sqlite` em `userData`, esquema com escada de migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir — e a resposta interrompida gravada com o que chegou.
 
 > Segundo plano do [arco conversacional](README.md#o-arco-conversacional-1320). **Primeiro plano do arco que atravessa a fronteira de processo:** ele cria canais, handlers e o primeiro dado que o aplicativo escreve por conta própria. Se um componente do renderer aparecer no diff sem que um hook tenha mudado antes, algo passou por cima da D14.6.
 
@@ -71,7 +71,7 @@ A segunda dessas variantes é evidência, não previsão: ela **não existia** q
 
 > **Uma escada com um degrau só nunca subiu escada nenhuma.** Ela roda `v0 → v1` na primeira abertura e nunca mais é executada em nenhuma máquina. Se o segundo degrau tiver defeito — e ele será escrito no plano 15 ou 16, sob pressão de outra coisa —, o defeito aparece **na base de alguém que já tem conversas dentro**.
 
-É a mesma classe da prova do smoke test da [fase 07](../implemented/07-e2e-e-empacotamento.md) (sabotar o `files` para ver o teste ficar vermelho) e da provocação de hook da [fase 08](../implemented/08-automacao-e-registro.md). A escada é uma lista de funções indexada por versão, e o teste de nível 1 abre um banco **na v1 com linhas dentro**, roda a escada até uma v2 de fixture, e confere que as linhas sobreviveram. O degrau de fixture mora no teste, nunca no código de produção.
+É a mesma classe da prova do smoke test da [fase 07](07-e2e-e-empacotamento.md) (sabotar o `files` para ver o teste ficar vermelho) e da provocação de hook da [fase 08](08-automacao-e-registro.md). A escada é uma lista de funções indexada por versão, e o teste de nível 1 abre um banco **na v1 com linhas dentro**, roda a escada até uma v2 de fixture, e confere que as linhas sobreviveram. O degrau de fixture mora no teste, nunca no código de produção.
 
 **Descartado** gerar o esquema a partir de um ORM ou de um migrador de terceiro: são quatro `CREATE TABLE` e uma função por versão, e o `node:sqlite` foi escolhido exatamente para não trazer pacote.
 
@@ -96,7 +96,7 @@ Os dois primeiros casos já são distinguíveis: a flag `timedOut` do handler (`
 
 ### D14.4 — TanStack Query entra para o cache de servidor; o Context fica com o cliente
 
-O gatilho do [`ROADMAP § 2`](../../ROADMAP.md) tinha data marcada aqui, e a razão registrada nele acontece de fato neste plano: **a lista de conversas é refeita após cada resposta**, que é a consulta repetida que faltava quando a [fase 06](../implemented/06-primeira-feature.md) adiou a adoção. A régua que adiou é a mesma que agora manda adotar.
+O gatilho do [`ROADMAP § 2`](../../ROADMAP.md) tinha data marcada aqui, e a razão registrada nele acontece de fato neste plano: **a lista de conversas é refeita após cada resposta**, que é a consulta repetida que faltava quando a [fase 06](06-primeira-feature.md) adiou a adoção. A régua que adiou é a mesma que agora manda adotar.
 
 A divisão é a da D13.2, sem alteração:
 
@@ -155,7 +155,7 @@ Registrado porque é a primeira coisa que uma sessão futura vai querer acrescen
 
 A revisão de escopo de ago/2026 **endureceu a razão 2 e acrescentou uma quarta**. O anexo de documento e imagem do plano 17 não é rederivável *na prática*, como o cartão — é irrecuperável **por natureza**: os bytes de um PDF não se recomputam de arquivo nenhum se o original foi movido ou apagado. Daí a regra do [`ESCOPO.md`](../../ESCOPO.md) de guardar o arquivo em `userData/attachments/<hash>` e a mensagem guardar a referência. **A quarta razão é essa:** as três variantes de anexo — `dataset`, `document`, `image` — passam a ter a mesma forma, uma parte tipada apontando para conteúdo endereçado por hash, e uma forma só é o que permite ao construtor de contexto de `core/` tratar as três no mesmo caminho, com uma fronteira de privacidade só.
 
-⚠️ A objeção honesta, registrada para não ser redescoberta: com o cartão dentro do JSON, RAG sobre cartões (fatia 5 do [plano 09](09-camada-de-ia.md)) e o observatório precisariam varrer o JSON de toda mensagem — o próprio argumento do `HISTORY` de que *schemaless* move a migração para o caminho de leitura. **A resposta é a D14.2:** quando existirem cartões suficientes, promover de JSON para tabela própria com backfill por `json_extract` é *operação normal* — desde que a escada exista **e tenha sido exercitada**. É por isso que o passo 1 gasta um teste nela.
+⚠️ A objeção honesta, registrada para não ser redescoberta: com o cartão dentro do JSON, RAG sobre cartões (fatia 5 do [plano 09](../active/09-camada-de-ia.md)) e o observatório precisariam varrer o JSON de toda mensagem — o próprio argumento do `HISTORY` de que *schemaless* move a migração para o caminho de leitura. **A resposta é a D14.2:** quando existirem cartões suficientes, promover de JSON para tabela própria com backfill por `json_extract` é *operação normal* — desde que a escada exista **e tenha sido exercitada**. É por isso que o passo 1 gasta um teste nela.
 
 ---
 
@@ -232,10 +232,10 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| | | | |
+| 09/08/2026 | 1–6 | **plano concluído** | Uma sessão, seis commits. **A D13.2 se sustentou:** o passo 3 tocou `conversations.ts`, `conversationsContext.ts` e `useConversationChat.ts` — três hooks, **zero componentes** —, e os 33 testes de nível 2 do plano 13 passaram só com o provider acrescentado ao envoltório. O que fez isso funcionar não estava escrito no plano e subiu para o `HISTORY`: `Conversation` virou a **linha** e o composto com `messages` mudou de nome no renderer, então `ConversationList` recebe um subtipo e não muda uma linha. Três achados também subiram: o mock de armazenamento delegando aos handlers reais, o botão escondido por CSS que o jsdom não vê, e o campo do modal semeado antes da leitura chegar. `check:fast` 207 testes em ~15–19 s; `test:e2e` 5/5, com o novo provado por sabotagem (`openDatabase(':memory:')` no composition root → vermelho). Fica aberto: os outros três specs de e2e continuam lançando sem `--user-data-dir` e portanto criam `crivo.db` no `%APPDATA%` real — inofensivo hoje porque nenhum deles escreve conversa, e uma armadilha armada para quem fizer o primeiro que escreva. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
 
 ---
 
-**Anterior:** [13 — Casca do aplicativo](../implemented/13-casca-do-aplicativo.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)
+**Anterior:** [13 — Casca do aplicativo](13-casca-do-aplicativo.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)

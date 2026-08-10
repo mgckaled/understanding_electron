@@ -10,7 +10,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 | # | Plano | Estado |
 |---|---|---|
-| [14](14-persistencia-das-conversas.md) | Persistência das conversas | escrito, nenhum passo iniciado |
+| — | O próximo é o **15**, e o documento dele nasce na sessão que o começar | nenhum plano em execução |
 
 ---
 
@@ -25,7 +25,7 @@ Nasceu da [virada de ago/2026](../../HISTORY.md), que fez do chat a porta de ent
 | # | Entrega | A decisão que o plano carrega |
 |---|---|---|
 | [~~**13**~~](../implemented/13-casca-do-aplicativo.md) | ✅ **Casca do aplicativo** — concluída em ago/2026. Duas colunas, sidebar em três regiões por slot, conversa em altura cheia, composer fixo, Configurações em modal. Entrada em [`HISTORY.md`](../../HISTORY.md) | — |
-| [**14**](14-persistencia-das-conversas.md) | **Persistência das conversas.** `node:sqlite` em `userData`, esquema com migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir. A mesma tela do 13, agora sobrevivendo ao fechamento. | ✅ escrito. Resposta interrompida **grava o parcial com marcador** (D14.3); TanStack Query entra para o cache de servidor, com o corpo dos dois hooks como único ponto de troca (D14.4); a escada de migração nasce **exercitada em dois degraus** (D14.2); e o cartão de dados fica para o 16 por não ter escritor, mas com a forma já decidida — dentro de `parts` (D14.9) |
+| [~~**14**~~](../implemented/14-persistencia-das-conversas.md) | ✅ **Persistência das conversas** — concluída em ago/2026. `node:sqlite` em `userData`, escada de migração desde a v1, canais `conversation:*` e `settings:*`, TanStack Query no cache de servidor, parcial interrompido gravado com marcador, e um e2e que fecha e relança o app. Entrada em [`HISTORY.md`](../../HISTORY.md) | — |
 | **15** | **Orçamento de contexto e modelo por conversa.** `num_ctx` exposto, política de truncamento medida, contador visível, lista de modelos por `/api/tags` **guardando as `capabilities`, não só os nomes** — é o que permite ligar anexo de imagem só para modelo com `vision` sem refazer lista e armazenamento depois. | A política de truncamento — janela deslizante invalida o prefixo em cache e força reprocessar o prompt inteiro a cada turno, que na CPU é o custo dominante. **O gate de `capabilities` deixou de ser conveniência:** modelo sem `vision` que recebe um anexo perdido em silêncio descreve a imagem mesmo assim, inventando os números ([`HISTORY.md`](../../HISTORY.md)) |
 | **16** | **Anexo: o mecanismo, e o dataset como primeiro consumidor.** O clipe no composer, `userData/attachments/<hash>`, as variantes de `MessagePart`, e o anexo como **job** com progresso e cancelamento. Sobre isso: o `dataset:scan` da [fase 06](../implemented/06-primeira-feature.md) vira cartão no contexto, níveis 1 e 2 de exposição. | Onde a regra de privacidade vira teste: um nível 1 sobre o construtor de contexto que falha se um valor-sentinela do arquivo aparecer no payload. **O mecanismo nasce genérico de propósito** — desenhado sabendo que só existe dataset, ele nasce com forma de dataset e o 17 o reescreve |
 | **17** | **Anexo: documento e imagem.** Os extratores por tipo (`.txt`/`.md` direto, `.pdf` por `unpdf`, imagem normalizada para PNG), o gate de `vision`, a recusa de PDF escaneado com motivo na tela, e o `/api/ps` visível em Configurações com descarregamento do modelo anterior ao trocar. | Que forma tem a pré-visualização de um documento longo na conversa — e onde o aplicativo diz que anexar vai custar ~80 s antes de custar |

@@ -73,6 +73,12 @@ Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atr
 
 `<StateView state={...} render={(data) => ...} />` cobre os cinco estados que não são `ready` e delega `ready` ao `render`. `loading` mostra barra determinada quando `progress.total` não é nulo, indeterminada quando é — o próprio contrato ([`shared/ipc.ts`](../../../src/shared/ipc.ts)) admite total desconhecido.
 
+## Controle que COPIA um valor precisa saber se o valor já chegou
+
+Um campo de texto mantém o próprio rascunho (`useState(String(valor))`) — é a forma certa, e a fase 13 registrou por quê: clampar a cada tecla faz limpar o campo virar `1`, e quem digita "2" depois termina com `12`. A fase 14 encontrou o outro lado: quando esse valor passa a vir de I/O, o `useState` copia o **default** e o congela, porque o primeiro render acontece antes da resposta. Com `<dialog>` é pior — ele mantém os filhos montados fechado, então o primeiro render é o boot do aplicativo.
+
+**Regra:** um hook que serve valor assíncrono expõe `loaded`, e o controle que copia só monta quando ele é verdadeiro (`{open && loaded && <Campo />}`). Quem apenas **lê** o valor pode ignorar `loaded`; quem o copia, não. Diagnóstico completo em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § armadilhas.
+
 ## Erro é dado em inglês no contrato, texto em português na borda
 
 `src/renderer/src/shared/ui/messages.ts` mapeia `AppError['kind']` para texto, via `Record<ErrorKind, string>` — o `pnpm typecheck` força toda entrada nova da união a ganhar mensagem aqui. O fallback genérico dentro de `errorMessage()` é a garantia gêmea em runtime: protege contra um `kind` que este build não conhece (main mais novo que o renderer), não contra esquecimento em desenvolvimento — isso o typecheck já pega.

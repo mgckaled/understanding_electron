@@ -66,8 +66,11 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 | electron-vite | 5.0.0 | build tool específica para Electron |
 | Vite | 7.x | **não subir para 8** — ver abaixo |
 | React | 19.2.8 | apenas no renderer |
+| TanStack Query | 5.101.4 | cache de servidor no renderer; estado de cliente segue em Context — ver [`HISTORY.md`](docs/HISTORY.md) |
 | TypeScript | 5.9.3 | migração para 6 planejada, ver abaixo |
 | electron-builder | 26.x | empacotamento e instaladores |
+
+**Dentro do binário, sem pacote:** `node:sqlite` (SQLite 3.53.1 no Electron 42.8.0) guarda conversas e configurações de máquina em `app.getPath('userData')/crivo.db`, com escada de migração por `PRAGMA user_version`. Zero dependência npm, zero módulo nativo — e por isso **não** dispara o gatilho do `shamefullyHoist`.
 
 ### Planejadas, ainda não instaladas
 

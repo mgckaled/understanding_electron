@@ -17,8 +17,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    12 realce de sintaxe              plan/implemented/12-...          concluída (ago/2026)
    13 casca conversacional           plan/implemented/13-...          concluída (ago/2026)
    0  revisão de escopo: documento    ESCOPO.md · HISTORY.md           concluída (ago/2026)
-▶  14 persistência das conversas      plan/active/14-...               ← estamos aqui
-   15 orçamento de contexto e modelo
+   14 persistência das conversas      plan/implemented/14-...          concluída (ago/2026)
+▶  15 orçamento de contexto e modelo                                   ← estamos aqui
    16 anexo: mecanismo + dataset
    17 anexo: documento e imagem
    18 camada de dados (DuckDB)       study/05-proximos-passos.md
@@ -50,7 +50,7 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Quando acontecer | Revisitar | Registrado em |
 |---|---|---|
 | DuckDB instalado e carregando | `shamefullyHoist: false` no `pnpm-workspace.yaml` | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
-| ~~Primeira query reexecutada sobre o mesmo dataset~~ · ~~data marcada: plano 14~~ **decidido na D14.4** — adotar, com o corpo de `useConversations()`/`useActiveConversation()` como único ponto de troca; falta executar | Adotar TanStack Query para o **cache de servidor**, mantendo o estado de cliente (conversa ativa, sidebar, rascunho) em Context | [`14-persistencia`](plan/active/14-persistencia-das-conversas.md) |
+| ~~Primeira query reexecutada sobre o mesmo dataset~~ · ~~data marcada: plano 14~~ **fechado** — adotado em ago/2026 (`@tanstack/react-query` 5.101.4), e a promessa se cumpriu: três hooks tocados, **zero componentes**. O que a fez se cumprir está no [`HISTORY`](HISTORY.md) § *um hook público sobrevive à troca de fonte* | ~~Adotar TanStack Query para o **cache de servidor**~~ | [`14-persistencia`](plan/implemented/14-persistencia-das-conversas.md) |
 | Busca em texto completo sobre todo o histórico (FTS5) — **disponibilidade confirmada** no binário do Electron 42.8.0 (SQLite 3.53.1), então o gatilho é só de "quando", não mais de "se dá" | Tirar o SQLite síncrono do main — até lá, listar e inserir são operações indexadas de microssegundos | [`HISTORY`](HISTORY.md) § Decisão: persistência em `node:sqlite` |
 | Máquina com GPU ou RAM que comporte um modelo com `tools` folgado | Reavaliar *tool calling* — foi descartado pela RAM desta máquina, não pelo mérito; a saída estruturada validada continua funcionando de qualquer forma | [`HISTORY`](HISTORY.md) § A virada |
 | **Máquina com GPU para inferência** | Os ~80 s de prefill por imagem caem para segundos, e todo o desenho de "anexar é um job com progresso e cancelamento" fica superdimensionado. A recusa a OCR e o teto de ~8k tokens por documento também foram medidos **nesta** CPU — os três se reabrem juntos | [`HISTORY`](HISTORY.md) § o anexo custa ~80 s |

@@ -45,9 +45,19 @@ O nível 2 cobre muito, e a linha onde ele para não é óbvia. Três achados, e
 
 **2. O jsdom não implementa `<dialog>`.** No 30.0.1, `HTMLDialogElement` é subclasse **vazia** de `HTMLElement` — sem `show`, sem `showModal`, sem `close`, e sem flag (lido em `lib/jsdom/living/nodes/HTMLDialogElement-impl.js`, não no changelog). O sintoma é `TypeError: node.showModal is not a function` matando o arquivo inteiro. Há um polyfill mínimo em `test/setup-renderer.ts`, e o que ele **não** substitui está escrito nele: camada superior, foco preso, `Esc`, `closedby` e `::backdrop` não têm equivalente, e asseverá-los ali seria testar o shim.
 
-**3. O Playwright emula `prefers-color-scheme`, e o padrão dele é `'light'`.** Não é "não interfere" — é emular claro ativamente, por CDP, e essa emulação **ganha do `nativeTheme.themeSource`**: o main reporta `shouldUseDarkColors: true` e o renderer continua respondendo claro. Consequência que vale saber antes de escrever qualquer spec sobre cor: **nenhum e2e deste repositório exercita o tema escuro.** Para verificar tema, `page.emulateMedia({ colorScheme: 'dark' })`.
+**3. O jsdom não aplica CSS, então nível 2 clica em botão escondido.** As ações de cada linha da lista de conversas são `visibility: hidden` até o `:hover`. O nível 2 encontra e clica sem hesitar; o Playwright respeita visibilidade e espera até estourar. Toda a família — revelar no hover, `display: none` por media query, elemento fora do viewport — é invisível abaixo do nível 4, e o sintoma imita "o dado não foi criado". Conserto: `hover()` na linha antes. Detalhe adjacente do mesmo spec: `getByRole('button', { name: título })` casa também com "Renomear \<título\>", porque o `aria-label` contém o título — **`exact: true` é obrigatório em lista com ações por linha.**
 
-Forma comum às três: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Para saber o que ele suporta, leia o `lib/` instalado — a matriz do jsdom é grande o bastante para dar a impressão errada por omissão.
+**4. O Playwright emula `prefers-color-scheme`, e o padrão dele é `'light'`.** Não é "não interfere" — é emular claro ativamente, por CDP, e essa emulação **ganha do `nativeTheme.themeSource`**: o main reporta `shouldUseDarkColors: true` e o renderer continua respondendo claro. Consequência que vale saber antes de escrever qualquer spec sobre cor: **nenhum e2e deste repositório exercita o tema escuro.** Para verificar tema, `page.emulateMedia({ colorScheme: 'dark' })`.
+
+Forma comum às quatro: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Para saber o que ele suporta, leia o `lib/` instalado — a matriz do jsdom é grande o bastante para dar a impressão errada por omissão.
+
+## O que persiste é testado contra o banco real, nunca contra uma fake
+
+Duas peças da fase 14, e as duas seguem o princípio do `satisfies Api` — **derivar em vez de duplicar**.
+
+Os handlers de `conversation:*` e `settings:*` recebem o banco por parâmetro, então o **nível 3** os chama como funções comuns contra `:memory:`: sem Electron, sem mock dele. E o mock de `window.api` do **nível 2** não os reimplementa: `test/store-api.ts` monta as duas superfícies delegando aos mesmos handlers, sobre um `:memory:` por teste (`node:sqlite` funciona sob o ambiente `jsdom`, que continua sendo Node por baixo). Sem isso, todo teste sobre trocar de conversa, renomear ou manter histórico ficaria vazio — e uma fake escrita à mão teria de repetir ordenação por `updated_at`, o `COALESCE` do título, a cascata e o merge de configurações, com liberdade para divergir em silêncio. Contrapartida assumida: defeito de handler deixa vermelhos também os testes do renderer.
+
+**O que nem isso alcança é o processo morrer.** `e2e/dev/persistence.spec.ts` fecha o `electronApp` e lança de novo — a única prova de que a escrita sobreviveu. Ele exige `--user-data-dir` numa pasta temporária por corrida (o e2e roda contra o `%APPDATA%` real, e um spec que limpasse para começar do zero apagaria o histórico de quem desenvolve), e a **primeira** asserção confere `app.getPath('userData')` antes de qualquer escrita. Atenção ao arrumar: os outros specs ainda lançam sem a flag; hoje é inofensivo porque nenhum deles escreve conversa.
 
 ## Armadilha grave: `electron-builder` empacota direto do disco, não do que o git rastreia
 
@@ -87,7 +97,7 @@ Dentro de `shared/`, nem tudo é lógica: um arquivo de só-constante (`APP_ID`)
 
 ## `pnpm build` não roda teste; `check:fast` é o portão
 
-`build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição (fase 08) e o pré-commit vão chamar — um lugar para manter alinhado, não três configs espalhadas. Meta: `check:fast` abaixo de 15s nesta altura do projeto: se já estiver mais lento, é hora de investigar antes de empilhar mais teste em cima. **Estava em 16–23s ao fim da fase 13** (24 arquivos, 172 testes), e a medição redireciona a investigação: a maior fatia é `environment` — a subida do jsdom, uma por arquivo —, não as asserções. Gatilho e número em [`ROADMAP § 2`](../../../docs/ROADMAP.md); não abra uma segunda lista aqui.
+`build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição (fase 08) e o pré-commit vão chamar — um lugar para manter alinhado, não três configs espalhadas. Meta: `check:fast` abaixo de 15s nesta altura do projeto: se já estiver mais lento, é hora de investigar antes de empilhar mais teste em cima. **Estava em 15–19s ao fim da fase 14** (28 arquivos, 207 testes — 35 testes a mais que a fase 13 e nenhum segundo a mais, porque os novos são de ambiente `node`), e a medição redireciona a investigação: a maior fatia é `environment` — a subida do jsdom, uma por arquivo —, não as asserções. Gatilho e número em [`ROADMAP § 2`](../../../docs/ROADMAP.md); não abra uma segunda lista aqui.
 
 ## Globals do Vitest declarados manualmente no ESLint
 
