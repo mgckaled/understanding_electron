@@ -140,7 +140,9 @@ Add-MpPreference -ExclusionProcess "node.exe"
 | `phi4-mini` | 2,5 GB | `completion`, **`tools`** | alternativa com `tools`, mais leve |
 | `nomic-embed-text` | 274 MB | `embedding` | 768 dims — o embedder da D9.5 já está instalado |
 
-⚠️ **O teto de contexto não é do Ollama nem do modelo — é da máquina.** O `gemma3:4b` declara 131.072; o default de 4k é do Ollama (`< 24 GiB VRAM`). Numa CPU sem GPU o custo dominante de contexto grande **não é memória, é o prefill a cada turno** — medir antes de escolher.
+⚠️ **O teto de contexto não é do Ollama nem do modelo — é da máquina, e a medição inverteu o reflexo.** O `gemma3:4b` declara 131.072; o default de 4k é do Ollama (`< 24 GiB VRAM`). Medido em ago/2026 ao planejar a fase 15: subir `num_ctx` de 4.096 para **32.768 custa 120 MB** (2,91 → 3,03 GB residentes) e não muda o tempo de carga. **`num_ctx` não é um botão de consumo de RAM** — reservar a janela é barato; encher custa segundos de prefill, e uma janela deslizante custa **30×** por invalidar o cache de prefixo. Números, e o que decorre deles, em [`docs/HISTORY.md`](docs/HISTORY.md) e [`plan/active/15`](docs/plan/active/15-orcamento-de-contexto-e-modelo.md).
+
+⚠️ **As `capabilities` da tabela acima vêm do `/api/show`.** O `/api/tags` também traz o campo e **omite `vision`** — armadilha medida e registrada no [`HISTORY.md`](docs/HISTORY.md). Carregar o `gemma3:4b` do disco frio custa **~50 s**, o que é o preço real de trocar de modelo.
 
 Estes números decidiram o default de `num_thread`, o modelo padrão e a recusa de *tool calling* (ver [`docs/HISTORY.md`](docs/HISTORY.md)). **Ao trocar de máquina, refazer a medição antes de reaproveitar qualquer uma dessas decisões.**
 

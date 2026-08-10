@@ -18,7 +18,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    13 casca conversacional           plan/implemented/13-...          concluída (ago/2026)
    0  revisão de escopo: documento    ESCOPO.md · HISTORY.md           concluída (ago/2026)
    14 persistência das conversas      plan/implemented/14-...          concluída (ago/2026)
-▶  15 orçamento de contexto e modelo                                   ← estamos aqui
+▶  15 orçamento de contexto e modelo   plan/active/15-...               ← estamos aqui (escrito)
    16 anexo: mecanismo + dataset
    17 anexo: documento e imagem
    18 camada de dados (DuckDB)       study/05-proximos-passos.md

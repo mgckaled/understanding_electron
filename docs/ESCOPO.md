@@ -144,7 +144,9 @@ Logo, **todo anexo de documento ou imagem herda a regra do nível 3**: opt-in ex
 
 ### O gate de capacidade é correção, não cortesia
 
-Anexo de imagem exige modelo que declare `vision` nas `capabilities` do `/api/tags`. Se o modelo selecionado não declara, o aplicativo **recusa o envio** — não envia sem a imagem, não avisa depois.
+Anexo de imagem exige modelo que declare `vision` nas `capabilities` — lidas do **`/api/show`**, nunca do `/api/tags`. Se o modelo selecionado não declara, o aplicativo **recusa o envio** — não envia sem a imagem, não avisa depois.
+
+> ⚠️ **A fonte importa, e a errada é a intuitiva.** Medido em ago/2026 no Ollama 0.32.6: o `/api/tags` traz um campo `capabilities`, mas ele **omite `vision`** — o `gemma3:4b` aparece ali como `["completion"]` e no `/api/show` como `["completion","vision"]`. `tools` aparece nos dois, que é o que torna a armadilha convincente. Um gate construído sobre o `/api/tags` recusaria o único modelo com visão desta máquina. O teto de contexto também só existe no `/api/show`. Detalhe e custo em [`plan/active/15-orcamento-de-contexto-e-modelo.md`](plan/active/15-orcamento-de-contexto-e-modelo.md).
 
 O motivo não é elegância de interface. Medido em ago/2026: dado o prompt *"descreva o conteúdo desta imagem"* **sem imagem nenhuma**, o `gemma3:4b` descreveu um gráfico de barras inteiro, com quatro produtos e quatro números, todos inventados, sem uma palavra de hesitação. É a mesma classe da [falha silenciosa do NL→SQL](HISTORY.md) — num caminho gerado por modelo, o perigo não é a exceção, é o sucesso. Anexo que falha em silêncio não produz erro: produz resposta convincente sobre um arquivo que o modelo nunca viu.
 
