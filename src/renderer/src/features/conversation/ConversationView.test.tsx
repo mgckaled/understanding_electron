@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
 import type { Api, ChatReply, JobEvent, Result } from '@shared/ipc'
+import { createQueryClient } from '../../shared/queryClient'
 import SettingsProvider from '../settings/SettingsProvider'
 import Settings from '../settings/Settings'
 import ConversationsProvider from './ConversationsProvider'
@@ -14,11 +16,19 @@ const ready = { ok: true, value: { service: 'ollama', version: '0.5.1' } } as co
 
 const PROMPT = 'Pergunte algo ao modelo…'
 
+/*
+ * The only thing plano 14 changed in this file is this wrapper — the server
+ * cache needs its provider, and a fresh QueryClient per test keeps them from
+ * sharing state. Every assertion below is the fase-13 one, unchanged, which is
+ * exactly what step 3 existed to collect on (D13.2).
+ */
 function providers(children: ReactNode): React.JSX.Element {
   return (
-    <SettingsProvider>
-      <ConversationsProvider>{children}</ConversationsProvider>
-    </SettingsProvider>
+    <QueryClientProvider client={createQueryClient()}>
+      <SettingsProvider>
+        <ConversationsProvider>{children}</ConversationsProvider>
+      </SettingsProvider>
+    </QueryClientProvider>
   )
 }
 

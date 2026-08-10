@@ -1,31 +1,46 @@
-import { createContext, useContext, useMemo, type Dispatch } from 'react'
-import type { Message } from '@shared/ipc'
-import type {
-  ConversationsAction,
-  ConversationsState,
-  ConversationWithMessages
-} from './conversations'
+import { createContext, useContext, useMemo } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { Conversation, Message } from '@shared/ipc'
+import { messageText } from '@core/ai/messages'
+import { DEFAULT_TITLE, titleFromText, type ConversationWithMessages } from './conversations'
 
 /*
- * Context behind purpose-shaped hooks (D13.2). No component calls useContext
- * directly, and that is the whole point: when plano 14 replaces the in-memory
- * list with a server cache, the body of these two hooks is the only thing that
- * changes — one file, not four. Props would have been honest (the tree is two
- * levels deep, there is no drilling) but they get rewritten anyway.
+ * The division promised by D13.2, now executed (D14.4):
+ *
+ *   SERVER cache  → TanStack Query: the conversation list, the transcript
+ *   CLIENT state  → Context, for good: which conversation is selected
+ *
+ * These two hooks are the only place either one is touched. No component calls
+ * useContext, and none calls useQueryClient — the same rule, for the same
+ * reason. That is what made this plan's step 3 change two files instead of six.
+ *
+ * No optimistic updates: they exist to hide network latency, and the write here
+ * is a microsecond INSERT in the same process. Invalidating after the mutation
+ * is simpler and has no reconciliation state to get wrong.
  */
 
+const CONVERSATIONS_KEY = ['conversations'] as const
+const messagesKey = (conversationId: string): readonly unknown[] => [
+  'conversations',
+  conversationId,
+  'messages'
+]
+
+/** Stable identity, so an empty list does not re-run every downstream memo. */
+const NO_CONVERSATIONS: Conversation[] = []
+
 type ConversationsContextValue = {
-  state: ConversationsState
-  dispatch: Dispatch<ConversationsAction>
+  selectedId: string | null
+  setSelectedId: (id: string | null) => void
 }
 
 export const ConversationsContext = createContext<ConversationsContextValue | null>(null)
 
-/** A message before the store stamps it with an identity and a timestamp. */
+/** A message before the renderer stamps it with an identity and a timestamp. */
 export type NewMessage = Omit<Message, 'id' | 'createdAt'>
 
 export type ConversationsApi = {
-  conversations: ConversationWithMessages[]
+  conversations: Conversation[]
   activeId: string | null
   /** Creates an empty conversation, selects it, and returns its id. */
   create: () => string
@@ -44,38 +59,102 @@ function useConversationsContext(): ConversationsContextValue {
 }
 
 export function useConversations(): ConversationsApi {
-  const { state, dispatch } = useConversationsContext()
+  const { selectedId, setSelectedId } = useConversationsContext()
+  const queryClient = useQueryClient()
 
-  // dispatch is stable, so this memo only re-runs when the data actually
-  // changes — the identity of the action creators stays put across a stream of
-  // tokens re-rendering the view.
+  const { data } = useQuery({
+    queryKey: CONVERSATIONS_KEY,
+    queryFn: () => window.api.conversation.list()
+  })
+  const conversations = data ?? NO_CONVERSATIONS
+
+  // Every write shares one scope, so they run in SERIES. Without it, "create a
+  // conversation" and "append the first message" would be two calls in flight
+  // at once, and the append could reach the database first — where it would be
+  // dropped for having no conversation to belong to.
+  const invalidate = (): Promise<void> =>
+    queryClient.invalidateQueries({ queryKey: ['conversations'] })
+  const scope = { id: 'conversations' }
+  const create = useMutation({
+    scope,
+    mutationFn: window.api.conversation.create,
+    onSuccess: invalidate
+  })
+  const rename = useMutation({
+    scope,
+    mutationFn: (args: { id: string; title: string }) =>
+      window.api.conversation.rename(args.id, args.title),
+    onSuccess: invalidate
+  })
+  const remove = useMutation({
+    scope,
+    mutationFn: (id: string) => window.api.conversation.remove(id),
+    onSuccess: invalidate
+  })
+  const append = useMutation({
+    scope,
+    mutationFn: (args: { id: string; message: Message; title?: string }) =>
+      window.api.conversation.append(args.id, args.message, args.title),
+    onSuccess: invalidate
+  })
+
+  // On first open, the most recent conversation (D14.6). It costs zero columns:
+  // the list already arrives ORDER BY updated_at DESC, so `[0]` IS that one.
+  // An empty database opens with no active conversation, in the empty state
+  // ConversationView already draws.
+  const activeId = selectedId ?? conversations[0]?.id ?? null
+
   return useMemo(
     () => ({
-      conversations: state.conversations,
-      activeId: state.activeId,
+      conversations,
+      activeId,
       create: () => {
         const id = crypto.randomUUID()
-        dispatch({ type: 'create', id, now: Date.now() })
+        create.mutate({ id, title: DEFAULT_TITLE, createdAt: Date.now() })
+        setSelectedId(id)
         return id
       },
-      select: (id: string) => dispatch({ type: 'select', id }),
-      rename: (id: string, title: string) => dispatch({ type: 'rename', id, title }),
-      remove: (id: string) => dispatch({ type: 'remove', id }),
-      append: (id: string, message: NewMessage) =>
-        dispatch({
-          type: 'append',
+      select: setSelectedId,
+      rename: (id: string, title: string) => {
+        // An empty rename falls back to the default rather than leaving a blank
+        // row in the sidebar — nothing to click and nothing to read.
+        rename.mutate({ id, title: title.trim() === '' ? DEFAULT_TITLE : title.trim() })
+      },
+      remove: (id: string) => {
+        remove.mutate(id)
+        // Going back to no selection re-elects the newest remaining one through
+        // the derivation above, instead of pointing at something that is gone.
+        if (selectedId === id) setSelectedId(null)
+      },
+      append: (id: string, message: NewMessage) => {
+        const full: Message = { ...message, id: crypto.randomUUID(), createdAt: Date.now() }
+        // A conversation that is not in the list yet was just created, so it
+        // still carries the default title — that is why `?? DEFAULT_TITLE` and
+        // not `?? ''`. Getting it wrong loses the title of the very first turn,
+        // which is the only turn that sets one (D13.9).
+        const current = conversations.find((item) => item.id === id)?.title ?? DEFAULT_TITLE
+        const renames = current === DEFAULT_TITLE && message.role === 'user'
+        append.mutate({
           id,
-          // Identity and timestamp are minted here, never inside the reducer:
-          // a reducer that calls randomUUID() is impure, and StrictMode's
-          // double invocation in development turns that into two ids.
-          message: { ...message, id: crypto.randomUUID(), createdAt: Date.now() }
+          message: full,
+          ...(renames ? { title: titleFromText(messageText(full)) } : {})
         })
+      }
     }),
-    [state.conversations, state.activeId, dispatch]
+    [conversations, activeId, selectedId, setSelectedId, create, rename, remove, append]
   )
 }
 
 export function useActiveConversation(): ConversationWithMessages | null {
-  const { state } = useConversationsContext()
-  return state.conversations.find((item) => item.id === state.activeId) ?? null
+  const { conversations, activeId } = useConversations()
+
+  const { data } = useQuery({
+    queryKey: messagesKey(activeId ?? ''),
+    queryFn: () => window.api.conversation.messages(activeId as string),
+    enabled: activeId !== null
+  })
+
+  const conversation = conversations.find((item) => item.id === activeId)
+  if (conversation === undefined) return null
+  return { ...conversation, messages: data ?? [] }
 }

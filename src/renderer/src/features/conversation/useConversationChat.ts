@@ -4,7 +4,7 @@ import { toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
 import type { ViewState } from '../../shared/ui/state'
-import { useConversations } from './conversationsContext'
+import { useActiveConversation, useConversations } from './conversationsContext'
 
 const SERVICE = 'ollama' as const
 
@@ -31,7 +31,10 @@ export function useConversationChat(
   send: (prompt: string) => Promise<void>
   cancel: () => void
 } {
-  const { conversations, activeId, create, append } = useConversations()
+  const { activeId, create, append } = useConversations()
+  // The history now comes from the transcript query rather than from a list
+  // that carried every message inside it (D14.1).
+  const active = useActiveConversation()
   const [availability, setAvailability] = useState<ViewState<AiAvailability>>({ status: 'loading' })
   const [streaming, setStreaming] = useState('')
   const [lastRequestId, setLastRequestId] = useState<string | null>(null)
@@ -63,7 +66,10 @@ export function useConversationChat(
       // A conversation exists before there is any reply (D13.9). Typing into an
       // empty app creates one instead of demanding the user make one first.
       const conversationId = activeId ?? create()
-      const previous = conversations.find((item) => item.id === conversationId)?.messages ?? []
+      // A conversation just created by the line above is not the active one
+      // yet, and its history is empty by definition — comparing the ids is what
+      // keeps the previous conversation's turns out of a brand new one.
+      const previous = conversationId === active?.id ? active.messages : []
       const history: ChatMessage[] = [...toChatMessages(previous), { role: 'user', content: text }]
 
       append(conversationId, { role: 'user', parts: [{ kind: 'text', text }] })
@@ -91,7 +97,7 @@ export function useConversationChat(
         })
       }
     },
-    [activeId, conversations, create, append, model, numThread, run]
+    [activeId, active, create, append, model, numThread, run]
   )
 
   const cancel = useCallback((): void => {
