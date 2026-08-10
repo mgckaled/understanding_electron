@@ -1,4 +1,4 @@
-import type { Conversation, Message } from '@shared/ipc'
+import type { AppError, Conversation, Message, MessageStopped } from '@shared/ipc'
 
 /*
  * What survived the move to storage (plano 14).
@@ -37,4 +37,20 @@ export function titleFromText(text: string): string {
   const normalised = text.replace(/\s+/g, ' ').trim()
   if (normalised === '') return DEFAULT_TITLE
   return normalised.length <= TITLE_MAX ? normalised : `${normalised.slice(0, TITLE_MAX - 1)}…`
+}
+
+/**
+ * Which failures leave a partial reply worth keeping (D14.3).
+ *
+ * Only the two interruptions do. `unavailable` and `upstream` produce nothing:
+ * the failure is of the CALL, not a reply that got cut short, so there is no
+ * text to keep and a marker would claim something that did not happen.
+ *
+ * The two are already distinguishable at this point — the handler's `timedOut`
+ * flag maps them to different AppErrors, and the renderer reads the `kind`.
+ */
+export function stoppedFromError(error: AppError): MessageStopped | null {
+  if (error.kind === 'cancelled') return 'cancelled'
+  if (error.kind === 'timeout') return 'timeout'
+  return null
 }

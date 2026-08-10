@@ -89,6 +89,17 @@
   color: var(--color-text-faint);
 }
 
+/* Why a reply stopped, next to the author label (D14.3). Warn and not danger:
+   an interrupted answer is not an error — it is a turn that says less than it
+   could, and the text below it is real. Lower case, because the reason is a
+   sentence and the label above it is a tag. */
+.stopped {
+  margin-left: var(--space-2);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-warn-text);
+}
+
 /* Reading density (D13.6). Model output is copyable data — opt back into
    selection, which base.css turns off at the root for the desktop feel. */
 .content,

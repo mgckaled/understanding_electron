@@ -96,6 +96,18 @@ export type MessagePart = z.infer<typeof messagePartSchema>
 export const messageRoleSchema = z.enum(['user', 'assistant'])
 export type MessageRole = z.infer<typeof messageRoleSchema>
 
+/**
+ * Why a reply stopped before it finished (D14.3).
+ *
+ * A conversation that discards half an answer lies by omission: you remember
+ * asking, the app shows the question with no answer, and there is no way to
+ * tell "the model did not reply" from "I cancelled". With the marker the screen
+ * says what happened, and the partial still informs the next turn — on a CPU
+ * with no GPU, throwing away forty seconds of generation is expensive.
+ */
+export const messageStoppedSchema = z.enum(['cancelled', 'timeout'])
+export type MessageStopped = z.infer<typeof messageStoppedSchema>
+
 export const messageSchema = z.object({
   id: z.string().min(1),
   role: messageRoleSchema,
@@ -106,7 +118,11 @@ export const messageSchema = z.object({
   // first reply — on a local-model app "this 4B failed, move up to qwen 7B" is
   // the main recovery action — so a transcript can carry mixed authorship.
   // That is resolved with data, not with a prohibition.
-  model: z.string().min(1).optional()
+  model: z.string().min(1).optional(),
+  // A column, not a part: it is metadata ABOUT the turn, not content. Inside
+  // `parts` the interface would have to open the JSON to know whether to draw
+  // a label. Absent means the reply finished.
+  stopped: messageStoppedSchema.optional()
 })
 export type Message = z.infer<typeof messageSchema>
 

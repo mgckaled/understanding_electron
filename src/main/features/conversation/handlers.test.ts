@@ -107,6 +107,24 @@ describe('appendMessage', () => {
     ])
   })
 
+  it('round-trips the stopped marker of an interrupted reply', () => {
+    appendMessage(
+      {
+        conversationId: 'c1',
+        message: message({ role: 'assistant', stopped: 'timeout', model: 'gemma3:4b' })
+      },
+      db
+    )
+
+    expect(readMessages({ conversationId: 'c1' }, db)[0]).toMatchObject({ stopped: 'timeout' })
+  })
+
+  it('omits stopped entirely when the reply finished', () => {
+    appendMessage({ conversationId: 'c1', message: message({ role: 'assistant' }) }, db)
+
+    expect(readMessages({ conversationId: 'c1' }, db)[0]).not.toHaveProperty('stopped')
+  })
+
   it('omits model entirely when the message carries none', () => {
     appendMessage({ conversationId: 'c1', message: message() }, db)
 

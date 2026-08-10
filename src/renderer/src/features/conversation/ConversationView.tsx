@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AppError } from '@shared/ipc'
+import type { AppError, MessageStopped } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
 import Field from '../../shared/ui/Field/Field'
 import { errorMessage } from '../../shared/ui/messages'
@@ -22,6 +22,14 @@ const DEFAULT_MODEL = 'gemma3:4b'
 // to the shared generic message.
 function availabilityText(error: AppError): string {
   return error.kind === 'unavailable' ? error.hint : errorMessage(error)
+}
+
+// Reading a saved conversation, "there is no answer here" and "the answer was
+// cut short" look identical without this (D14.3). The two reasons are told
+// apart because the user's own cancel and a deadline are different facts.
+const STOPPED_LABEL: Record<MessageStopped, string> = {
+  cancelled: 'interrompida por você',
+  timeout: 'interrompida por tempo esgotado'
 }
 
 function ConversationView(): React.JSX.Element {
@@ -87,6 +95,9 @@ function ConversationView(): React.JSX.Element {
               >
                 <span className={styles.role}>
                   {message.role === 'user' ? 'Você' : 'Assistente'}
+                  {message.stopped !== undefined && (
+                    <span className={styles.stopped}>· {STOPPED_LABEL[message.stopped]}</span>
+                  )}
                 </span>
                 {message.role === 'assistant' ? (
                   <MarkdownMessage text={messageText(message)} />

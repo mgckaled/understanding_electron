@@ -1,4 +1,4 @@
-import type { Conversation, Message, MessagePart, MessageRole } from '@shared/ipc'
+import type { Conversation, Message, MessagePart, MessageRole, MessageStopped } from '@shared/ipc'
 
 /*
  * node:sqlite hands back `Record<string, null | number | bigint | string |
@@ -28,13 +28,22 @@ export function toConversation(row: Row): Conversation {
   }
 }
 
+/** True for a column that holds an actual value — SQL NULL arrives as `null`. */
+function filled(value: unknown): value is string {
+  return value !== null && value !== undefined
+}
+
 export function toMessage(row: Row): Message {
-  const model = row['model']
-  return {
+  const message: Message = {
     id: String(row['id']),
     role: String(row['role']) as MessageRole,
     parts: JSON.parse(String(row['parts'])) as MessagePart[],
-    createdAt: Number(row['created_at']),
-    ...(model === null || model === undefined ? {} : { model: String(model) })
+    createdAt: Number(row['created_at'])
   }
+  // A NULL column becomes an ABSENT key, never `model: null`. The contract says
+  // `model?: string`, and a null would typecheck nowhere while rendering as the
+  // string "null" somewhere on screen.
+  if (filled(row['model'])) message.model = String(row['model'])
+  if (filled(row['stopped'])) message.stopped = String(row['stopped']) as MessageStopped
+  return message
 }

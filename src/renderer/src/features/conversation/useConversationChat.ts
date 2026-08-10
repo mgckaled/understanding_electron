@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiAvailability, ChatMessage, ChatReply, JobId } from '@shared/ipc'
 import { toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
 import type { ViewState } from '../../shared/ui/state'
+import { stoppedFromError } from './conversations'
 import { useActiveConversation, useConversations } from './conversationsContext'
 
 const SERVICE = 'ollama' as const
@@ -56,7 +57,23 @@ export function useConversationChat(
     }
   }, [])
 
-  useJobChunks(jobId, (text) => setStreaming((prev) => prev + text))
+  /*
+   * The accumulated text also lives in a ref, and that is not duplication.
+   * `send` captures `streaming` from the render it was created in, so by the
+   * time the request settles the closure holds an empty string — the very text
+   * D14.3 says to save would be the one thing not reachable. The ref is read at
+   * settle time; the state is what re-renders the view.
+   */
+  const partialRef = useRef('')
+  useJobChunks(jobId, (text) => {
+    partialRef.current += text
+    setStreaming(partialRef.current)
+  })
+
+  const clearStreaming = useCallback((): void => {
+    partialRef.current = ''
+    setStreaming('')
+  }, [])
 
   const send = useCallback(
     async (prompt: string): Promise<void> => {
@@ -73,7 +90,7 @@ export function useConversationChat(
       const history: ChatMessage[] = [...toChatMessages(previous), { role: 'user', content: text }]
 
       append(conversationId, { role: 'user', parts: [{ kind: 'text', text }] })
-      setStreaming('')
+      clearStreaming()
       setLastRequestId(conversationId)
 
       const newJobId = crypto.randomUUID()
@@ -82,7 +99,8 @@ export function useConversationChat(
         window.api.ai.chat({ service: SERVICE, model, messages: history, numThread }, newJobId)
       )
       setJobId(null)
-      setStreaming('')
+      const partial = partialRef.current
+      clearStreaming()
 
       if (result.ok) {
         // Addressed to the conversation captured at send time, never to
@@ -95,9 +113,24 @@ export function useConversationChat(
           parts: [{ kind: 'text', text: result.value.content }],
           model
         })
+        return
       }
+
+      // An interrupted reply keeps what arrived, marked (D14.3). Deciding this
+      // in the renderer costs no contract change: main returns err() with no
+      // payload, and it does not need one — the text is already here.
+      const stopped = stoppedFromError(result.error)
+      // Interrupted before the first token writes NOTHING: an empty assistant
+      // message is noise, not honesty.
+      if (stopped === null || partial === '') return
+      append(conversationId, {
+        role: 'assistant',
+        parts: [{ kind: 'text', text: partial }],
+        model,
+        stopped
+      })
     },
-    [activeId, active, create, append, model, numThread, run]
+    [activeId, active, create, append, clearStreaming, model, numThread, run]
   )
 
   const cancel = useCallback((): void => {

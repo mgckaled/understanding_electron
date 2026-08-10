@@ -27,7 +27,7 @@ export function readMessages(
 ): Message[] {
   return db
     .prepare(
-      `SELECT id, role, parts, created_at, model FROM messages
+      `SELECT id, role, parts, created_at, model, stopped FROM messages
        WHERE conversation_id = ? ORDER BY created_at, id`
     )
     .all(conversationId)
@@ -79,15 +79,16 @@ export function appendMessage(
     if (Number(touched.changes) === 0) return
 
     db.prepare(
-      `INSERT INTO messages (id, conversation_id, role, parts, created_at, model)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO messages (id, conversation_id, role, parts, created_at, model, stopped)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).run(
       message.id,
       conversationId,
       message.role,
       JSON.stringify(message.parts),
       message.createdAt,
-      message.model ?? null
+      message.model ?? null,
+      message.stopped ?? null
     )
   })
 }

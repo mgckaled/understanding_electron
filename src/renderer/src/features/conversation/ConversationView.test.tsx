@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
-import type { Api, ChatReply, JobEvent, Result } from '@shared/ipc'
+import type { Api, AppError, ChatReply, JobEvent, Result } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
 import SettingsProvider from '../settings/SettingsProvider'
 import Settings from '../settings/Settings'
@@ -65,6 +65,38 @@ async function reply(
   await user.type(screen.getByPlaceholderText(PROMPT), prompt)
   await user.click(screen.getByRole('button', { name: 'Enviar' }))
   return { api, container }
+}
+
+/**
+ * Sends a prompt, optionally lets `chunk` arrive, then fails the request with
+ * `error`. The reply is held open until then, which is what makes the partial
+ * text exist at the moment of the interruption.
+ */
+async function interrupted(error: AppError, chunk?: string): Promise<Api> {
+  const api = installApiMock()
+  vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+  let settle: (result: Result<ChatReply>) => void = () => {}
+  vi.mocked(api.ai.chat).mockReturnValue(
+    new Promise<Result<ChatReply>>((resolve) => {
+      settle = resolve
+    })
+  )
+  let emit: ((event: JobEvent) => void) | undefined
+  vi.mocked(api.job.onEvent).mockImplementation((listener) => {
+    emit = listener
+    return vi.fn()
+  })
+  const user = userEvent.setup()
+
+  renderView()
+  await screen.findByText('Ollama 0.5.1')
+  await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+  await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+  const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
+  if (chunk !== undefined) act(() => emit?.({ jobId, type: 'chunk', text: chunk }))
+  await act(async () => settle({ ok: false, error }))
+  return api
 }
 
 describe('ConversationView', () => {
@@ -420,5 +452,53 @@ describe('ConversationView — realce de sintaxe', () => {
     // absence of colour comes from highlight={false}, not from broken markdown.
     expect(container.querySelector('pre')?.textContent).toContain('SELECT nam')
     expect(container.querySelector('[class^="hljs-"]')).toBeNull()
+  })
+})
+
+// D14.3: what arrived is kept, marked. A conversation that discards half an
+// answer lies by omission — you remember asking, and the transcript shows the
+// question with nothing under it.
+describe('ConversationView — resposta interrompida', () => {
+  it('keeps a cancelled partial, marked as cancelled by the user', async () => {
+    const api = await interrupted({ kind: 'cancelled' }, 'A resposta ia por aqui')
+
+    expect(await screen.findByText(/interrompida por você/)).toBeInTheDocument()
+    expect(screen.getByText('A resposta ia por aqui')).toBeInTheDocument()
+    expect(vi.mocked(api.conversation.append).mock.calls[1]?.[1]).toMatchObject({
+      role: 'assistant',
+      stopped: 'cancelled'
+    })
+  })
+
+  it('keeps a timed-out partial, marked with the OTHER reason', async () => {
+    // The two are distinguishable because the handler's `timedOut` flag maps
+    // them to different AppErrors. Collapsing them would tell the user their
+    // own cancel took five minutes.
+    await interrupted({ kind: 'timeout', afterMs: 300_000 }, 'Metade de uma frase')
+
+    expect(await screen.findByText(/tempo esgotado/)).toBeInTheDocument()
+    expect(screen.getByText('Metade de uma frase')).toBeInTheDocument()
+  })
+
+  it('writes nothing when the interruption arrives before the first token', async () => {
+    const api = await interrupted({ kind: 'cancelled' })
+
+    expect(screen.queryByText(/interrompida/)).toBeNull()
+    // One append only — the user's own message. An empty assistant turn is
+    // noise, not honesty.
+    expect(api.conversation.append).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(api.conversation.append).mock.calls[0]?.[1]).toMatchObject({ role: 'user' })
+  })
+
+  it('writes nothing when the service was unreachable, partial or not', async () => {
+    // The failure is of the CALL, not a reply cut short. A marker here would
+    // claim an answer started when none did.
+    const api = await interrupted(
+      { kind: 'unavailable', service: 'ollama', hint: 'Rode ollama serve.' },
+      'texto que nao deveria sobreviver'
+    )
+
+    expect(api.conversation.append).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText(/interrompida/)).toBeNull()
   })
 })
