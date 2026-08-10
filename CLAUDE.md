@@ -128,19 +128,29 @@ Add-MpPreference -ExclusionProcess "node.exe"
 | | |
 |---|---|
 | CPU | Intel i5-8265U — 4 núcleos / 8 threads |
-| RAM | 16 GB, com ~4,4 GB livres em uso típico |
+| RAM | 16 GB. **Não há um número de "livre" — há três**, medidos em 10/08/2026: **~9 GB** com só o app Electron rodando · **~7,5 GB** com só o VS Code · **~6 GB** no ambiente de trabalho típico (VS Code, Edge, WhatsApp, Claude Code). A variação de 3 GB é maior que o peso da maioria dos modelos da frota, e é por isso que o teto de contexto se lê em runtime em vez de ser chumbado — ver [`plan/active/15`](docs/plan/active/15-orcamento-de-contexto-e-modelo.md) § D15.2 |
 | GPU | **sem aceleração para inferência — tudo roda em CPU** |
 | Ollama | 0.32.6, servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
 
-| Modelo | Tamanho | `capabilities` | Papel |
-|---|---|---|---|
-| `gemma3:4b` | 3,3 GB | `completion`, `vision` | **default** — 131.072 de contexto treinado, janela deslizante de 1024 |
-| `gemma3:1b` | 815 MB | `completion` | fallback de baixa RAM, fraco em síntese |
-| `qwen2.5:7b` | ~4,7 GB | `completion`, **`tools`** | qualidade máxima; **mal cabe na RAM livre** |
-| `phi4-mini` | 2,5 GB | `completion`, **`tools`** | alternativa com `tools`, mais leve |
-| `nomic-embed-text` | 274 MB | `embedding` | 768 dims — o embedder da D9.5 já está instalado |
+Frota de **12 entradas** no `/api/tags` em 10/08/2026, das quais 5 são variantes `-custom` por Modelfile, com os mesmos pesos e teto das originais. As 7 distintas:
 
-⚠️ **O teto de contexto não é do Ollama nem do modelo — é da máquina, e a medição inverteu o reflexo.** O `gemma3:4b` declara 131.072; o default de 4k é do Ollama (`< 24 GiB VRAM`). Medido em ago/2026 ao planejar a fase 15: subir `num_ctx` de 4.096 para **32.768 custa 120 MB** (2,91 → 3,03 GB residentes) e não muda o tempo de carga. **`num_ctx` não é um botão de consumo de RAM** — reservar a janela é barato; encher custa segundos de prefill, e uma janela deslizante custa **30×** por invalidar o cache de prefixo. Números, e o que decorre deles, em [`docs/HISTORY.md`](docs/HISTORY.md) e [`plan/active/15`](docs/plan/active/15-orcamento-de-contexto-e-modelo.md).
+| Modelo | Tamanho | Teto treinado | KV/token | `capabilities` | Papel |
+|---|---|---|---|---|---|
+| `gemma3:4b` | 3,3 GB | 131.072 | ~24 KB | `completion`, `vision` | **default** — janela deslizante de 1024, o único com visão |
+| `gemma3:1b` | 815 MB | 32.768 | ~4 KB | `completion` | fallback de baixa RAM, fraco em síntese |
+| `qwen2.5-coder:3b` | 1,9 GB | 32.768 | 36 KB | `completion`, `tools`, `insert` | **o único que combina especialização em código com folga de RAM** — candidato a default do NL→SQL |
+| `phi4-mini` | 2,5 GB | 131.072 | **128 KB** | `completion`, **`tools`** | pesos leves e **o cache mais caro da frota** — a 32k custa o mesmo que o `qwen2.5:7b`, que pesa o dobro |
+| `qwen2.5:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, **`tools`** | qualidade máxima de uso geral |
+| `qwen2.5-coder:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, `tools`, `insert` | teto de qualidade em código; escolha deliberada, não default |
+| `nomic-embed-text` | 274 MB | 2.048 | — | `embedding` | 768 dims — o embedder da D9.5 já está instalado |
+
+**Desinstalados em 10/08/2026**, medidos antes e registrados para não serem reinstalados por impulso: `mistral:7b` (dominado — mesmo porte e teto do `qwen2.5:7b`, sem especialização, com o dobro do cache) e `llama3.1:8b` (o teto de 131.072 que o tornava interessante pede 16 GB de cache; sem ele, é um `qwen2.5:7b` mais pesado). Motivos completos na D15.8 do [`plan/active/15`](docs/plan/active/15-orcamento-de-contexto-e-modelo.md).
+
+⚠️ **O teto de contexto não é do Ollama nem do modelo — é da máquina, e o custo depende da arquitetura de atenção.** O `gemma3:4b` declara 131.072; o default de 4k é do Ollama (`< 24 GiB VRAM`). Medido em ago/2026 ao planejar a fase 15: subir `num_ctx` de 4.096 para **32.768 custa 120 MB** (2,91 → 3,03 GB residentes) e não muda o tempo de carga.
+
+**Essa medida vale para o `gemma3:4b` e não se generaliza** — correção de 10/08/2026, feita ao instalar quatro modelos novos. Ele é o único da frota com **janela deslizante** (`sliding_window: 1024`), e é a janela que trava o cache KV de 28 das suas 34 camadas. Um modelo sem janela cresce em todas: o `phi4-mini` custa **128 KB por token** contra os ~24 KB do `gemma3:4b` — **5,3×** — e, no teto de 131.072 que ele próprio declara, pediria **16 GB só de cache**, sete vezes o próprio peso de 2,5 GB. **Tamanho de modelo não prediz custo de contexto**, e nenhuma coluna do `ollama list` deixa isso visível. Reservar a janela continua barato *comparado a enchê-la* (o prefill segue dominante, e uma janela deslizante custa **30×** por invalidar o cache de prefixo), mas *"`num_ctx` não é um botão de consumo de RAM"* era uma frase sobre uma arquitetura, não sobre todas. A fórmula (derivável do `/api/show`, sem carregar modelo) e o orçamento por modelo estão em [`plan/active/15`](docs/plan/active/15-orcamento-de-contexto-e-modelo.md); o que decorre disso, em [`docs/HISTORY.md`](docs/HISTORY.md).
+
+⚠️ **Ao sondar o Ollama, um modelo residente por vez.** `keep_alive` de no máximo 1, e descarregar explicitamente com `keep_alive: 0` entre medidas — o default é 5 minutos, então modelos se acumulam em silêncio ao longo de sondas sucessivas, e dois residentes nesta máquina é *swap*. `ollama ps` vazio antes de começar e ao terminar. `/api/tags` e `/api/show` são metadados e **não** carregam nada (confirmado com 14 chamadas seguidas), então catálogo é sempre seguro; o que exige o protocolo é inferência.
 
 ⚠️ **As `capabilities` da tabela acima vêm do `/api/show`.** O `/api/tags` também traz o campo e **omite `vision`** — armadilha medida e registrada no [`HISTORY.md`](docs/HISTORY.md). Carregar o `gemma3:4b` do disco frio custa **~50 s**, o que é o preço real de trocar de modelo.
 
