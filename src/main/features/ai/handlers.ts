@@ -63,11 +63,12 @@ type ChatArgs = {
   model: string
   messages: ChatMessage[]
   numThread?: number
+  numCtx?: number
   jobId: JobId
 }
 
 export async function chat(
-  { service, model, messages, numThread, jobId }: ChatArgs,
+  { service, model, messages, numThread, numCtx, jobId }: ChatArgs,
   chatFn: ChatFn,
   emit: (event: JobEvent) => void
 ): Promise<Result<ChatReply>> {
@@ -84,7 +85,7 @@ export async function chat(
     const onChunk = (text: string): void => emit({ jobId, type: 'chunk', text })
     return await runChat(
       chatFn,
-      { messages, model, numThread },
+      { messages, model, numThread, numCtx },
       { signal: controller.signal, onChunk }
     )
   } catch (error) {

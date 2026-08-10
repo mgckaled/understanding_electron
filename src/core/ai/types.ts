@@ -1,4 +1,4 @@
-import type { AiModel, ChatMessage } from '@shared/ipc'
+import type { AiModel, ChatMessage, ChatReply } from '@shared/ipc'
 
 // The single network-touching seam, injected by the caller (D9.2). core/ never
 // knows which provider fulfills it — the concrete adapters live in
@@ -9,10 +9,16 @@ export type ChatFn = (
   opts: {
     model: string
     numThread?: number
+    numCtx?: number
     signal?: AbortSignal
     onChunk?: (text: string) => void
   }
-) => Promise<string>
+  // Resolves to ChatReply and not to a bare string since plano 15: the final
+  // line of the stream carries the token counters, and the adapter used to read
+  // that line and throw them away. They are the only exact count that exists —
+  // nothing can tokenize before sending — so discarding them left the meter
+  // with no way to calibrate itself.
+) => Promise<ChatReply>
 
 // Availability probe seam for the gate (D9.3). Resolves to the service version
 // on success, or throws — the handler turns the throw into AppError.unavailable.

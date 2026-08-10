@@ -115,7 +115,7 @@ describe('ollamaChat', () => {
 
     const result = await ollamaChat(messages, { model: 'gemma3:4b', onChunk: (t) => seen.push(t) })
 
-    expect(result).toBe('Olá, mundo')
+    expect(result.content).toBe('Olá, mundo')
     expect(seen).toEqual(['Olá', ', mundo'])
   })
 
@@ -124,7 +124,46 @@ describe('ollamaChat', () => {
 
     const result = await ollamaChat(messages, { model: 'gemma3:4b' })
 
-    expect(result).toBe('Olá')
+    expect(result.content).toBe('Olá')
+  })
+
+  it('carries the token counters from the final line of the stream', async () => {
+    // The line was already being read to detect `done`; its counters were being
+    // dropped. prompt_eval_count is the only exact token count that exists —
+    // there is no tokenizing before sending — so this is what calibrates the
+    // meter and what makes silent truncation detectable at all.
+    stubChatStream([
+      '{"message":{"content":"ok"},"done":false}\n',
+      '{"message":{"content":""},"done":true,"prompt_eval_count":1850,"eval_count":42}\n'
+    ])
+
+    const result = await ollamaChat(messages, { model: 'gemma3:4b' })
+
+    expect(result).toEqual({ content: 'ok', promptTokens: 1850, evalTokens: 42 })
+  })
+
+  it('omits the counters rather than reporting zero when they are absent', async () => {
+    // A cloud provider may not report them, and the contract says their absence
+    // must not break anything. Zero would be a lie the meter would act on.
+    stubChatStream(['{"message":{"content":"ok"},"done":true}\n'])
+
+    const result = await ollamaChat(messages, { model: 'gemma3:4b' })
+
+    expect(result).toEqual({ content: 'ok' })
+    expect('promptTokens' in result).toBe(false)
+  })
+
+  it('sends num_ctx in options only when it is defined', async () => {
+    // Same reason already recorded for num_thread: an options object carrying a
+    // zero default would push that default onto the runner.
+    const withCtx = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
+    await ollamaChat(messages, { model: 'gemma3:4b', numCtx: 32768, numThread: 4 })
+    expect(requestBody(withCtx).options).toEqual({ num_thread: 4, num_ctx: 32768 })
+
+    vi.unstubAllGlobals()
+    const without = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
+    await ollamaChat(messages, { model: 'gemma3:4b' })
+    expect(requestBody(without)).not.toHaveProperty('options')
   })
 
   it('sends options.num_thread only when numThread is provided', async () => {

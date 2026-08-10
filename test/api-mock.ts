@@ -21,7 +21,14 @@ export const TEST_MODEL: AiModel = {
 
 export function createApiMock(): Api {
   return {
-    app: { info: vi.fn() },
+    app: {
+      info: vi.fn(),
+      // A realistic figure by default, for the same reason ai.models resolves a
+      // real catalog: `undefined` here would make every context ceiling NaN,
+      // breaking tests that have nothing to do with memory. ~6 GB free of 16 is
+      // the development machine in its working environment.
+      memory: vi.fn().mockResolvedValue({ freeBytes: 6 * 1024 ** 3, totalBytes: 16 * 1024 ** 3 })
+    },
     shell: { openExternal: vi.fn() },
     dataset: { pick: vi.fn(), scan: vi.fn() },
     // onEvent defaults to a no-op unsubscribe: a component whose useEffect

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { AiModel, AppError, MessageStopped } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
+import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/budget'
 import { errorMessage } from '../../shared/ui/messages'
+import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
@@ -50,6 +52,16 @@ function ConversationView(): React.JSX.Element {
   const chosen = conversation === null ? pending : conversation.settings.model
   const model = resolveModel(chosen, installed)
 
+  // min(what the model was trained for, what this machine can hold) — the
+  // second bound is the one that matters: phi4-mini truthfully declares 131072
+  // and honouring it means reserving 16 GB of cache on a 16 GB machine.
+  const memory = useSystemMemory()
+  const current = installed.find((entry) => entry.name === model)
+  const ceiling =
+    current === undefined || memory === undefined
+      ? null
+      : contextCeiling(current, memory.freeBytes, RAM_MARGIN_BYTES)
+
   const chooseModel = (name: string): void => {
     setPending(name)
     if (conversation !== null) updateSettings(conversation.id, { model: name })
@@ -57,7 +69,8 @@ function ConversationView(): React.JSX.Element {
 
   const { availability, streaming, lastRequestId, state, send, cancel } = useConversationChat(
     model,
-    settings.numThread
+    settings.numThread,
+    conversation?.settings.numCtx
   )
 
   const messages = conversation?.messages ?? []
@@ -86,6 +99,15 @@ function ConversationView(): React.JSX.Element {
             disabled={isLoading}
             onSelect={chooseModel}
             onReload={reload}
+            numCtx={conversation?.settings.numCtx}
+            ceiling={ceiling}
+            // Remounts the window control when the conversation changes, so it
+            // re-reads that conversation's value instead of showing the last
+            // one typed.
+            scopeKey={conversation?.id ?? 'sem-conversa'}
+            onNumCtx={(tokens) => {
+              if (conversation !== null) updateSettings(conversation.id, { numCtx: tokens })
+            }}
           />
           {isReady && <span className={styles.status}>Ollama {availability.data.version}</span>}
         </div>

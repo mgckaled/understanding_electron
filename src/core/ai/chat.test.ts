@@ -10,7 +10,7 @@ describe('runChat', () => {
     const chat: ChatFn = async (_messages, opts) => {
       opts.onChunk?.('Olá')
       opts.onChunk?.(', mundo')
-      return 'Olá, mundo'
+      return { content: 'Olá, mundo' }
     }
 
     const result = await runChat(
@@ -24,7 +24,7 @@ describe('runChat', () => {
   })
 
   it('forwards model, messages and numThread to the chat fn', async () => {
-    const chat = vi.fn<ChatFn>(async () => 'ok')
+    const chat = vi.fn<ChatFn>(async () => ({ content: 'ok' }))
 
     await runChat(chat, { messages, model: 'qwen3', numThread: 4 })
 
@@ -35,7 +35,7 @@ describe('runChat', () => {
   })
 
   it('short-circuits to cancelled when the signal is already aborted', async () => {
-    const chat = vi.fn<ChatFn>(async () => 'never')
+    const chat = vi.fn<ChatFn>(async () => ({ content: 'never' }))
 
     const result = await runChat(
       chat,
@@ -51,7 +51,7 @@ describe('runChat', () => {
     const controller = new AbortController()
     const chat: ChatFn = async () => {
       controller.abort()
-      return 'partial'
+      return { content: 'partial' }
     }
 
     const result = await runChat(

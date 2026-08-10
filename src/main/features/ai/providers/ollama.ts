@@ -14,6 +14,12 @@ type OllamaChatLine = {
   message?: { role: string; content: string }
   done?: boolean
   error?: string
+  // Only on the final line. prompt_eval_count is the exact token count of what
+  // the model ACTUALLY read — the only exact count that exists, since nothing
+  // can tokenize before sending, and the only evidence of silent truncation
+  // when it comes back smaller than what was sent.
+  prompt_eval_count?: number
+  eval_count?: number
 }
 
 // Cheapest availability ping: /api/version returns only { version }, without
@@ -64,7 +70,21 @@ export const ollamaModels: ModelsFn = async ({ signal }) => {
   return models
 }
 
-export const ollamaChat: ChatFn = async (messages, { model, numThread, signal, onChunk }) => {
+// Built separately so an absent value means ABSENT, never zero: an options
+// object carrying num_thread: 0 or num_ctx: 0 would push those defaults onto
+// the runner instead of leaving the decision to it.
+function chatOptions(numThread?: number, numCtx?: number): Record<string, number> | undefined {
+  const options: Record<string, number> = {}
+  if (numThread !== undefined) options.num_thread = numThread
+  if (numCtx !== undefined) options.num_ctx = numCtx
+  return Object.keys(options).length === 0 ? undefined : options
+}
+
+export const ollamaChat: ChatFn = async (
+  messages,
+  { model, numThread, numCtx, signal, onChunk }
+) => {
+  const options = chatOptions(numThread, numCtx)
   const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -72,9 +92,7 @@ export const ollamaChat: ChatFn = async (messages, { model, numThread, signal, o
       model,
       messages,
       stream: true,
-      // Only attach options when we actually cap threads: an empty options
-      // object would still push num_thread's zero-default onto the runner.
-      ...(numThread !== undefined ? { options: { num_thread: numThread } } : {})
+      ...(options === undefined ? {} : { options })
     }),
     signal
   })
@@ -110,12 +128,26 @@ export const ollamaChat: ChatFn = async (messages, { model, numThread, signal, o
           assembled += piece
           onChunk?.(piece)
         }
-        if (parsed.done === true) return assembled
+        // The final line carries the counters, and this used to `return
+        // assembled` and drop them on the floor. They are the only exact token
+        // count the app can ever have.
+        if (parsed.done === true) {
+          return {
+            content: assembled,
+            ...(parsed.prompt_eval_count === undefined
+              ? {}
+              : { promptTokens: parsed.prompt_eval_count }),
+            ...(parsed.eval_count === undefined ? {} : { evalTokens: parsed.eval_count })
+          }
+        }
       }
     }
   } finally {
     reader.releaseLock()
   }
 
-  return assembled
+  // The stream ended without a `done` line — a truncated response rather than a
+  // finished one. What arrived is still worth keeping; there are simply no
+  // counters to report, which is the same shape a cloud provider may produce.
+  return { content: assembled }
 }

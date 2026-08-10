@@ -23,7 +23,13 @@ export function useConversationChat(
    * never pulled it, and get back a generic upstream error.
    */
   model: string | null,
-  numThread?: number
+  numThread?: number,
+  /**
+   * The context window this conversation reserves (D15.2). Undefined lets
+   * Ollama decide, which on this machine is 4096 — a number nobody chose, and
+   * one a single 8k-token document overflows on its own.
+   */
+  numCtx?: number
 ): {
   availability: ViewState<AiAvailability>
   streaming: string
@@ -111,7 +117,10 @@ export function useConversationChat(
       const newJobId = crypto.randomUUID()
       setJobId(newJobId)
       const result = await run(() =>
-        window.api.ai.chat({ service: SERVICE, model, messages: history, numThread }, newJobId)
+        window.api.ai.chat(
+          { service: SERVICE, model, messages: history, numThread, numCtx },
+          newJobId
+        )
       )
       setJobId(null)
       const partial = partialRef.current
@@ -145,7 +154,18 @@ export function useConversationChat(
         stopped
       })
     },
-    [activeId, active, create, append, updateSettings, clearStreaming, model, numThread, run]
+    [
+      activeId,
+      active,
+      create,
+      append,
+      updateSettings,
+      clearStreaming,
+      model,
+      numThread,
+      numCtx,
+      run
+    ]
   )
 
   const cancel = useCallback((): void => {

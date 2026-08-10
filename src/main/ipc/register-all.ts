@@ -5,7 +5,8 @@ import type { JobEvent } from '@shared/ipc'
 import { JOB_EVENT_CHANNEL } from '@shared/channels'
 import { handle } from './registry'
 import { DATABASE_FILE, openDatabase } from '../db/open'
-import { getAppInfo } from '../features/app/handlers'
+import { freemem, totalmem } from 'node:os'
+import { getAppInfo, getSystemMemory } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
 import { pickDataset, scanDataset } from '../features/dataset/handlers'
 import { cancelJob } from '../features/job/handlers'
@@ -46,6 +47,7 @@ export function registerAll(): () => void {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))
 
   handle('app:info', () => getAppInfo(app.getVersion, is.dev))
+  handle('app:memory', () => getSystemMemory(freemem, totalmem))
   handle('shell:openExternal', (args) => openExternal(args, shell.openExternal))
   handle('dataset:pick', (args) => pickDataset(args, dialog.showOpenDialog))
   handle('dataset:scan', (args) => scanDataset(args, readLines, broadcastJobEvent))

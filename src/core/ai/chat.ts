@@ -9,18 +9,19 @@ import type { ChatFn } from './types'
 // errors for scanDataset to map.
 export async function runChat(
   chat: ChatFn,
-  request: { messages: ChatMessage[]; model: string; numThread?: number },
+  request: { messages: ChatMessage[]; model: string; numThread?: number; numCtx?: number },
   opts: { signal?: AbortSignal; onChunk?: (text: string) => void } = {}
 ): Promise<Result<ChatReply>> {
   if (opts.signal?.aborted) return err({ kind: 'cancelled' })
 
-  const content = await chat(request.messages, {
+  const reply = await chat(request.messages, {
     model: request.model,
     numThread: request.numThread,
+    numCtx: request.numCtx,
     signal: opts.signal,
     onChunk: opts.onChunk
   })
 
   if (opts.signal?.aborted) return err({ kind: 'cancelled' })
-  return ok({ content })
+  return ok(reply)
 }

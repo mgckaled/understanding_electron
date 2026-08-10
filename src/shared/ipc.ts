@@ -21,6 +21,16 @@ export type AppInfo = {
   isDev: boolean
 }
 
+/**
+ * Free memory as of the moment it was asked for (D15.2). Not part of AppInfo,
+ * which is immutable facts about the build: this changes while the app is open,
+ * and treating it as static is what a cached ceiling would get wrong.
+ */
+export type SystemMemory = {
+  freeBytes: number
+  totalBytes: number
+}
+
 export type JobId = string
 
 export type JobEvent =
@@ -60,6 +70,11 @@ export type ChatRequest = {
   // Optional cap on the CPU threads Ollama uses for this call's inference —
   // maps to the request's options.num_thread. Undefined lets Ollama decide.
   numThread?: number
+  // The context window to reserve for this call — maps to options.num_ctx.
+  // Undefined lets Ollama decide, which on this machine means 4096: a number
+  // nobody chose, and small enough that a single 8k-token document overflows
+  // it on its own (D15.2).
+  numCtx?: number
 }
 
 // The final, authoritative reply. Live tokens arrive first as JobEvent 'chunk'
@@ -67,6 +82,26 @@ export type ChatRequest = {
 // progress events yet still returns the final DatasetSummary as its Result.
 export type ChatReply = {
   content: string
+  /**
+   * Tokens the provider actually read from the prompt, and produced (D15.4).
+   *
+   * `promptTokens` is the ONLY exact count available: there is no
+   * tokenize-before-sending — /api/tokenize returns 404 on this runtime — so
+   * every estimate before the call is characters divided by a ratio. This
+   * number comes back after, and dividing it by the characters that were sent
+   * gives the real density OF THIS CONVERSATION, which calibrates the next
+   * estimate.
+   *
+   * It is also the only evidence of silent truncation: when it comes back
+   * SMALLER than what was sent, the provider dropped the beginning and answered
+   * anyway.
+   *
+   * Optional because a cloud provider may not report them, and their absence
+   * must not break anything — the meter degrades to an estimate, which is what
+   * it already is on the first turn.
+   */
+  promptTokens?: number
+  evalTokens?: number
 }
 
 export type AiAvailability = {
@@ -254,6 +289,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = { numThread: 4 }
 
 export const argsSchema = {
   'app:info': z.void(),
+  'app:memory': z.void(),
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
   'dataset:scan': z.object({ path: z.string(), jobId: z.string() }),
@@ -271,6 +307,7 @@ export const argsSchema = {
     model: z.string().min(1),
     messages: z.array(chatMessageSchema).min(1),
     numThread: z.number().int().positive().optional(),
+    numCtx: z.number().int().positive().optional(),
     jobId: z.string()
   }),
   // Conversation storage (plano 14). The renderer mints `id` and stamps
@@ -315,6 +352,10 @@ export const argsSchema = {
 
 export type IpcContract = {
   'app:info': { args: z.infer<(typeof argsSchema)['app:info']>; result: AppInfo }
+  // No Result: reading the machine's own memory counters cannot fail in a way
+  // the UI has to distinguish, and wrapping it would train the reader to ignore
+  // `ok` — the same reasoning app:info already carries.
+  'app:memory': { args: z.infer<(typeof argsSchema)['app:memory']>; result: SystemMemory }
   'shell:openExternal': {
     args: z.infer<(typeof argsSchema)['shell:openExternal']>
     result: Result<void>
@@ -387,7 +428,11 @@ export type Args<C extends Channel> = IpcContract[C]['args']
 export type ResultOf<C extends Channel> = IpcContract[C]['result']
 
 export type Api = {
-  app: { info(): Promise<AppInfo> }
+  app: {
+    info(): Promise<AppInfo>
+    /** Read fresh each call — see SystemMemory for why it is never cached. */
+    memory(): Promise<SystemMemory>
+  }
   shell: { openExternal(url: string): Promise<Result<void>> }
   dataset: {
     pick(): Promise<Result<DatasetRef | null>>

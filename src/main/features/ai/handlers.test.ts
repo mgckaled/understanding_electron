@@ -109,7 +109,7 @@ describe('chat', () => {
     const chatFn: ChatFn = async (_messages, opts) => {
       opts.onChunk?.('Olá')
       opts.onChunk?.('!')
-      return 'Olá!'
+      return { content: 'Olá!' }
     }
     const events: JobEvent[] = []
 
@@ -128,7 +128,7 @@ describe('chat', () => {
 
   it('finishes the job even on success (no leaked AbortController)', async () => {
     const finish = vi.spyOn(jobs, 'finish')
-    const chatFn: ChatFn = async () => 'ok'
+    const chatFn: ChatFn = async () => ({ content: 'ok' })
 
     await chat({ service: 'ollama', model: 'llama3.2', messages, jobId: 'j2' }, chatFn, () => {})
 

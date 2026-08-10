@@ -55,6 +55,13 @@ type ModelSelectorProps = {
   disabled: boolean
   onSelect: (name: string) => void
   onReload: () => void
+  /** What this conversation reserves; undefined means the provider decides. */
+  numCtx?: number
+  /** min(what the model was trained for, what this machine can hold). */
+  ceiling: number | null
+  /** Identity of the conversation, so the window control re-reads on switch. */
+  scopeKey: string
+  onNumCtx: (tokens: number) => void
 }
 
 function ModelSelector({
@@ -62,7 +69,11 @@ function ModelSelector({
   selected,
   disabled,
   onSelect,
-  onReload
+  onReload,
+  numCtx,
+  ceiling,
+  scopeKey,
+  onNumCtx
 }: ModelSelectorProps): React.JSX.Element {
   const current = state.status === 'ready' ? state.data.find((m) => m.name === selected) : undefined
 
@@ -116,6 +127,39 @@ function ModelSelector({
       >
         ↻
       </button>
+
+      {ceiling !== null && (
+        <Field label="Contexto" hint={`até ${formatContext(ceiling)}`}>
+          {/*
+           * UNCONTROLLED, re-keyed per conversation and per stored value. A
+           * `useState(stored)` here would copy the value on the first render —
+           * which happens before the conversation read returns — and then keep
+           * showing that first copy forever. Remounting re-reads instead, which
+           * is the same defect fase 14 paid for in the threads field.
+           *
+           * Committed on blur, not per keystroke: clamping while typing turns
+           * clearing the field into `1`, and typing "32768" after that gives
+           * something nobody asked for.
+           */}
+          <input
+            key={`${scopeKey}:${numCtx ?? 'default'}`}
+            className={styles.number}
+            type="number"
+            min={1024}
+            max={ceiling}
+            step={1024}
+            defaultValue={numCtx ?? ''}
+            placeholder={String(ceiling)}
+            disabled={disabled}
+            onBlur={(event) => {
+              const parsed = Number(event.target.value)
+              if (Number.isFinite(parsed) && parsed > 0) {
+                onNumCtx(Math.min(Math.round(parsed), ceiling))
+              }
+            }}
+          />
+        </Field>
+      )}
 
       {current !== undefined && badges(current).length > 0 && (
         <ul className={styles.badges}>
