@@ -51,7 +51,7 @@ A última linha é a mais interessante: os dois resolveram *"a descrição que o
 
 ### Para o plano 15 — contexto e modelo
 
-**`num_ctx` pequeno demais corrompe saída estruturada, e isso já aconteceu lá.** O `llm_factory` fixa `DEFAULT_OLLAMA_NUM_CTX = 8192` com o motivo escrito: *"o Ollama usa 2048 por padrão — pequeno demais p/ o JSON verboso (truncava → JSON inválido)"*. O crivo vai pedir JSON estruturado a um 4B no plano 18; este é o modo de falha que aparece primeiro, e ele se parece com "o modelo é ruim" sem ser.
+**`num_ctx` pequeno demais corrompe saída estruturada, e isso já aconteceu lá.** O `llm_factory` fixa `DEFAULT_OLLAMA_NUM_CTX = 8192` com o motivo escrito: *"o Ollama usa 2048 por padrão — pequeno demais p/ o JSON verboso (truncava → JSON inválido)"*. O crivo vai pedir JSON estruturado a um 4B no plano 19; este é o modo de falha que aparece primeiro, e ele se parece com "o modelo é ruim" sem ser.
 
 Junto vai a nota de precedência: `num_ctx` **por requisição** vence o slider do app Ollama, que é o nível mais baixo. Ou seja, o app controla, e o usuário não precisa configurar nada fora dele.
 
@@ -59,7 +59,7 @@ Junto vai a nota de precedência: `num_ctx` **por requisição** vence o slider 
 
 **Orçamento de contexto longo por modelo.** `LONG_CONTEXT_LOCAL_BUDGETS` dá a cada modelo local um teto em caracteres (`gemma3-4b`: 12000 ≈ 3K tokens) acima do qual volta a fatiar; nuvem nunca fatia. É uma forma concreta da política de truncamento que a D13/15 ainda deve.
 
-### Para os planos 16 e 17 — o cartão de dados e seu cache
+### Para os planos 16 e 18 — o cartão de dados e seu cache
 
 **A assinatura de cache precisa conter tudo que muda a saída — e ser uma função só.** É a ideia mais profunda do conjunto. O mill.tools compõe `embed_space_id = "{modelo}:{dim}:{esquema}"` e a **dobra em toda assinatura derivada**: protótipos de classificação, modelo supervisionado, mapa semântico. Antes disso, trocar o modelo de embedding deixava caches do espaço antigo válidos e *"prevendo lixo em silêncio"* — palavras deles.
 
@@ -71,9 +71,11 @@ O análogo no crivo é direto e ainda não decidido: o **cartão de dados vai se
 
 **Onde o cache mora.** Lá é JSON em `~/.mill-tools/`, chaveado por `(path, mtime)` — `data_assessments.json` é literalmente a avaliação de qualidade da IA sobre um arquivo de dados. No crivo isso é uma **tabela do SQLite** que o plano 14 já traz, o que é melhor: um mecanismo de armazenamento, uma escada de migração.
 
-### Para o plano 18 — propostas
+### Para o plano 19 — propostas
 
 **Não use RAG sobre o catálogo, e o gatilho para reabrir está escrito.** A decisão do `nl2cli`: o corpus inteiro de CLI (~54 operações, ~8,5k caracteres) cabe no contexto de um modelo local, e *"RAG trocaria 'o modelo vê tudo' por 'vê top-k', o que pioraria a acurácia num corpus desse tamanho. Só reabrir se o corpus de CLI multiplicar de tamanho."* O catálogo camada 1 do crivo tem ~25 operações — mesma ordem, mesma conclusão, mesmo gatilho.
+
+> 🔍 **Convergência confirmada por outro caminho, em ago/2026.** A [decisão sobre RAG](../HISTORY.md) do crivo chegou ao mesmo veredito para anexo de documento, e por um argumento **de custo**, não de acurácia: o cache de prefixo do Ollama faz o documento inteiro ser pago uma vez, enquanto os trechos recuperados mudam a cada pergunta e são pagos sempre. Duas rotas independentes — acurácia lá, tempo de prefill aqui — apontando para "mande tudo enquanto couber" reforçam o gatilho comum: **RAG entra quando não couber, nunca antes.**
 
 **Protocolo de retry que o crivo ainda não desenhou.** O `nl2cli` reprompta **uma vez** anexando o erro de validação; a segunda falha levanta. E resposta vazia é **recusa deliberada** (pedido fora do escopo do app), que nunca passa pelo validador. Três estados — válido, retentável, recusa — em vez de dois.
 
