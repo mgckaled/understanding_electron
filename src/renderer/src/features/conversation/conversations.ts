@@ -20,8 +20,19 @@ import { messageText } from '@core/ai/messages'
 export const DEFAULT_TITLE = 'Nova conversa'
 const TITLE_MAX = 48
 
+/**
+ * A conversation together with its transcript.
+ *
+ * `Conversation` in the contract is the ROW (D14.1) — the sidebar lists rows,
+ * and the transcript is a second read. This composite is how the renderer puts
+ * the two back together for the conversation on screen, and it lives here and
+ * not in `shared/` for the same reason `ViewState` does: main has no opinion
+ * about it.
+ */
+export type ConversationWithMessages = Conversation & { messages: Message[] }
+
 export type ConversationsState = {
-  conversations: Conversation[]
+  conversations: ConversationWithMessages[]
   activeId: string | null
 }
 
@@ -51,7 +62,10 @@ export function titleFromText(text: string): string {
 }
 
 /** Newest first, mirroring the `ORDER BY updated_at DESC` plano 14 will run. */
-function moveToFront(conversations: Conversation[], updated: Conversation): Conversation[] {
+function moveToFront(
+  conversations: ConversationWithMessages[],
+  updated: ConversationWithMessages
+): ConversationWithMessages[] {
   return [updated, ...conversations.filter((item) => item.id !== updated.id)]
 }
 
@@ -61,7 +75,7 @@ export function conversationsReducer(
 ): ConversationsState {
   switch (action.type) {
     case 'create': {
-      const conversation: Conversation = {
+      const conversation: ConversationWithMessages = {
         id: action.id,
         title: DEFAULT_TITLE,
         messages: [],
@@ -105,7 +119,7 @@ export function conversationsReducer(
       const target = state.conversations.find((item) => item.id === action.id)
       if (!target) return state
       const isFirstUserMessage = target.title === DEFAULT_TITLE && action.message.role === 'user'
-      const updated: Conversation = {
+      const updated: ConversationWithMessages = {
         ...target,
         messages: [...target.messages, action.message],
         title: isFirstUserMessage ? titleFromText(messageText(action.message)) : target.title,

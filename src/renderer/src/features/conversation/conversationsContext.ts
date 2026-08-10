@@ -1,6 +1,10 @@
 import { createContext, useContext, useMemo, type Dispatch } from 'react'
-import type { Conversation, Message } from '@shared/ipc'
-import type { ConversationsAction, ConversationsState } from './conversations'
+import type { Message } from '@shared/ipc'
+import type {
+  ConversationsAction,
+  ConversationsState,
+  ConversationWithMessages
+} from './conversations'
 
 /*
  * Context behind purpose-shaped hooks (D13.2). No component calls useContext
@@ -21,7 +25,7 @@ export const ConversationsContext = createContext<ConversationsContextValue | nu
 export type NewMessage = Omit<Message, 'id' | 'createdAt'>
 
 export type ConversationsApi = {
-  conversations: Conversation[]
+  conversations: ConversationWithMessages[]
   activeId: string | null
   /** Creates an empty conversation, selects it, and returns its id. */
   create: () => string
@@ -71,7 +75,7 @@ export function useConversations(): ConversationsApi {
   )
 }
 
-export function useActiveConversation(): Conversation | null {
+export function useActiveConversation(): ConversationWithMessages | null {
   const { state } = useConversationsContext()
   return state.conversations.find((item) => item.id === state.activeId) ?? null
 }

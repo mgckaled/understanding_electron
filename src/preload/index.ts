@@ -31,6 +31,15 @@ const api: Api = {
     // Live tokens surface through api.job.onEvent as 'chunk' events; this
     // resolves with the assembled reply. No new preload channel needed.
     chat: (request, jobId) => invoke('ai:chat', { ...request, jobId })
+  },
+  conversation: {
+    list: () => invoke('conversation:list'),
+    messages: (conversationId) => invoke('conversation:messages', { conversationId }),
+    create: (conversation) => invoke('conversation:create', conversation),
+    rename: (id, title) => invoke('conversation:rename', { id, title }),
+    remove: (id) => invoke('conversation:remove', { id }),
+    append: (conversationId, message, title) =>
+      invoke('conversation:append', { conversationId, message, title })
   }
 }
 

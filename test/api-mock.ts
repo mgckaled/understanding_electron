@@ -11,7 +11,18 @@ export function createApiMock(): Api {
     // and throw, breaking every test that mounts it — not just the ones
     // about unsubscribing.
     job: { cancel: vi.fn(), onEvent: vi.fn().mockReturnValue(vi.fn()) },
-    ai: { isAvailable: vi.fn(), chat: vi.fn() }
+    ai: { isAvailable: vi.fn(), chat: vi.fn() },
+    // The reads default to empty rather than undefined: a hook that awaits
+    // list() and maps the result would otherwise throw in every test that
+    // mounts it, not only in the ones that are about conversations.
+    conversation: {
+      list: vi.fn().mockResolvedValue([]),
+      messages: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue(undefined),
+      rename: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+      append: vi.fn().mockResolvedValue(undefined)
+    }
   } satisfies Api
 }
 

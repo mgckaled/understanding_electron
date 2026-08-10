@@ -87,29 +87,43 @@ export type AiAvailability = {
 // rows already written to disk. Case 1 of the rule in docs/HISTORY.md
 // § flexibilidade é forma de dado e slot.
 //
-// No zod schema and no channel on purpose: a schema exists to validate an IPC
-// payload, and there is no IPC here yet. Both are born in plano 14, together.
-export type MessagePart = { kind: 'text'; text: string }
+// The schemas were born in plano 14, together with the channels — a schema
+// exists to validate an IPC payload, and until there was IPC there was none.
+// The types are inferred from them and never written in parallel.
+export const messagePartSchema = z.object({ kind: z.literal('text'), text: z.string() })
+export type MessagePart = z.infer<typeof messagePartSchema>
 
-export type MessageRole = 'user' | 'assistant'
+export const messageRoleSchema = z.enum(['user', 'assistant'])
+export type MessageRole = z.infer<typeof messageRoleSchema>
 
-export type Message = {
-  id: string
-  role: MessageRole
-  parts: MessagePart[]
-  createdAt: number
+export const messageSchema = z.object({
+  id: z.string().min(1),
+  role: messageRoleSchema,
+  parts: z.array(messagePartSchema).min(1),
+  createdAt: z.number().int().nonnegative(),
   // The model that produced this message, recorded per message and not only
   // per conversation (D13.4). The model is deliberately NOT locked after the
   // first reply — on a local-model app "this 4B failed, move up to qwen 7B" is
   // the main recovery action — so a transcript can carry mixed authorship.
   // That is resolved with data, not with a prohibition.
-  model?: string
-}
+  model: z.string().min(1).optional()
+})
+export type Message = z.infer<typeof messageSchema>
 
+/**
+ * A conversation ROW — the shape of a line in the `conversations` table, and
+ * what the sidebar lists. The transcript is a separate read (D14.1: a message
+ * is a row, not an item inside a conversation blob), so `messages` is
+ * deliberately absent here: loading every transcript to draw a list of titles
+ * is the cost the relational shape exists to avoid.
+ *
+ * The renderer composes this with `conversation:messages` for the active
+ * conversation; that composite type belongs to the renderer, not here, because
+ * main has no opinion about it.
+ */
 export type Conversation = {
   id: string
   title: string
-  messages: Message[]
   createdAt: number
   updatedAt: number
 }
@@ -132,6 +146,30 @@ export const argsSchema = {
     messages: z.array(chatMessageSchema).min(1),
     numThread: z.number().int().positive().optional(),
     jobId: z.string()
+  }),
+  // Conversation storage (plano 14). The renderer mints `id` and stamps
+  // `createdAt` (D14.5) — same argument as JobId: identity generated on the
+  // side that acts does not have to wait for a reply to know what it is
+  // talking about, and it makes invalidation predictable. So no handler here
+  // generates identity or stamps time; it inserts what it receives.
+  'conversation:list': z.void(),
+  'conversation:messages': z.object({ conversationId: z.string().min(1) }),
+  'conversation:create': z.object({
+    id: z.string().min(1),
+    title: z.string(),
+    createdAt: z.number().int().nonnegative()
+  }),
+  'conversation:rename': z.object({ id: z.string().min(1), title: z.string() }),
+  'conversation:remove': z.object({ id: z.string().min(1) }),
+  // `title` present means "and rename it to this" — the first user message
+  // becomes the title (D13.9), and the decision of what that title is stays in
+  // the renderer, where `titleFromText` already lives and is tested. Folding it
+  // into the append keeps one call, one invalidation, and no window in which
+  // the sidebar shows a stale title.
+  'conversation:append': z.object({
+    conversationId: z.string().min(1),
+    message: messageSchema,
+    title: z.string().optional()
   })
 } as const
 
@@ -158,6 +196,37 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['ai:chat']>
     result: Result<ChatReply>
   }
+  // None of the conversation channels returns Result, and that is a decision,
+  // not an omission. Result exists for failures the UI has to REACT to — file
+  // missing, service down, user cancelled. An indexed insert into a local
+  // SQLite file has no such failure: what is left is programming defect, which
+  // must throw and hurt in the console. Wrapping everything trains the reader
+  // to ignore `ok`. Absence is expressed as data instead: an empty list, and an
+  // append addressed to a conversation that is gone is dropped (see handlers).
+  'conversation:list': {
+    args: z.infer<(typeof argsSchema)['conversation:list']>
+    result: Conversation[]
+  }
+  'conversation:messages': {
+    args: z.infer<(typeof argsSchema)['conversation:messages']>
+    result: Message[]
+  }
+  'conversation:create': {
+    args: z.infer<(typeof argsSchema)['conversation:create']>
+    result: void
+  }
+  'conversation:rename': {
+    args: z.infer<(typeof argsSchema)['conversation:rename']>
+    result: void
+  }
+  'conversation:remove': {
+    args: z.infer<(typeof argsSchema)['conversation:remove']>
+    result: void
+  }
+  'conversation:append': {
+    args: z.infer<(typeof argsSchema)['conversation:append']>
+    result: void
+  }
 }
 
 export type Channel = keyof IpcContract
@@ -180,5 +249,15 @@ export type Api = {
     // Live tokens stream through job.onEvent as 'chunk' events keyed by jobId;
     // the resolved Result carries the assembled whole.
     chat(request: ChatRequest, jobId: JobId): Promise<Result<ChatReply>>
+  }
+  conversation: {
+    /** Newest first — `ORDER BY updated_at DESC`, the sidebar's own order. */
+    list(): Promise<Conversation[]>
+    /** The transcript of one conversation, oldest first. */
+    messages(conversationId: string): Promise<Message[]>
+    create(conversation: Omit<Conversation, 'updatedAt'>): Promise<void>
+    rename(id: string, title: string): Promise<void>
+    remove(id: string): Promise<void>
+    append(conversationId: string, message: Message, title?: string): Promise<void>
   }
 }

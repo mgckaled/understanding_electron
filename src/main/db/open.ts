@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
 import { migrations, type Migration } from './migrations'
+import { inTransaction } from './transaction'
 
 /** File name under app.getPath('userData') — the caller supplies the folder. */
 export const DATABASE_FILE = 'crivo.db'
@@ -31,17 +32,12 @@ export function migrate(db: DatabaseSync, ladder: readonly Migration[] = migrati
     // One transaction per rung. A rung that throws halfway must not leave the
     // schema half-applied with user_version already bumped — the next open
     // would then skip it and fail somewhere far from the cause.
-    db.exec('BEGIN')
-    try {
+    inTransaction(db, () => {
       ladder[version](db)
       // Pragmas cannot be parameterised — SQLite compiles them, so `?` is not
       // bound here. Safe only because the value is the loop index, never input.
       db.exec(`PRAGMA user_version = ${version + 1}`)
-      db.exec('COMMIT')
-    } catch (error) {
-      db.exec('ROLLBACK')
-      throw error
-    }
+    })
   }
   return currentVersion(db)
 }
