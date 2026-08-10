@@ -24,7 +24,7 @@ const PROMPT = 'Pergunte algo ao modelo…'
 function providers(children: ReactNode): React.JSX.Element {
   return (
     <QueryClientProvider client={createQueryClient()}>
-        <ConversationsProvider>{children}</ConversationsProvider>
+      <ConversationsProvider>{children}</ConversationsProvider>
     </QueryClientProvider>
   )
 }
@@ -132,7 +132,11 @@ describe('ConversationView', () => {
         service: 'ollama',
         model: 'gemma3:4b',
         messages: [{ role: 'user', content: 'oi' }],
-        numThread: 4
+        numThread: 4,
+        // Sent explicitly since plano 15. Leaving it out is what left Ollama's
+        // own default of 4096 in charge — a number nobody chose, and one a
+        // single 8k-token document overflows on its own, in silence.
+        numCtx: 32768
       },
       expect.any(String)
     )

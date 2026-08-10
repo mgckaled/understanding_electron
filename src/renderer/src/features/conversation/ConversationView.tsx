@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import type { AiModel, AppError, MessageStopped } from '@shared/ipc'
+import type { AiModel, AppError, ConversationSettings, MessageStopped } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
-import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/budget'
+import { calibrateRatio, contextCeiling, effectiveNumCtx, RAM_MARGIN_BYTES } from '@core/ai/budget'
 import { errorMessage } from '../../shared/ui/messages'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
@@ -40,17 +40,18 @@ function ConversationView(): React.JSX.Element {
   const { state: catalog, reload } = useAiModels()
 
   // Held ONLY for the window in which no conversation exists yet — on a fresh
-  // database there is no row to write a setting into.
-  const [pending, setPending] = useState<string | undefined>(undefined)
+  // database there is no row to write a setting into, and dropping the choice
+  // silently is worse than holding it.
+  const [pending, setPending] = useState<ConversationSettings>({})
   const installed = catalog.status === 'ready' ? catalog.data : EMPTY_CATALOG
 
   // Note the branch rather than `conversation?.settings.model ?? pending`: that
   // spelling leaks. A conversation that has chosen nothing yields `undefined`,
-  // which falls through to whatever was last clicked in a DIFFERENT
+  // which falls through to whatever was last chosen in a DIFFERENT
   // conversation — so creating a second one silently inherited the first one's
   // model. Once a conversation exists, only that conversation decides.
-  const chosen = conversation === null ? pending : conversation.settings.model
-  const model = resolveModel(chosen, installed)
+  const chosen = conversation === null ? pending : conversation.settings
+  const model = resolveModel(chosen.model, installed)
 
   // min(what the model was trained for, what this machine can hold) — the
   // second bound is the one that matters: phi4-mini truthfully declares 131072
@@ -62,18 +63,29 @@ function ConversationView(): React.JSX.Element {
       ? null
       : contextCeiling(current, memory.freeBytes, RAM_MARGIN_BYTES)
 
-  const chooseModel = (name: string): void => {
-    setPending(name)
-    if (conversation !== null) updateSettings(conversation.id, { model: name })
+  // One writer for both settings: hold it locally so a choice made before any
+  // conversation exists is not dropped in silence, and persist it as soon as
+  // there is a row to persist into.
+  const choose = (patch: ConversationSettings): void => {
+    setPending((current) => ({ ...current, ...patch }))
+    if (conversation !== null) updateSettings(conversation.id, patch)
   }
 
-  const { availability, streaming, lastRequestId, state, send, cancel } = useConversationChat(
-    model,
-    settings.numThread,
-    conversation?.settings.numCtx
-  )
+  // The window actually in force. Sent explicitly on every call, because NOT
+  // sending it is what leaves Ollama's own 4096 in charge — a number nobody
+  // chose and one that a single document overflows in silence.
+  const numCtx = effectiveNumCtx(chosen.numCtx, ceiling)
+
+  const { availability, streaming, lastRequestId, state, send, cancel, lastPromptTokens } =
+    useConversationChat(model, settings.numThread, numCtx)
 
   const messages = conversation?.messages ?? []
+  // What the next send would carry: the whole transcript, since the provider is
+  // stateless and every turn resends everything.
+  const historyChars = messages.reduce((total, message) => total + messageText(message).length, 0)
+  // Generic ratio on the first turn, this conversation's own from then on — the
+  // exact count only exists AFTER a call (D15.4).
+  const charsPerToken = calibrateRatio(historyChars, lastPromptTokens)
   const isLoading = state.status === 'loading'
   const isReady = availability.status === 'ready'
   // The in-flight surface belongs to the conversation the request was sent
@@ -97,17 +109,15 @@ function ConversationView(): React.JSX.Element {
             // attributed to a model that is no longer selected. Switching
             // between turns is the point (D15.7) and stays open.
             disabled={isLoading}
-            onSelect={chooseModel}
+            onSelect={(name) => choose({ model: name })}
             onReload={reload}
-            numCtx={conversation?.settings.numCtx}
+            numCtx={chosen.numCtx}
             ceiling={ceiling}
             // Remounts the window control when the conversation changes, so it
             // re-reads that conversation's value instead of showing the last
             // one typed.
             scopeKey={conversation?.id ?? 'sem-conversa'}
-            onNumCtx={(tokens) => {
-              if (conversation !== null) updateSettings(conversation.id, { numCtx: tokens })
-            }}
+            onNumCtx={(tokens) => choose({ numCtx: tokens })}
           />
           {isReady && <span className={styles.status}>Ollama {availability.data.version}</span>}
         </div>
@@ -174,6 +184,9 @@ function ConversationView(): React.JSX.Element {
         loading={isLoading}
         onSend={send}
         onCancel={cancel}
+        historyChars={historyChars}
+        limit={numCtx}
+        charsPerToken={charsPerToken}
       />
     </section>
   )

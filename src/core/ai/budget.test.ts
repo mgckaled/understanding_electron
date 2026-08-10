@@ -1,5 +1,13 @@
 import type { AiModel } from '@shared/ipc'
-import { contextCeiling, kvBytesPerToken, residentBytes } from './budget'
+import {
+  budgetFor,
+  calibrateRatio,
+  contextCeiling,
+  DEFAULT_CHARS_PER_TOKEN,
+  estimateTokens,
+  kvBytesPerToken,
+  residentBytes
+} from './budget'
 
 const GIB = 1024 ** 3
 
@@ -142,5 +150,80 @@ describe('contextCeiling', () => {
   it('is null when there is nothing to bound', () => {
     expect(contextCeiling(embedder, 8 * GIB, 0)).toBeNull()
     expect(contextCeiling(model({ contextLength: null }), 8 * GIB, 0)).toBeNull()
+  })
+})
+
+describe('calibrateRatio', () => {
+  it('uses the observed density once a reply reports its token count', () => {
+    // 7600 characters that the provider read as 2000 tokens is 3,8 — but the
+    // point is that the number comes from THIS conversation instead of from an
+    // average over documents nobody in it wrote.
+    expect(calibrateRatio(8000, 2000)).toBe(4)
+  })
+
+  it('falls back to the measured Portuguese default on the first turn', () => {
+    expect(calibrateRatio(1000, undefined)).toBe(DEFAULT_CHARS_PER_TOKEN)
+  })
+
+  it('falls back when a provider reports no counters at all', () => {
+    // A cloud provider may not send them. The meter degrades to an estimate,
+    // which is what it already is before the first reply.
+    expect(calibrateRatio(1000, 0)).toBe(DEFAULT_CHARS_PER_TOKEN)
+  })
+
+  it('pulls the estimate in the right direction after one observation', () => {
+    // Text that repeats packs more characters per token (4,3–5,1 measured), so
+    // the generic ratio OVERESTIMATES tokens for it. One observation corrects
+    // that, and the error shrinks per turn instead of accumulating.
+    const dense = calibrateRatio(10_000, 2000) // 5,0 chars/token
+
+    expect(estimateTokens(10_000, dense)).toBeLessThan(
+      estimateTokens(10_000, DEFAULT_CHARS_PER_TOKEN)
+    )
+  })
+})
+
+describe('budgetFor', () => {
+  const base = { limit: 4096, charsPerToken: 4 }
+
+  it('counts history and draft together, because both are sent', () => {
+    const budget = budgetFor({ ...base, historyChars: 4000, draftChars: 4000 })
+
+    expect(budget.estimated).toBe(2000)
+    expect(budget.used).toBeCloseTo(0.488, 2)
+  })
+
+  it('allows a send that fits', () => {
+    expect(budgetFor({ ...base, historyChars: 1000, draftChars: 100 }).fits).toBe(true)
+  })
+
+  it('refuses before the nominal ceiling, because the estimate is optimistic', () => {
+    // 15.000 characters at 4 per token is 3.750 tokens — under the 4.096
+    // window, so a naive gate would let it through. The estimate can undercount
+    // by a third, and a gate that fires only after the damage is a report.
+    const budget = budgetFor({ ...base, historyChars: 15_000, draftChars: 0 })
+
+    expect(budget.estimated).toBeLessThan(4096)
+    expect(budget.fits).toBe(false)
+  })
+
+  it('flags the case where the new message alone does not fit', () => {
+    // Rare, and different in kind: "start a new conversation" does not help,
+    // and the screen has to say so instead of offering it as a way out.
+    const budget = budgetFor({ ...base, historyChars: 0, draftChars: 40_000 })
+
+    expect(budget.fits).toBe(false)
+    expect(budget.messageAloneOverflows).toBe(true)
+  })
+
+  it('does not flag the message when it is the history that is large', () => {
+    const budget = budgetFor({ ...base, historyChars: 40_000, draftChars: 100 })
+
+    expect(budget.fits).toBe(false)
+    expect(budget.messageAloneOverflows).toBe(false)
+  })
+
+  it('reports above 1 when the send overflows, so a meter can show it', () => {
+    expect(budgetFor({ ...base, historyChars: 40_000, draftChars: 0 }).used).toBeGreaterThan(1)
   })
 })

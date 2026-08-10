@@ -35,20 +35,27 @@ const OVERHEAD = 1.06
 const FIXED_OVERHEAD_BYTES = 0.33 * 1024 ** 3
 
 /**
- * Head-room left for the WORKING ENVIRONMENT COMING BACK.
+ * Head-room so the app never reserves the last byte the machine has.
  *
- * Not a round number picked for comfort: it is the measured spread between this
- * machine's scenarios — ~9 GB free with only the app running, ~6 GB with the
- * editor, browser and agent open. `num_ctx` reserves its cache when the model
- * loads and the reservation never shrinks, so a ceiling computed from a
- * snapshot of an idle machine makes the app cause the swap it exists to
- * prevent.
+ * It was first written as 3 GiB — the measured spread between this machine's
+ * scenarios, ~9 GB free with only the app running against ~6 GB with the
+ * working environment open — on the reasoning that `num_ctx` reserves its cache
+ * at load time and never gives it back, so a ceiling computed while the machine
+ * was idle would make the app cause the swap it exists to prevent.
  *
- * The asymmetry is what fixes the value: underestimating costs context the user
- * could have had; overestimating costs the machine freezing in the middle of an
- * answer. Those are not errors of the same size.
+ * That reasoning DOUBLE-COUNTS, and a level-2 test caught it: when the reading
+ * already IS 6 GB, the machine is already in the busy state. Subtracting the
+ * spread on top left 3 GB, which is less than gemma3:4b's own 3,11 GB of
+ * weights — so the app refused to run its own default model, ceiling 0.
+ *
+ * The distinction the spread argument needs — "idle now, about to get busy"
+ * versus "already busy" — is not available from a single reading. So the margin
+ * goes back to what it can honestly be: a modest buffer against reserving
+ * everything. The asymmetry still sets the direction (underestimating costs
+ * context the user could have had; overestimating costs the machine freezing
+ * mid-answer), it just cannot cost more than the app being unusable.
  */
-export const RAM_MARGIN_BYTES = 3 * 1024 ** 3
+export const RAM_MARGIN_BYTES = 1024 ** 3
 
 /**
  * How many layers actually grow with `num_ctx`.
@@ -89,6 +96,123 @@ export function kvBytesPerToken(model: AiModel): number | null {
 
   const layers = growingLayers(model)
   return 2 * layers * attention.headCountKv * attention.headDim * 2 * OVERHEAD
+}
+
+/**
+ * Characters per token for Portuguese prose, measured on this project's own
+ * documents in ago/2026 (D15.4).
+ *
+ * Only a starting point, and knowingly a rough one: the same measurement found
+ * 3,8 for varied prose and 4,3–5,1 for text that repeats itself, so estimating
+ * by character is wrong by up to a third depending on what is being written. It
+ * is enough for a meter and NOT enough for a gate — which is why the gate
+ * carries a margin and the ratio recalibrates itself after the first turn.
+ */
+export const DEFAULT_CHARS_PER_TOKEN = 3.8
+
+/**
+ * The characters-per-token ratio this conversation actually exhibits.
+ *
+ * There is no way to tokenize before sending, so every estimate before a call
+ * is a guess. But every reply comes back with `prompt_eval_count`, which is the
+ * exact count of what was just read — dividing the characters that were sent by
+ * it gives the real density of THIS conversation: its language, its style, its
+ * attachments. The error shrinks each turn instead of accumulating.
+ *
+ * Falls back to the default when there is nothing to learn from, which includes
+ * a provider that does not report counters at all.
+ */
+export function calibrateRatio(sentChars: number, promptTokens: number | undefined): number {
+  if (promptTokens === undefined || promptTokens <= 0 || sentChars <= 0) {
+    return DEFAULT_CHARS_PER_TOKEN
+  }
+  return sentChars / promptTokens
+}
+
+/** Characters to tokens, at the given density. Always rounds up. */
+export function estimateTokens(chars: number, charsPerToken: number): number {
+  if (charsPerToken <= 0) return 0
+  return Math.ceil(chars / charsPerToken)
+}
+
+/**
+ * Head-room the gate keeps because the estimate is OPTIMISTIC BY CONSTRUCTION.
+ *
+ * Character-based estimation can undercount by roughly a third, so a gate that
+ * fired exactly at the nominal ceiling would fire after the damage. A gate that
+ * only reports the overflow once it has happened is not a gate, it is a report.
+ */
+export const GATE_MARGIN = 0.9
+
+/**
+ * The window the app reserves when the conversation has not chosen one (D15.2).
+ *
+ * It replaces Ollama's own default of 4096 on this machine — a number nobody
+ * chose, and one that a single 8k-token document overflows on its own, silently.
+ *
+ * 32768 and not the model's trained ceiling, even though the ceiling is often
+ * affordable: reserving the window is cheap, FILLING it is not. gemma3:4b can
+ * hold its declared 131072 in RAM, and filling it would be ~87 minutes of
+ * prefill on this CPU. 32k is where the measurements were taken and is already
+ * eight times what the provider would have picked.
+ */
+export const DEFAULT_NUM_CTX = 32768
+
+/**
+ * The window actually in force: what the conversation chose, else the app's
+ * default, never above what this machine can hold.
+ *
+ * `null` ceiling means the model could not be costed, and then the app's own
+ * default stands — refusing to reserve anything would silently hand the
+ * decision back to the provider, which is the behaviour this replaces.
+ */
+export function effectiveNumCtx(chosen: number | undefined, ceiling: number | null): number {
+  const wanted = chosen ?? DEFAULT_NUM_CTX
+  return ceiling === null ? wanted : Math.max(1, Math.min(wanted, ceiling))
+}
+
+export type Budget = {
+  /** Estimated tokens the next send would consume, prompt side. */
+  estimated: number
+  /** The window it has to fit into. */
+  limit: number
+  /** 0..1+, for a meter. Above 1 means it does not fit at all. */
+  used: number
+  /** False when the next send must be refused (D15.5). */
+  fits: boolean
+  /**
+   * True when the new message alone overflows the window. Genuinely rare and
+   * genuinely different: starting a new conversation does not help, and the
+   * screen has to say so instead of offering it.
+   */
+  messageAloneOverflows: boolean
+}
+
+/**
+ * What the next send would cost, and whether it is allowed (D15.4, D15.5).
+ *
+ * `limit` is the conversation's own window — the reserved `num_ctx`, or the
+ * provider default when nothing was chosen. Note it is NOT the model's trained
+ * ceiling: what is reserved is what exists.
+ */
+export function budgetFor(input: {
+  historyChars: number
+  draftChars: number
+  limit: number
+  charsPerToken: number
+}): Budget {
+  const { historyChars, draftChars, limit, charsPerToken } = input
+  const estimated = estimateTokens(historyChars + draftChars, charsPerToken)
+  const draftAlone = estimateTokens(draftChars, charsPerToken)
+  const allowed = Math.floor(limit * GATE_MARGIN)
+
+  return {
+    estimated,
+    limit,
+    used: limit <= 0 ? 0 : estimated / limit,
+    fits: estimated <= allowed,
+    messageAloneOverflows: draftAlone > allowed
+  }
 }
 
 /** Total resident bytes this model would occupy at the given context window. */
