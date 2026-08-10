@@ -137,38 +137,42 @@ Num modelo com janela deslizante, só as camadas globais crescem com o `num_ctx`
 
 Compare-o com o `gemma3:4b`, que pesa **mais** (3,11 GB), declara o **mesmo** teto de 131.072, e o compra por 3,1 GB de cache em vez de 16. A diferença inteira é a janela deslizante.
 
-> 🔍 **A aritmética e a medição discordam, e a discordância é o achado.** O delta medido no `gemma3:4b` foi de 120 MB para 28.672 tokens a mais — **4,3 KB por token**, contra os 24 KB que a fórmula prevê. Fator de ~5,6×, sem explicação confirmada: o `ollama ps` pode reportar estimativa em vez de RSS, o runtime pode alocar sob demanda, ou o cache KV pode estar quantizado por padrão. **A tabela acima é teto superior, não previsão.** O que ela sustenta com segurança é a **razão** entre modelos, que é arquitetural e independe de qual das hipóteses seja a certa: `mistral:7b` e `llama3.1:8b` custam **5,3× por token** o que o `gemma3:4b` custa. O passo 0 existe para fechar essa lacuna com uma medida só.
+> ✅ **A discordância entre aritmética e medição foi resolvida pelo passo 0, em 10/08/2026 — e a aritmética estava certa.**
+>
+> Medido no `qwen2.5-coder:3b` (sem janela), 4.096 contra 32.768, um modelo residente por vez: **38,0 KB por token** contra os 36,0 previstos. Fator de **1,055** — os 5,5% são overhead do runner, não erro de modelo.
+>
+> Isso isola a anomalia no `gemma3:4b`, e explica-a: os 4,3 KB/token medidos lá, divididos pelos 4 KB que uma camada custa naquele modelo, dão **1,07 camadas**. Com janela deslizante ativa, **o Ollama contabiliza o crescimento como se uma única camada escalasse com o `num_ctx`** — não as ~6 globais que a proporção 5:1 do Gemma 3 sugeriria. Empírico, ajustado a um modelo; o que lhe dá crédito é fechar as **duas** medições com a mesma constante de overhead.
+>
+> A tabela acima deixa de ser teto superior e passa a ser previsão, com uma correção: a linha do `gemma3:4b` conta 6 camadas crescendo e o certo é **1**.
 
-**O orçamento desta máquina, somando pesos e cache, a 32.768 tokens.** Duas incertezas se cruzam aqui, e é por isso que a tabela tem duas colunas de total: o **fator** (aritmética contra medição, ~5,6×) e o **cenário** (a RAM livre varia 3 GB conforme o que está aberto — ver D15.2).
+**O orçamento desta máquina a 32.768 tokens**, agora com a fórmula fechada pelo passo 0: `base = disco + 0,33` e `KV = KB/token × 1,06 × num_ctx`. A linha do `qwen2.5-coder:3b` é **medida**; as demais são a fórmula aplicada.
 
-| Modelo | Pesos | + KV | Total (teto superior) | Total (calibrado ÷5,6) |
+| Modelo | Disco | Base | KV a 32k | **Total** |
 |---|---|---|---|---|
-| `qwen2.5-coder:3b` | 1,80 GB | 1,13 | **2,93** | **2,00** |
-| `gemma3:4b` | 3,11 GB | 0,77 | **3,88** | **3,25** |
-| `phi4-mini` | 2,32 GB | 4,00 | **6,32** | **3,03** |
-| `qwen2.5:7b` | 4,36 GB | 1,75 | **6,11** | **4,67** |
-| `qwen2.5-coder:7b` | 4,36 GB | 1,75 | **6,11** | **4,67** |
+| `gemma3:1b` | 0,76 | 1,09 | 0,03 | **1,12** |
+| `qwen2.5-coder:3b` | 1,80 | 2,13 | 1,19 | **3,32** ✔ medido |
+| `gemma3:4b` | 3,11 | 3,44 | 0,13 | **3,57** |
+| `qwen2.5:7b` | 4,36 | 4,69 | 1,86 | **6,55** |
+| `qwen2.5-coder:7b` | 4,36 | 4,69 | 1,86 | **6,55** |
+| `phi4-mini` | 2,32 | 2,65 | 4,24 | **6,89** |
 
-> 🔍 **Repare no `phi4-mini` contra o `qwen2.5:7b`: 6,32 e 6,11 GB, praticamente o mesmo total, por caminhos opostos.** Um é 2,32 de pesos com 4,00 de cache; o outro é 4,36 de pesos com 1,75 de cache. Quem orçar por tamanho de modelo — que é o reflexo, e o que o `ollama list` mostra — conclui que o `phi4-mini` custa metade do `qwen2.5:7b`. A 32k eles empatam, e a 4k o `phi4-mini` de fato custa menos. **O ordenamento entre dois modelos pode inverter conforme o `num_ctx`**, e nenhuma coluna do `ollama list` deixa isso visível.
+> 🔍 **O `phi4-mini` é o mais caro da frota a 32k, e é o segundo mais leve em disco.** 2,32 GB de pesos contra os 4,36 do `qwen2.5:7b` — e mesmo assim ele termina **acima**, porque paga 4,24 GB de cache contra 1,86. Quem orçar por tamanho de modelo, que é o reflexo e é o que o `ollama list` mostra, conclui que o `phi4-mini` custa metade. A 4k ele de fato custa menos; a 32k custa mais. **O ordenamento entre dois modelos inverte conforme o `num_ctx`**, e nenhuma coluna do `ollama list` deixa isso visível — é a razão de o `AiModel` carregar o bloco `attention`.
 
-Cruzando com os três cenários (✅ cabe · ⚠️ na borda · ❌ não cabe):
+Cruzando com os três cenários de RAM livre:
 
 | Modelo | 6 GB (dev típico) | 7,5 GB (só VS Code) | 9 GB (só o app) |
 |---|---|---|---|
-| `qwen2.5-coder:3b` | ✅ ✅ | ✅ ✅ | ✅ ✅ |
-| `gemma3:4b` | ✅ ✅ | ✅ ✅ | ✅ ✅ |
-| `phi4-mini` | ❌ ✅ | ⚠️ ✅ | ✅ ✅ |
-| `qwen2.5:7b` | ❌ ✅ | ⚠️ ✅ | ✅ ✅ |
-| `qwen2.5-coder:7b` | ❌ ✅ | ⚠️ ✅ | ✅ ✅ |
+| `gemma3:1b` · `qwen2.5-coder:3b` · `gemma3:4b` | ✅ | ✅ | ✅ |
+| `qwen2.5:7b` · `qwen2.5-coder:7b` | ❌ | ✅ | ✅ |
+| `phi4-mini` | ❌ | ⚠️ 0,6 de folga | ✅ |
 
-*(primeiro símbolo: teto superior · segundo: calibrado)*
+**Isto é o plano se justificando.** No cenário em que o aplicativo é desenvolvido, **metade da frota não roda a 32k** — e nada hoje avisa. Um seletor que ofereça 32.768 a qualquer modelo entrega *swap* em três dos seis. O teto de RAM da D15.2 não é uma salvaguarda teórica para um caso extremo: ele age no caso comum.
 
-**Onde as duas incertezas se somam é onde o passo 0 se paga.** Para três dos cinco modelos, a resposta a "cabe a 32k?" depende inteiramente de qual fator vale — e o cenário só desloca a fronteira, não a apaga. Os dois pequenos cabem em todas as combinações; os três demais não cabem em nenhuma pela aritmética e cabem em todas pelo fator medido. Uma medida resolve nove células.
+Três conclusões, agora com número fechado em vez de faixa:
 
-Duas conclusões sobrevivem a **todas** as combinações, e são as que o código pode usar antes do passo 0:
-
-- **`qwen2.5-coder:3b` cabe com folga em qualquer cenário e sob qualquer fator** — 2,0 a 2,9 GB contra 6 no pior caso. É isso, e não a especialização (que o 7b também tem), que o torna candidato a default do caminho NL→SQL.
-- **Nenhum modelo da frota tem o teto declarado utilizável**, e vale ser preciso sobre o porquê, porque uma versão anterior desta seção afirmava mais do que os números sustentam. O `phi4-mini` a 131.072 pede **18,3 GB** pela aritmética (acima da RAM *total*) e **5,2 GB** pelo fator calibrado — o que **caberia** nos cenários de 7,5 e 9 GB. O que mata a ideia não é a RAM, é o argumento que a D15.2 já tinha em primeiro lugar: **131.072 tokens a 25 tok/s de prefill são ~87 minutos.** O teto não é impossível em todos os casos; é inútil em todos. Uma perna em vez de duas, e ainda de pé.
+- **`qwen2.5-coder:3b` cabe com folga nos três cenários** — 3,32 GB medidos contra 6 no pior caso. É isso, e não a especialização (que o 7b também tem), que o torna candidato a default do caminho NL→SQL.
+- **O `gemma3:4b` consegue os 131.072 que declara — em RAM.** Base 3,44 mais 0,53 de cache dão **3,97 GB**, que cabe até no cenário apertado. A janela deslizante o torna o único modelo da frota cujo teto declarado é financiável, e isso *inverte* o que este plano supunha. O que o mantém fora não é memória: são os **~87 minutos de prefill** a 25 tok/s. A D15.2 tinha duas razões para desconfiar do teto declarado; para este modelo, sobrou uma.
+- **O `phi4-mini` a 131.072 pede 19,6 GB** — acima da RAM total da máquina, sem ambiguidade. Mesmo teto declarado que o `gemma3:4b`, **cinco vezes** o custo, e a diferença inteira é a janela.
 
 ### O truncamento silencioso
 
@@ -258,8 +262,12 @@ Mora em `settings` da conversa, JSON, sem migração (D14.1). Escala de conversa
 ```
 tetoOferecido = min(contextLength, tetoDeRam)
 
-tetoDeRam = (ramLivre − margem − pesos) ÷ kvPorToken
-kvPorToken = 2 × blockCount × headCountKv × headDim × 2 × fatorDaClasse
+tetoDeRam  = (ramLivre − margem − base) ÷ kvPorToken
+base       = pesos + OVERHEAD_FIXO
+kvPorToken = 2 × camadasQueCrescem × headCountKv × headDim × 2 × OVERHEAD
+
+camadasQueCrescem = janelaAtiva ? 1 : blockCount
+janelaAtiva       = slidingWindow !== null && slidingWindow < contextLength
 ```
 
 #### `ramLivre` é leitura de runtime, e a `margem` sai da medição
@@ -282,16 +290,25 @@ Um teto derivado de qualquer um desses números chumbado no código está errado
 
 Isso também explica por que desenvolver no cenário apertado é a direção segura: o que funciona com 6 GB funciona nos 9 GB do aplicativo empacotado, e nunca o contrário.
 
-#### O fator de classe
+#### As duas constantes, medidas no passo 0
 
-`fatorDaClasse` é a única constante que não sai do `/api/show` nem de leitura de runtime, e existe porque a aritmética e a medição discordam por ~5,6× (registrado acima). São **dois** valores, um por classe de atenção, medidos nesta máquina e escritos aqui:
+Tudo o mais sai do `/api/show` ou de leitura de runtime. Sobram **duas** constantes, e as duas foram medidas em 10/08/2026 no `qwen2.5-coder:3b`, comparando `num_ctx` 4.096 com 32.768:
 
-| Classe | Como se detecta | Fator | Origem |
-|---|---|---|---|
-| com janela deslizante ativa | `slidingWindow !== null && slidingWindow < contextLength` | **0,032** | `gemma3:4b`, medido 09/08/2026 (4,3 KB/token contra 136 analíticos) |
-| sem janela, ou janela inerte | o contrário | **a medir** | `qwen2.5-coder:3b`, passo 0 |
+| Constante | Valor | Como saiu |
+|---|---|---|
+| `OVERHEAD` | **1,06** | 38,0 KB/token medidos contra 36,0 analíticos — o runner do Ollama por cima do cache |
+| `OVERHEAD_FIXO` | **0,33 GB** | `ollama ps` reportou 2,277 GB a 4k e 3,316 a 32k; subtraindo o cache dá **2,129 GB** nos dois casos, contra 1,80 GB de disco |
 
-Dois números, medidos, com a máquina registrada no [`CLAUDE.md`](../../../CLAUDE.md) — e o gatilho de refazê-los é o mesmo de todas as outras medidas de lá: trocar de máquina.
+O `OVERHEAD_FIXO` não estava previsto e caiu dos dados: os dois pontos dão a mesma base com três casas, o que é forte para duas medidas. Ele importa porque é **maior que o cache inteiro de um modelo pequeno a 4k** — ignorá-lo subestimaria todo modelo por um terço de giga, sempre na direção perigosa.
+
+**`camadasQueCrescem = 1` para modelo com janela ativa é empírico**, e vale dizer que é. Os 4,3 KB/token medidos no `gemma3:4b` divididos pelos 4 KB que uma camada custa ali dão 1,07 — não as ~6 camadas globais que a proporção 5:1 do Gemma 3 sugeriria. O que dá crédito ao número é fechar as **duas** medições com a mesma `OVERHEAD`:
+
+| Modelo | Previsto | Medido |
+|---|---|---|
+| `gemma3:4b` (janela ativa, 1 camada) | 4,34 KB/token | **4,3** |
+| `qwen2.5-coder:3b` (sem janela, 36 camadas) | 38,2 KB/token | **38,0** |
+
+Duas constantes, medidas, com a máquina registrada no [`CLAUDE.md`](../../../CLAUDE.md) — e o gatilho de refazê-las é o mesmo de todas as outras medidas de lá: trocar de máquina. **Um terceiro modelo com janela deslizante também as reabre**, porque o `1` está ajustado a um caso só.
 
 > 🔍 **A comparação é contra `contextLength`, não contra o `numCtx` — e a diferença não é estilística, é que a segunda forma não fecha.** O `numCtx` é exatamente o valor que a fórmula está calculando; testar a classe contra ele torna a função recursiva sobre a própria saída. Comparar com o teto treinado do modelo resolve, e dá o **mesmo veredito para os nove modelos da frota**: as janelas reais são de 512 e 1024, muito abaixo de qualquer `numCtx` que se vá oferecer, e a única janela inerte (`phi4-mini`, 262.144) é inerte justamente por ser maior que o teto do próprio modelo. É a propriedade que torna a simplificação segura, e ela precisa ser reconferida se algum dia entrar um modelo com janela na ordem de dezenas de milhares.
 
@@ -427,12 +444,22 @@ Protocolo, **um modelo residente por vez**, no molde da sessão de 09/08:
 5. Descarregar; confirmar vazio.
 6. `fatorDaClasse = (delta ÷ 28.672) ÷ 36 KB`.
 
-> ⛔ **Não medir `phi4-mini`, `qwen2.5:7b` nem `qwen2.5-coder:7b` a 32k antes de ter o fator.** Pelo teto superior são 6,3, 6,1 e 6,1 GB contra ~6 GB livres no cenário de desenvolvimento — não seria uma medição lenta, seria *swap*, e a máquina para de responder. Pelo fator calibrado seriam 3,0 a 4,7 GB, e caberiam com folga; **mas é exatamente isso que ainda não se sabe**, e medir antes de saber é apostar a máquina no resultado que a medida deveria produzir. Ordem: 3b primeiro, fator na mão, e só então decidir se os outros são mensuráveis aqui.
+> ⛔ **Não medir `phi4-mini`, `qwen2.5:7b` nem `qwen2.5-coder:7b` a 32k no cenário de desenvolvimento.** Escrito como precaução antes do passo rodar, e **a medição o confirmou**: com o fator em 1,06, os totais são 6,89, 6,55 e 6,55 GB contra ~6 GB livres. Não seria uma medição lenta, seria *swap*. A ordem que a precaução impôs — 3b primeiro, fator na mão, decidir depois — é o que evitou travar a máquina para descobrir isso, e continua valendo: para medi-los é preciso fechar o ambiente de trabalho e subir ao cenário de 7,5 ou 9 GB.
 >
 > Os dois modelos que este ⛔ nomeava na primeira redação (`mistral:7b` e `llama3.1:8b`, a 8,1 e 8,6 GB) foram desinstalados antes de o passo rodar — ver D15.8. A regra não mudou de forma, só de alvo, e é isso que a torna uma regra e não uma lista.
 
-**Aceite:** os dois `SIZE`, o delta, o fator, e `ollama ps` vazio ao final, anotados no diário e o fator escrito na tabela da D15.2. Se o fator sair perto de 1,0, a aritmética estava certa e a medição do `gemma3:4b` é que precisa de explicação — o que é um resultado, não um fracasso, e muda a tabela de orçamento inteira.
-**Commit:** `docs(plan): fator de cache KV medido para atenção sem janela`
+**✅ Concluído em 10/08/2026.** `ollama ps` vazio antes, entre e depois.
+
+| `num_ctx` | `ollama ps` SIZE | `context_length` reportado |
+|---|---|---|
+| 4.096 | 2,277 GB | 4096 |
+| 32.768 | 3,316 GB | 32768 |
+
+Delta de **1,039 GB** para 28.672 tokens = **38,0 KB/token**, contra 36,0 analíticos: `OVERHEAD` = **1,055**. E os dois pontos deram a mesma base ao subtrair o cache — 2,129 GB —, revelando um `OVERHEAD_FIXO` de **0,33 GB** que não estava previsto.
+
+**O fator saiu em 1,0, que era a hipótese registrada como "resultado, não fracasso".** A aritmética estava certa para atenção plena, e a anomalia ficou isolada no `gemma3:4b`, com explicação: 4,3 ÷ 4 = **uma camada crescendo**. A fórmula da D15.2 passou de dois fatores opacos para uma contagem de camadas mais duas constantes de overhead, e as tabelas de orçamento deixaram de ser faixa para virar previsão.
+
+**Commit:** `docs(plan): fator de cache KV medido — a aritmética estava certa`
 
 ### Passo 1 — O catálogo, sem UI
 
@@ -519,6 +546,7 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 10/08/2026 | 0 | **concluído** | Medição no `qwen2.5-coder:3b`, um modelo residente por vez, `ollama ps` vazio nas três conferências. **O fator saiu 1,055 — a aritmética estava certa**, e era a hipótese que o passo registrava como "resultado, não fracasso". Consequências, todas na D15.2: o `fatorDaClasse` opaco morreu e virou `camadasQueCrescem`, que é **1** para modelo com janela ativa (4,3 ÷ 4 KB por camada = 1,07 no `gemma3:4b`) e `blockCount` para os demais; apareceu um `OVERHEAD_FIXO` de 0,33 GB que não estava previsto e que os dois pontos confirmam com três casas; e as tabelas de orçamento deixaram de ser faixa para virar previsão. **Duas surpresas do outro lado:** metade da frota **não cabe** a 32k no cenário de 6 GB, o que faz o teto de RAM agir no caso comum em vez de num extremo; e o `gemma3:4b` **cabe** nos 131.072 que declara (3,97 GB), invertendo a suposição do plano — o que o mantém fora é o prefill de ~87 min, não a memória. |
 | 09/08/2026 | — | plano escrito | Sessão de medição, sem código. As sondas contra o Ollama real derrubaram duas premissas escritas: `/api/tags` **não** reporta `vision` (o `ESCOPO.md` foi corrigido na mesma sessão) e `num_ctx` **não** é um botão de RAM (8× de contexto custa 120 MB). A medição do cache de prefixo — 287 ms contra 8.500 ms para o mesmo prompt — deu o número que faltava para descartar a janela deslizante por evidência em vez de por intuição. |
 | 10/08/2026 | revisão do plano | plano reescrito | Quatro modelos novos instalados (`qwen2.5-coder:7b`/`:3b`, `mistral:7b`, `llama3.1:8b`), frota de 10 → 14. Sessão só de `/api/tags` + `/api/show`, **sem carregar modelo nenhum** — `ollama ps` vazio no início e no fim. Três achados: (1) `insert` chegou como capability desconhecida, o que torna o `string[]` da D15.1 medição em vez de precaução; (2) `mistral:7b` responde sob **`llama.context_length`** — o prefixo não é a família comercial do modelo, e virou caso de teste do passo 1; (3) **a manchete do plano estava generalizada demais** — os 120 MB de 09/08 foram medidos no `gemma3:4b`, o único modelo da frota com janela deslizante, e `llama3.1:8b`/`mistral:7b` custam **5,3× por token** de contexto. Daí nasceram o teto de RAM da D15.2, o passo 0 e a recusa a medir os modelos de 7–8B antes de ter o fator. **A RAM livre virou três números, não um** — 9 GB só com o app, 7,5 GB só com o VS Code, 6 GB no ambiente típico (a estimativa anterior de 4,4 GB estava baixa). A variação de 3 GB é maior que o peso da maioria dos modelos, o que matou a ideia de chumbar `ramLivre` como constante e deu à `margem` da fórmula uma origem medida em vez de escolhida: ela cobre o **retorno do ambiente de trabalho**, porque `num_ctx` reserva na carga e a reserva não encolhe. Uma afirmação anterior desta sessão foi corrigida no caminho: `llama3.1:8b` a 131.072 **não** é impossível sob todas as leituras — cabe em 7,4 GB pelo fator calibrado no cenário de 9 GB; o que o mantém fora é o prefill de ~87 min, não a RAM. Decidido também que os modelos de nuvem **não** entram neste plano (D15.9), com a costura de custo zero que entra. Catálogo remedido: 4,9 s para 14 modelos. **Ao fim da sessão, `mistral:7b` e `llama3.1:8b` foram desinstalados** (D15.8) — dominado o primeiro, atrativo inalcançável o segundo, 8,65 GB de disco liberados, payloads do `/api/show` capturados antes. A remoção não custou nenhum argumento ao plano: o `phi4-mini` já ocupava a mesma célula da tabela de arquitetura e é exemplar melhor, por pesar 2,32 GB e ainda assim ter o cache mais caro da frota. Frota: 14 → 12 entradas, 9 → 7 distintas. |
 
