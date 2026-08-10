@@ -27,28 +27,28 @@ const queryClient = createQueryClient()
 function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
-        <ConversationsProvider>
-          <AppShell
-            sidebar={
-              <Sidebar
-                nav={
-                  <>
-                    <NewConversationButton />
-                    <Settings />
-                  </>
-                }
-                content={
-                  <>
-                    <ConversationList />
-                    <OpenDatasetPanel />
-                  </>
-                }
-                footer={<Versions />}
-              />
-            }
-            main={<ConversationView />}
-          />
-        </ConversationsProvider>
+      <ConversationsProvider>
+        <AppShell
+          sidebar={
+            <Sidebar
+              nav={
+                <>
+                  <NewConversationButton />
+                  <Settings />
+                </>
+              }
+              content={
+                <>
+                  <ConversationList />
+                  <OpenDatasetPanel />
+                </>
+              }
+              footer={<Versions />}
+            />
+          }
+          main={<ConversationView />}
+        />
+      </ConversationsProvider>
     </QueryClientProvider>
   )
 }
