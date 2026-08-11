@@ -1,6 +1,6 @@
 # 16 — Anexo: o mecanismo, e o dataset como primeiro consumidor
 
-**Depende de:** [15 — Orçamento de contexto e modelo](15-orcamento-de-contexto-e-modelo.md) · **Entrega:** o clipe no composer, o armazenamento por conteúdo em `userData/attachments/`, as variantes de `MessagePart`, e o **cartão de dados** em `core/` — o primeiro caminho em que o modelo vê alguma coisa de um arquivo do usuário.
+**Depende de:** [15 — Orçamento de contexto e modelo](../implemented/15-orcamento-de-contexto-e-modelo.md) · **Entrega:** o clipe no composer, o armazenamento por conteúdo em `userData/attachments/`, as variantes de `MessagePart`, e o **cartão de dados** em `core/` — o primeiro caminho em que o modelo vê alguma coisa de um arquivo do usuário.
 
 > Quarto plano do [arco conversacional](README.md#o-arco-conversacional-1320). **O mecanismo nasce genérico de propósito.** Desenhado sabendo que só existe dataset, ele nasceria com forma de dataset e o 17 o reescreveria — então o dataset entra aqui como *primeiro consumidor* de um mecanismo que já prevê documento e imagem, e não como o assunto do plano.
 
@@ -17,7 +17,7 @@ Quatro coisas faltam, e nenhuma é o parser:
 3. **O orçamento do plano 15 mede a coisa errada** — descoberto ao escrever este plano, e é o achado que mais muda o desenho. Ver D16.5.
 4. **Apagar uma conversa não sabe o que fazer com os bytes dela.** O `ON DELETE CASCADE` da [D14.1](../implemented/14-persistencia-das-conversas.md) resolve mensagens e **não serve** para anexo: o mesmo arquivo pode estar em duas conversas.
 
-**Fora deste plano:** extratores de documento e imagem e o gate de `vision` (17); DuckDB e o nível 2 de verdade (18); nível 3, amostra de linhas (17, junto com documento, que é nível 3 por construção). Prompt de sistema continua fora, pelo motivo da [D15.2](15-orcamento-de-contexto-e-modelo.md). ~~`/api/ps` em Configurações (17)~~ — **entregue em ago/2026**, antecipado do 17 porque o incômodo era imediato.
+**Fora deste plano:** extratores de documento e imagem e o gate de `vision` (17); DuckDB e o nível 2 de verdade (18); nível 3, amostra de linhas (17, junto com documento, que é nível 3 por construção). Prompt de sistema continua fora, pelo motivo da [D15.2](../implemented/15-orcamento-de-contexto-e-modelo.md). ~~`/api/ps` em Configurações (17)~~ — **entregue em ago/2026**, antecipado do 17 porque o incômodo era imediato.
 
 ---
 
@@ -66,7 +66,7 @@ O `phi4-mini` é mais leve que o `gemma3:4b` e tem janela **7× menor**. É por 
 
 **"Arquivo grande pede janela grande"** vale para documento (17) e **não vale para dataset**, que é o caso deste plano: um CSV de 2 GB e um de 2 MB produzem o mesmo cartão, porque o modelo nunca vê as linhas. É o desenho inteiro dos três níveis expresso em uma frase — **o tamanho do dataset não consome contexto**. E, mesmo onde vale, reservar não é encher: os 131.072 do `gemma3:4b` cabem na RAM e custam ~87 min para preencher, o que é o motivo de o teto prático de documento ser ~8k tokens.
 
-**E escolher antes de anexar deixou de ser conselho: é garantia — implementada.** A [D15.13](15-orcamento-de-contexto-e-modelo.md) trava o par `(modelo, num_ctx)` no primeiro envio, e o passo 6 do 15 a entregou. Isso dá a este plano o que faltava ao passo 0: **um denominador fixo**. Sem a trava, o orçamento de um cartão seria medido contra uma janela que a próxima troca de modelo pode dividir por vinte, e a conversa que cabia passa a não caber com o anexo já dentro dela.
+**E escolher antes de anexar deixou de ser conselho: é garantia — implementada.** A [D15.13](../implemented/15-orcamento-de-contexto-e-modelo.md) trava o par `(modelo, num_ctx)` no primeiro envio, e o passo 6 do 15 a entregou. Isso dá a este plano o que faltava ao passo 0: **um denominador fixo**. Sem a trava, o orçamento de um cartão seria medido contra uma janela que a próxima troca de modelo pode dividir por vinte, e a conversa que cabia passa a não caber com o anexo já dentro dela.
 
 > 🔍 **A trava também protege a medição do passo 0, e isso não estava previsto.** A razão caracteres-por-token que calibra o medidor é propriedade do **tokenizador**, e os modelos da frota não compartilham um: `gemma3:4b` é SentencePiece, `qwen2.5-coder:3b` é BPE — e este último ainda injeta um system prompt de fábrica em toda requisição, custo fixo que o aplicativo não conta. Medido em 11/08/2026, com a mesma pergunta-e-resposta: **204 tokens contra 311**. Um custo de cartão medido num modelo **não transporta** para outro; o passo 0 tem de dizer em qual mediu, como o passo 0 do 15 teve de dizer. Ver [`HISTORY.md`](../../HISTORY.md).
 
@@ -74,9 +74,9 @@ O `phi4-mini` é mais leve que o `gemma3:4b` e tem janela **7× menor**. É por 
 
 ## Passo 0 — Uma medida, antes de decidir o formato do cartão
 
-Sem código, no molde do [passo 0 do plano 15](15-orcamento-de-contexto-e-modelo.md#passos). A D16.5 precisa de um número que nenhuma aritmética dá: **quantos tokens custa um cartão de dados**, e como isso escala com o número de colunas.
+Sem código, no molde do [passo 0 do plano 15](../implemented/15-orcamento-de-contexto-e-modelo.md#passos). A D16.5 precisa de um número que nenhuma aritmética dá: **quantos tokens custa um cartão de dados**, e como isso escala com o número de colunas.
 
-Montar à mão o texto do cartão para três arquivos reais de larguras diferentes (~5, ~20 e ~40 colunas), mandar cada um pelo `/api/chat` com `num_ctx` folgado e ler o `prompt_eval_count` — o mesmo instrumento que a [D15.4](15-orcamento-de-contexto-e-modelo.md) já usa para calibrar o medidor, e a única contagem exata que existe.
+Montar à mão o texto do cartão para três arquivos reais de larguras diferentes (~5, ~20 e ~40 colunas), mandar cada um pelo `/api/chat` com `num_ctx` folgado e ler o `prompt_eval_count` — o mesmo instrumento que a [D15.4](../implemented/15-orcamento-de-contexto-e-modelo.md) já usa para calibrar o medidor, e a única contagem exata que existe.
 
 **O que a medida decide:**
 
@@ -141,7 +141,7 @@ O aceite é um teste de nível 1 que falha se um valor-sentinela do arquivo de t
 
 **Este é o achado do plano, e ele corrige o 15.**
 
-O medidor da [D15.4](15-orcamento-de-contexto-e-modelo.md) soma `messageText(message).length` sobre a transcrição. Uma parte `dataset` **não tem texto** — o cartão é materializado quando o payload do provedor é montado. Logo, o medidor reportaria **zero** para o anexo, e o portão da D15.5 deixaria passar exatamente o turno mais caro.
+O medidor da [D15.4](../implemented/15-orcamento-de-contexto-e-modelo.md) soma `messageText(message).length` sobre a transcrição. Uma parte `dataset` **não tem texto** — o cartão é materializado quando o payload do provedor é montado. Logo, o medidor reportaria **zero** para o anexo, e o portão da D15.5 deixaria passar exatamente o turno mais caro.
 
 O plano 15 registrou essa armadilha como *"o que este plano arma para o 17"*, apontando para a imagem, que custa ~270 tokens sem ter caractere nenhum. **Ela arma um plano antes do previsto**, e por um motivo mais banal: não é preciso ser uma imagem para não ter caracteres, basta não ser texto.
 
@@ -149,7 +149,7 @@ O conserto não é somar um caso especial ao medidor — é apontar o medidor pa
 
 Consequência de contrato: `historyChars` deixa de ser um número que o `ConversationView` calcula e passa a sair do construtor de contexto.
 
-> ✅ **Metade disto já aconteceu, por outro caminho — e é a metade que valida o argumento.** A [D15.14](15-orcamento-de-contexto-e-modelo.md), consertando um defeito sem relação com anexo, moveu a **calibração** para o payload: o `useConversationChat` mede `sentChars` sobre o array `history` que acabou de montar, e não sobre a transcrição. Quando a variante `dataset` existir, o cartão é materializado por essa mesma montagem e **passa a ser contado sem uma linha de código nova**, que é exatamente a propriedade que a D16.5 prometia.
+> ✅ **Metade disto já aconteceu, por outro caminho — e é a metade que valida o argumento.** A [D15.14](../implemented/15-orcamento-de-contexto-e-modelo.md), consertando um defeito sem relação com anexo, moveu a **calibração** para o payload: o `useConversationChat` mede `sentChars` sobre o array `history` que acabou de montar, e não sobre a transcrição. Quando a variante `dataset` existir, o cartão é materializado por essa mesma montagem e **passa a ser contado sem uma linha de código nova**, que é exatamente a propriedade que a D16.5 prometia.
 >
 > Sobra a **estimativa**: o `historyChars` do `ConversationView` continua somando `messageText` sobre a transcrição, e é ele que reportaria zero para o anexo. O passo 5 encolheu para esse lado só — e o teste de aceite continua tendo de ser **visto vermelho antes**, porque é ele que prova que a metade restante importava.
 
@@ -169,7 +169,7 @@ O gatilho está no [`ROADMAP § 2`](../../ROADMAP.md#2-gatilhos-de-revisão) com
 
 ## Decisões futuras registradas agora
 
-Duas propostas nascidas da correção da [D15.10](15-orcamento-de-contexto-e-modelo.md), que **não** entram neste plano. Ficam aqui porque é aqui que o anexo torna cada uma mais cara de não ter — e as duas viram linha no [`ROADMAP § 2`](../../ROADMAP.md#2-gatilhos-de-revisão), que é o dono de pendência.
+Duas propostas nascidas da correção da [D15.10](../implemented/15-orcamento-de-contexto-e-modelo.md), que **não** entram neste plano. Ficam aqui porque é aqui que o anexo torna cada uma mais cara de não ter — e as duas viram linha no [`ROADMAP § 2`](../../ROADMAP.md#2-gatilhos-de-revisão), que é o dono de pendência.
 
 ### F16.1 — A RAM livre passa a ser observada, não fotografada
 

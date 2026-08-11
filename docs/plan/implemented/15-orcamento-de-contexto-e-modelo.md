@@ -1,8 +1,8 @@
 # 15 — Orçamento de contexto e modelo por conversa
 
-**Depende de:** [14 — Persistência das conversas](../implemented/14-persistencia-das-conversas.md) · **Entrega:** o campo de texto livre onde hoje se digita o nome do modelo vira **seletor com catálogo real**; `num_ctx` deixa de ser o default silencioso do Ollama e passa a ser escolha da conversa, gravada em `settings`; e a conversa mostra quanto do orçamento já gastou — porque, sem isso, o Ollama joga fora o começo do histórico sem dizer nada.
+**Depende de:** [14 — Persistência das conversas](14-persistencia-das-conversas.md) · **Entrega:** o campo de texto livre onde hoje se digita o nome do modelo vira **seletor com catálogo real**; `num_ctx` deixa de ser o default silencioso do Ollama e passa a ser escolha da conversa, gravada em `settings`; e a conversa mostra quanto do orçamento já gastou — porque, sem isso, o Ollama joga fora o começo do histórico sem dizer nada.
 
-> Terceiro plano do [arco conversacional](README.md#o-arco-conversacional-1320). **Nenhuma tabela nova e nenhuma migração:** tudo que este plano guarda cabe na coluna `settings` que a [D14.1](../implemented/14-persistencia-das-conversas.md) criou vazia. Se um `CREATE TABLE` aparecer no diff, alguma coisa saiu do lugar.
+> Terceiro plano do [arco conversacional](../active/README.md#o-arco-conversacional-1320). **Nenhuma tabela nova e nenhuma migração:** tudo que este plano guarda cabe na coluna `settings` que a [D14.1](14-persistencia-das-conversas.md) criou vazia. Se um `CREATE TABLE` aparecer no diff, alguma coisa saiu do lugar.
 
 ---
 
@@ -49,7 +49,7 @@ Sondas diretas contra o Ollama 0.32.6 servindo os modelos de `C:\ollama-models`,
 > qwen2.5-coder:3b   tags=["completion","tools","insert"]   show=["completion","tools","insert"]
 > ```
 >
-> `tools` aparece nos dois; **`vision` só aparece no `/api/show`**. O escopo dizia *"modelo que declare `vision` nas `capabilities` do `/api/tags`"*, e o diário da fatia 1 do [plano 09](09-camada-de-ia.md) deixou em aberto *"gate via `/api/tags` para popular um dropdown"*. Construído assim, o gate do plano 17 **recusaria o único modelo com visão da máquina** — falha na direção segura, mas a feature simplesmente não funcionaria, e a causa estaria a dois documentos de distância. Corrigido no `ESCOPO.md` e registrado no [`HISTORY.md`](../../HISTORY.md) na mesma sessão em que foi medido.
+> `tools` aparece nos dois; **`vision` só aparece no `/api/show`**. O escopo dizia *"modelo que declare `vision` nas `capabilities` do `/api/tags`"*, e o diário da fatia 1 do [plano 09](../active/09-camada-de-ia.md) deixou em aberto *"gate via `/api/tags` para popular um dropdown"*. Construído assim, o gate do plano 17 **recusaria o único modelo com visão da máquina** — falha na direção segura, mas a feature simplesmente não funcionaria, e a causa estaria a dois documentos de distância. Corrigido no `ESCOPO.md` e registrado no [`HISTORY.md`](../../HISTORY.md) na mesma sessão em que foi medido.
 >
 > 🔍 **`insert` apareceu sozinho, e é a prova empírica da D15.1.** Os dois `qwen2.5-coder` declaram uma quarta capability — preenchimento no meio do texto — que nenhum modelo da frota anterior tinha. Ninguém a previu, ela chegou instalando um modelo, e um `z.enum` fechado sobre as três conhecidas transformaria os dois modelos novos em erro de parse do catálogo inteiro. `capabilities: string[]` deixou de ser precaução e passou a ser medição.
 
@@ -367,7 +367,7 @@ O gatilho para separar está escrito: **`settings` passar a caber um prompt de s
 
 ### ~~D15.7 — O modelo continua sendo gravado por mensagem, e o seletor não trava~~ · **revertida pela D15.13**
 
-Dizia que trocar de modelo no meio de uma conversa é a principal ação de recuperação num app de modelo local (*"este 4B falhou, sobe para o qwen 7B"*), herdando o argumento da [D13.4](../implemented/13-casca-do-aplicativo.md), e que a troca seria **informada** (~50 s de carga) em vez de proibida.
+Dizia que trocar de modelo no meio de uma conversa é a principal ação de recuperação num app de modelo local (*"este 4B falhou, sobe para o qwen 7B"*), herdando o argumento da [D13.4](13-casca-do-aplicativo.md), e que a troca seria **informada** (~50 s de carga) em vez de proibida.
 
 **Caiu no aceite ao vivo de 11/08/2026**, e o motivo está na D15.13. Sobrevive dela apenas a metade que não dependia da troca: o modelo continua gravado **por mensagem**.
 
@@ -383,7 +383,7 @@ Reverte a D15.7. A decisão é do dono do projeto, e o argumento dele é mais fo
 
 **Precisão sobre a indústria, para o argumento não cair no primeiro contraexemplo.** *"Toda ferramenta de IA trabalha assim"* não vale como está: ChatGPT, Claude.ai e Gemini **deixam** trocar no meio da conversa. O que amarra sessão a modelo é a ferramenta **local** — LM Studio, Jan, a UI do Ollama — e pelas razões exatas desta decisão: RAM reservada, ~50 s de carga, e uma janela que é *alocação* e não parâmetro por requisição. É um princípio de local-first, não universal.
 
-**Vale para nuvem também**, quando a fatia 3 do [plano 09](09-camada-de-ia.md) chegar. Lá não há `num_ctx` nem carga, então o argumento de memória não se aplica — mas o de **denominador estável** sim: um cartão de dados orçado contra uma janela de 200k não é o mesmo cartão orçado contra 1M, e trocar de provedor no meio recalcularia tudo o que já foi enviado. Mesma trava, motivo diferente.
+**Vale para nuvem também**, quando a fatia 3 do [plano 09](../active/09-camada-de-ia.md) chegar. Lá não há `num_ctx` nem carga, então o argumento de memória não se aplica — mas o de **denominador estável** sim: um cartão de dados orçado contra uma janela de 200k não é o mesmo cartão orçado contra 1M, e trocar de provedor no meio recalcularia tudo o que já foi enviado. Mesma trava, motivo diferente.
 
 **O que a D15.12 vira.** Deixa de existir dentro da conversa — não há mais troca, então o teto é decidido uma vez. Entre conversas, a pergunta passa a ser *"carregue o que esta conversa precisa"*, que é determinística. A pergunta difícil — *"qual dos seis modelos caberia se eu despejasse o atual?"* — sobra **só na criação**, onde a escolha é viva e onde despejar o residente é obviamente certo. A trava não resolve a D15.12 por decreto; move o problema para o único lugar em que ele tem resposta simples.
 
@@ -543,7 +543,7 @@ A causa é que `contextCeiling` recebe `os.freemem()`, de onde o modelo resident
 
 **O conserto não é somar de volta o que o `/api/ps` reporta.** Isso trocaria uma suposição por outra: o Ollama mantém quantos couberem (`OLLAMA_MAX_LOADED_MODELS`), e o despejo observado aqui é forçado pela memória desta máquina, não por política — numa máquina maior, somar de volta faria o app reservar memória que continua ocupada. O conserto é tornar o despejo **determinístico**: descarregar explicitamente o modelo anterior ao trocar, com `keep_alive: 0`, e então a suposição vira construção.
 
-Isso é, literalmente, o item que o [índice do arco](README.md) já reservou para o plano **17** — *"o `/api/ps` visível em Configurações com descarregamento do modelo anterior ao trocar"*. O achado não cria trabalho novo; **antecipa a necessidade** e explica por quê: sem ele, usar um modelo pesado uma vez deixa o aplicativo aparentemente quebrado até alguém abrir um terminal.
+Isso é, literalmente, o item que o [índice do arco](../active/README.md) já reservou para o plano **17** — *"o `/api/ps` visível em Configurações com descarregamento do modelo anterior ao trocar"*. O achado não cria trabalho novo; **antecipa a necessidade** e explica por quê: sem ele, usar um modelo pesado uma vez deixa o aplicativo aparentemente quebrado até alguém abrir um terminal.
 
 **Mitigação que já existe:** o ↻ relê a memória (D15.10), então `ollama stop` seguido do botão devolve os tetos corretos sem reiniciar o app. É contorno, não conserto.
 
@@ -649,7 +649,7 @@ Nível 3 de que `num_ctx` vai no `options` só quando definido, pelo mesmo motiv
 
 Quando o próximo turno não couber, o envio é bloqueado com o motivo e as saídas (D15.5). É o passo que fecha a falha silenciosa, e é o motivo de o plano existir.
 
-> **A prova que este passo existe para cobrar, no molde do ciclo vermelho→verde da [fase 07](../implemented/07-e2e-e-empacotamento.md):** ao vivo, com o portão **desligado**, mandar um histórico maior que o `num_ctx` e confirmar que o Ollama responde normalmente com `prompt_eval_count` truncado — ver a falha acontecer. Religar e ver o envio ser recusado. Um portão que nunca foi visto deixando passar não é um portão testado.
+> **A prova que este passo existe para cobrar, no molde do ciclo vermelho→verde da [fase 07](07-e2e-e-empacotamento.md):** ao vivo, com o portão **desligado**, mandar um histórico maior que o `num_ctx` e confirmar que o Ollama responde normalmente com `prompt_eval_count` truncado — ver a falha acontecer. Religar e ver o envio ser recusado. Um portão que nunca foi visto deixando passar não é um portão testado.
 
 **Aceite:** nível 2 dos três casos — cabe (envia), não cabe (bloqueia com a dica), e a mensagem sozinha já não cabe (bloqueia dizendo que conversa nova não resolve); a demonstração acima registrada no diário com os números.
 **Commit:** `feat(conversation): envio recusado quando o histórico não cabe no contexto`
@@ -685,7 +685,7 @@ E o modelo desinstalado deixa de cair no primeiro instalado: `resolveModel` rece
 - **`settings` continua absorvendo chave nova sem migração** — prompt de sistema, temperatura, e o que o 17 precisar.
 - **A política de resumo do começo (D15.3, opção 3)** é a única estratégia de compressão que preserva o cache de prefixo. Quando alguém for construí-la, o número que a justifica está na tabela acima.
 - **`AiModel.attention` e `contextCeiling` existem antes de o anexo chegar** (D15.2), e é o 17 que os cobra de verdade: um documento de 8k tokens muda o `num_ctx` necessário, e o `num_ctx` necessário muda quais modelos ainda cabem na RAM. O 17 herda a conta pronta em vez de descobrir na tela que anexar o PDF tornou o modelo escolhido inviável.
-- **`AiModel.provider` existe com um valor só** (D15.9), e é a costura de zero custo para a fatia 3 do [plano 09](09-camada-de-ia.md). O nome do parâmetro de orçamento em `core/` é `contextWindow`, não `numCtx`, pelo mesmo motivo.
+- **`AiModel.provider` existe com um valor só** (D15.9), e é a costura de zero custo para a fatia 3 do [plano 09](../active/09-camada-de-ia.md). O nome do parâmetro de orçamento em `core/` é `contextWindow`, não `numCtx`, pelo mesmo motivo.
 
 > ⚠️ **A armadilha que este plano arma para o 17:** o medidor da D15.4 conta **caracteres**, e uma imagem não tem caracteres. Ela custa ~270 tokens fixos, medidos em ago/2026, independentemente das dimensões. Se o medidor for estendido para anexos somando texto extraído, ele vai reportar zero para a imagem e o portão vai deixar passar exatamente o caso mais caro. O contador de partes não-textuais é problema de quem cria a variante, e precisa nascer junto dela.
 
@@ -715,4 +715,4 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 ---
 
-**Anterior:** [14 — Persistência das conversas](../implemented/14-persistencia-das-conversas.md) · **Índice:** [README](README.md) · **Camada de IA:** [09 — Camada de IA e ML](09-camada-de-ia.md)
+**Anterior:** [14 — Persistência das conversas](14-persistencia-das-conversas.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)

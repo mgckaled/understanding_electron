@@ -2,7 +2,7 @@
 
 **Depende de:** [13 — Casca do aplicativo](13-casca-do-aplicativo.md) · **Entrega:** a mesma tela do 13, sobrevivendo ao fechamento. `node:sqlite` em `userData`, esquema com escada de migração desde a v1, canais `conversation:*`, histórico ao abrir, renomear e excluir — e a resposta interrompida gravada com o que chegou.
 
-> Segundo plano do [arco conversacional](README.md#o-arco-conversacional-1320). **Primeiro plano do arco que atravessa a fronteira de processo:** ele cria canais, handlers e o primeiro dado que o aplicativo escreve por conta própria. Se um componente do renderer aparecer no diff sem que um hook tenha mudado antes, algo passou por cima da D14.6.
+> Segundo plano do [arco conversacional](../active/README.md#o-arco-conversacional-1320). **Primeiro plano do arco que atravessa a fronteira de processo:** ele cria canais, handlers e o primeiro dado que o aplicativo escreve por conta própria. Se um componente do renderer aparecer no diff sem que um hook tenha mudado antes, algo passou por cima da D14.6.
 
 ---
 
