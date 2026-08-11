@@ -49,7 +49,7 @@ O `phi4-mini` é mais leve que o `gemma3:4b` e tem janela **7× menor**. É por 
 
 **"Arquivo grande pede janela grande"** vale para documento (17) e **não vale para dataset**, que é o caso deste plano: um CSV de 2 GB e um de 2 MB produzem o mesmo cartão, porque o modelo nunca vê as linhas. É o desenho inteiro dos três níveis expresso em uma frase — **o tamanho do dataset não consome contexto**. E, mesmo onde vale, reservar não é encher: os 131.072 do `gemma3:4b` cabem na RAM e custam ~87 min para preencher, o que é o motivo de o teto prático de documento ser ~8k tokens.
 
-**E o modelo não trava na conversa** — decisão da [D15.7](15-orcamento-de-contexto-e-modelo.md), resolvida com dado (cada mensagem grava seu modelo) em vez de proibição, porque *"este 4B falhou, sobe para o 7B"* é a principal ação de recuperação num app local. O que a troca custa é real e triplo — ~50 s de carga a frio, o cache de prefixo invalidado, e um teto diferente que pode recusar um histórico que cabia — então **escolher antes de anexar é conselho de fluxo**, e o app mostra os três custos em vez de impedir.
+**E escolher antes de anexar deixou de ser conselho: é garantia.** A [D15.13](15-orcamento-de-contexto-e-modelo.md) trava o par `(modelo, num_ctx)` no primeiro envio, o que dá a este plano o que faltava ao passo 0 — **um denominador fixo**. Sem a trava, o orçamento de um cartão seria medido contra uma janela que a próxima troca de modelo pode dividir por vinte, e a conversa que cabia passa a não caber com o anexo já dentro dela. Com a trava, o custo do cartão é orçado uma vez contra um número que não se mexe.
 
 ---
 

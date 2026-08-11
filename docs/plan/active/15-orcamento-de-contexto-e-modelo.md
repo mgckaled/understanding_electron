@@ -365,13 +365,56 @@ A D14.1 decidiu **o que é coluna e o que é JSON**; ela não decidiu o que a le
 
 O gatilho para separar está escrito: **`settings` passar a caber um prompt de sistema longo**, momento em que a lista carregaria kilobytes por conversa para desenhar títulos.
 
-### D15.7 — O modelo continua sendo gravado por mensagem, e o seletor não trava
+### ~~D15.7 — O modelo continua sendo gravado por mensagem, e o seletor não trava~~ · **revertida pela D15.13**
 
-Já é assim desde a [D13.4](../implemented/13-casca-do-aplicativo.md), e este plano só passa a exercitá-lo de verdade: trocar de modelo no meio de uma conversa é a principal ação de recuperação num app de modelo local (*"este 4B falhou, sobe para o qwen 7B"*), e a autoria do que já foi respondido é preservada porque cada mensagem carrega o `model` que a produziu.
+Dizia que trocar de modelo no meio de uma conversa é a principal ação de recuperação num app de modelo local (*"este 4B falhou, sobe para o qwen 7B"*), herdando o argumento da [D13.4](../implemented/13-casca-do-aplicativo.md), e que a troca seria **informada** (~50 s de carga) em vez de proibida.
 
-O que o seletor **acrescenta** é o preço na etiqueta: trocar de modelo custa ~50 s de carga do disco, medido. A troca não é proibida nem confirmada por diálogo — é informada.
+**Caiu no aceite ao vivo de 11/08/2026**, e o motivo está na D15.13. Sobrevive dela apenas a metade que não dependia da troca: o modelo continua gravado **por mensagem**.
 
-Descarregar o modelo anterior ao trocar é regra do [`ESCOPO.md`](../../ESCOPO.md) e **é do plano 17**, junto com o `/api/ps` em Configurações. Aqui ela ainda não roda, e é bom que não role: com um único modelo residente e nenhum anexo, o custo de RAM ainda não é o problema que ela resolve.
+### D15.13 — O par `(modelo, num_ctx)` trava no **primeiro envio**
+
+Reverte a D15.7. A decisão é do dono do projeto, e o argumento dele é mais forte do que a formulação inicial — vale escrito por inteiro, porque o que ele elimina não é trabalho, é **um estado sem saída**.
+
+**O que a flexibilidade produzia.** Trocar para um modelo menor **encalha a conversa**: um histórico que cabia nos 131.072 do `gemma3:4b` é recusado pelos 6.006 do `qwen2.5:7b`. O portão da D15.5 faz a coisa certa — recusa, com o motivo — e o resultado é uma conversa que não se continua nem se conserta sem voltar ao modelo anterior. **A flexibilidade não causa o problema; ela o torna visível e não o resolve.** Uma feature que produz estado sem saída é pior que a ausência dela.
+
+**Por que o par, e não só o modelo.** Mudar `num_ctx` faz o Ollama **recarregar o modelo com outra alocação**, exatamente como trocar de modelo. O que determina a pegada residente é o par, não o nome — travar um e deixar o outro livre deixa o mesmo encalhe aberto com outro rótulo.
+
+**Quando fecha: no primeiro envio, não na criação.** Antes disso a escolha é livre, e é assim que o aplicativo já se comporta — o `useConversationChat` grava o modelo quando o envio cria a conversa. Não é mecanismo novo; é deixar de permitir depois.
+
+**Precisão sobre a indústria, para o argumento não cair no primeiro contraexemplo.** *"Toda ferramenta de IA trabalha assim"* não vale como está: ChatGPT, Claude.ai e Gemini **deixam** trocar no meio da conversa. O que amarra sessão a modelo é a ferramenta **local** — LM Studio, Jan, a UI do Ollama — e pelas razões exatas desta decisão: RAM reservada, ~50 s de carga, e uma janela que é *alocação* e não parâmetro por requisição. É um princípio de local-first, não universal.
+
+**Vale para nuvem também**, quando a fatia 3 do [plano 09](09-camada-de-ia.md) chegar. Lá não há `num_ctx` nem carga, então o argumento de memória não se aplica — mas o de **denominador estável** sim: um cartão de dados orçado contra uma janela de 200k não é o mesmo cartão orçado contra 1M, e trocar de provedor no meio recalcularia tudo o que já foi enviado. Mesma trava, motivo diferente.
+
+**O que a D15.12 vira.** Deixa de existir dentro da conversa — não há mais troca, então o teto é decidido uma vez. Entre conversas, a pergunta passa a ser *"carregue o que esta conversa precisa"*, que é determinística. A pergunta difícil — *"qual dos seis modelos caberia se eu despejasse o atual?"* — sobra **só na criação**, onde a escolha é viva e onde despejar o residente é obviamente certo. A trava não resolve a D15.12 por decreto; move o problema para o único lugar em que ele tem resposta simples.
+
+#### Os dois modos de falha da trava, e eles não são simétricos
+
+A reserva é refeita **toda vez que o modelo carrega**, e a RAM livre varia entre 6 e 9 GB nesta máquina. Logo:
+
+| | Consequência |
+|---|---|
+| Travar janela **pequena** com a máquina ocupada | fica subótimo depois; **continua funcionando** |
+| Travar janela **grande** com a máquina ociosa | reabrir com a máquina ocupada tenta alocar o que já não existe |
+
+O segundo obriga uma verificação **na carga**, não só na criação — e o aplicativo não pode encolher em silêncio (isso quebra a garantia da trava) nem deixar a máquina entrar em *swap*. A saída reusa o mecanismo abaixo: conversa indisponível, com o motivo e a oferta de duplicar.
+
+> Assumido pelo dono como gestão manual antes de iniciar cada sessão, dado o horizonte de uso pessoal. Registrado como armadilha e não como problema resolvido.
+
+#### Modelo desinstalado: somente leitura, e a duplicação é **perguntada**
+
+Hoje o `resolveModel` cai no primeiro instalado, em silêncio. **Sob a trava isso passa a ser errado** — é o retorno exato da instabilidade que ela remove.
+
+A conversa fica **somente leitura**, com o aviso de que o modelo não está mais instalado, e **junto dele** a pergunta se o usuário quer duplicá-la com outro modelo. Nunca automático: duplicar sozinho criaria conversas que ninguém pediu, e recomeçar é justamente a ação que deve ser deliberada — o mesmo princípio que motiva a trava, aplicado ao caso de borda.
+
+**Pode ser implementado depois da trava**, e é a ordem certa: a trava é o que cria o caso.
+
+#### O que sobrevive da D13.4
+
+O `model` por mensagem deixa de ser sustentado pela troca, e **continua justificado por outro motivo**: um modelo travado pode ser desinstalado, e o default do aplicativo muda entre sessões — a mensagem é o único lugar que registra o que de fato a produziu.
+
+### D15.8 — Dos quatro modelos instalados, dois ficam e dois saem — e o mais barato é o que muda o aplicativo
+
+O catálogo continua sendo derivado do que o Ollama serve e **não curado**: curar a lista reintroduziria a manutenção manual que a D15.1 existe para eliminar. Mas curar o *catálogo* e curar a *máquina* são coisas diferentes, e esta decisão é sobre a segunda — o que o aplicativo mostra é consequência do que está instalado, nunca de uma lista de permissão no código.
 
 ### D15.8 — Dos quatro modelos instalados, dois ficam e dois saem — e o mais barato é o que muda o aplicativo
 
@@ -456,6 +499,26 @@ A divisão de responsabilidade é o que importa: **`ai:models` relata o que est�
 > ⚠️ **E o filtro mora no `useAiModels`, não em um consumidor — porque a primeira versão morava, e não funcionou.** Filtrei no `ConversationView`, que usa a lista para resolver o modelo e calcular o teto; o `<select>` é desenhado pelo `ModelSelector`, que recebe o `ViewState` **bruto** e mapeia `state.data`. Resultado: o filtro funcionava, todos os testes de nível 1 passavam, e a tela continuava mostrando as doze entradas. **Forma da lição: lista derivada calculada num consumidor cria duas listas na mesma tela, e a que aparece é sempre a outra.** Ela pertence a quem produz o estado. Travado agora com quatro testes de nível 2 que olham as `<option>` — vistos vermelhos com o filtro removido antes de virarem verdes. O contrato ganha `AiModel.variantOf` — o **nome** do pai, não um booleano, porque esconder exige antes verificar que o pai está instalado: sem ele, a variante é o único jeito que resta de rodar aqueles pesos.
 
 E o `hasCapability`, que o plano entregou **sem chamador** à espera do portão de imagem do 17, ganhou o primeiro: é ele que responde se o modelo conversa.
+
+### D15.12 — O teto cobra do candidato a memória que carregá-lo vai liberar
+
+Achado no aceite ao vivo de 11/08/2026, e é **a terceira aparição da mesma classe de erro** — contar duas vezes a mesma ocupação. Vale registrar as três juntas, porque nenhuma se parece com a anterior enquanto não se põe lado a lado:
+
+| | O que foi contado duas vezes |
+|---|---|
+| Margem de 3 GiB (D15.10) | a ocupação do ambiente de trabalho, já embutida na leitura |
+| Margem de 1 GiB (D15.10) | nada — erro diferente, de escala e não de dupla contagem |
+| **Teto com modelo residente** | **o modelo que está carregado, que o próximo carregamento despeja** |
+
+O sintoma: com o `gemma3:4b` residente (~4,5 GB), quase toda a frota passa a marcar "não cabe", e a saída é `ollama stop` num terminal. Com 5,81 GiB livres e nada carregado, o `qwen2.5-coder:3b` recebe teto 32.768; com o gemma3 residente, o **mesmo** modelo recebe teto **0**.
+
+A causa é que `contextCeiling` recebe `os.freemem()`, de onde o modelo residente já foi descontado — e o app está sendo pessimista sobre um evento **que ele mesmo dispara**: escolher outro modelo faz o Ollama despejar o atual. Confirmado em uso na mesma sessão: três modelos, `ollama ps` sempre com um.
+
+**O conserto não é somar de volta o que o `/api/ps` reporta.** Isso trocaria uma suposição por outra: o Ollama mantém quantos couberem (`OLLAMA_MAX_LOADED_MODELS`), e o despejo observado aqui é forçado pela memória desta máquina, não por política — numa máquina maior, somar de volta faria o app reservar memória que continua ocupada. O conserto é tornar o despejo **determinístico**: descarregar explicitamente o modelo anterior ao trocar, com `keep_alive: 0`, e então a suposição vira construção.
+
+Isso é, literalmente, o item que o [índice do arco](README.md) já reservou para o plano **17** — *"o `/api/ps` visível em Configurações com descarregamento do modelo anterior ao trocar"*. O achado não cria trabalho novo; **antecipa a necessidade** e explica por quê: sem ele, usar um modelo pesado uma vez deixa o aplicativo aparentemente quebrado até alguém abrir um terminal.
+
+**Mitigação que já existe:** o ↻ relê a memória (D15.10), então `ollama stop` seguido do botão devolve os tetos corretos sem reiniciar o app. É contorno, não conserto.
 
 ---
 
@@ -590,6 +653,8 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 11/08/2026 | revisão de decisão | **D15.7 revertida, D15.13 escrita** | Sessão de decisão, sem código. O aceite ao vivo acima mostrou o custo de lidar com vários modelos numa conversa, e o dono do projeto pediu a revisão: **o par `(modelo, num_ctx)` trava no primeiro envio.** O argumento decisivo não é economia de trabalho — é que a flexibilidade produz **estado sem saída**: trocar para um modelo menor faz o portão recusar corretamente um histórico que já não cabe, e a conversa fica sem continuação nem conserto. Três coisas foram acrescentadas ao pedido na discussão: travar o **par** e não só o modelo (mudar `num_ctx` também recarrega o modelo com outra alocação); a trava tem **dois modos de falha assimétricos**, e o perigoso é travar janela grande com a máquina ociosa, porque a reserva é refeita a cada carga; e a mesma regra vale para nuvem, por denominador estável e não por memória. Corrigida também uma premissa: ChatGPT, Claude.ai e Gemini **deixam** trocar no meio — o princípio é de ferramenta local, não universal. **Nada implementado ainda**; a trava, a verificação na carga e o somente-leitura com duplicação perguntada são a próxima sessão. |
+| 11/08/2026 | aceite ao vivo dos passos 2 e 3 | **aprovados**, com um achado | Três modelos numa mesma conversa — `qwen2.5-coder:3b`, `gemma3:1b`, `gemma3:4b` — e o campo de contexto acompanhou cada troca com o teto do modelo escolhido. A D15.7 (modelo não trava na conversa) confirmada em uso, e o gerenciamento do Ollama também: `ollama ps` manteve **um** residente ao longo das três trocas. **O achado, e ele é um defeito: foi preciso rodar `ollama stop gemma3:4b` à mão para conseguir escolher outro modelo**, porque com ele residente quase toda a frota passou a marcar "não cabe". A causa é a mesma classe da D15.10 — contar duas vezes a mesma ocupação. Ver D15.12. |
 | 11/08/2026 | correções de uso | **D15.10 e D15.11** | Três defeitos relatados a partir do aplicativo rodando, nenhum deles achado por teste. (1) O seletor listava as 12 entradas do `/api/tags`, das quais 5 são variantes `*-custom` de outro projeto e 1 é um embedder que não conversa — filtro por `details.parent_model` no renderer, `AiModel.variantOf` no contrato, e o `hasCapability` finalmente ganhou chamador. **Uma exceção minha foi construída e derrubada contra o Ollama real na mesma sessão** — "variante com system prompt próprio é outro assistente" escondeu 4 das 5, e a que sobrou tinha por system prompt o boilerplate do fabricante. **E o filtro foi entregue quebrado na primeira tentativa, reportado em uso:** eu o pus no `ConversationView`, mas o `<select>` é do `ModelSelector`, que recebe o estado bruto — filtro certo, lista na tela vinda de outro lugar, e nenhum teste montando a tela com uma variante no catálogo. Movido para o `useAiModels`, com quatro testes de nível 2 sobre as `<option>`, **vistos vermelhos** com o filtro removido. Conferido no fim: o seletor sai de 12 opções para 6, e todas as 6 cabem. (2) Modelo grande dava *"até 0k"*, medidor *"~1 de 1 tokens"* e recusa de schema no `conversation:settings`: `MIN_NUM_CTX` e `effectiveNumCtx` devolvendo `null` em vez de chão 1. (3) **A margem de RAM de 1 GiB tornava todo modelo de 7B inutilizável** — 512 MiB agora, pelo argumento de que margem subtraída antes da divisão por token não é custo fixo. O ↻ passou a reler memória junto com o catálogo. **Um teste meu nasceu vacuoso e foi removido:** "não escreve `numCtx` quando não há janela" passava porque o campo não é renderizado, logo nada dispara `blur` — o código *antigo* também passaria. Feedback adotado na mesma sessão: **comentário em código só diz o que o código não diz, em até ~3 linhas**; história e razão longa vão para o plano, com o `.ts` apontando (`D15.10`). Isso é a regra de fonte única do `CLAUDE.md` aplicada ao código, que eu vinha violando. 307 testes verdes. |
 | 10/08/2026 | 4 e 5 | **concluídos** | Medidor e portão, num commit só: dividi-los significaria commitar um cálculo sem consumidor. O medidor vive no `Composer` porque o **rascunho** vive lá, e é metade do que o envio custa. **Um erro meu de projeto, pego por teste de nível 2:** eu tinha fixado `RAM_MARGIN_BYTES` em 3 GiB, justificando pela diferença entre os cenários de RAM — mas isso **conta duas vezes**, porque quando a leitura já é 6 GB a máquina *já está* no estado ocupado. Resultado: 6 − 3 − 3,44 = teto **0**, `num_ctx` 1, e o aplicativo recusando o próprio modelo padrão. A distinção que o argumento exige ("ocioso agora, vai encher" contra "já cheio") não existe numa leitura só, então a margem voltou a ser o que honestamente pode ser: 1 GiB de folga contra reservar tudo. Segundo defeito da mesma família do passo 2: o campo de contexto **descartava a escolha em silêncio** quando ainda não havia conversa — os dois escritores viraram um `choose(patch)` só, com `pending` guardando um `ConversationSettings` inteiro. Armadilha de teste: `user.type` despacha uma tecla por caractere e 4.000 delas estouram os 5 s do teste — rascunho longo pede `user.paste`. Efeito colateral bom: os hooks de formatação derrubaram os avisos de CRLF de **577 para 56**. |
 | 10/08/2026 | 3 | **concluído** | `num_ctx` na chamada, contadores de volta, `core/ai/budget.ts`. Três testes ancoram a fórmula na medição do passo 0 e passam: 3,32 GB a 32k e 2,28 GB a 4k para o `qwen2.5-coder:3b`, os mesmos que o `ollama ps` reportou. **Um canal a mais do que o plano previa** — `app:memory`, 18º: o teto de RAM da D15.2 precisa de RAM livre, e como não existe *um* número (9 / 7,5 / 6 GB), ela é lida a cada chamada em vez de chumbada. Verificação do aceite feita e aprovada: `os.freemem()` deu **6,73 GiB**, batendo com os 58% de uso do Gerenciador — no Windows o Node devolve `ullAvailPhys`, que é o *Disponível*. Se devolvesse o *Livre*, seria quase zero (o Windows mantém quase tudo em standby recuperável) e todo modelo receberia teto zero. Contra a armadilha de "controle que copia valor assíncrono" (fase 14), o campo de contexto é **não controlado com `key` por conversa**, remontando em vez de copiar. |
