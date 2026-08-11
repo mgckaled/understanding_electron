@@ -7,9 +7,10 @@ import type {
   ChatReply,
   JobEvent,
   JobId,
+  LoadedModel,
   Result
 } from '@shared/ipc'
-import type { ChatFn, ModelsFn, ProbeFn } from '@core/ai/types'
+import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { runChat } from '@core/ai/chat'
 import { ok, err } from '@core/result'
@@ -53,6 +54,39 @@ export async function models(
 ): Promise<Result<AiModel[]>> {
   try {
     return ok(await modelsFn({ signal: AbortSignal.timeout(CATALOG_TIMEOUT_MS) }))
+  } catch (error) {
+    return err(mapProviderError(error, service))
+  }
+}
+
+/**
+ * What the provider holds in memory, and dropping it (antecipado do plano 17).
+ *
+ * Weights stay resident for five minutes after the last request by default, and
+ * on this machine that is long enough to make the rest of the fleet read as
+ * "não cabe" while nothing is running. Manual and never automatic: unloading on
+ * conversation switch would evict a model because the user LOOKED at another
+ * conversation, and pay ~50 s to bring it back — the provider only loads on a
+ * request, so switching costs nothing until something is sent.
+ */
+export async function loaded(
+  { service }: { service: AiService },
+  loadedFn: LoadedFn
+): Promise<Result<LoadedModel[]>> {
+  try {
+    return ok(await loadedFn({ signal: AbortSignal.timeout(PING_TIMEOUT_MS) }))
+  } catch (error) {
+    return err(mapProviderError(error, service))
+  }
+}
+
+export async function unload(
+  { service, model }: { service: AiService; model: string },
+  unloadFn: UnloadFn
+): Promise<Result<void>> {
+  try {
+    await unloadFn(model, { signal: AbortSignal.timeout(PING_TIMEOUT_MS) })
+    return ok(undefined)
   } catch (error) {
     return err(mapProviderError(error, service))
   }

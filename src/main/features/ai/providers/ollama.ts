@@ -1,7 +1,13 @@
 import type { AiModel } from '@shared/ipc'
-import type { ChatFn, ModelsFn, ProbeFn } from '@core/ai/types'
+import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
-import { normalizeOllamaModel, type OllamaShow, type OllamaTag } from '@core/ai/models'
+import {
+  normalizeOllamaModel,
+  normalizeOllamaRunning,
+  type OllamaRunning,
+  type OllamaShow,
+  type OllamaTag
+} from '@core/ai/models'
 
 // 127.0.0.1, not localhost: skips the DNS lookup and dodges the IPv6/IPv4
 // resolution race that makes `localhost` intermittently slow on Windows.
@@ -68,6 +74,28 @@ export const ollamaModels: ModelsFn = async ({ signal }) => {
     models.push(normalizeOllamaModel(tag, show))
   }
   return models
+}
+
+/** What is resident right now. Metadata only — it loads nothing. */
+export const ollamaLoaded: LoadedFn = async ({ signal }) => {
+  const body = await requestJson<{ models?: OllamaRunning[] }>('/api/ps', { signal })
+  return (body.models ?? []).map(normalizeOllamaRunning)
+}
+
+/**
+ * Drops one model's weights now, instead of waiting out `keep_alive`.
+ *
+ * `/api/generate` with no prompt and `keep_alive: 0` is the documented unload
+ * (confirmed against the Ollama API docs, not guessed). It answers with
+ * `done_reason: 'unload'` and never runs inference, so it costs nothing.
+ */
+export const ollamaUnload: UnloadFn = async (model, { signal }) => {
+  await requestJson('/api/generate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model, keep_alive: 0 }),
+    signal
+  })
 }
 
 // Built separately so an absent value means ABSENT, never zero: an options

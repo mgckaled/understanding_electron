@@ -1,4 +1,10 @@
-import { hasCapability, normalizeOllamaModel, type OllamaShow, type OllamaTag } from './models'
+import {
+  hasCapability,
+  normalizeOllamaModel,
+  normalizeOllamaRunning,
+  type OllamaShow,
+  type OllamaTag
+} from './models'
 
 // model_info as the real Ollama 0.32.6 reported it on 10/08/2026, trimmed to
 // the keys this module reads. Two of these models — mistral:7b and llama3.1:8b
@@ -237,5 +243,31 @@ describe('normalizeOllamaModel', () => {
 
       expect(model.variantOf).toBe('qwen2.5:7b')
     })
+  })
+})
+
+/*
+ * /api/ps — what is RESIDENT, which is a different question from what is
+ * installed. `size` there is weights plus the KV cache of the window it was
+ * loaded with, so it never matches the disk figure from /api/tags.
+ */
+describe('normalizeOllamaRunning', () => {
+  it('reads the resident size and the expiry as epoch milliseconds', () => {
+    const entry = normalizeOllamaRunning({
+      name: 'gemma3:4b',
+      size: 4_800_000_000,
+      expires_at: '2026-08-11T14:38:31.837530-03:00'
+    })
+
+    expect(entry.name).toBe('gemma3:4b')
+    expect(entry.sizeBytes).toBe(4_800_000_000)
+    expect(entry.expiresAt).toBe(Date.parse('2026-08-11T14:38:31.837530-03:00'))
+  })
+
+  it('turns an absent or unparseable expiry into 0, never NaN', () => {
+    // NaN would flow into the interface's own arithmetic and render as "sai em
+    // ~NaN min" — absence has to have the shape of absence.
+    expect(normalizeOllamaRunning({ name: 'x', size: 1 }).expiresAt).toBe(0)
+    expect(normalizeOllamaRunning({ name: 'x', size: 1, expires_at: 'nunca' }).expiresAt).toBe(0)
   })
 })

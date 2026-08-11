@@ -408,6 +408,10 @@ A conversa fica **somente leitura**, com o aviso de que o modelo não está mais
 
 **Pode ser implementado depois da trava**, e é a ordem certa: a trava é o que cria o caso.
 
+#### Um benefício que não estava no argumento
+
+Medido em 11/08/2026, depois da trava: **a razão de calibração da D15.4 é uma propriedade do tokenizador**, e os dois modelos da frota nem usam a mesma família — `gemma3:4b` é SentencePiece, `qwen2.5-coder:3b` é BPE, e este último ainda injeta um system prompt de fábrica em toda requisição. Com o par travado, a razão calibrada é **daquele modelo** e vale a conversa inteira; sem a trava, trocar no meio carregaria adiante uma razão medida noutro tokenizador. Detalhe e números em [`HISTORY.md`](../../HISTORY.md).
+
 #### O que sobrevive da D13.4
 
 O `model` por mensagem deixa de ser sustentado pela troca, e **continua justificado por outro motivo**: um modelo travado pode ser desinstalado, e o default do aplicativo muda entre sessões — a mensagem é o único lugar que registra o que de fato a produziu.

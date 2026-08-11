@@ -1,4 +1,4 @@
-import type { AiModel, ChatMessage, ChatReply } from '@shared/ipc'
+import type { AiModel, ChatMessage, ChatReply, LoadedModel } from '@shared/ipc'
 
 // The single network-touching seam, injected by the caller (D9.2). core/ never
 // knows which provider fulfills it — the concrete adapters live in
@@ -29,6 +29,13 @@ export type ProbeFn = (opts: { signal?: AbortSignal }) => Promise<string>
 // will fulfil it from a table instead of a probe — which is precisely why the
 // seam is a function returning AiModel[] and not an HTTP-shaped thing.
 export type ModelsFn = (opts: { signal?: AbortSignal }) => Promise<AiModel[]>
+
+// What the provider is holding in memory, and letting go of it. Both throw for
+// the handler to classify, like every seam above. A cloud provider fulfils the
+// first with an empty list and the second with a no-op — there is nothing
+// resident to report, which is a true answer and not a missing feature.
+export type LoadedFn = (opts: { signal?: AbortSignal }) => Promise<LoadedModel[]>
+export type UnloadFn = (model: string, opts: { signal?: AbortSignal }) => Promise<void>
 
 // Thrown by an adapter when the provider answered but with an error: a non-2xx
 // HTTP status (status set) or an error object inside an otherwise-200 stream

@@ -172,6 +172,23 @@ export type AiModel = {
   variantOf: string | null
 }
 
+/**
+ * A model the provider is holding in memory right now — `/api/ps`.
+ *
+ * Distinct from `AiModel`, which is what is INSTALLED: one is disk, the other
+ * is RAM, and the whole point of showing this is that the second is the scarce
+ * one. Weights stay resident for five minutes after the last request by
+ * default, which on this machine is long enough to make the rest of the fleet
+ * read as "não cabe" while nothing is happening.
+ */
+export type LoadedModel = {
+  name: string
+  /** Resident bytes, as the provider reports them — not the size on disk. */
+  sizeBytes: number
+  /** Epoch ms at which the provider will drop it. */
+  expiresAt: number
+}
+
 // The application's conversation (D13.3). Distinct from ChatMessage above,
 // which is the provider's wire shape and stays exactly as it is — a pure
 // function translates one into the other, and that function is where plano 16
@@ -212,10 +229,10 @@ export const messageSchema = z.object({
   parts: z.array(messagePartSchema).min(1),
   createdAt: z.number().int().nonnegative(),
   // The model that produced this message, recorded per message and not only
-  // per conversation (D13.4). The model is deliberately NOT locked after the
-  // first reply — on a local-model app "this 4B failed, move up to qwen 7B" is
-  // the main recovery action — so a transcript can carry mixed authorship.
-  // That is resolved with data, not with a prohibition.
+  // per conversation (D13.4). The pair does lock on the first send since
+  // D15.13, so mixed authorship inside one transcript is no longer reachable —
+  // what keeps this here is that a locked model can be uninstalled and the
+  // app's default moves between sessions.
   model: z.string().min(1).optional(),
   // A column, not a part: it is metadata ABOUT the turn, not content. Inside
   // `parts` the interface would have to open the JSON to know whether to draw
@@ -312,6 +329,11 @@ export const argsSchema = {
   // a reload button, because installing a model is a system event the app has
   // no way to observe.
   'ai:models': z.object({ service: aiServiceSchema }),
+  // What is resident, and letting go of it. Two channels and not one because
+  // one is a question and the other is an action — merging them would make a
+  // cached query carry a side effect.
+  'ai:loaded': z.object({ service: aiServiceSchema }),
+  'ai:unload': z.object({ service: aiServiceSchema, model: z.string().min(1) }),
   'ai:chat': z.object({
     service: aiServiceSchema,
     model: z.string().min(1),
@@ -390,6 +412,14 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['ai:models']>
     result: Result<AiModel[]>
   }
+  'ai:loaded': {
+    args: z.infer<(typeof argsSchema)['ai:loaded']>
+    result: Result<LoadedModel[]>
+  }
+  'ai:unload': {
+    args: z.infer<(typeof argsSchema)['ai:unload']>
+    result: Result<void>
+  }
   'ai:chat': {
     args: z.infer<(typeof argsSchema)['ai:chat']>
     result: Result<ChatReply>
@@ -456,6 +486,10 @@ export type Api = {
     isAvailable(service: AiService): Promise<Result<AiAvailability>>
     /** The installed models, with capabilities and context ceiling (D15.1). */
     models(service: AiService): Promise<Result<AiModel[]>>
+    /** What the provider is holding in memory right now. */
+    loaded(service: AiService): Promise<Result<LoadedModel[]>>
+    /** Asks the provider to drop one model's weights now. */
+    unload(service: AiService, model: string): Promise<Result<void>>
     // Live tokens stream through job.onEvent as 'chunk' events keyed by jobId;
     // the resolved Result carries the assembled whole.
     chat(request: ChatRequest, jobId: JobId): Promise<Result<ChatReply>>

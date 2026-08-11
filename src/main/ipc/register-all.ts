@@ -14,9 +14,17 @@ import { readLines } from '../features/dataset/lines'
 import {
   chat as aiChat,
   isAvailable as aiIsAvailable,
-  models as aiModels
+  loaded as aiLoaded,
+  models as aiModels,
+  unload as aiUnload
 } from '../features/ai/handlers'
-import { ollamaChat, ollamaModels, ollamaProbe } from '../features/ai/providers/ollama'
+import {
+  ollamaChat,
+  ollamaLoaded,
+  ollamaModels,
+  ollamaProbe,
+  ollamaUnload
+} from '../features/ai/providers/ollama'
 import {
   appendMessage,
   createConversation,
@@ -57,6 +65,8 @@ export function registerAll(): () => void {
   // resolver; nothing else in this file changes.
   handle('ai:isAvailable', (args) => aiIsAvailable(args, ollamaProbe))
   handle('ai:models', (args) => aiModels(args, ollamaModels))
+  handle('ai:loaded', (args) => aiLoaded(args, ollamaLoaded))
+  handle('ai:unload', (args) => aiUnload(args, ollamaUnload))
   handle('ai:chat', (args) => aiChat(args, ollamaChat, broadcastJobEvent))
 
   handle('conversation:list', (args) => listConversations(args, db))

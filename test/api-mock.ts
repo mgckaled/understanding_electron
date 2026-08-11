@@ -44,6 +44,10 @@ export function createApiMock(): Api {
       // selector reads as "the catalog failed" — and that would break every
       // test that merely mounts the view, not only the ones about models.
       models: vi.fn().mockResolvedValue({ ok: true, value: [TEST_MODEL] }),
+      // Nothing resident by default: the common state, and the one that keeps
+      // Configurações from claiming the machine is holding weights it is not.
+      loaded: vi.fn().mockResolvedValue({ ok: true, value: [] }),
+      unload: vi.fn().mockResolvedValue({ ok: true, value: undefined }),
       chat: vi.fn()
     },
     // Not bare vi.fn()s: these two are the surfaces the renderer READS BACK

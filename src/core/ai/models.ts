@@ -1,4 +1,4 @@
-import type { AiModel, AiModelAttention } from '@shared/ipc'
+import type { AiModel, AiModelAttention, LoadedModel } from '@shared/ipc'
 
 // The two raw shapes this module normalizes. Declared loose on purpose: they
 // belong to Ollama, not to us, and every field the app depends on is read
@@ -123,4 +123,31 @@ export function normalizeOllamaModel(tag: OllamaTag, show: OllamaShow): AiModel 
  */
 export function hasCapability(model: AiModel, capability: string): boolean {
   return model.capabilities.includes(capability)
+}
+
+/** One entry of `/api/ps` — what the provider currently holds in memory. */
+export type OllamaRunning = {
+  name: string
+  size: number
+  /** RFC 3339 with offset, e.g. '2026-08-11T14:38:31.83-03:00'. */
+  expires_at?: string
+}
+
+/**
+ * `/api/ps` to `LoadedModel`.
+ *
+ * `size` is the RESIDENT figure, weights plus the KV cache the loaded window
+ * reserved — not the size on disk that `/api/tags` reports, which is why the
+ * two never agree for the same model.
+ *
+ * An unparseable `expires_at` becomes 0 rather than NaN: absence has to have
+ * the shape of absence, or the interface does arithmetic on a silent NaN.
+ */
+export function normalizeOllamaRunning(entry: OllamaRunning): LoadedModel {
+  const expiresAt = entry.expires_at === undefined ? NaN : Date.parse(entry.expires_at)
+  return {
+    name: entry.name,
+    sizeBytes: entry.size,
+    expiresAt: Number.isFinite(expiresAt) ? expiresAt : 0
+  }
 }

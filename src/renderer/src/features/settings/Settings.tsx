@@ -3,6 +3,7 @@ import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
 import Field from '../../shared/ui/Field/Field'
 import { useSettings } from './settingsContext'
+import LoadedModels from './LoadedModels'
 import styles from './Settings.module.css'
 
 /*
@@ -76,6 +77,9 @@ function Settings(): React.JSX.Element {
          * suggesting anything is wrong.
          */}
         {open && loaded && <ThreadsField />}
+        {/* Only while open: its query refetches on mount, and mounting it with
+            the modal closed would poll the provider from boot onwards. */}
+        {open && <LoadedModels />}
       </Dialog>
     </>
   )

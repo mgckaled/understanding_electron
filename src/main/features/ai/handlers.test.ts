@@ -1,9 +1,9 @@
 import { vi } from 'vitest'
 import type { AiModel, ChatMessage, JobEvent } from '@shared/ipc'
-import type { ChatFn, ModelsFn, ProbeFn } from '@core/ai/types'
+import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import * as jobs from '../../jobs'
-import { chat, isAvailable, models } from './handlers'
+import { chat, isAvailable, loaded, models, unload } from './handlers'
 
 const messages: ChatMessage[] = [{ role: 'user', content: 'oi' }]
 
@@ -203,5 +203,46 @@ describe('chat', () => {
 
     expect(result).toEqual({ ok: false, error: { kind: 'timeout', afterMs: 300_000 } })
     vi.useRealTimers()
+  })
+})
+
+/*
+ * What the provider holds in memory (antecipado do plano 17). Same Result
+ * shape and same two failure modes as the catalog, because it is the same
+ * transport — which is the point of `mapProviderError` serving both.
+ */
+describe('loaded and unload', () => {
+  const resident = { name: 'gemma3:4b', sizeBytes: 4_800_000_000, expiresAt: 1_754_000_000_000 }
+
+  it('reports what is resident', async () => {
+    const loadedFn: LoadedFn = async () => [resident]
+
+    expect(await loaded({ service: 'ollama' }, loadedFn)).toEqual({ ok: true, value: [resident] })
+  })
+
+  it('reports an empty machine as an empty list, not as a failure', async () => {
+    const loadedFn: LoadedFn = async () => []
+
+    expect(await loaded({ service: 'ollama' }, loadedFn)).toEqual({ ok: true, value: [] })
+  })
+
+  it('asks the provider to drop the model it was given', async () => {
+    const unloadFn = vi.fn<UnloadFn>().mockResolvedValue(undefined)
+
+    const result = await unload({ service: 'ollama', model: 'gemma3:4b' }, unloadFn)
+
+    expect(result.ok).toBe(true)
+    expect(unloadFn).toHaveBeenCalledWith('gemma3:4b', expect.anything())
+  })
+
+  it('degrades to unavailable when the provider cannot be reached', async () => {
+    const unloadFn: UnloadFn = async () => {
+      throw new TypeError('fetch failed')
+    }
+
+    const result = await unload({ service: 'ollama', model: 'gemma3:4b' }, unloadFn)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.kind).toBe('unavailable')
   })
 })

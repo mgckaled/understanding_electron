@@ -30,6 +30,8 @@ const api: Api = {
   ai: {
     isAvailable: (service) => invoke('ai:isAvailable', { service }),
     models: (service) => invoke('ai:models', { service }),
+    loaded: (service) => invoke('ai:loaded', { service }),
+    unload: (service, model) => invoke('ai:unload', { service, model }),
     // Live tokens surface through api.job.onEvent as 'chunk' events; this
     // resolves with the assembled reply. No new preload channel needed.
     chat: (request, jobId) => invoke('ai:chat', { ...request, jobId })
