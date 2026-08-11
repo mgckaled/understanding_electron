@@ -31,6 +31,26 @@ O plano anterior fechou com seis itens de herança. Três se cobram aqui:
 
 E um item novo, que o 15 não previu: **`MessagePart` só tem a variante `text`, e a coluna `parts` é JSON justamente para as variantes deste plano não custarem migração** — a [migração v1](../implemented/14-persistencia-das-conversas.md) diz isso em comentário. Se um `CREATE TABLE` aparecer no diff, ver a D16.2 antes de aceitá-lo.
 
+### Que modelo escolher quando há anexo — duas correções de intuição
+
+Perguntado na revisão deste plano, e vale escrito porque as duas intuições erradas são as naturais.
+
+**"Menos parâmetros, janela maior"** é verdade na direção e falso como regra. O que decide é o **custo de cache KV por token**, que é arquitetura e varia 30× na frota sem relação com o tamanho — medido com ~5,5 GiB livres:
+
+| Modelo | Pesos | KV/token | Janela usável |
+|---|---|---|---|
+| `gemma3:4b` | 3,1 GB | **4,2 KB** | **131.072** |
+| `qwen2.5-coder:3b` | 1,8 GB | 38,2 KB | 32.768 |
+| `gemma3:1b` | 0,8 GB | ~4 KB | 32.768 |
+| `phi4-mini` | **2,3 GB** | **135,7 KB** | 18.399 |
+| `qwen2.5:7b` · `-coder:7b` | 4,4 GB | 59 KB | 6.006 |
+
+O `phi4-mini` é mais leve que o `gemma3:4b` e tem janela **7× menor**. É por isso que o seletor mostra o teto calculado por modelo: nenhuma coluna do `ollama list` deixa isso visível.
+
+**"Arquivo grande pede janela grande"** vale para documento (17) e **não vale para dataset**, que é o caso deste plano: um CSV de 2 GB e um de 2 MB produzem o mesmo cartão, porque o modelo nunca vê as linhas. É o desenho inteiro dos três níveis expresso em uma frase — **o tamanho do dataset não consome contexto**. E, mesmo onde vale, reservar não é encher: os 131.072 do `gemma3:4b` cabem na RAM e custam ~87 min para preencher, o que é o motivo de o teto prático de documento ser ~8k tokens.
+
+**E o modelo não trava na conversa** — decisão da [D15.7](15-orcamento-de-contexto-e-modelo.md), resolvida com dado (cada mensagem grava seu modelo) em vez de proibição, porque *"este 4B falhou, sobe para o 7B"* é a principal ação de recuperação num app local. O que a troca custa é real e triplo — ~50 s de carga a frio, o cache de prefixo invalidado, e um teto diferente que pode recusar um histórico que cabia — então **escolher antes de anexar é conselho de fluxo**, e o app mostra os três custos em vez de impedir.
+
 ---
 
 ## Passo 0 — Uma medida, antes de decidir o formato do cartão
@@ -43,6 +63,8 @@ Montar à mão o texto do cartão para três arquivos reais de larguras diferent
 
 - Se um cartão de 40 colunas custar **centenas** de tokens, ele viaja inteiro em todo turno e não há o que projetar.
 - Se custar **milhares**, o cartão precisa de forma resumida para os turnos seguintes ao primeiro — e aí a D15.3 (resumir o começo preservando o cache de prefixo) deixa de ser nota de rodapé e vira requisito.
+
+> ⚠️ **O cartão não é pago uma vez, é pago todo turno.** O provedor é sem estado e cada chamada reenvia a conversa inteira, então um cartão de 2.000 tokens numa conversa de 20 turnos custa **40.000 tokens de prefill acumulado** — e disputa, a cada turno, a mesma janela que a conversa. Isto reordena o requisito: *"suficiente para o modelo responder"* é o piso, **enxuto** é o alvo. O multiplicador é o número de turnos, e é ele que faz uma diferença de 500 tokens no formato do cartão valer uma sessão de medição.
 
 **Protocolo do Ollama, como sempre:** um modelo residente por vez, `keep_alive` ≤ 1, `ollama ps` vazio antes e depois.
 
@@ -62,6 +84,14 @@ O anexo mora em `parts`, que é JSON, então **este plano também não tem `CREA
 
 Isso decide também a coleta de lixo, e por um caminho que a tabela **pioraria**. Sem tabela, a pergunta *"este blob ainda é referenciado?"* é uma varredura com `json_each` sobre `messages.parts`, e a pergunta simétrica — *"que arquivo em `attachments/` ninguém referencia?"* — é a mesma varredura invertida. Com tabela, um blob escrito em disco cuja mensagem nunca chegou a ser gravada (envio cancelado, falha no meio) ficaria órfão **e sem registro**, invisível para as duas perguntas.
 
+**Verificado em 11/08/2026**, porque a decisão dependia de a consulta existir e não de ela ser plausível — `json_each` está disponível no `node:sqlite` (SQLite 3.53.3 local, 3.53.1 no Electron; a extensão JSON1 é embutida desde a 3.38), e o conjunto de referências sai num `SELECT` só:
+
+```sql
+SELECT DISTINCT json_extract(p.value, '$.hash') AS hash
+FROM messages, json_each(messages.parts) AS p
+WHERE json_extract(p.value, '$.hash') IS NOT NULL
+```
+
 **Gatilho declarado para a v2:** o plano 17 vai querer cachear o texto extraído de um PDF para não reextrair a cada turno. Isso é dado sobre o anexo, não dentro da mensagem, e é aí que a escada do `PRAGMA user_version` ganha seu segundo degrau — que, como a [D14.2](../implemented/14-persistencia-das-conversas.md) registra, é o degrau cujo defeito aparece sobre um banco que já tem conversas dentro.
 
 ### D16.3 — Copiar, endereçado por conteúdo, inclusive o dataset
@@ -75,6 +105,12 @@ O custo é disco, que é o recurso mais barato aqui e já está na fila para ser
 > Isto **refina** a frase do [índice do arco](README.md): *"os bytes de um PDF não são rederiváveis"*. O argumento estava escrito para documento; vale igual para dataset, por um motivo diferente e mais forte.
 
 ### D16.4 — O cartão é um só, mora em `core/`, e a regra de privacidade vira teste
+
+> **O que é um cartão de dados, e o que ele não é.** É a **descrição do arquivo que o modelo lê**: nomes e tipos de coluna, contagem de linhas, e — a partir do 18 — agregados. Não é o conteúdo do arquivo resumido, e **nenhuma linha do arquivo entra nele**.
+>
+> Não confundir com a **proposta** do plano 19 (a união discriminada `query | steps`), que é o SQL ou a lista de passos que o modelo **escreve**. Um é entrada, o outro é saída; leem-se parecido e vivem em planos diferentes.
+>
+> **O cartão é produzido por código determinístico, sem o modelo.** Hoje pelo scanner da [fase 06](../implemented/06-primeira-feature.md), no 18 pelo `SUMMARIZE`. Pedir um resumo ao modelo custaria uma ida a 4–6 tok/s, daria resultado diferente a cada vez e — o que decide — exigiria mostrar as linhas cruas para produzir a descrição, furando a fronteira que o cartão existe para manter.
 
 `core/ai/dataCard.ts`, dono único, consumido por conversa, consulta, passos e busca. Contexto montado por feature é como se produzem duas qualidades de resposta sobre o mesmo arquivo — e, pior, duas fronteiras de privacidade, das quais a segunda ninguém revisa.
 
@@ -163,5 +199,6 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
 | 11/08/2026 | — | plano escrito | Escrito logo após as correções de uso do plano 15 (D15.10, D15.11), e uma delas mudou o desenho deste: a armadilha que o 15 registrou para o 17 — medidor que conta caracteres contra uma parte que não tem caracteres — **arma um plano antes**, porque basta não ser texto, não é preciso ser imagem. Daí a D16.5, que aponta o orçamento para o payload em vez da transcrição. Duas propostas da sessão anterior entram como decisões futuras com gatilho (F16.1, F16.2) em vez de escopo. |
+| 11/08/2026 | — | plano revisado | Revisão de leitura, e ela achou três buracos de exposição mais um número que faltava. **(1)** *"Cartão de dados"* não estava definido em lugar nenhum e colide de leitura com a **proposta** do 19 — um é o que o modelo lê, o outro é o que ele escreve; definição e a distinção agora abrem a D16.4, junto do que estava implícito e não escrito: **o cartão é determinístico, sem o modelo**. **(2)** O passo 0 media o custo do cartão sem dizer que ele é **pago a cada turno** — 2.000 tokens numa conversa de 20 turnos são 40.000 de prefill acumulado, e é esse multiplicador que faz a medição valer uma sessão. **(3)** As duas intuições naturais sobre escolha de modelo são falsas e agora estão numa tabela: menos parâmetros não implica janela maior (o `phi4-mini` é mais leve que o `gemma3:4b` e tem janela 7× menor), e **tamanho de dataset não consome contexto nenhum**, porque o modelo nunca vê as linhas. Verificado no caminho, porque a D16.2 dependia disso e não de plausibilidade: `json_each` existe no `node:sqlite` e o conjunto de referências sai num `SELECT` só. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
