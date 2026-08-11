@@ -181,5 +181,8 @@ export function useActiveConversation(): ConversationWithMessages | null {
 
   const conversation = conversations.find((item) => item.id === activeId)
   if (conversation === undefined) return null
+  // `messagesLoaded` only works because no `placeholderData` is set: with one,
+  // `data` survives a queryKey change and a switched-to conversation would read
+  // as loaded with the previous transcript, unlocking the pair (D15.13).
   return { ...conversation, messages: data ?? [], messagesLoaded: data !== undefined }
 }
