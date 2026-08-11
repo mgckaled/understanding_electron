@@ -43,6 +43,8 @@ function ConversationView(): React.JSX.Element {
   // database there is no row to write a setting into, and dropping the choice
   // silently is worse than holding it.
   const [pending, setPending] = useState<ConversationSettings>({})
+  // Already filtered by the hook, so this list and the one the selector draws
+  // are the same object — see D15.11 for what happened when they were not.
   const installed = catalog.status === 'ready' ? catalog.data : EMPTY_CATALOG
 
   // Note the branch rather than `conversation?.settings.model ?? pending`: that
@@ -55,13 +57,14 @@ function ConversationView(): React.JSX.Element {
 
   // min(what the model was trained for, what this machine can hold) — the
   // second bound is the one that matters: phi4-mini truthfully declares 131072
-  // and honouring it means reserving 16 GB of cache on a 16 GB machine.
-  const memory = useSystemMemory()
+  // and honouring it means reserving 16 GB of cache on a 16 GB machine. Defined
+  // once here and passed down, so the margin is applied in a single place.
+  const { memory, reload: reloadMemory } = useSystemMemory()
+  const ceilingOf = (entry: AiModel): number | null =>
+    memory === undefined ? null : contextCeiling(entry, memory.freeBytes, RAM_MARGIN_BYTES)
+
   const current = installed.find((entry) => entry.name === model)
-  const ceiling =
-    current === undefined || memory === undefined
-      ? null
-      : contextCeiling(current, memory.freeBytes, RAM_MARGIN_BYTES)
+  const ceiling = current === undefined ? null : ceilingOf(current)
 
   // One writer for both settings: hold it locally so a choice made before any
   // conversation exists is not dropped in silence, and persist it as soon as
@@ -73,11 +76,12 @@ function ConversationView(): React.JSX.Element {
 
   // The window actually in force. Sent explicitly on every call, because NOT
   // sending it is what leaves Ollama's own 4096 in charge — a number nobody
-  // chose and one that a single document overflows in silence.
+  // chose and one that a single document overflows in silence. `null` means the
+  // model does not fit in the memory free right now, which closes the composer.
   const numCtx = effectiveNumCtx(chosen.numCtx, ceiling)
 
   const { availability, streaming, lastRequestId, state, send, cancel, lastPromptTokens } =
-    useConversationChat(model, settings.numThread, numCtx)
+    useConversationChat(model, settings.numThread, numCtx ?? undefined)
 
   const messages = conversation?.messages ?? []
   // What the next send would carry: the whole transcript, since the provider is
@@ -110,9 +114,14 @@ function ConversationView(): React.JSX.Element {
             // between turns is the point (D15.7) and stays open.
             disabled={isLoading}
             onSelect={(name) => choose({ model: name })}
-            onReload={reload}
+            // Both, because both readings are snapshots the app cannot observe
+            // changing: a model installed since launch, and memory freed since.
+            onReload={() => {
+              reload()
+              reloadMemory()
+            }}
             numCtx={chosen.numCtx}
-            ceiling={ceiling}
+            ceilingOf={ceilingOf}
             // Remounts the window control when the conversation changes, so it
             // re-reads that conversation's value instead of showing the last
             // one typed.
@@ -178,9 +187,11 @@ function ConversationView(): React.JSX.Element {
       </div>
 
       {/* No model installed is as blocking as no service: there is nothing to
-          address the call to, so the composer says so by being closed. */}
+          address the call to, so the composer says so by being closed. A model
+          too large for the free memory is the third case — the reason for it is
+          in the header, next to the choice that fixes it. */}
       <Composer
-        disabled={!isReady || model === null}
+        disabled={!isReady || model === null || numCtx === null}
         loading={isLoading}
         onSend={send}
         onCancel={cancel}

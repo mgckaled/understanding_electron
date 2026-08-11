@@ -37,25 +37,11 @@ const FIXED_OVERHEAD_BYTES = 0.33 * 1024 ** 3
 /**
  * Head-room so the app never reserves the last byte the machine has.
  *
- * It was first written as 3 GiB — the measured spread between this machine's
- * scenarios, ~9 GB free with only the app running against ~6 GB with the
- * working environment open — on the reasoning that `num_ctx` reserves its cache
- * at load time and never gives it back, so a ceiling computed while the machine
- * was idle would make the app cause the swap it exists to prevent.
- *
- * That reasoning DOUBLE-COUNTS, and a level-2 test caught it: when the reading
- * already IS 6 GB, the machine is already in the busy state. Subtracting the
- * spread on top left 3 GB, which is less than gemma3:4b's own 3,11 GB of
- * weights — so the app refused to run its own default model, ceiling 0.
- *
- * The distinction the spread argument needs — "idle now, about to get busy"
- * versus "already busy" — is not available from a single reading. So the margin
- * goes back to what it can honestly be: a modest buffer against reserving
- * everything. The asymmetry still sets the direction (underestimating costs
- * context the user could have had; overestimating costs the machine freezing
- * mid-answer), it just cannot cost more than the app being unusable.
+ * Subtracted BEFORE the per-token division, so it is not a fixed cost: it buys a
+ * 3B model a few thousand fewer tokens and costs a 7B model its whole existence.
+ * That is why it is this small — see D15.10 for the two values it has been.
  */
-export const RAM_MARGIN_BYTES = 1024 ** 3
+export const RAM_MARGIN_BYTES = 512 * 1024 ** 2
 
 /**
  * How many layers actually grow with `num_ctx`.
@@ -159,16 +145,38 @@ export const GATE_MARGIN = 0.9
 export const DEFAULT_NUM_CTX = 32768
 
 /**
+ * The smallest window worth reserving — below it there is no conversation to be
+ * had. Also the step of the control the user types into, so the two agree.
+ *
+ * `contextCeiling` legitimately returns 0 for a model that does not fit, and
+ * this is the line between that and a window (D15.10).
+ */
+export const MIN_NUM_CTX = 1024
+
+/**
+ * Whether this machine can hold the model at all, given its ceiling. A `null`
+ * ceiling reads as TRUE: the model could not be costed, and refusing to run it
+ * would be the app inventing a limit it has no basis for.
+ */
+export function fitsInMemory(ceiling: number | null): boolean {
+  return ceiling === null || ceiling >= MIN_NUM_CTX
+}
+
+/**
  * The window actually in force: what the conversation chose, else the app's
  * default, never above what this machine can hold.
  *
  * `null` ceiling means the model could not be costed, and then the app's own
  * default stands — refusing to reserve anything would silently hand the
  * decision back to the provider, which is the behaviour this replaces.
+ *
+ * Returns `null` when the model does not fit at all, rather than a token or two:
+ * a window that small is a fiction the meter and the gate both act on (D15.10).
  */
-export function effectiveNumCtx(chosen: number | undefined, ceiling: number | null): number {
+export function effectiveNumCtx(chosen: number | undefined, ceiling: number | null): number | null {
+  if (!fitsInMemory(ceiling)) return null
   const wanted = chosen ?? DEFAULT_NUM_CTX
-  return ceiling === null ? wanted : Math.max(1, Math.min(wanted, ceiling))
+  return ceiling === null ? wanted : Math.min(wanted, ceiling)
 }
 
 export type Budget = {

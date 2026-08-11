@@ -1,4 +1,5 @@
 import type { AiModel } from '@shared/ipc'
+import { fitsInMemory, MIN_NUM_CTX } from '@core/ai/budget'
 import Field from '../../shared/ui/Field/Field'
 import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
@@ -43,9 +44,14 @@ function formatContext(tokens: number | null): string | null {
   return tokens === null ? null : `${Math.round(tokens / 1024)}k`
 }
 
-function optionLabel(model: AiModel): string {
+// Marked, not disabled: free RAM is a snapshot of a machine the user is also
+// using, and closing a browser changes the answer (D15.2).
+function optionLabel(model: AiModel, ceiling: number | null): string {
   const context = formatContext(model.contextLength)
-  return [model.name, formatSize(model.sizeBytes), context].filter(Boolean).join(' · ')
+  const fits = fitsInMemory(ceiling)
+  return [model.name, formatSize(model.sizeBytes), context, fits ? '' : 'não cabe']
+    .filter(Boolean)
+    .join(' · ')
 }
 
 type ModelSelectorProps = {
@@ -57,8 +63,13 @@ type ModelSelectorProps = {
   onReload: () => void
   /** What this conversation reserves; undefined means the provider decides. */
   numCtx?: number
-  /** min(what the model was trained for, what this machine can hold). */
-  ceiling: number | null
+  /**
+   * `min(what the model was trained for, what this machine can hold)`, for any
+   * model in the list. A function and not a single number for the selection,
+   * because the list needs it too — and taking the rule as a parameter keeps it
+   * defined in ONE place, together with the margin it is computed against.
+   */
+  ceilingOf: (model: AiModel) => number | null
   /** Identity of the conversation, so the window control re-reads on switch. */
   scopeKey: string
   onNumCtx: (tokens: number) => void
@@ -71,11 +82,13 @@ function ModelSelector({
   onSelect,
   onReload,
   numCtx,
-  ceiling,
+  ceilingOf,
   scopeKey,
   onNumCtx
 }: ModelSelectorProps): React.JSX.Element {
   const current = state.status === 'ready' ? state.data.find((m) => m.name === selected) : undefined
+  const ceiling = current === undefined ? null : ceilingOf(current)
+  const fits = fitsInMemory(ceiling)
 
   return (
     <div className={styles.selector}>
@@ -99,7 +112,7 @@ function ModelSelector({
           >
             {state.data.map((model) => (
               <option key={model.name} value={model.name}>
-                {optionLabel(model)}
+                {optionLabel(model, ceilingOf(model))}
               </option>
             ))}
           </select>
@@ -128,34 +141,35 @@ function ModelSelector({
         ↻
       </button>
 
-      {ceiling !== null && (
+      {/* No window at all: offering the control here is what produced "até 0k"
+          and a clamp to zero, which the IPC schema then rejected (D15.2). */}
+      {current !== undefined && !fits && (
+        <p className={styles.tooBig} role="alert">
+          Não cabe na memória livre: {formatSize(current.sizeBytes)} de pesos, mais o cache. Feche
+          aplicativos e recarregue, ou escolha um modelo menor.
+        </p>
+      )}
+
+      {fits && ceiling !== null && (
         <Field label="Contexto" hint={`até ${formatContext(ceiling)}`}>
-          {/*
-           * UNCONTROLLED, re-keyed per conversation and per stored value. A
-           * `useState(stored)` here would copy the value on the first render —
-           * which happens before the conversation read returns — and then keep
-           * showing that first copy forever. Remounting re-reads instead, which
-           * is the same defect fase 14 paid for in the threads field.
-           *
-           * Committed on blur, not per keystroke: clamping while typing turns
-           * clearing the field into `1`, and typing "32768" after that gives
-           * something nobody asked for.
-           */}
+          {/* Uncontrolled and re-keyed: useState(stored) would copy the value on
+              the first render, before the conversation read returns (fase 14). */}
           <input
             key={`${scopeKey}:${numCtx ?? 'default'}`}
             className={styles.number}
             type="number"
-            min={1024}
+            min={MIN_NUM_CTX}
             max={ceiling}
-            step={1024}
+            step={MIN_NUM_CTX}
             defaultValue={numCtx ?? ''}
             placeholder={String(ceiling)}
             disabled={disabled}
+            // On blur, not per keystroke — clamping while typing turns a cleared
+            // field into the floor. The floor also keeps 0 off the IPC boundary.
             onBlur={(event) => {
               const parsed = Number(event.target.value)
-              if (Number.isFinite(parsed) && parsed > 0) {
-                onNumCtx(Math.min(Math.round(parsed), ceiling))
-              }
+              if (!Number.isFinite(parsed) || parsed <= 0) return
+              onNumCtx(Math.min(Math.max(Math.round(parsed), MIN_NUM_CTX), ceiling))
             }}
           />
         </Field>

@@ -1,4 +1,5 @@
 import type { AiModel, AppError, Conversation, Message, MessageStopped } from '@shared/ipc'
+import { hasCapability } from '@core/ai/models'
 
 /*
  * What survived the move to storage (plano 14).
@@ -53,6 +54,26 @@ export function stoppedFromError(error: AppError): MessageStopped | null {
   if (error.kind === 'cancelled') return 'cancelled'
   if (error.kind === 'timeout') return 'timeout'
   return null
+}
+
+/**
+ * The models worth offering for a conversation (D15.11): everything installed,
+ * minus what cannot converse and minus a variant of a model already listed.
+ *
+ * The parent has to be PRESENT for the variant to be dropped — with the parent
+ * gone the variant is the only way left to run those weights.
+ *
+ * It filters here and not in main for the reason `resolveModel` below gives:
+ * what is installed is a fact, what is worth offering is a judgement about a
+ * user interface.
+ */
+export function selectableModels(catalog: AiModel[]): AiModel[] {
+  const installed = new Set(catalog.map((model) => model.name))
+  return catalog.filter(
+    (model) =>
+      hasCapability(model, 'completion') &&
+      (model.variantOf === null || !installed.has(model.variantOf))
+  )
 }
 
 /**

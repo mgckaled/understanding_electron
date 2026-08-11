@@ -28,7 +28,8 @@ const CODER: AiModel = {
   sizeBytes: 1_929_000_000,
   capabilities: ['completion', 'tools', 'insert'],
   contextLength: 32768,
-  attention: { blockCount: 36, headCountKv: 2, headDim: 128, slidingWindow: null }
+  attention: { blockCount: 36, headCountKv: 2, headDim: 128, slidingWindow: null },
+  variantOf: null
 }
 
 function providers(children: ReactNode): React.JSX.Element {
@@ -197,5 +198,120 @@ describe('ModelSelector', () => {
     await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
 
     await waitFor(() => expect(api.ai.models).toHaveBeenCalledTimes(2))
+  })
+
+  it('rereads free memory on reload, because the advice depends on it', async () => {
+    // "Feche aplicativos e recarregue" is only true if the button rereads the
+    // figure the ceiling is computed from.
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByRole('option', { name: /qwen/ })
+    expect(api.app.memory).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
+
+    await waitFor(() => expect(api.app.memory).toHaveBeenCalledTimes(2))
+  })
+})
+
+/*
+ * What the <select> actually draws. Level 1 covered `selectableModels` and
+ * passed while the options came from the unfiltered state — the filter worked
+ * and the list on screen came from somewhere else (D15.11).
+ */
+describe('what the list offers', () => {
+  const VARIANT: AiModel = {
+    ...TEST_MODEL,
+    name: 'gemma3-4b-custom:latest',
+    variantOf: 'gemma3:4b'
+  }
+  const EMBEDDER: AiModel = {
+    ...TEST_MODEL,
+    name: 'nomic-embed-text:latest',
+    capabilities: ['embedding'],
+    contextLength: 2048,
+    attention: null
+  }
+
+  function mountWith(models: AiModel[]): void {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: models })
+    render(providers(<ConversationView />))
+  }
+
+  it('leaves a Modelfile variant of a listed model out of the options', async () => {
+    mountWith([TEST_MODEL, VARIANT, CODER])
+
+    await screen.findByRole('option', { name: /gemma3:4b/ })
+    expect(screen.queryByRole('option', { name: /custom/ })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('option')).toHaveLength(2)
+  })
+
+  it('leaves out a model that cannot converse', async () => {
+    mountWith([TEST_MODEL, EMBEDDER])
+
+    await screen.findByRole('option', { name: /gemma3:4b/ })
+    expect(screen.queryByRole('option', { name: /nomic/ })).not.toBeInTheDocument()
+  })
+
+  it('keeps the variant when its parent is not installed', async () => {
+    mountWith([VARIANT, CODER])
+
+    expect(await screen.findByRole('option', { name: /custom/ })).toBeInTheDocument()
+  })
+
+  it('reports empty when nothing left can converse', async () => {
+    mountWith([EMBEDDER])
+
+    expect(await screen.findByText('Nenhum modelo instalado.')).toBeInTheDocument()
+  })
+})
+
+/*
+ * A model too large for the memory free right now. `contextCeiling` returns 0
+ * for it, which is the true answer — the failure was treating zero as a window.
+ */
+describe('a model that does not fit', () => {
+  const BIG: AiModel = {
+    provider: 'ollama',
+    name: 'qwen2.5:7b',
+    parameterSize: '7.6B',
+    sizeBytes: 5.9 * 1024 ** 3,
+    capabilities: ['completion', 'tools'],
+    contextLength: 32768,
+    attention: { blockCount: 28, headCountKv: 4, headDim: 128, slidingWindow: null },
+    variantOf: null
+  }
+
+  function mountBig(): Api {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [BIG] })
+    render(providers(<ConversationView />))
+    return api
+  }
+
+  it('marks it in the list instead of disabling the option', async () => {
+    // Free RAM is a snapshot of a machine the user is also using: closing a
+    // browser changes the answer, so a dead option would be worse than a mark.
+    mountBig()
+
+    expect(await screen.findByRole('option', { name: /não cabe/ })).toBeEnabled()
+  })
+
+  it('says why, instead of offering a context window of zero', async () => {
+    mountBig()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Não cabe na memória livre/)
+    expect(screen.queryByLabelText('Contexto')).not.toBeInTheDocument()
+  })
+
+  it('closes the composer, because there is no window to send into', async () => {
+    mountBig()
+    await screen.findByRole('alert')
+
+    expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
   })
 })

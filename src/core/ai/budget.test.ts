@@ -4,8 +4,13 @@ import {
   calibrateRatio,
   contextCeiling,
   DEFAULT_CHARS_PER_TOKEN,
+  DEFAULT_NUM_CTX,
+  effectiveNumCtx,
   estimateTokens,
+  fitsInMemory,
   kvBytesPerToken,
+  MIN_NUM_CTX,
+  RAM_MARGIN_BYTES,
   residentBytes
 } from './budget'
 
@@ -27,6 +32,7 @@ function model(over: Partial<AiModel>): AiModel {
     capabilities: ['completion'],
     contextLength: 32768,
     attention: null,
+    variantOf: null,
     ...over
   }
 }
@@ -52,6 +58,13 @@ const phi4Mini = model({
   // Declared, and larger than this model's own ceiling — so it never closes
   // over anything and the model pays full attention prices.
   attention: { blockCount: 32, headCountKv: 8, headDim: 128, slidingWindow: 262144 }
+})
+
+const qwen7b = model({
+  name: 'qwen2.5:7b',
+  sizeBytes: 4_683_087_332,
+  contextLength: 32768,
+  attention: { blockCount: 28, headCountKv: 4, headDim: 128, slidingWindow: null }
 })
 
 const embedder = model({ name: 'nomic-embed-text', contextLength: 2048, attention: null })
@@ -150,6 +163,44 @@ describe('contextCeiling', () => {
   it('is null when there is nothing to bound', () => {
     expect(contextCeiling(embedder, 8 * GIB, 0)).toBeNull()
     expect(contextCeiling(model({ contextLength: null }), 8 * GIB, 0)).toBeNull()
+  })
+
+  it('leaves a 7B model a usable window in the working environment', () => {
+    // The regression that made this margin a measurement. At 1 GiB every 7B in
+    // the fleet came back at ceiling 0: a fixed margin subtracted BEFORE the
+    // per-token division costs a small model tokens and a large one everything.
+    expect(contextCeiling(qwen7b, 5.44 * GIB, RAM_MARGIN_BYTES)!).toBeGreaterThan(MIN_NUM_CTX)
+    expect(contextCeiling(qwen7b, 5.44 * GIB, GIB)).toBe(0)
+  })
+})
+
+describe('fitsInMemory', () => {
+  it('reads a ceiling too small to converse in as not fitting', () => {
+    expect(fitsInMemory(0)).toBe(false)
+    expect(fitsInMemory(MIN_NUM_CTX - 1)).toBe(false)
+    expect(fitsInMemory(MIN_NUM_CTX)).toBe(true)
+  })
+
+  it('treats a model it cannot cost as fitting', () => {
+    // Absence of a bound is not evidence of a problem; inventing a limit is.
+    expect(fitsInMemory(null)).toBe(true)
+  })
+})
+
+describe('effectiveNumCtx', () => {
+  it('returns null when no window fits, rather than a window of one token', () => {
+    // A one-token window is not a smaller window, it is a fiction: the meter
+    // read "~1 de 1 tokens" and the gate refused every message at any length.
+    expect(effectiveNumCtx(32768, 0)).toBeNull()
+  })
+
+  it('clamps a choice to what the machine can hold', () => {
+    expect(effectiveNumCtx(131072, 8192)).toBe(8192)
+  })
+
+  it('falls back to the app default rather than to the provider default', () => {
+    expect(effectiveNumCtx(undefined, 131072)).toBe(DEFAULT_NUM_CTX)
+    expect(effectiveNumCtx(undefined, null)).toBe(DEFAULT_NUM_CTX)
   })
 })
 

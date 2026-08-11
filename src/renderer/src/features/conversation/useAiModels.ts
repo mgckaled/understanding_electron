@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AiModel } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
+import { selectableModels } from './conversations'
 
 const SERVICE = 'ollama' as const
 const MODELS_KEY = ['ai', 'models'] as const
@@ -41,7 +42,12 @@ export function useAiModels(): { state: ViewState<AiModel[]>; reload: () => void
       return { status: 'error', error: { kind: 'unknown', message: 'ai:models' } }
     }
     if (!data.ok) return { status: 'error', error: data.error }
-    return data.value.length === 0 ? { status: 'empty' } : { status: 'ready', data: data.value }
+    // Filtered HERE and nowhere else (D15.11). Doing it at one consumer left
+    // the <select> reading the raw list while the model resolution read the
+    // filtered one — the hidden entries stayed on screen and every level-1 test
+    // still passed.
+    const usable = selectableModels(data.value)
+    return usable.length === 0 ? { status: 'empty' } : { status: 'ready', data: usable }
   }, [data, isPending, isError])
 
   return useMemo(() => ({ state, reload }), [state, reload])

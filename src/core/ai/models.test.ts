@@ -74,6 +74,11 @@ function tag(name: string, size = 1_000, parameterSize = '4.3B'): OllamaTag {
   return { name, size, details: { parameter_size: parameterSize } }
 }
 
+/** What `ollama create` produces: a parent, and 27 bytes of Modelfile over it. */
+function derived(name: string, parent: string): OllamaTag {
+  return { name, size: 1_027, details: { parameter_size: '4.3B', parent_model: parent } }
+}
+
 describe('normalizeOllamaModel', () => {
   it('reads capabilities from /api/show, which is the only place vision appears', () => {
     const model = normalizeOllamaModel(tag('gemma3:4b'), gemma3_4b)
@@ -206,5 +211,31 @@ describe('normalizeOllamaModel', () => {
 
   it('falls back to an empty parameter size when details are missing', () => {
     expect(normalizeOllamaModel({ name: 'x', size: 1 }, {}).parameterSize).toBe('')
+  })
+
+  describe('variantOf', () => {
+    it('names the parent of a model built from another one', () => {
+      const model = normalizeOllamaModel(derived('gemma3-4b-custom:latest', 'gemma3:4b'), gemma3_4b)
+
+      expect(model.variantOf).toBe('gemma3:4b')
+    })
+
+    it('is null for a pulled model, whether the field is empty or absent', () => {
+      expect(normalizeOllamaModel(tag('gemma3:4b'), gemma3_4b).variantOf).toBeNull()
+      expect(
+        normalizeOllamaModel({ name: 'x', size: 1, details: { parent_model: '' } }, {}).variantOf
+      ).toBeNull()
+    })
+
+    it('names the parent even when the variant declares a system prompt', () => {
+      // The exception this replaces read a system prompt as "a different
+      // assistant". Measured on qwen7b-custom, what `ollama create` actually
+      // copies forward is the vendor's own boilerplate — "You are Qwen, created
+      // by Alibaba Cloud." — so the exception fired on the one case it was
+      // meant to exclude and on none of the cases it was meant to protect.
+      const model = normalizeOllamaModel(derived('qwen7b-custom:latest', 'qwen2.5:7b'), qwenCoder3b)
+
+      expect(model.variantOf).toBe('qwen2.5:7b')
+    })
   })
 })

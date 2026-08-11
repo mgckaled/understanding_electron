@@ -14,7 +14,8 @@ const gemma: AiModel = {
   sizeBytes: 3_338_801_804,
   capabilities: ['completion', 'vision'],
   contextLength: 131072,
-  attention: { blockCount: 34, headCountKv: 4, headDim: 256, slidingWindow: 1024 }
+  attention: { blockCount: 34, headCountKv: 4, headDim: 256, slidingWindow: 1024 },
+  variantOf: null
 }
 
 describe('isAvailable', () => {

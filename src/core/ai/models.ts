@@ -8,7 +8,11 @@ import type { AiModel, AiModelAttention } from '@shared/ipc'
 export type OllamaTag = {
   name: string
   size: number
-  details?: { parameter_size?: string }
+  details?: {
+    parameter_size?: string
+    /** Set by `ollama create`; empty string for a model that was pulled. */
+    parent_model?: string
+  }
 }
 
 export type OllamaShow = {
@@ -102,7 +106,10 @@ export function normalizeOllamaModel(tag: OllamaTag, show: OllamaShow): AiModel 
     sizeBytes: tag.size,
     capabilities: show.capabilities ?? [],
     contextLength: readInfo(show.model_info, 'context_length'),
-    attention: readAttention(show.model_info)
+    attention: readAttention(show.model_info),
+    // D15.11. Raw parent: whether it is redundant needs the whole catalog, and
+    // a variant whose parent is gone is the only way left to run those weights.
+    variantOf: tag.details?.parent_model || null
   }
 }
 

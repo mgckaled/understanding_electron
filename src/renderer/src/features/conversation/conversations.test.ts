@@ -1,5 +1,11 @@
 import type { AiModel } from '@shared/ipc'
-import { DEFAULT_TITLE, resolveModel, stoppedFromError, titleFromText } from './conversations'
+import {
+  DEFAULT_TITLE,
+  resolveModel,
+  selectableModels,
+  stoppedFromError,
+  titleFromText
+} from './conversations'
 
 /*
  * The reducer tests that used to live here are gone with the reducer: the list
@@ -41,6 +47,47 @@ describe('stoppedFromError', () => {
   })
 })
 
+describe('selectableModels', () => {
+  function entry(over: Partial<AiModel>): AiModel {
+    return {
+      provider: 'ollama',
+      name: 'x',
+      parameterSize: '',
+      sizeBytes: 0,
+      capabilities: ['completion'],
+      contextLength: null,
+      attention: null,
+      variantOf: null,
+      ...over
+    }
+  }
+
+  const gemma = entry({ name: 'gemma3:4b' })
+
+  it('drops a Modelfile variant of a model already in the list', () => {
+    // Five of the twelve entries on this machine are these, left over from
+    // another project that pins num_thread — each one duplicates its parent.
+    const custom = entry({ name: 'gemma3-4b-custom:latest', variantOf: 'gemma3:4b' })
+
+    expect(selectableModels([gemma, custom]).map((m) => m.name)).toEqual(['gemma3:4b'])
+  })
+
+  it('keeps the variant when its parent is not installed', () => {
+    // Then it is the only way left to run those weights.
+    const custom = entry({ name: 'gemma3-4b-custom:latest', variantOf: 'gemma3:4b' })
+
+    expect(selectableModels([custom]).map((m) => m.name)).toEqual(['gemma3-4b-custom:latest'])
+  })
+
+  it('drops a model that cannot hold a conversation', () => {
+    // Selecting the embedder produced a generic upstream error with nothing on
+    // screen pointing at the cause.
+    const nomic = entry({ name: 'nomic-embed-text:latest', capabilities: ['embedding'] })
+
+    expect(selectableModels([gemma, nomic]).map((m) => m.name)).toEqual(['gemma3:4b'])
+  })
+})
+
 describe('resolveModel', () => {
   function model(name: string): AiModel {
     return {
@@ -48,9 +95,10 @@ describe('resolveModel', () => {
       name,
       parameterSize: '',
       sizeBytes: 0,
-      capabilities: [],
+      capabilities: ['completion'],
       contextLength: null,
-      attention: null
+      attention: null,
+      variantOf: null
     }
   }
 

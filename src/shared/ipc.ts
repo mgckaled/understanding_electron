@@ -160,6 +160,16 @@ export type AiModel = {
   capabilities: string[]
   contextLength: number | null
   attention: AiModelAttention | null
+  /**
+   * The model this one was derived from with `ollama create` — the two are the
+   * same conversation under two names (D15.11). Null for a model pulled from a
+   * registry.
+   *
+   * The parent's NAME and not a boolean, because whoever hides a variant has to
+   * check the parent is installed first: with the parent gone, the variant is
+   * the only way left to run those weights.
+   */
+  variantOf: string | null
 }
 
 // The application's conversation (D13.3). Distinct from ChatMessage above,
