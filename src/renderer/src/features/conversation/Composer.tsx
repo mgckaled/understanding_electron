@@ -14,6 +14,14 @@ import styles from './Composer.module.css'
 type ComposerProps = {
   disabled: boolean
   loading: boolean
+  /**
+   * Whether the pair `(model, num_ctx)` has closed (D15.13). It changes the
+   * GATE'S ADVICE and nothing else: two of the three ways out it used to offer
+   * — raise the window, switch to a model with a bigger ceiling — stop existing
+   * once the conversation is locked, and advice the app will not honour is the
+   * same defect as no advice at all.
+   */
+  locked: boolean
   onSend: (text: string) => void
   onCancel: () => void
   /**
@@ -31,6 +39,7 @@ type ComposerProps = {
 function Composer({
   disabled,
   loading,
+  locked,
   onSend,
   onCancel,
   historyChars,
@@ -106,14 +115,25 @@ function Composer({
         <p className={styles.overflow} role="alert">
           {budget.messageAloneOverflows ? (
             <>
-              Esta mensagem sozinha não cabe na janela de contexto. Começar uma conversa nova{' '}
-              <strong>não resolve</strong> — encurte a mensagem, aumente o contexto ou troque para
-              um modelo de teto maior.
+              Esta mensagem sozinha não cabe na janela de contexto.{' '}
+              {locked ? (
+                <>
+                  Encurte a mensagem, ou comece uma conversa nova com uma janela maior — esta está
+                  travada em {budget.limit.toLocaleString('pt-BR')} tokens.
+                </>
+              ) : (
+                <>
+                  Começar uma conversa nova <strong>não resolve</strong> — encurte a mensagem,
+                  aumente o contexto ou troque para um modelo de teto maior.
+                </>
+              )}
             </>
           ) : (
             <>
-              O histórico já não cabe na janela de contexto. Aumente o contexto, troque para um
-              modelo de teto maior, ou comece uma conversa nova.
+              O histórico já não cabe na janela de contexto.{' '}
+              {locked
+                ? 'Esta conversa está travada no modelo e na janela do primeiro envio, então a saída é começar uma conversa nova.'
+                : 'Aumente o contexto, troque para um modelo de teto maior, ou comece uma conversa nova.'}
             </>
           )}
         </p>

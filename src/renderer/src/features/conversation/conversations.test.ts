@@ -105,24 +105,30 @@ describe('resolveModel', () => {
   const catalog = [model('gemma3:4b'), model('qwen2.5-coder:3b')]
 
   it('keeps the chosen model when it is installed', () => {
-    expect(resolveModel('qwen2.5-coder:3b', catalog)).toBe('qwen2.5-coder:3b')
+    expect(resolveModel('qwen2.5-coder:3b', catalog, false)).toBe('qwen2.5-coder:3b')
+    expect(resolveModel('qwen2.5-coder:3b', catalog, true)).toBe('qwen2.5-coder:3b')
   })
 
   it('falls back to the first installed model when nothing was chosen', () => {
     // There is no hardcoded default any more (D15.2). The old constant was how
     // the app could confidently send `gemma3:4b` to an Ollama that never had it.
-    expect(resolveModel(undefined, catalog)).toBe('gemma3:4b')
+    expect(resolveModel(undefined, catalog, false)).toBe('gemma3:4b')
   })
 
-  it('falls back when the chosen model was uninstalled', () => {
-    // Nothing about the transcript is lost: each message records the model that
-    // produced it (D13.4), so history keeps saying what it was written with.
-    expect(resolveModel('mistral:7b', catalog)).toBe('gemma3:4b')
+  it('falls back when the chosen model was uninstalled and nothing is locked', () => {
+    expect(resolveModel('mistral:7b', catalog, false)).toBe('gemma3:4b')
+  })
+
+  it('refuses to substitute a locked model that was uninstalled', () => {
+    // The same fallback that was right before the lock is wrong under it: the
+    // conversation would be answered by a model its own transcript never used,
+    // which is the instability the lock exists to remove (D15.13).
+    expect(resolveModel('mistral:7b', catalog, true)).toBeNull()
   })
 
   it('is null when the machine has no model at all', () => {
     // A state the selector draws — not one the send path should work around.
-    expect(resolveModel('gemma3:4b', [])).toBeNull()
-    expect(resolveModel(undefined, [])).toBeNull()
+    expect(resolveModel('gemma3:4b', [], false)).toBeNull()
+    expect(resolveModel(undefined, [], false)).toBeNull()
   })
 })

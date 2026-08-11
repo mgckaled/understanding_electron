@@ -10,7 +10,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 | # | Plano | Estado |
 |---|---|---|
-| [15](15-orcamento-de-contexto-e-modelo.md) | Orçamento de contexto e modelo por conversa | **passos 0–5 concluídos**; duas correções de uso em 11/08 (D15.10, D15.11). Falta a demonstração ao vivo do portão para mover a `implemented/` |
+| [15](15-orcamento-de-contexto-e-modelo.md) | Orçamento de contexto e modelo por conversa | **passos 0–6 concluídos**; correções de uso e a trava do par `(modelo, num_ctx)` em 11/08 (D15.10–D15.13). Faltam, para mover a `implemented/`: a demonstração ao vivo do portão e o aceite ao vivo da trava |
 | [16](16-anexo-mecanismo-e-dataset.md) | Anexo: o mecanismo, e o dataset como primeiro consumidor | escrito, nenhum passo iniciado |
 
 ---

@@ -1,5 +1,5 @@
 import type { AiModel } from '@shared/ipc'
-import { fitsInMemory, MIN_NUM_CTX } from '@core/ai/budget'
+import { fitsInMemory, MIN_NUM_CTX, type ConversationWindow } from '@core/ai/budget'
 import Field from '../../shared/ui/Field/Field'
 import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
@@ -59,10 +59,12 @@ type ModelSelectorProps = {
   /** Already resolved: the conversation's model, or the first installed one. */
   selected: string | null
   disabled: boolean
+  /** The pair closed on this conversation's first send (D15.13). */
+  locked: boolean
   onSelect: (name: string) => void
   onReload: () => void
-  /** What this conversation reserves; undefined means the provider decides. */
-  numCtx?: number
+  /** The window in force, and whether it can be changed or even used. */
+  contextWindow: ConversationWindow
   /**
    * `min(what the model was trained for, what this machine can hold)`, for any
    * model in the list. A function and not a single number for the selection,
@@ -79,9 +81,10 @@ function ModelSelector({
   state,
   selected,
   disabled,
+  locked,
   onSelect,
   onReload,
-  numCtx,
+  contextWindow,
   ceilingOf,
   scopeKey,
   onNumCtx
@@ -107,7 +110,10 @@ function ModelSelector({
           <select
             className={styles.select}
             value={selected ?? ''}
-            disabled={disabled}
+            // Locked, not merely busy: switching to a smaller model strands the
+            // conversation — the gate correctly refuses a history that no longer
+            // fits, and there is no way back (D15.13).
+            disabled={disabled || locked}
             onChange={(event) => onSelect(event.target.value)}
           >
             {state.data.map((model) => (
@@ -143,26 +149,43 @@ function ModelSelector({
 
       {/* No window at all: offering the control here is what produced "até 0k"
           and a clamp to zero, which the IPC schema then rejected (D15.2). */}
-      {current !== undefined && !fits && (
+      {current !== undefined && contextWindow.status === 'too-large' && (
         <p className={styles.tooBig} role="alert">
           Não cabe na memória livre: {formatSize(current.sizeBytes)} de pesos, mais o cache. Feche
-          aplicativos e recarregue, ou escolha um modelo menor.
+          aplicativos e recarregue
+          {locked ? ', ou comece uma conversa nova.' : ', ou escolha um modelo menor.'}
         </p>
       )}
 
-      {fits && ceiling !== null && (
+      {/* The second failure mode of the lock, and the one that is not symmetric:
+          the reservation is remade on every load, and free RAM varies by 3 GB on
+          this machine. Refusing is the point — shrinking in silence would undo
+          the guarantee the lock exists to give (D15.13). */}
+      {contextWindow.status === 'unaffordable' && (
+        <p className={styles.tooBig} role="alert">
+          Esta conversa reservou {contextWindow.numCtx.toLocaleString('pt-BR')} tokens, e a memória
+          livre agora não comporta. Feche aplicativos e recarregue.
+        </p>
+      )}
+
+      {contextWindow.status === 'locked' && (
+        <p className={styles.locked}>
+          Contexto: {contextWindow.numCtx.toLocaleString('pt-BR')} tokens · travado
+        </p>
+      )}
+
+      {contextWindow.status === 'open' && fits && ceiling !== null && (
         <Field label="Contexto" hint={`até ${formatContext(ceiling)}`}>
           {/* Uncontrolled and re-keyed: useState(stored) would copy the value on
               the first render, before the conversation read returns (fase 14). */}
           <input
-            key={`${scopeKey}:${numCtx ?? 'default'}`}
+            key={`${scopeKey}:${contextWindow.numCtx}`}
             className={styles.number}
             type="number"
             min={MIN_NUM_CTX}
             max={ceiling}
             step={MIN_NUM_CTX}
-            defaultValue={numCtx ?? ''}
-            placeholder={String(ceiling)}
+            defaultValue={contextWindow.numCtx}
             disabled={disabled}
             // On blur, not per keystroke — clamping while typing turns a cleared
             // field into the floor. The floor also keeps 0 off the IPC boundary.

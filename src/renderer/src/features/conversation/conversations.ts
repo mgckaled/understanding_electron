@@ -22,7 +22,16 @@ const TITLE_MAX = 48
  * not in `shared/` for the same reason `ViewState` does: main has no opinion
  * about it.
  */
-export type ConversationWithMessages = Conversation & { messages: Message[] }
+export type ConversationWithMessages = Conversation & {
+  messages: Message[]
+  /**
+   * Whether the transcript read has landed. `messages` is `[]` while it is in
+   * flight, which is indistinguishable from an empty conversation — and the two
+   * differ on whether the pair is locked (D15.13), so the caller reads this
+   * instead and assumes locked until it knows better.
+   */
+  messagesLoaded: boolean
+}
 
 /**
  * The title of a conversation is its first user message, truncated (D13.9).
@@ -84,18 +93,23 @@ export function selectableModels(catalog: AiModel[]): AiModel[] {
  * an Ollama that had never pulled it — and get back a generic `upstream` error
  * with nothing pointing at the cause.
  *
- * A conversation whose chosen model was UNINSTALLED falls back to the first
- * installed one rather than failing on send. Nothing about the transcript is
- * lost by doing so: every message already records the model that produced it
- * (D13.4), so the history keeps saying what it was written with.
+ * `null` means there is nothing to address a call to — a state the selector
+ * draws, not one the send path should try to work around.
  *
- * `null` means the machine has no model at all — a state the selector draws,
- * not one the send path should try to work around.
+ * Once the conversation is LOCKED, falling back to the first installed model is
+ * no longer the safe answer: it is the exact instability the lock removes, and
+ * it would have the conversation answered by a model its own history never used
+ * (D15.13). The uninstalled model becomes `null`, and the offer to duplicate the
+ * conversation elsewhere is what the plan defers.
  *
  * It lives here and not in `core/` for the same reason `titleFromText` does:
  * main has no opinion about which model a UI should preselect.
  */
-export function resolveModel(chosen: string | undefined, catalog: AiModel[]): string | null {
+export function resolveModel(
+  chosen: string | undefined,
+  catalog: AiModel[],
+  locked: boolean
+): string | null {
   if (chosen !== undefined && catalog.some((model) => model.name === chosen)) return chosen
-  return catalog[0]?.name ?? null
+  return locked ? null : (catalog[0]?.name ?? null)
 }

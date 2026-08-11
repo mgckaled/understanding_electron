@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AiAvailability, ChatMessage, ChatReply, JobId } from '@shared/ipc'
+import type {
+  AiAvailability,
+  ChatMessage,
+  ChatReply,
+  ConversationSettings,
+  JobId
+} from '@shared/ipc'
 import { toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
@@ -106,11 +112,17 @@ export function useConversationChat(
       // A conversation exists before there is any reply (D13.9). Typing into an
       // empty app creates one instead of demanding the user make one first.
       const conversationId = activeId ?? create()
-      // A conversation born here has empty settings, so it would fall back to
-      // the catalog's first model on reopen — while its transcript says it was
-      // answered by whatever was selected. Recording the model now keeps the
-      // row and the messages telling the same story.
-      if (activeId === null) updateSettings(conversationId, { model })
+
+      // Where the pair closes (D15.13). It writes only what is MISSING, which is
+      // what makes it both the first-send lock and the one-time backfill for a
+      // conversation that predates it — and what keeps it from ever rewriting a
+      // pair already recorded.
+      const recorded = conversationId === active?.id ? active.settings : {}
+      const pair: ConversationSettings = {
+        ...(recorded.model === undefined ? { model } : {}),
+        ...(recorded.numCtx === undefined && numCtx !== undefined ? { numCtx } : {})
+      }
+      if (Object.keys(pair).length > 0) updateSettings(conversationId, pair)
       // A conversation just created by the line above is not the active one
       // yet, and its history is empty by definition — comparing the ids is what
       // keeps the previous conversation's turns out of a brand new one.

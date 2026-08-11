@@ -63,6 +63,16 @@
   outline: none;
 }
 
+/* The window once the pair is locked (D15.13): a number that is a fact, not a
+   control. A disabled input showing a value reads as "you may edit this later". */
+.locked {
+  align-self: flex-end;
+  padding: var(--space-2) 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
 /* Replaces the context control when no window fits: the choice is still valid,
    it just cannot be made until memory frees up. */
 .tooBig {

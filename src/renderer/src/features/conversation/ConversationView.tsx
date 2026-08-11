@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { AiModel, AppError, ConversationSettings, MessageStopped } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
-import { calibrateRatio, contextCeiling, effectiveNumCtx, RAM_MARGIN_BYTES } from '@core/ai/budget'
+import { calibrateRatio, conversationWindow } from '@core/ai/budget'
+import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
@@ -53,7 +54,12 @@ function ConversationView(): React.JSX.Element {
   // conversation — so creating a second one silently inherited the first one's
   // model. Once a conversation exists, only that conversation decides.
   const chosen = conversation === null ? pending : conversation.settings
-  const model = resolveModel(chosen.model, installed)
+  const messages = conversation?.messages ?? []
+  // The pair closes on the first send, not at creation (D15.13). An unread
+  // transcript counts as locked: `messages` is `[]` while it is in flight, and
+  // unlocking a saved conversation for a frame is the direction that hurts.
+  const locked = conversation !== null && (!conversation.messagesLoaded || messages.length > 0)
+  const model = resolveModel(chosen.model, installed, locked)
 
   // min(what the model was trained for, what this machine can hold) — the
   // second bound is the one that matters: phi4-mini truthfully declares 131072
@@ -76,14 +82,16 @@ function ConversationView(): React.JSX.Element {
 
   // The window actually in force. Sent explicitly on every call, because NOT
   // sending it is what leaves Ollama's own 4096 in charge — a number nobody
-  // chose and one that a single document overflows in silence. `null` means the
-  // model does not fit in the memory free right now, which closes the composer.
-  const numCtx = effectiveNumCtx(chosen.numCtx, ceiling)
+  // chose and one that a single document overflows in silence.
+  const contextWindow = conversationWindow({ locked, reserved: chosen.numCtx, ceiling })
+  const numCtx =
+    contextWindow.status === 'open' || contextWindow.status === 'locked'
+      ? contextWindow.numCtx
+      : null
 
   const { availability, streaming, lastRequestId, state, send, cancel, lastPromptTokens } =
     useConversationChat(model, settings.numThread, numCtx ?? undefined)
 
-  const messages = conversation?.messages ?? []
   // What the next send would carry: the whole transcript, since the provider is
   // stateless and every turn resends everything.
   const historyChars = messages.reduce((total, message) => total + messageText(message).length, 0)
@@ -109,10 +117,10 @@ function ConversationView(): React.JSX.Element {
           <ModelSelector
             state={catalog}
             selected={model}
-            // Changing model mid-answer would leave the reply in flight
-            // attributed to a model that is no longer selected. Switching
-            // between turns is the point (D15.7) and stays open.
+            // Two different reasons to be inert: busy, which passes, and
+            // locked, which does not (D15.13).
             disabled={isLoading}
+            locked={locked}
             onSelect={(name) => choose({ model: name })}
             // Both, because both readings are snapshots the app cannot observe
             // changing: a model installed since launch, and memory freed since.
@@ -120,7 +128,7 @@ function ConversationView(): React.JSX.Element {
               reload()
               reloadMemory()
             }}
-            numCtx={chosen.numCtx}
+            contextWindow={contextWindow}
             ceilingOf={ceilingOf}
             // Remounts the window control when the conversation changes, so it
             // re-reads that conversation's value instead of showing the last
@@ -141,6 +149,17 @@ function ConversationView(): React.JSX.Element {
         {availability.status === 'error' && (
           <p className={styles.unavailable} role="alert">
             {availabilityText(availability.error)}
+          </p>
+        )}
+
+        {/* Under the lock, falling back to the first installed model would have
+            the conversation answered by a model its own history never used
+            (D15.13). Offering to duplicate it elsewhere is what the plan
+            defers; saying so is not. */}
+        {locked && model === null && chosen.model !== undefined && (
+          <p className={styles.unavailable} role="alert">
+            O modelo <strong>{chosen.model}</strong> desta conversa não está mais instalado. Ela
+            fica somente leitura — reinstale o modelo ou comece uma conversa nova.
           </p>
         )}
 
@@ -193,6 +212,9 @@ function ConversationView(): React.JSX.Element {
       <Composer
         disabled={!isReady || model === null || numCtx === null}
         loading={isLoading}
+        // The gate's ways out are not the same under the lock: two of the three
+        // it used to offer no longer exist (D15.13).
+        locked={locked}
         onSend={send}
         onCancel={cancel}
         historyChars={historyChars}

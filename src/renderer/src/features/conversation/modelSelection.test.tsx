@@ -142,11 +142,10 @@ describe('ModelSelector', () => {
     await waitFor(() => expect(selector().value).toBe('gemma3:4b'))
   })
 
-  it('records the model on a conversation that the send itself created', async () => {
-    // Typing into an empty app creates the conversation (D13.9), and that row
-    // is born with empty settings. Without this, the transcript would say the
-    // reply came from qwen while reopening the conversation showed gemma —
-    // the row and its own messages telling different stories.
+  it('records the whole pair on the send that creates the conversation', async () => {
+    // The lock is only as good as what it writes down (D15.13). Recording the
+    // model alone would leave the window still derived from live free RAM —
+    // grey control, floating value.
     const user = userEvent.setup()
     const api = mount()
     await screen.findByRole('option', { name: /qwen/ })
@@ -157,7 +156,8 @@ describe('ModelSelector', () => {
 
     await waitFor(() =>
       expect(api.conversation.updateSettings).toHaveBeenCalledWith(expect.any(String), {
-        model: 'qwen2.5-coder:3b'
+        model: 'qwen2.5-coder:3b',
+        numCtx: 32768
       })
     )
   })
@@ -265,6 +265,80 @@ describe('what the list offers', () => {
     mountWith([EMBEDDER])
 
     expect(await screen.findByText('Nenhum modelo instalado.')).toBeInTheDocument()
+  })
+})
+
+/*
+ * The lock (D15.13). Level 2 because level 1 already passed while the screen
+ * showed something else once (D15.11): the pair is only locked if the CONTROLS
+ * say so, and `disabled={isLoading}` goes back to false as soon as the reply
+ * lands.
+ */
+describe('the pair locks on the first send', () => {
+  async function send(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+  }
+
+  it('stops offering another model once there is a turn', async () => {
+    const user = userEvent.setup()
+    mount()
+    await screen.findByRole('option', { name: /qwen/ })
+    expect(selector()).toBeEnabled()
+
+    await send(user)
+
+    await waitFor(() => expect(selector()).toBeDisabled())
+  })
+
+  it('turns the window from a control into a stated number', async () => {
+    const user = userEvent.setup()
+    mount()
+    await screen.findByLabelText('Contexto')
+
+    await send(user)
+
+    expect(await screen.findByText(/32\.768 tokens · travado/)).toBeInTheDocument()
+    // Not a disabled input: one still reads as "editable later", which is the
+    // opposite of what the lock promises.
+    expect(screen.queryByLabelText('Contexto')).not.toBeInTheDocument()
+  })
+
+  it('refuses the send when the locked window no longer fits, without shrinking it', async () => {
+    // The asymmetric failure mode: the reservation is remade on every load, and
+    // free RAM varies by 3 GB on this machine. Silently dropping to what fits
+    // would give back the instability the lock removes.
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByLabelText('Contexto')
+    await send(user)
+    await screen.findByText(/travado/)
+
+    vi.mocked(api.app.memory).mockResolvedValue({
+      freeBytes: 4 * 1024 ** 3,
+      totalBytes: 16 * 1024 ** 3
+    })
+    await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
+
+    expect(await screen.findByText(/reservou 32\.768 tokens/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
+  })
+
+  it('says the locked model is gone instead of answering with another one', async () => {
+    // The silent fallback that was right before the lock is wrong under it: the
+    // conversation would be answered by a model its transcript never used.
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByRole('option', { name: /qwen/ })
+    await user.selectOptions(selector(), 'qwen2.5-coder:3b')
+    await send(user)
+    await waitFor(() => expect(selector()).toBeDisabled())
+
+    vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [TEST_MODEL] })
+    await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
+
+    expect(await screen.findByText(/não está mais instalado/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
   })
 })
 

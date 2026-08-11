@@ -181,5 +181,5 @@ export function useActiveConversation(): ConversationWithMessages | null {
 
   const conversation = conversations.find((item) => item.id === activeId)
   if (conversation === undefined) return null
-  return { ...conversation, messages: data ?? [] }
+  return { ...conversation, messages: data ?? [], messagesLoaded: data !== undefined }
 }

@@ -1,178 +1,14 @@
-import type { AiModel } from '@shared/ipc'
 import {
   budgetFor,
   calibrateRatio,
-  contextCeiling,
+  conversationWindow,
   DEFAULT_CHARS_PER_TOKEN,
   DEFAULT_NUM_CTX,
   effectiveNumCtx,
   estimateTokens,
   fitsInMemory,
-  kvBytesPerToken,
-  MIN_NUM_CTX,
-  RAM_MARGIN_BYTES,
-  residentBytes
+  MIN_NUM_CTX
 } from './budget'
-
-const GIB = 1024 ** 3
-
-/*
- * The fleet as measured on 10/08/2026. qwen2.5-coder:3b is the calibration
- * point — `ollama ps` reported 3,316 GB at num_ctx 32768 — so the assertion
- * about it is the one that ties this arithmetic to reality rather than to
- * itself.
- */
-
-function model(over: Partial<AiModel>): AiModel {
-  return {
-    provider: 'ollama',
-    name: 'x',
-    parameterSize: '',
-    sizeBytes: 0,
-    capabilities: ['completion'],
-    contextLength: 32768,
-    attention: null,
-    variantOf: null,
-    ...over
-  }
-}
-
-const qwenCoder3b = model({
-  name: 'qwen2.5-coder:3b',
-  sizeBytes: 1.8 * GIB,
-  contextLength: 32768,
-  attention: { blockCount: 36, headCountKv: 2, headDim: 128, slidingWindow: null }
-})
-
-const gemma3_4b = model({
-  name: 'gemma3:4b',
-  sizeBytes: 3.11 * GIB,
-  contextLength: 131072,
-  attention: { blockCount: 34, headCountKv: 4, headDim: 256, slidingWindow: 1024 }
-})
-
-const phi4Mini = model({
-  name: 'phi4-mini',
-  sizeBytes: 2.32 * GIB,
-  contextLength: 131072,
-  // Declared, and larger than this model's own ceiling — so it never closes
-  // over anything and the model pays full attention prices.
-  attention: { blockCount: 32, headCountKv: 8, headDim: 128, slidingWindow: 262144 }
-})
-
-const qwen7b = model({
-  name: 'qwen2.5:7b',
-  sizeBytes: 4_683_087_332,
-  contextLength: 32768,
-  attention: { blockCount: 28, headCountKv: 4, headDim: 128, slidingWindow: null }
-})
-
-const embedder = model({ name: 'nomic-embed-text', contextLength: 2048, attention: null })
-
-describe('kvBytesPerToken', () => {
-  it('matches the 38 KB/token measured on qwen2.5-coder:3b', () => {
-    // 36 layers × 2 KV heads × 128 dims, ×2 for K and V, ×2 for f16, ×1,06.
-    expect(kvBytesPerToken(qwenCoder3b)! / 1024).toBeCloseTo(38.2, 1)
-  })
-
-  it('counts ONE growing layer for a model with an active sliding window', () => {
-    // Measured 4,3 KB/token on gemma3:4b. Its 34 layers at full price would be
-    // 136 KB — the window is the entire difference, and it is why the "num_ctx
-    // costs nothing" measurement from the previous session did not generalize.
-    expect(kvBytesPerToken(gemma3_4b)! / 1024).toBeCloseTo(4.24, 2)
-  })
-
-  it('charges full price when the declared window is larger than the ceiling', () => {
-    // The trap: `if (slidingWindow)` is truthy for phi4-mini and would classify
-    // the most expensive model in the fleet as the cheapest, off by 4 GB.
-    expect(kvBytesPerToken(phi4Mini)! / 1024).toBeCloseTo(135.7, 1)
-    expect(kvBytesPerToken(phi4Mini)!).toBeGreaterThan(kvBytesPerToken(gemma3_4b)! * 30)
-  })
-
-  it('is null for a model with no attention block, never zero', () => {
-    // Zero would read as "free" and let the ceiling go to infinity.
-    expect(kvBytesPerToken(embedder)).toBeNull()
-  })
-})
-
-describe('residentBytes', () => {
-  it('reproduces the 3,32 GB measured for qwen2.5-coder:3b at 32k', () => {
-    expect(residentBytes(qwenCoder3b, 32768)! / GIB).toBeCloseTo(3.32, 1)
-  })
-
-  it('reproduces the 2,28 GB measured for the same model at 4k', () => {
-    // Two points, one formula: the fixed 0,33 GB overhead is what makes both
-    // land, and it was derived from these two numbers rather than assumed.
-    expect(residentBytes(qwenCoder3b, 4096)! / GIB).toBeCloseTo(2.28, 1)
-  })
-
-  it('says a lightweight model can cost more than a heavy one', () => {
-    // phi4-mini is 2,32 GB on disk against qwen2.5:7b-class weights, and at 32k
-    // it still ends up more expensive. Model size does not predict context cost,
-    // and no column of `ollama list` shows this.
-    expect(residentBytes(phi4Mini, 32768)!).toBeGreaterThan(residentBytes(gemma3_4b, 32768)!)
-    expect(phi4Mini.sizeBytes).toBeLessThan(gemma3_4b.sizeBytes)
-  })
-})
-
-describe('contextCeiling', () => {
-  it('clamps below the ceiling the model truthfully declares', () => {
-    // The case the whole decision exists for: phi4-mini declares 131072 and
-    // honouring it means 16 GB of cache. The datum is right; the conclusion is
-    // not, and only a derived bound tells them apart.
-    const ceiling = contextCeiling(phi4Mini, 6 * GIB, 0)
-
-    expect(ceiling).toBeLessThan(131072)
-    expect(ceiling).toBeGreaterThan(0)
-  })
-
-  it('gives the same model different ceilings on a busier machine', () => {
-    // Proof the free-RAM figure is entering the arithmetic rather than being
-    // decoration. There is no single "free RAM" on this machine: ~6 GB in the
-    // working environment, ~9 GB with only the app running.
-    const busy = contextCeiling(phi4Mini, 6 * GIB, 0)!
-    const idle = contextCeiling(phi4Mini, 9 * GIB, 0)!
-
-    expect(idle).toBeGreaterThan(busy)
-  })
-
-  it('lets a sliding-window model reach the ceiling it declares', () => {
-    // gemma3:4b is the one model whose declared 131072 is affordable — 3,97 GB
-    // all-in. This inverted what the plan assumed: what keeps it out of reach is
-    // ~87 minutes of prefill, not memory.
-    expect(contextCeiling(gemma3_4b, 6 * GIB, 0)).toBe(131072)
-  })
-
-  it('never exceeds what the model was trained for, however much RAM there is', () => {
-    expect(contextCeiling(qwenCoder3b, 64 * GIB, 0)).toBe(32768)
-  })
-
-  it('shrinks by exactly the margin it is given', () => {
-    const withoutMargin = contextCeiling(phi4Mini, 9 * GIB, 0)!
-    const withMargin = contextCeiling(phi4Mini, 9 * GIB, 3 * GIB)!
-
-    expect(withMargin).toBeLessThan(withoutMargin)
-  })
-
-  it('returns zero rather than a negative window when nothing fits', () => {
-    // A machine too small for the weights alone. Zero is a state the selector
-    // can draw; a negative number is one it would silently pass to the runner.
-    expect(contextCeiling(phi4Mini, 1 * GIB, 0)).toBe(0)
-  })
-
-  it('is null when there is nothing to bound', () => {
-    expect(contextCeiling(embedder, 8 * GIB, 0)).toBeNull()
-    expect(contextCeiling(model({ contextLength: null }), 8 * GIB, 0)).toBeNull()
-  })
-
-  it('leaves a 7B model a usable window in the working environment', () => {
-    // The regression that made this margin a measurement. At 1 GiB every 7B in
-    // the fleet came back at ceiling 0: a fixed margin subtracted BEFORE the
-    // per-token division costs a small model tokens and a large one everything.
-    expect(contextCeiling(qwen7b, 5.44 * GIB, RAM_MARGIN_BYTES)!).toBeGreaterThan(MIN_NUM_CTX)
-    expect(contextCeiling(qwen7b, 5.44 * GIB, GIB)).toBe(0)
-  })
-})
 
 describe('fitsInMemory', () => {
   it('reads a ceiling too small to converse in as not fitting', () => {
@@ -276,5 +112,71 @@ describe('budgetFor', () => {
 
   it('reports above 1 when the send overflows, so a meter can show it', () => {
     expect(budgetFor({ ...base, historyChars: 40_000, draftChars: 0 }).used).toBeGreaterThan(1)
+  })
+})
+
+/*
+ * The lock (D15.13). What it buys is a denominator that stops moving: before
+ * the first send the window is derived from free RAM at render time, after it
+ * the recorded number stands.
+ */
+describe('conversationWindow', () => {
+  it('derives the window while the conversation is still open', () => {
+    expect(conversationWindow({ locked: false, reserved: undefined, ceiling: 32_768 })).toEqual({
+      status: 'open',
+      numCtx: 32_768
+    })
+  })
+
+  it('clamps an open conversation to what the machine can hold', () => {
+    expect(conversationWindow({ locked: false, reserved: 32_768, ceiling: 6006 })).toEqual({
+      status: 'open',
+      numCtx: 6006
+    })
+  })
+
+  it('keeps a locked window even when more memory freed up', () => {
+    // The point of the lock, and the direction that is easy to get wrong: a
+    // ceiling that grew must not silently raise a reservation the model was
+    // already loaded with.
+    expect(conversationWindow({ locked: true, reserved: 8192, ceiling: 131_072 })).toEqual({
+      status: 'locked',
+      numCtx: 8192
+    })
+  })
+
+  it('refuses instead of shrinking when the locked window no longer fits', () => {
+    // The asymmetric failure mode: the reservation is remade on every load, and
+    // free RAM varies by 3 GB on this machine. Shrinking in silence would undo
+    // the guarantee the lock exists to give.
+    expect(conversationWindow({ locked: true, reserved: 32_768, ceiling: 6006 })).toEqual({
+      status: 'unaffordable',
+      numCtx: 32_768
+    })
+  })
+
+  it('locks a conversation from before the lock at what it can afford now', () => {
+    // Its turns predate the pair being recorded, so there is nothing written
+    // down to honour — it derives one, and its next send writes it.
+    expect(conversationWindow({ locked: true, reserved: undefined, ceiling: 6006 })).toEqual({
+      status: 'locked',
+      numCtx: 6006
+    })
+  })
+
+  it('reports too-large when the model does not fit at all', () => {
+    // `contextCeiling` returning 0 is the true answer; treating it as a window
+    // is what produced "até 0k" and a clamp to zero (D15.10).
+    expect(conversationWindow({ locked: false, reserved: undefined, ceiling: 0 })).toEqual({
+      status: 'too-large'
+    })
+  })
+
+  it('honours a locked window for a model that could not be costed', () => {
+    // A null ceiling means "no basis to refuse", never "free".
+    expect(conversationWindow({ locked: true, reserved: 16_384, ceiling: null })).toEqual({
+      status: 'locked',
+      numCtx: 16_384
+    })
   })
 })
