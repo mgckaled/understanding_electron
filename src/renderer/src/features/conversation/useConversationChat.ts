@@ -48,11 +48,12 @@ export function useConversationChat(
   lastRequestId: string | null
   state: ViewState<ChatReply>
   /**
-   * `prompt_eval_count` from the last reply — the exact number of tokens the
-   * provider actually read. The only exact count available anywhere, and what
-   * calibrates the meter's estimate from the second turn on (D15.4).
+   * The last call's two halves: the characters that WERE SENT, and the
+   * `prompt_eval_count` the provider reported for exactly them. They travel
+   * together because a ratio built from one of them and a figure from another
+   * moment is not a ratio (D15.14).
    */
-  lastPromptTokens: number | undefined
+  lastPrompt: { chars: number; tokens: number } | undefined
   send: (prompt: string) => Promise<void>
   cancel: () => void
 } {
@@ -63,7 +64,9 @@ export function useConversationChat(
   const [availability, setAvailability] = useState<ViewState<AiAvailability>>({ status: 'loading' })
   const [streaming, setStreaming] = useState('')
   const [lastRequestId, setLastRequestId] = useState<string | null>(null)
-  const [lastPromptTokens, setLastPromptTokens] = useState<number | undefined>(undefined)
+  const [lastPrompt, setLastPrompt] = useState<{ chars: number; tokens: number } | undefined>(
+    undefined
+  )
   const [jobId, setJobId] = useState<JobId | null>(null)
   const { state, run } = useAsyncAction<ChatReply>()
 
@@ -128,6 +131,10 @@ export function useConversationChat(
       // keeps the previous conversation's turns out of a brand new one.
       const previous = conversationId === active?.id ? active.messages : []
       const history: ChatMessage[] = [...toChatMessages(previous), { role: 'user', content: text }]
+      // Measured HERE, on the payload, and not recomputed from the transcript
+      // afterwards: by then the transcript also holds the reply, which this call
+      // did not send (D15.14).
+      const sentChars = history.reduce((total, message) => total + message.content.length, 0)
 
       append(conversationId, { role: 'user', parts: [{ kind: 'text', text }] })
       clearStreaming()
@@ -146,11 +153,13 @@ export function useConversationChat(
       clearStreaming()
 
       if (result.ok) {
-        // The exact token count of what was just read. Kept so the meter can
-        // stop guessing: dividing the characters that were sent by this gives
-        // the real density of THIS conversation. Absent from a provider that
-        // does not report it, and the meter falls back to the generic ratio.
-        setLastPromptTokens(result.value.promptTokens)
+        // The pair the meter calibrates on: what went out, and what the
+        // provider counted for it. `sentChars` misses the chat template's own
+        // markers, which the count includes — so the ratio comes out low and
+        // the estimate high, which is the safe direction.
+        if (result.value.promptTokens !== undefined) {
+          setLastPrompt({ chars: sentChars, tokens: result.value.promptTokens })
+        }
         // Addressed to the conversation captured at send time, never to
         // whichever one is active when the reply lands: switching mid-stream
         // must not drop the answer into the wrong transcript. The model is
@@ -196,5 +205,5 @@ export function useConversationChat(
     if (jobId !== null) void window.api.job.cancel(jobId)
   }, [jobId])
 
-  return { availability, streaming, lastRequestId, state, lastPromptTokens, send, cancel }
+  return { availability, streaming, lastRequestId, state, lastPrompt, send, cancel }
 }

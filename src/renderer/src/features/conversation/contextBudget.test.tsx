@@ -69,6 +69,29 @@ describe('context budget', () => {
     expect(await screen.findByText(/~1 de 32.768 tokens/)).toBeInTheDocument()
   })
 
+  it('counts the reply too, and calibrates on what was actually SENT', async () => {
+    // The acceptance item of passo 4 that was never written, and the defect it
+    // would have caught: dividing the characters that exist NOW by the tokens
+    // of what was sent BEFORE makes the formula cancel itself, and the meter
+    // reports last turn's prompt_eval_count forever.
+    const user = userEvent.setup()
+    const api = mount()
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: { content: 'r'.repeat(400), promptTokens: 40 }
+    })
+    await screen.findByText(/de 32.768 tokens/)
+
+    await paste(user, 'p'.repeat(80))
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    // 80 characters were sent and the provider counted 40 tokens for them, so
+    // this conversation runs at 2 chars/token. The transcript is now 480
+    // characters — question plus reply — which is 240 tokens. The cancelling
+    // formula reports 40: exactly the count of the question alone.
+    expect(await screen.findByText(/~240 de 32\.768 tokens/)).toBeInTheDocument()
+  })
+
   it('sends when the turn fits', async () => {
     const user = userEvent.setup()
     const api = mount()

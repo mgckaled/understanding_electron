@@ -89,15 +89,17 @@ function ConversationView(): React.JSX.Element {
       ? contextWindow.numCtx
       : null
 
-  const { availability, streaming, lastRequestId, state, send, cancel, lastPromptTokens } =
+  const { availability, streaming, lastRequestId, state, send, cancel, lastPrompt } =
     useConversationChat(model, settings.numThread, numCtx ?? undefined)
 
   // What the next send would carry: the whole transcript, since the provider is
   // stateless and every turn resends everything.
   const historyChars = messages.reduce((total, message) => total + messageText(message).length, 0)
   // Generic ratio on the first turn, this conversation's own from then on — the
-  // exact count only exists AFTER a call (D15.4).
-  const charsPerToken = calibrateRatio(historyChars, lastPromptTokens)
+  // exact count only exists AFTER a call (D15.4). NOT `historyChars`: that
+  // already holds the reply, which the call being measured never sent, and the
+  // two together made the formula cancel itself (D15.14).
+  const charsPerToken = calibrateRatio(lastPrompt?.chars ?? 0, lastPrompt?.tokens)
   const isLoading = state.status === 'loading'
   const isReady = availability.status === 'ready'
   // The in-flight surface belongs to the conversation the request was sent
