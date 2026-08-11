@@ -68,7 +68,7 @@ Do scaffold do electron-vite a uma base pronta para o resto. Uma linha por fase;
 | [11](../implemented/11-markdown-na-resposta-do-assistente.md) | Markdown na resposta do assistente, com HTML cru inerte |
 | [12](../implemented/12-realce-de-sintaxe.md) | Realce de sintaxe por classes semânticas, sem estilo inline |
 
-As decisões estruturais viraram as skills [`architecture`](../../../.claude/skills/architecture/SKILL.md), [`design-system`](../../../.claude/skills/design-system/SKILL.md) e [`testing`](../../../.claude/skills/testing/SKILL.md) — carregadas quando o assunto aparece, em vez de ocuparem contexto em toda sessão.
+As decisões estruturais viraram skills — carregadas quando o assunto aparece, em vez de ocuparem contexto em toda sessão: [`architecture`](../../../.claude/skills/architecture/SKILL.md), [`design-system`](../../../.claude/skills/design-system/SKILL.md), [`testing`](../../../.claude/skills/testing/SKILL.md) e, desde ago/2026, [`ipc`](../../../.claude/skills/ipc/SKILL.md), separada da primeira quando o vigésimo canal disparou o gatilho do [`ROADMAP § 2`](../../ROADMAP.md).
 
 ---
 

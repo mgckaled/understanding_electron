@@ -17,7 +17,7 @@ Quatro coisas faltam, e nenhuma é o parser:
 3. **O orçamento do plano 15 mede a coisa errada** — descoberto ao escrever este plano, e é o achado que mais muda o desenho. Ver D16.5.
 4. **Apagar uma conversa não sabe o que fazer com os bytes dela.** O `ON DELETE CASCADE` da [D14.1](../implemented/14-persistencia-das-conversas.md) resolve mensagens e **não serve** para anexo: o mesmo arquivo pode estar em duas conversas.
 
-**Fora deste plano:** extratores de documento e imagem, gate de `vision`, `/api/ps` em Configurações (17); DuckDB e o nível 2 de verdade (18); nível 3, amostra de linhas (17, junto com documento, que é nível 3 por construção). Prompt de sistema continua fora, pelo motivo da [D15.2](15-orcamento-de-contexto-e-modelo.md).
+**Fora deste plano:** extratores de documento e imagem e o gate de `vision` (17); DuckDB e o nível 2 de verdade (18); nível 3, amostra de linhas (17, junto com documento, que é nível 3 por construção). Prompt de sistema continua fora, pelo motivo da [D15.2](15-orcamento-de-contexto-e-modelo.md). ~~`/api/ps` em Configurações (17)~~ — **entregue em ago/2026**, antecipado do 17 porque o incômodo era imediato.
 
 ---
 
@@ -25,11 +25,28 @@ Quatro coisas faltam, e nenhuma é o parser:
 
 O plano anterior fechou com seis itens de herança. Três se cobram aqui:
 
-- **`AiModel.contextLength` e `contextCeiling` existem**, então o custo de um anexo é comparável com um número real antes de ele ser pago.
+- **`AiModel.contextLength` e `contextCeiling` existem** — este último agora em `core/ai/memory.ts`, separado do `budget.ts` porque um lado são bytes e o outro tokens —, então o custo de um anexo é comparável com um número real antes de ele ser pago.
 - **O medidor existe**, e é o que torna visível o custo de um cartão antes do envio.
 - **`settings` absorve chave nova sem migração.**
 
 E um item novo, que o 15 não previu: **`MessagePart` só tem a variante `text`, e a coluna `parts` é JSON justamente para as variantes deste plano não custarem migração** — a [migração v1](../implemented/14-persistencia-das-conversas.md) diz isso em comentário. Se um `CREATE TABLE` aparecer no diff, ver a D16.2 antes de aceitá-lo.
+
+### O que mudou no 15 depois deste plano ser escrito
+
+Quatro coisas, e três delas encostam diretamente aqui:
+
+- **A trava do par `(modelo, num_ctx)` está implementada** (D15.13, passo 6), não só decidida. O denominador fixo que o passo 0 precisava **existe**.
+- **O medidor tinha um defeito e ele foi consertado** (D15.14) — ver o efeito na D16.5 abaixo, que encolheu.
+- **Configurações mostra o que está residente e deixa descarregar** (`ai:loaded`, `ai:unload`), antecipado do 17. Some da fila do 17 e não custa nada a este plano.
+- **Existe uma skill [`ipc`](../../../.claude/skills/ipc/SKILL.md)**, separada da `architecture` quando o vigésimo canal disparou o gatilho. **Este plano cria o canal de anexo, então ela é leitura obrigatória antes do passo 2** — e traz uma restrição que o plano precisa respeitar, logo abaixo.
+
+### O canal de anexo não carrega bytes, e agora há um motivo citável
+
+Verificado no fonte do Electron 42 ao escrever a skill `ipc`: **não existe zero-cópia no IPC.** `invoke` não aceita lista de transferência nenhuma, a do `postMessage` só extrai `MessagePort`, e todo `ArrayBuffer` é copiado a fundo pelo `v8::ValueSerializer`.
+
+Para este plano isso **confirma** o desenho da D16.6 em vez de mudá-lo, e vale escrito para que ninguém o "simplifique" depois: o renderer manda **um caminho**, e quem lê, hasheia e copia é o main. Um CSV de 200 MB atravessando o IPC seriam 200 MB copiados **para dentro do renderer** — o processo cujo heap o [`ESCOPO`](../../ESCOPO.md) identifica como o gargalo real, e sem nenhum ganho, porque o renderer não faz nada com os bytes.
+
+⚠️ **É o plano 17 que vai cobrar isto de verdade**, quando a pré-visualização de uma imagem precisar dos pixels na tela. Ali os bytes precisam mesmo atravessar, e a decisão a tomar — `data:` URI montada no main, protocolo customizado, ou arquivo servido de `userData` — é dele, não deste. Registrado aqui porque a restrição foi medida aqui.
 
 ### Que modelo escolher quando há anexo — duas correções de intuição
 
@@ -49,7 +66,9 @@ O `phi4-mini` é mais leve que o `gemma3:4b` e tem janela **7× menor**. É por 
 
 **"Arquivo grande pede janela grande"** vale para documento (17) e **não vale para dataset**, que é o caso deste plano: um CSV de 2 GB e um de 2 MB produzem o mesmo cartão, porque o modelo nunca vê as linhas. É o desenho inteiro dos três níveis expresso em uma frase — **o tamanho do dataset não consome contexto**. E, mesmo onde vale, reservar não é encher: os 131.072 do `gemma3:4b` cabem na RAM e custam ~87 min para preencher, o que é o motivo de o teto prático de documento ser ~8k tokens.
 
-**E escolher antes de anexar deixou de ser conselho: é garantia.** A [D15.13](15-orcamento-de-contexto-e-modelo.md) trava o par `(modelo, num_ctx)` no primeiro envio, o que dá a este plano o que faltava ao passo 0 — **um denominador fixo**. Sem a trava, o orçamento de um cartão seria medido contra uma janela que a próxima troca de modelo pode dividir por vinte, e a conversa que cabia passa a não caber com o anexo já dentro dela. Com a trava, o custo do cartão é orçado uma vez contra um número que não se mexe.
+**E escolher antes de anexar deixou de ser conselho: é garantia — implementada.** A [D15.13](15-orcamento-de-contexto-e-modelo.md) trava o par `(modelo, num_ctx)` no primeiro envio, e o passo 6 do 15 a entregou. Isso dá a este plano o que faltava ao passo 0: **um denominador fixo**. Sem a trava, o orçamento de um cartão seria medido contra uma janela que a próxima troca de modelo pode dividir por vinte, e a conversa que cabia passa a não caber com o anexo já dentro dela.
+
+> 🔍 **A trava também protege a medição do passo 0, e isso não estava previsto.** A razão caracteres-por-token que calibra o medidor é propriedade do **tokenizador**, e os modelos da frota não compartilham um: `gemma3:4b` é SentencePiece, `qwen2.5-coder:3b` é BPE — e este último ainda injeta um system prompt de fábrica em toda requisição, custo fixo que o aplicativo não conta. Medido em 11/08/2026, com a mesma pergunta-e-resposta: **204 tokens contra 311**. Um custo de cartão medido num modelo **não transporta** para outro; o passo 0 tem de dizer em qual mediu, como o passo 0 do 15 teve de dizer. Ver [`HISTORY.md`](../../HISTORY.md).
 
 ---
 
@@ -130,6 +149,10 @@ O conserto não é somar um caso especial ao medidor — é apontar o medidor pa
 
 Consequência de contrato: `historyChars` deixa de ser um número que o `ConversationView` calcula e passa a sair do construtor de contexto.
 
+> ✅ **Metade disto já aconteceu, por outro caminho — e é a metade que valida o argumento.** A [D15.14](15-orcamento-de-contexto-e-modelo.md), consertando um defeito sem relação com anexo, moveu a **calibração** para o payload: o `useConversationChat` mede `sentChars` sobre o array `history` que acabou de montar, e não sobre a transcrição. Quando a variante `dataset` existir, o cartão é materializado por essa mesma montagem e **passa a ser contado sem uma linha de código nova**, que é exatamente a propriedade que a D16.5 prometia.
+>
+> Sobra a **estimativa**: o `historyChars` do `ConversationView` continua somando `messageText` sobre a transcrição, e é ele que reportaria zero para o anexo. O passo 5 encolheu para esse lado só — e o teste de aceite continua tendo de ser **visto vermelho antes**, porque é ele que prova que a metade restante importava.
+
 ### D16.6 — Anexar é um job, e o job é a leitura
 
 O clipe abre o diálogo, e a partir daí é o mecanismo da [fase 06](../implemented/06-primeira-feature.md): `jobId` cunhado no renderer, progresso por evento, cancelamento. Não há mecanismo novo — há um segundo consumidor do que já existe, que é a primeira vez que aquele desenho é cobrado por outro caminho.
@@ -198,6 +221,7 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 11/08/2026 | — | plano atualizado com o 15 fechado | Sessão do plano 15, sem código deste. Quatro entradas do 15 encostam aqui. **(1)** A trava do par está **implementada**, não só decidida — o denominador fixo do passo 0 existe. **(2)** O medidor tinha um defeito (D15.14: a razão dividia dois recortes de momentos diferentes e se cancelava) e o conserto **fez metade da D16.5 por outro caminho** — a calibração já mede o payload, então o cartão nascerá contado; sobra a estimativa, e o passo 5 encolheu para esse lado. **(3)** `/api/ps` em Configurações saiu do 17 e está entregue. **(4)** Nasceu a skill [`ipc`](../../../.claude/skills/ipc/SKILL.md), e escrevê-la produziu uma restrição que este plano precisa respeitar: **não existe zero-cópia no IPC do Electron** — `invoke` não aceita transferível nenhum e todo binário é copiado a fundo. Confirma a D16.6 (o renderer manda caminho, o main lê) e desloca a pergunta difícil para o 17, onde a pré-visualização de imagem precisa mesmo dos pixels na tela. Acrescentado também um alerta ao passo 0: **custo de cartão medido num modelo não transporta para outro**, porque a razão caracteres-por-token é do tokenizador — 204 contra 311 tokens para a mesma pergunta-e-resposta em dois modelos da frota. |
 | 11/08/2026 | — | plano escrito | Escrito logo após as correções de uso do plano 15 (D15.10, D15.11), e uma delas mudou o desenho deste: a armadilha que o 15 registrou para o 17 — medidor que conta caracteres contra uma parte que não tem caracteres — **arma um plano antes**, porque basta não ser texto, não é preciso ser imagem. Daí a D16.5, que aponta o orçamento para o payload em vez da transcrição. Duas propostas da sessão anterior entram como decisões futuras com gatilho (F16.1, F16.2) em vez de escopo. |
 | 11/08/2026 | — | plano revisado | Revisão de leitura, e ela achou três buracos de exposição mais um número que faltava. **(1)** *"Cartão de dados"* não estava definido em lugar nenhum e colide de leitura com a **proposta** do 19 — um é o que o modelo lê, o outro é o que ele escreve; definição e a distinção agora abrem a D16.4, junto do que estava implícito e não escrito: **o cartão é determinístico, sem o modelo**. **(2)** O passo 0 media o custo do cartão sem dizer que ele é **pago a cada turno** — 2.000 tokens numa conversa de 20 turnos são 40.000 de prefill acumulado, e é esse multiplicador que faz a medição valer uma sessão. **(3)** As duas intuições naturais sobre escolha de modelo são falsas e agora estão numa tabela: menos parâmetros não implica janela maior (o `phi4-mini` é mais leve que o `gemma3:4b` e tem janela 7× menor), e **tamanho de dataset não consome contexto nenhum**, porque o modelo nunca vê as linhas. Verificado no caminho, porque a D16.2 dependia disso e não de plausibilidade: `json_each` existe no `node:sqlite` e o conjunto de referências sai num `SELECT` só. |
 

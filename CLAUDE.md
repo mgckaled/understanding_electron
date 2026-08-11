@@ -41,7 +41,8 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | Assunto | Dono |
 |---|---|
 | O que o app faz e não faz, catálogo de operações, formatos, escala | [`docs/ESCOPO.md`](docs/ESCOPO.md) |
-| Camadas, regra de importação, contrato IPC, sandbox, régua de tamanho | skill [`architecture`](.claude/skills/architecture/SKILL.md) |
+| Camadas, regra de importação, sandbox, jobs, régua de tamanho | skill [`architecture`](.claude/skills/architecture/SKILL.md) |
+| Contrato IPC, `window.api`, `Result` vs exceção, eventos, payload binário | skill [`ipc`](.claude/skills/ipc/SKILL.md) |
 | Tokens, primitivos, `ViewState`, convenções de desktop | skill [`design-system`](.claude/skills/design-system/SKILL.md) |
 | Níveis de teste, mocks, o que não testar | skill [`testing`](.claude/skills/testing/SKILL.md) |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow) | [`docs/study/05-proximos-passos.md`](docs/study/05-proximos-passos.md) |
@@ -169,8 +170,8 @@ Estes números decidiram o default de `num_thread`, o modelo padrão e a recusa 
 Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha. Aqui fica o essencial e o ponteiro; o porquê está na skill indicada.
 
 - **Camadas e quem importa quem.** Seis pastas em `src/` (`shared`, `core`, `main`, `workers`, `preload`, `renderer`), com a regra de importação verificada por ESLint. Decida a camada antes de criar o arquivo — skill [`architecture`](.claude/skills/architecture/SKILL.md).
-- **Todo canal novo nasce em `src/shared/ipc.ts`** e é registrado pelo `handle()` genérico de `src/main/ipc/`; não existe `ipcMain.handle` avulso. O handler é função exportada, testável sem subir o Electron — skill `architecture`.
-- **`Result` para falha esperada, exceção para bug.** O que atravessa o IPC e pode falhar retorna união discriminada (`AppError`); payload fora do schema **lança** — skill `architecture`.
+- **Todo canal novo nasce em `src/shared/ipc.ts`** e toca seis lugares, na ordem que a skill lista; é registrado pelo `handle()` genérico de `src/main/ipc/`, e não existe `ipcMain.handle` avulso. O handler é função exportada, testável sem subir o Electron — skill [`ipc`](.claude/skills/ipc/SKILL.md).
+- **`Result` para falha esperada, exceção para bug.** O que atravessa o IPC e pode falhar retorna união discriminada (`AppError`); payload fora do schema **lança**. Canal que não tem como falhar não embrulha — skill `ipc`.
 - **Componente só toca token semântico** (`var(--color-*)`): nenhum `#hex` nem `var(--gray-N)` fora de `tokens.css` — skill [`design-system`](.claude/skills/design-system/SKILL.md).
 - **Cinco níveis de teste**, cada coisa no seu. `core`/`shared` (1), `renderer` (2) e handlers do `main` (3) rodam em `check:fast` e no hook de edição; E2E em dev (4) e empacotado (5) ficam fora do ciclo — skill [`testing`](.claude/skills/testing/SKILL.md).
 - **Régua de tamanho** — arquivo que cresce é sintoma. Tabela abaixo.
@@ -222,7 +223,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 ### Arquitetura de dados
 
 - Query pesada **nunca** roda no processo main — trava a UI inteira, incluindo menus e a própria janela. Use `utilityProcess`.
-- Resultados grandes viajam como **Arrow IPC** (`ArrayBuffer` transferível), não como JSON.
+- Resultados grandes viajam como **Arrow IPC**, não como JSON — e o motivo **não** é transferência de posse: o IPC do Electron copia todo binário, sem exceção. É cópia de bloco contíguo contra alocar um milhão de objetos, o que segue valendo ordens de grandeza. Consequência: todo resultado grande é pago **duas vezes** em memória, momentaneamente — skill [`ipc`](.claude/skills/ipc/SKILL.md).
 - O renderer nunca renderiza mais que ~200 linhas de DOM por vez. Use virtualização.
 
 ### Dependências

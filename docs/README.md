@@ -75,7 +75,8 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Assunto | Fonte única | Os demais |
 |---|---|---|
 | O que o app faz e não faz, catálogo de operações, formatos, escala | [`ESCOPO.md`](ESCOPO.md) | apontam |
-| Camadas, regra de importação, contrato IPC, sandbox, régua de tamanho | skill `architecture` | apontam |
+| Camadas, regra de importação, sandbox, jobs, régua de tamanho | skill `architecture` | apontam |
+| Contrato IPC, `window.api`, `Result` vs exceção, eventos, payload binário | skill `ipc` | apontam |
 | Tokens, primitivos, `ViewState`, convenções de desktop | skill `design-system` | apontam |
 | Níveis de teste, mocks, o que não testar | skill `testing` | apontam |
 | Stack fixada, versões, regras invioláveis | [`CLAUDE.md`](../CLAUDE.md) | apontam |

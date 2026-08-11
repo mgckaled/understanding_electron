@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: Decisões estruturais do crivo — fronteira de processo (main/preload/renderer/core/shared/workers), a estrutura interna do renderer (app/ vs features/ vs shared/ui/, e a casca que não importa de features/), o que entra de SOLID, o contrato IPC (src/shared/ipc.ts, Result vs exceção, validação com zod, superfície de domínio), o sandbox do renderer e a fronteira de segurança, convenção de idioma, e o critério para decidir se algo é urgente ou pode esperar. Use ao criar ou consumir um canal IPC, decidir em que camada ou pasta um arquivo vai, compor uma tela nova na casca, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre tokens de design (skill design-system) nem estratégia de teste (skill testing).
+description: Decisões estruturais do crivo — fronteira de processo (main/preload/renderer/core/shared/workers) e a regra de importação verificada por ESLint, a estrutura interna do renderer (app/ vs features/ vs shared/ui/, e a casca que não importa de features/), aliases, o que entra de SOLID, erro como dado na fronteira, o registro de jobs canceláveis, o sandbox do renderer e por que o preload é bundle único, convenção de idioma, régua para dependência nova, e o critério "caro de desfazer" para decidir se algo é urgente ou pode esperar. Use ao decidir em que camada ou pasta um arquivo vai, compor uma tela nova na casca, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre o contrato IPC em si (skill ipc), tokens de design (skill design-system) nem estratégia de teste (skill testing).
 ---
 
 # Arquitetura — crivo
@@ -93,38 +93,19 @@ Se um handler do main lança, o `ipcRenderer.invoke` rejeita com um `Error` gen�
 
 `Result<T, E = AppError>` é `{ ok: true; value: T } | { ok: false; error: E }`, com `AppError` uma união discriminada por `kind` (`not-found`, `permission`, `blocked`, `cancelled`, `timeout`, `unavailable`, `upstream`, `unknown`). Canal que não tem como falhar (`app:info`) não retorna `Result` — embrulhar tudo treina a equipe a ignorar o `ok`.
 
-## Contrato: um mapa de canais, dois consumidores
+## Contrato IPC: dono é a skill `ipc`
 
-`src/shared/ipc.ts` declara `Channel → { args, result }` uma vez; `main` tipa os handlers contra ele, `preload` tipa as chamadas contra ele. Nenhum dos dois escreve o nome do canal duas vezes, e o preload é o **único** arquivo que referencia tanto `IpcContract` (o fio, `'app:info'`) quanto `Api` (a interface, `api.app.info`) — divergência entre os dois é erro de compilação nesse único lugar.
+O contrato (`src/shared/ipc.ts`), a superfície `window.api`, a régua de `Result` vs exceção, a validação com zod, o wrapper `handle()`, os eventos e o payload binário **saíram daqui em ago/2026** para a skill [`ipc`](../ipc/SKILL.md), quando o vigésimo canal disparou o gatilho que o [`ROADMAP § 2`](../../../docs/ROADMAP.md) tinha declarado. Não há resumo aqui: fato duplicado é o que a regra de fonte única existe para evitar.
 
-O renderer recebe uma superfície de domínio, nunca um `invoke` genérico:
-
-```ts
-window.api.app.info() // sim
-window.api.invoke('app:info') // não — reintroduz a superfície larga do template
-```
-
-`src/main/ipc/registry.ts` é o único arquivo que conhece `ipcMain.handle`; handlers nascem como funções exportadas em `src/main/features/<x>/handlers.ts`, nunca como closures dentro do registro — é o que os torna alcançáveis por teste em Node puro, sem subir o Electron.
-
-**O IPC ainda não tem skill própria, e o gatilho para isso acabou de disparar.** São **20 canais** desde ago/2026 — `app:info`, `app:memory`, `shell:openExternal`, `dataset:pick`, `dataset:scan`, `job:cancel`, os cinco `ai:*` (`isAvailable`, `models`, `loaded`, `unload`, `chat`), os sete `conversation:*` (`list`, `messages`, `create`, `rename`, `remove`, `append`, `settings`) e `settings:read`/`settings:write`. O [`ROADMAP § 2`](../../../docs/ROADMAP.md) marcava o **vigésimo** como o momento de reabrir a questão, e ele chegou: **decidir separar ou recalibrar o gatilho é tarefa própria**, não algo a resolver no meio de outra. Conte antes de propor.
-
-**Nem todo canal retorna `Result`, e a fase 14 é o precedente a citar.** Os seis de conversa e os dois de configuração **não** retornam — uma leitura ou um `INSERT` indexado num arquivo SQLite local não tem falha que a UI precise distinguir; o que resta é defeito de programação, que deve lançar e doer no console. Ausência vira dado em vez de erro: lista vazia, e um `append` endereçado a uma conversa já excluída é descartado pelo `changes` do próprio `UPDATE`, sem violar chave estrangeira. A régua continua a do `app:info` — embrulhar tudo treina o leitor a ignorar o `ok`.
+O que fica nesta skill, porque é de camada e não de contrato:
 
 ⚠️ **Tipo em `shared/ipc.ts` não implica canal.** `Conversation`/`Message`/`MessagePart` entraram na fase 13 **sem schema zod e sem canal**, de propósito: schema existe para validar payload de IPC, e não havia IPC. O que se decide cedo é a **forma do dado** que atravessa camadas; o canal nasce quando alguém o chama. Ver [`docs/HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
 
-## Validação: zod nos argumentos, nunca na saída
+## Jobs: o registro cancelável
 
-`renderer → main` passa por `zod` (schemas em `shared/ipc.ts`, tipos derivados via `z.infer` — nunca escritos em paralelo). `main → renderer` não passa: o main é código próprio rodando privilegiado, e validar a própria saída é desconfiar de si mesmo ao custo de latência em todo resultado.
+`src/main/jobs.ts` guarda um `Map<JobId, AbortController>` module-level, com `create`/`cancel`/`finish`. `finish` roda no `finally` do handler, sempre, por qualquer via de término — um `Map` que só cresce é vazamento silencioso, que teste nenhum pega sozinho (nenhum teste abre quarenta jobs seguidos).
 
-## Jobs e eventos: declarados na fase 02, implementados na fase 06
-
-`JobId` nasce no **renderer** (`crypto.randomUUID()`), nunca devolvido pelo main — o usuário cancela antes de a promessa resolver, e um id que só chega na resposta não deixa o que cancelar na janela em que isso importa. `JobEvent` é união por `type` (`progress`, `chunk`, `log`); a variante `progress` é a única com consumidor hoje, as outras duas (resposta em fluxo, linha de pipeline) são reserva deliberada — três linhas agora contra um segundo mecanismo de eventos depois.
-
-Listener de evento do main **nunca** vaza o `IpcRendererEvent` para o renderer — carrega `event.sender`, referência viva ao `webContents`. O callback do renderer recebe só o payload; toda assinatura devolve uma função de cancelamento.
-
-O canal do evento (`job:event`) **não** entra em `IpcContract`/`argsSchema` — `handle()` faz `argsSchema[channel]` para todo canal ali, e `job:event` nunca passa por `ipcMain.handle`, só por `webContents.send`. Seu nome mora em `src/shared/channels.ts`, não em `src/shared/ipc.ts` — motivo na próxima seção.
-
-`src/main/jobs.ts` guarda um `Map<JobId, AbortController>` module-level, com `create`/`cancel`/`finish`. `finish` roda no `finally` do handler, sempre, por qualquer via de término — um `Map` que só cresce é vazamento silencioso, que teste nenhum pega sozinho (nenhum teste abre quarenta jobs seguidos). Progresso é emitido a todas as janelas (`BrowserWindow.getAllWindows()`), não endereçado ao remetente — o `handle()` genérico só entrega argumentos ao handler, nunca o `IpcMainInvokeEvent`, e é essa restrição que mantém o handler testável em Node puro; o preço é não saber quem chamou. Gatilho de revisão: a segunda janela do app.
+`JobEvent` é união por `type` (`progress`, `chunk`, `log`); `progress` e `chunk` têm consumidor, `log` é reserva deliberada — três linhas agora contra um segundo mecanismo de eventos depois. Quem transporta o evento, e as duas armadilhas disso, são da skill [`ipc`](../ipc/SKILL.md).
 
 **Cancelar um stream não fecha o stream.** `readline.Interface.close()` só libera o controle do `readline` sobre o `input` — o `fs.ReadStream` subjacente segue lendo do disco depois de um `break` no `for await`, a menos que `stream.destroy()` seja chamado também. Medido, não suposto: ver [`docs/HISTORY.md`](../../../docs/HISTORY.md) § armadilhas.
 
@@ -134,7 +115,7 @@ O canal do evento (`job:event`) **não** entra em `IpcContract`/`argsSchema` —
 
 Com o sandbox ligado, o preload perde o `require` completo — sobra um polyfill limitado, sem capacidade de carregar múltiplos arquivos do próprio código. Por isso o preload é, e continua sendo, **um arquivo único**: `externalizeDepsPlugin()` nunca entra no bloco `preload` do `electron.vite.config.ts`. Ele existe para deixar dependência fora do bundle e resolvida por `require` em runtime — exatamente o que o preload sandboxed não sabe fazer.
 
-**É por isso que `preload/` importa `shared/` só por tipo (ver a tabela acima), e essa restrição já mordeu uma vez.** `src/shared/ipc.ts` importa `zod` como valor (para `argsSchema`); quando a fase 06 importou uma constante de lá **por valor** (`JOB_EVENT_CHANNEL`, precisava existir em runtime para `ipcRenderer.on`), isso arrastou `zod` para o bundle do preload — que o build deixa como `require('zod')` externo não resolvido. O preload falhou ao carregar, `window.api` ficou `undefined`, e a janela abriu **vazia, sem nenhum erro no terminal** onde `pnpm dev` roda; o erro só aparece no DevTools da própria janela (F12). Nem `typecheck`, nem `lint`, nem `test` pegam isso — nenhum executa o bundle do preload dentro do sandbox real. Corrigido com `src/shared/channels.ts`, um arquivo em `shared/` sem nenhuma dependência externa. Regra prática: valor novo que o preload vai consumir de `shared/` nasce num arquivo que não importa nada de fora — nunca reaproveitar um arquivo que já importa uma lib só porque o tipo relacionado mora lá.
+**É por isso que `preload/` importa `shared/` só por tipo (ver a tabela acima), e essa restrição já mordeu uma vez** — o defeito, o sintoma (janela vazia, sem erro no terminal) e a regra que dele decorre são da skill [`ipc`](../ipc/SKILL.md).
 
 Navegação para fora da origem do app é negada por padrão (`will-navigate`, ao lado do `setWindowOpenHandler` que já negava janela nova), com uma única exceção em desenvolvimento: o HMR do Vite precisa navegar dentro da própria origem do servidor.
 
