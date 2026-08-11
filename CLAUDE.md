@@ -192,6 +192,10 @@ As duas últimas linhas são a decisão de manter main e preload finos, tornada 
 
 Código em inglês, sempre — identificador, comentário, docstring e log, sem exceção de escopo (variável local inclusa) e sem exceção de fonte (nem citado dentro de um `.md` em português). Português fica reservado a texto visível ao usuário, mensagem de erro crua e documentação. Detalhe e armadilha diagnosticada: skill `architecture`.
 
+### Comentários
+
+**O comentário diz o que o código não consegue dizer, em até ~3 linhas.** Restrição externa que o próximo leitor violaria sem saber (`capabilities` vem do `/api/show` porque o `/api/tags` omite `vision`), número medido, armadilha diagnosticada — isso fica. Narrativa do que mudou, alternativa descartada e razão longa **não**: têm dono, e o dono é o plano ou o [`HISTORY.md`](docs/HISTORY.md), com o fonte apontando pela sigla da decisão (`D15.2`). Comentário longo dentro do `.ts` é a mesma dívida que a regra de fonte única proíbe, agravada por envelhecer onde ninguém releva. Regra adotada em ago/2026, a pedido, depois de o plano 15 acumular blocos de 25 linhas sobre constantes de uma linha.
+
 ### Segurança
 
 - Todo acesso a dados passa pelo **preload** via `contextBridge` — o renderer nunca fala direto com o main
