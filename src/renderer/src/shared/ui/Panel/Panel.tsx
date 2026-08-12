@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import styles from './Panel.module.css'
 
 type PanelProps = {
   title?: string
@@ -8,18 +7,26 @@ type PanelProps = {
   className?: string
 }
 
+/*
+ * Skip Panel inside the sidebar, or any region the shell already gives a
+ * surface to: the sidebar's own --color-surface already draws the boundary, so
+ * a Panel there is a border inside a border. OpenDatasetPanel uses a plain
+ * <section> for exactly this reason.
+ */
 function Panel({ title, actions, children, className }: PanelProps): React.JSX.Element {
-  const classes = [styles.panel, className].filter(Boolean).join(' ')
+  const classes = ['rounded-lg border border-border bg-surface', className]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <section className={classes}>
       {(title || actions) && (
-        <header className={styles.header}>
-          {title && <h2 className={styles.title}>{title}</h2>}
-          {actions && <div className={styles.actions}>{actions}</div>}
+        <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-5">
+          {title && <h2 className="text-sm font-semibold text-text">{title}</h2>}
+          {actions && <div className="flex items-center gap-3">{actions}</div>}
         </header>
       )}
-      <div className={styles.body}>{children}</div>
+      <div className="p-6">{children}</div>
     </section>
   )
 }

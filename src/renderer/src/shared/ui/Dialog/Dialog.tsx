@@ -44,22 +44,24 @@ function Dialog({ open, title, onClose, children }: DialogProps): React.JSX.Elem
   return (
     <dialog
       ref={ref}
-      className={styles.dialog}
+      // The module carries only what a class cannot reach — ::backdrop, the
+      // @starting-style fade, the width the fade's rule targets.
+      className={`${styles.dialog} rounded-lg border border-border bg-surface p-0 font-ui text-sm text-text`}
       closedby="any"
       aria-labelledby={titleId}
       // Fires for every way out — Esc, the backdrop, close(). Without it the
       // state would stay `open` after Esc and the trigger would look dead.
       onClose={onClose}
     >
-      <div className={styles.header}>
-        <h2 className={styles.title} id={titleId}>
+      <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-5">
+        <h2 className="text-md font-semibold" id={titleId}>
           {title}
         </h2>
         <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fechar">
           <span aria-hidden="true">×</span>
         </Button>
       </div>
-      <div className={styles.body}>{children}</div>
+      <div className="p-6">{children}</div>
     </dialog>
   )
 }

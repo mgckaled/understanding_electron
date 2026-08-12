@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react'
 import type { ViewState } from './state'
 import { errorMessage } from './messages'
-import styles from './StateView.module.css'
 
 type StateViewProps<T> = {
   state: ViewState<T>
   render: (data: T) => ReactNode
   emptyMessage?: string
 }
+
+const STATE = 'flex items-center justify-center p-7 text-sm text-text-muted'
+// accent-color is one of the two properties D10.1 allows the solid fill in, and
+// --color-accent is deliberately outside the theme so text-accent cannot exist.
+const BAR = 'w-full accent-(--color-accent)'
 
 function StateView<T>({
   state,
@@ -22,11 +26,11 @@ function StateView<T>({
       const total = state.progress?.total ?? null
       const done = state.progress?.done ?? 0
       return (
-        <div className={styles.state} role="status">
+        <div className={STATE} role="status">
           {total !== null ? (
-            <progress className={styles.bar} value={done} max={total} />
+            <progress className={BAR} value={done} max={total} />
           ) : (
-            <progress className={styles.bar} />
+            <progress className={BAR} />
           )}
         </div>
       )
@@ -36,14 +40,14 @@ function StateView<T>({
       return render(state.data)
 
     case 'empty':
-      return <div className={styles.state}>{emptyMessage}</div>
+      return <div className={STATE}>{emptyMessage}</div>
 
     case 'cancelled':
-      return <div className={styles.state}>Operação cancelada.</div>
+      return <div className={STATE}>Operação cancelada.</div>
 
     case 'error':
       return (
-        <div className={styles.state} role="alert">
+        <div className={STATE} role="alert">
           {errorMessage(state.error)}
         </div>
       )

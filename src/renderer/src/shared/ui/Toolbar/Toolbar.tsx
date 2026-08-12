@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import styles from './Toolbar.module.css'
 
 type ToolbarProps = {
   children: ReactNode
@@ -7,7 +6,7 @@ type ToolbarProps = {
 }
 
 function Toolbar({ children, className }: ToolbarProps): React.JSX.Element {
-  const classes = [styles.toolbar, className].filter(Boolean).join(' ')
+  const classes = ['flex items-center gap-4', className].filter(Boolean).join(' ')
 
   return <div className={classes}>{children}</div>
 }
