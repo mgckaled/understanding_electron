@@ -77,9 +77,24 @@ O exemplo canônico da documentação usa nomes **distintos** (`--acme-canvas-co
 
 ---
 
-## Passo 1 — Instalação e a camada de utilidade
+## Passo 1 — Instalação e a camada de utilidade ✅ **concluído em 12/08/2026**
 
-Uma sessão. ✅ **A instalação já aconteceu no passo 0** — `tailwindcss` e `@tailwindcss/vite` **4.3.3** estão em `devDependencies`, validados em dev e em build. Falta o plugin no bloco `renderer` do `electron.vite.config.ts` — **só nele**; `main` e `preload` não recebem nada.
+> **A camada existe e o aceite passou — mas o passo encontrou o que o plano não previa: o *preflight*.** Ele entra junto com `@import 'tailwindcss'` e é um reset **de página web** onde o `base.css` é um reset **de desktop**. Quatro divergências medidas, todas corrigidas no `base.css`, e a mais cara é invisível em qualquer captura da tela principal.
+>
+> | O que o preflight faz | Consequência medida |
+> |---|---|
+> | `* { margin: 0 }` | **o modal de Configurações renderiza em `rect=0,0`** em vez de centralizado — leva junto o `dialog { margin: auto }` da folha do navegador, que é *como* um modal se centraliza |
+> | `font: inherit` em controle | `line-height` de `normal` para `1.5` em todo botão e campo: rótulo 1px acima, `section` da lista 9px mais alta |
+> | `* { margin: 0 }` (de novo) | `p.locked` do `ModelSelector` perdeu o `1em` do navegador — 11px. A irmã `.tooBig` já declarava `margin: 0`; a inconsistência existia e só o preflight a revelou |
+> | `::placeholder`, `option`, `meter` | cor do *placeholder* reescrita como `color-mix(currentcolor 50%)`; padding do popup nativo e borda do `<meter>` zerados |
+>
+> **Aceite verificado, não afirmado:** `bg-surface`, `p-6` (=16px), `rounded-md`, `text-reading`, `font-ui`, `bg-accent`, `bg-danger` e `hover:bg-accent-hover` lidos do CSS gerado; **`text-accent` e `bg-slate-800` ausentes**; `p-4` vale `var(--space-4)` = 8px. `tokens.contrast.test.ts` passa **sem uma linha alterada** (`git diff` do arquivo, vazio). `check:fast` verde, 333 testes.
+>
+> **Zero mudança visual, medido:** captura antes e depois nos dois temas, 1280×800, `userData` fixo — **0 pixels diferentes**, `maxDelta` 0. Antes das quatro correções eram 1,19% no escuro e 1,20% no claro. Mais os retângulos de todos os elementos do DOM, idênticos. Modal reconferido ao vivo: `rect=430,193`.
+>
+> **Custo:** CSS **34,77 → 47,28 kB** (+12,51 kB, quase tudo preflight). JS **1.558,97 → 1.558,97 kB — zero**, byte a byte. O saldo do CSS fica negativo conforme os 15 módulos saírem no DS-2.
+
+✅ **A instalação já aconteceu no passo 0** — `tailwindcss` e `@tailwindcss/vite` **4.3.3** estão em `devDependencies`, validados em dev e em build. Falta o plugin no bloco `renderer` do `electron.vite.config.ts` — **só nele**; `main` e `preload` não recebem nada.
 
 A camada mora em **arquivo próprio**, `src/renderer/src/assets/tailwind.css`, importado por `main.tsx` depois de `tokens.css`. Não dentro do `tokens.css`: o compromisso central deste plano é que aquele arquivo não muda, e concentrar a camada num arquivo separado o torna literal em vez de prometido.
 
@@ -87,11 +102,18 @@ Conteúdo: `@import 'tailwindcss'`, o `@theme inline` com todos os defaults desl
 
 **Aceite:** `bg-surface` e `p-6` (=16px) compilam; `bg-slate-800` e `p-4`-valendo-16px **não**; `text-accent` não existe (ou, sob o fallback do passo 0, lê como erro); `tokens.contrast.test.ts` passa **sem uma linha alterada** — é o teste que prova que o arquivo de tokens seguiu intacto.
 
+Dois desvios do escrito acima, ambos decididos na execução e ambos por consistência com o próprio plano:
+
+- **Cinco namespaces desligados, não quatro.** `--font-*` entrou junto, porque `font-sans`/`font-serif` do Tailwind conviveriam com `--font-ui` — que é a forma exata de "dois lugares decidindo" que este plano existe para evitar. Medido antes de adotar, porque o palpite ia ao contrário: **`--font-*: initial` não leva `--font-weight-*` junto**, e `font-bold` sobrevive. Os namespaces são casados por chave inteira, não por prefixo de texto.
+- **Cinco `@utility`, não quatro.** `--color-accent-hover` também é sólido de preenchimento, e `text-accent-hover` sobre `--color-surface` dá **2,44:1** — é o mesmo defeito que o ⚠️ do passo 2 aponta no pacote de handoff. Quatro famílias de cor, cinco nomes.
+
 ---
 
 ## Passo 2 — `base.css` como `@layer base`
 
-Meia sessão. O arquivo vira `@layer base`, preservando o que é comportamento de aplicativo de desktop: `user-select: none` na raiz com `.selectable`, `overscroll-behavior: none`, a scrollbar fina, `:focus { outline: none }` com `:focus-visible` de 2px, e o bloco `prefers-reduced-motion`.
+Meia sessão. ⚠️ **O passo 1 já acrescentou um bloco a este arquivo** — as quatro correções ao preflight (DS1.6). Elas entram no `@layer base` junto com o resto e continuam vencendo, porque `base.css` é importado **depois** de `tailwind.css` e, dentro da mesma camada, quem vem depois ganha.
+
+O arquivo vira `@layer base`, preservando o que é comportamento de aplicativo de desktop: `user-select: none` na raiz com `.selectable`, `overscroll-behavior: none`, a scrollbar fina, `:focus { outline: none }` com `:focus-visible` de 2px, e o bloco `prefers-reduced-motion`.
 
 ⚠️ **O `base.css` do pacote de handoff não serve.** Ele acrescentou duas regras de link que não existem no repositório, e a segunda pinta `a:hover` com `--color-accent-hover` — um sólido de preenchimento usado como cor de texto, **2,44:1** sobre `--color-surface`, contra o mínimo de 4,5. É a mesma classe de bug que a fase 10 mediu e matou, chegando por duas linhas. Usar o arquivo do repositório.
 
@@ -179,10 +201,31 @@ Isolada, essa declaração é um ciclo, e um ciclo faz a custom property computa
 
 Por isso o passo 2 põe **`base.css`** em `@layer base` e **não** `tokens.css` — a distinção entre os dois arquivos deixa de ser organizacional e passa a ser funcional.
 
+### DS1.6 — O preflight fica, e as divergências com o `base.css` são corrigidas uma a uma
+
+Descartar o preflight foi considerado e recusado por um motivo mecânico: as utilidades de borda do v4 emitem só `border-width`, e contam com o `*, ::before, ::after { border: 0 solid }` do preflight para o `border-style`. Sem ele, `border-2` produz largura sem estilo — **borda invisível**, defeito que aparece só nos passos 4–5 e cuja causa está num arquivo que ninguém editou. Vale para o mesmo lote a normalização de `box-sizing`, `img`/`svg` como bloco e a herança de fonte.
+
+O que fica então é a fronteira: **preflight é um reset de página web, `base.css` é um reset de desktop, e onde discordam quem manda é o `base.css`.** As quatro correções são nomeadas, não um `revert` genérico, e se dividem em dois grupos com vidas diferentes:
+
+| Correção | Vida |
+|---|---|
+| `line-height: normal` em `button`/`input`/`select`/`textarea` | **temporária** — sai quando `Button` e `Field` carregarem `leading-*` explícito (passo 4) |
+| `dialog { margin: auto }` | **temporária** — vira `m-auto` no `Dialog` (passo 5) |
+| `option`, `meter`, `::placeholder` | **permanente** — pseudo-elemento e chrome nativo **não têm `className` para receber utilidade**, exatamente o argumento que já mantém o `MarkdownMessage.module.css` em CSS |
+
+A quinta correção não é do preflight e sim do que ele revelou: `p.locked` do `ModelSelector` dependia do `1em` que o navegador dá a `<p>`, enquanto a irmã `.tooBig`, que a substitui na tela, declarava `margin: 0`. O valor foi escrito por extenso para preservar o pixel; **qual das duas está certa é pergunta do DS-3**, e o comentário no fonte diz isso.
+
+### DS1.7 — Diff de tela é aceite de fim de passo, não ferramenta de depuração
+
+Nasceu de fazer errado. A conferência ao vivo do passo 1 virou um laço — medir, achar uma divergência, corrigir, medir de novo — quatro vezes, e o laço custou mais que os consertos somados. O mecanismo estava certo e a cadência, errada: **o diff responde "mudou?", e a pergunta "o que mudou?" tem instrumento melhor e mais barato**, que é o despejo de `getBoundingClientRect` de todo o DOM comparado entre os dois builds. Ele nomeia o elemento; o diff de pixel só aponta uma caixa.
+
+Forma para o DS-2 em diante: **despejo de retângulos durante o trabalho, diff de pixel uma vez no fim, como aceite.** E o corolário que justifica manter os dois: o diff de pixel pegou o `::placeholder` e o `<meter>`, que são cor e não geometria, e portanto invisíveis ao despejo de retângulos.
+
 ---
 
 ## Diário de execução
 
 | Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
+| 12/08/2026 | 2 | **Passo 1 completo.** `@tailwindcss/vite` no bloco `renderer`; `assets/tailwind.css` com `@theme inline` (5 namespaces desligados, 15 cores semânticas, 9 espaços, 4 raios, 8 tamanhos de texto, 2 famílias) e 5 `@utility` de sólido; import no `main.tsx` entre `tokens.css` e `base.css`. **O preflight foi o achado**: quatro divergências com o `base.css`, a pior sendo o modal em `rect=0,0`. Corrigidas, e o resultado é **0 pixel de diferença** nos dois temas. `tokens.css` intacto, 333 testes, CSS +12,51 kB, JS zero. D1.6 e D1.7 nasceram aqui | Passo 2. O `base.css` já ganhou um bloco no passo 1 — ler a ⚠️ do passo 2 antes de começar |
 | 12/08/2026 | 1 | **Passo 0 completo.** `tailwindcss` + `@tailwindcss/vite` 4.3.3 instalados e validados; sonda descartável em dev (CSS lido do dev server) e em build; medição de `getComputedStyle` no Chromium 148 do próprio Electron. Os dois riscos caíram; a D1.5 nasceu do resultado. Custo medido: CSS +11,2 kB, JS zero. Sonda removida, `src/` intacto, `check:fast` verde (333 testes) | Passo 1. A dependência **fica instalada** — instalar, validar e commitar é uma variável por vez, e a validação já aconteceu |
