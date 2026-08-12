@@ -173,6 +173,7 @@ Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha
 - **Todo canal novo nasce em `src/shared/ipc.ts`** e toca seis lugares, na ordem que a skill lista; é registrado pelo `handle()` genérico de `src/main/ipc/`, e não existe `ipcMain.handle` avulso. O handler é função exportada, testável sem subir o Electron — skill [`ipc`](.claude/skills/ipc/SKILL.md).
 - **`Result` para falha esperada, exceção para bug.** O que atravessa o IPC e pode falhar retorna união discriminada (`AppError`); payload fora do schema **lança**. Canal que não tem como falhar não embrulha — skill `ipc`.
 - **Componente só toca token semântico** (`var(--color-*)`): nenhum `#hex` nem `var(--gray-N)` fora de `tokens.css` — skill [`design-system`](.claude/skills/design-system/SKILL.md).
+- **O design system é um envelope: define a linguagem visual, não constrói feature.** Diante de um alvo visual, o que **já existe** ganha a linguagem (é da trilha DS); o que **ainda não existe** nasce depois, no plano da própria feature, já vestido. Alvo não é checklist de feature — ler a régua antes de tratar uma ausência como pendência, skill `design-system`.
 - **Cinco níveis de teste**, cada coisa no seu. `core`/`shared` (1), `renderer` (2) e handlers do `main` (3) rodam em `check:fast` e no hook de edição; E2E em dev (4) e empacotado (5) ficam fora do ciclo — skill [`testing`](.claude/skills/testing/SKILL.md).
 - **Régua de tamanho** — arquivo que cresce é sintoma. Tabela abaixo.
 

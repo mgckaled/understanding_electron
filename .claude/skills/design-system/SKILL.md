@@ -1,11 +1,26 @@
 ---
 name: design-system
-description: Tokens de design do crivo — os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, as duas densidades (chrome compacto vs superfície de leitura), tema pelo sistema operacional sem alternador manual, comportamento de desktop (seleção de texto, foco, movimento), os cinco primitivos (Button, Field, Panel, Toolbar, Dialog) em CSS Modules, ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor, medida ou tamanho de texto, abrir um modal, decidir onde um estado de UI mora, ou tratar um AppError na interface.
+description: Tokens de design do crivo — o design system como envelope (define a linguagem visual, não constrói feature; o que já existe ganha a linguagem, o que ainda não existe nasce depois já vestido), os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, as duas densidades (chrome compacto vs superfície de leitura), tema pelo sistema operacional sem alternador manual, comportamento de desktop (seleção de texto, foco, movimento), os cinco primitivos (Button, Field, Panel, Toolbar, Dialog) em CSS Modules, ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor, medida ou tamanho de texto, abrir um modal, decidir onde um estado de UI mora, ou tratar um AppError na interface.
 ---
 
 # Design tokens — crivo
 
 > Escrito na fase [05](../../../docs/plan/implemented/05-design-tokens.md) do plano de fundação. Fonte completa, com o porquê de cada decisão: o documento linkado acima.
+
+## O design system é um envelope, e essa é a ideia central
+
+Ele **envelopa**: define a linguagem visual, e não constrói feature nenhuma. É como funciona na prática na maioria dos projetos, e a consequência é toda a razão de a trilha DS rodar **antes** do arco de features — quando o anexo, o cartão de dados e a proposta de passos chegarem, a pergunta *"como isto fica?"* já está respondida, e cada um nasce vestido.
+
+Daí a régua que resolve quase toda dúvida de escopo. Diante de um alvo visual, cada elemento cai num de dois lados:
+
+| | Quem faz |
+|---|---|
+| **Já existe no app** | o design system. Ganha a linguagem |
+| **Ainda não existe** | o plano da própria feature, depois — já vestido, porque o DS estará pronto |
+
+**Um alvo visual não é lista de feature a construir.** Ele é o retrato do app *depois* que os planos seguintes rodarem sobre este DS — então mostra coisas que o DS nunca vai entregar, e isso não é lacuna. O alvo do crivo é [`docs/reference/handoff-ds-ago2026/`](../../../docs/reference/handoff-ds-ago2026/README.md), que é o dono da tabela de distância e de quem faz cada item.
+
+⚠️ **A leitura errada já custou duas vezes em ago/2026** — uma delas descartou cinco dos seis alvos por julgá-los como código; a outra transformou o alvo em checklist de features e produziu impasses inexistentes (*"onde vai o orçamento de contexto?"*, *"remover o painel de abrir arquivo bloqueia o plano 16?"*). Ambos dissolvem pela régua: o que existe ganha o envelope, e quem substitui um elemento é o plano que traz o substituto. **Colocação de elemento que já existe é decisão de rotina dentro da trilha, não pergunta.**
 
 ## App de desktop não é site
 
