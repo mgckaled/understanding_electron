@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; }
+    a { color: #0007cd; }
+    a:hover { color: #1a26ff; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+<div style="width:100vw;height:100vh;overflow:hidden;position:relative;background:{{ theme.canvas }};color:{{ theme.body }};font-family:'Inter',ui-sans-serif,system-ui,sans-serif;">
+
+  <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Onboarding" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:{{ theme.canvas }};">
+      <div style="width:460px;background:{{ theme.surface }};border:1px solid {{ theme.hairline }};border-radius:16px;padding:40px;">
+        <div style="font-size:20px;font-weight:600;color:{{ theme.ink }};letter-spacing:-0.3px;margin-bottom:6px;">Configuração inicial</div>
+        <div style="font-size:14px;color:{{ theme.muted }};margin-bottom:28px;">Vamos conectar ao Ollama e escolher um modelo padrão.</div>
+
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:{{ theme.successBg }};border-radius:10px;margin-bottom:24px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:{{ theme.success }};flex-shrink:0;"></div>
+          <div style="font-size:13px;color:{{ theme.bodyStrong }};font-family:'JetBrains Mono',monospace;">Ollama encontrado em {{ ollamaHost }}</div>
+        </div>
+
+        <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.7px;color:{{ theme.muted }};margin-bottom:12px;">Modelo padrão</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:28px;">
+          <sc-for list="{{ models }}" as="m" hint-placeholder-count="3">
+            <div onClick="{{ selectModel }}" data-id="{{ m.id }}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;border:1px solid {{ theme.hairline }};cursor:pointer;background:{{ theme.surface }};">
+              <div>
+                <div style="font-size:14px;color:{{ theme.bodyStrong }};font-weight:500;">{{ m.name }}</div>
+                <div style="font-size:12px;color:{{ theme.muted }};font-family:'JetBrains Mono',monospace;margin-top:2px;">{{ m.ram }} · {{ m.ctx }}</div>
+              </div>
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid {{ theme.hairlineStrong }};flex-shrink:0;"></div>
+            </div>
+          </sc-for>
+        </div>
+
+        <button onClick="{{ goToChat }}" style="width:100%;padding:12px;border:none;border-radius:8px;background:{{ theme.primary }};color:{{ theme.onPrimary }};font-size:14px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;">Começar a usar</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ !isOnboarding }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;width:100%;height:100%;">
+
+      <div style="width:{{ sidebarWidth }}px;flex-shrink:0;background:{{ theme.surface }};border-right:1px solid {{ theme.hairline }};display:flex;flex-direction:column;transition:width 0.15s ease;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px;">
+          <sc-if value="{{ !sidebarCollapsed }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size:14px;font-weight:600;color:{{ theme.ink }};white-space:nowrap;">Chat local</div>
+          </sc-if>
+          <button onClick="{{ toggleSidebar }}" style="width:26px;height:26px;border:none;background:transparent;color:{{ theme.muted }};cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4v16M4 4h16v16H4z"/></svg>
+          </button>
+        </div>
+
+        <div style="padding:0 12px 12px 12px;">
+          <button onClick="{{ newConversation }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;border:1px solid {{ theme.hairlineStrong }};background:transparent;color:{{ theme.bodyStrong }};font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M12 5v14M5 12h14"/></svg>
+            <sc-if value="{{ !sidebarCollapsed }}" hint-placeholder-val="{{ true }}"><span>Nova conversa</span></sc-if>
+          </button>
+        </div>
+
+        <sc-if value="{{ !sidebarCollapsed }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:0 12px 12px 12px;">
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:{{ theme.surfaceElevated }};">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:{{ theme.muted }};flex-shrink:0;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <span style="font-size:13px;color:{{ theme.muted }};white-space:nowrap;">Buscar conversas</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="flex:1;overflow-y:auto;padding:4px 8px;">
+          <sc-for list="{{ conversations }}" as="c" hint-placeholder-count="5">
+            <sc-if value="{{ c.isHeader }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ !sidebarCollapsed }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:{{ theme.mutedSoft }};padding:12px 8px 6px 8px;">{{ c.label }}</div>
+              </sc-if>
+            </sc-if>
+            <sc-if value="{{ c.isItem }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ selectConv }}" data-id="{{ c.id }}" style="padding:{{ sp.itemPad }};margin-bottom:2px;border-radius:8px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;background:{{ c.bg }};color:{{ c.color }};border-left:2px solid {{ c.accent }};">
+                <sc-if value="{{ !sidebarCollapsed }}" hint-placeholder-val="{{ true }}"><span>{{ c.title }}</span></sc-if>
+              </div>
+            </sc-if>
+          </sc-for>
+        </div>
+
+        <div style="padding:10px;border-top:1px solid {{ theme.hairline }};display:flex;align-items:center;justify-content:space-between;">
+          <div style="position:relative;display:flex;align-items:center;gap:8px;overflow:hidden;">
+            <div style="width:7px;height:7px;border-radius:50%;background:{{ theme.success }};flex-shrink:0;"></div>
+            <sc-if value="{{ !sidebarCollapsed }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ toggleOllamaInfo }}" style="background:transparent;border:none;padding:0;font-size:12px;color:{{ theme.muted }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-family:'Inter',sans-serif;">Ollama ({{ ollamaVersion }})</button>
+            </sc-if>
+            <sc-if value="{{ ollamaInfoOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:fixed;bottom:48px;left:20px;background:{{ theme.surfaceStrong }};border:1px solid {{ theme.hairlineStrong }};border-radius:10px;padding:10px 12px;box-shadow:0 12px 32px rgba(0,0,0,0.35);white-space:nowrap;z-index:1100;">
+                <div style="font-size:11px;color:{{ theme.muted }};margin-bottom:3px;">Conectado</div>
+                <div style="font-size:12.5px;color:{{ theme.bodyStrong }};font-family:'JetBrains Mono',monospace;">localhost:{{ ollamaPort }}</div>
+              </div>
+            </sc-if>
+          </div>
+          <button onClick="{{ goToSettings }}" style="width:26px;height:26px;border:none;background:transparent;color:{{ theme.muted }};cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:{{ theme.canvas }};">
+
+        <sc-if value="{{ isChat }}" hint-placeholder-val="{{ true }}">
+          <div data-screen-label="Chat" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+            <div style="padding:16px 28px;border-bottom:1px solid {{ theme.hairline }};font-size:14px;font-weight:600;color:{{ theme.ink }};flex-shrink:0;">{{ activeConvTitle }}</div>
+
+            <sc-if value="{{ isChatError }}" hint-placeholder-val="{{ false }}">
+              <div style="margin:20px 28px;padding:12px 16px;border-radius:10px;background:{{ theme.errorBg }};display:flex;align-items:center;gap:12px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ theme.error }}" stroke-width="2" style="flex-shrink:0;"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.7 3.86a2 2 0 00-3.4 0z"/></svg>
+                <div style="flex:1;font-size:13px;color:{{ theme.bodyStrong }};">Não foi possível conectar ao Ollama em {{ ollamaHost }}. Verifique se o serviço está em execução.</div>
+                <button onClick="{{ retryConnection }}" style="padding:7px 14px;border-radius:8px;border:1px solid {{ theme.hairlineStrong }};background:transparent;color:{{ theme.bodyStrong }};font-size:12px;cursor:pointer;flex-shrink:0;">Tentar novamente</button>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isChatEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+                <div style="font-size:15px;color:{{ theme.muted }};">Comece uma conversa</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:480px;">
+                  <div style="padding:8px 14px;border-radius:9999px;border:1px solid {{ theme.hairlineStrong }};font-size:12px;color:{{ theme.body }};cursor:pointer;">Analisar um CSV</div>
+                  <div style="padding:8px 14px;border-radius:9999px;border:1px solid {{ theme.hairlineStrong }};font-size:12px;color:{{ theme.body }};cursor:pointer;">Explicar um trecho de código</div>
+                  <div style="padding:8px 14px;border-radius:9999px;border:1px solid {{ theme.hairlineStrong }};font-size:12px;color:{{ theme.body }};cursor:pointer;">Comparar modelos locais</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isChatActive }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:{{ sp.threadPad }}px 28px;display:flex;flex-direction:column;gap:{{ sp.msgGap }}px;">
+                <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;align-items:{{ msg.align }};max-width:640px;{{ msg.selfAlign }}">
+                    <div style="padding:{{ msg.padding }};border-radius:12px;background:{{ msg.bg }};color:{{ theme.bodyStrong }};font-size:14px;line-height:1.55;text-wrap:pretty;">{{ msg.content }}</div>
+                    <sc-if value="{{ msg.hasAttachment }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:8px;display:inline-flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:{{ theme.surfaceElevated }};">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:{{ theme.muted }};flex-shrink:0;"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
+                        <div>
+                          <div style="font-size:12.5px;color:{{ theme.bodyStrong }};font-family:'JetBrains Mono',monospace;">{{ msg.attachment.name }}</div>
+                          <div style="font-size:11px;color:{{ theme.muted }};">{{ msg.attachment.rows }}</div>
+                        </div>
+                        <div style="padding:2px 8px;border-radius:9999px;background:{{ theme.surfaceStrong }};font-size:10px;font-weight:600;color:{{ theme.muted }};letter-spacing:0.4px;">SQL</div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <div style="padding:16px 28px 64px 28px;flex-shrink:0;opacity:{{ composerOpacity }};pointer-events:{{ composerEvents }};">
+              <div style="background:{{ theme.surface }};border:1px solid {{ theme.hairlineStrong }};border-radius:16px;padding:{{ sp.composerPad }}px;">
+                <textarea placeholder="Envie uma mensagem..." rows="1" onInput="{{ handleComposerInput }}" style="width:100%;border:none;background:transparent;color:{{ theme.bodyStrong }};font-size:14px;outline:none;margin-bottom:10px;font-family:'Inter',sans-serif;resize:none;overflow-y:hidden;line-height:1.4;min-height:20px;max-height:60px;display:block;"></textarea>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <button style="width:28px;height:28px;border:none;background:transparent;color:{{ theme.muted }};cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    </button>
+                    <div style="position:relative;">
+                      <button onClick="{{ toggleModelMenu }}" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;border:1px solid {{ theme.hairline }};background:transparent;color:{{ theme.bodyStrong }};font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;">
+                        <span style="white-space:nowrap;flex-shrink:0;">{{ selectedModel.name }}</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                      </button>
+                      <sc-if value="{{ modelMenuOpen }}" hint-placeholder-val="{{ false }}">
+                        <div style="position:absolute;bottom:36px;left:0;width:220px;background:{{ theme.surfaceStrong }};border:1px solid {{ theme.hairlineStrong }};border-radius:10px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,0.35);">
+                          <sc-for list="{{ models }}" as="m" hint-placeholder-count="3">
+                            <div onClick="{{ selectModel }}" data-id="{{ m.id }}" style="padding:8px 10px;border-radius:6px;cursor:pointer;">
+                              <div style="font-size:13px;color:{{ theme.bodyStrong }};">{{ m.name }}</div>
+                              <div style="font-size:11px;color:{{ theme.muted }};font-family:'JetBrains Mono',monospace;">{{ m.ram }} · {{ m.ctx }}</div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button onClick="{{ pauseResponse }}" disabled="{{ pauseDisabled }}" style="width:30px;height:30px;border:1px solid {{ theme.hairlineStrong }};border-radius:8px;background:transparent;color:{{ pauseColor }};cursor:{{ pauseCursor }};display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:{{ pauseOpacity }};">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                    </button>
+                    <button onClick="{{ sendMessage }}" style="width:30px;height:30px;border:none;border-radius:8px;background:{{ theme.primary }};color:{{ theme.onPrimary }};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSettings }}" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:900;">
+      <div onClick="{{ stopPropagation }}" style="width:560px;max-height:80vh;display:flex;flex-direction:column;background:{{ theme.surface }};border:1px solid {{ theme.hairlineStrong }};border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.45);">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid {{ theme.hairline }};flex-shrink:0;">
+          <div style="font-size:16px;font-weight:600;color:{{ theme.ink }};">Configurações</div>
+          <button onClick="{{ closeSettings }}" style="width:26px;height:26px;border:none;background:transparent;color:{{ theme.muted }};cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div style="overflow-y:auto;overflow-x:hidden;padding:24px;">
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:{{ theme.muted }};margin-bottom:10px;">Aparência</div>
+          <div style="display:flex;gap:8px;margin-bottom:28px;">
+            <button onClick="{{ setLight }}" style="padding:8px 16px;border-radius:8px;border:1px solid {{ lightBorder }};background:{{ lightBg }};color:{{ theme.bodyStrong }};font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Claro</button>
+            <button onClick="{{ setDark }}" style="padding:8px 16px;border-radius:8px;border:1px solid {{ darkBorder }};background:{{ darkBg }};color:{{ theme.bodyStrong }};font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Escuro</button>
+          </div>
+
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:{{ theme.muted }};margin-bottom:10px;">Threads de CPU</div>
+          <div style="display:flex;gap:8px;margin-bottom:28px;">
+            <sc-for list="{{ cpuThreadOptions }}" as="opt" hint-placeholder-count="3">
+              <button onClick="{{ selectCpuThreads }}" data-value="{{ opt.value }}" style="padding:8px 18px;border-radius:8px;border:1px solid {{ opt.border }};background:{{ opt.bg }};color:{{ theme.bodyStrong }};font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">{{ opt.value }}</button>
+            </sc-for>
+          </div>
+
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:{{ theme.muted }};margin-bottom:10px;">Modelos de nuvem (opcional)</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="background:{{ theme.canvas }};border:1px solid {{ theme.hairline }};border-radius:10px;padding:14px;">
+              <div style="font-size:13px;color:{{ theme.bodyStrong }};margin-bottom:8px;">Gemini</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="{{ geminiInputType }}" placeholder="Chave de API do Gemini" value="{{ geminiKey }}" onChange="{{ setGeminiKey }}" style="flex:1;min-width:0;border:1px solid {{ theme.hairlineStrong }};border-radius:8px;background:{{ theme.surface }};color:{{ theme.bodyStrong }};font-size:13px;font-family:'JetBrains Mono',monospace;padding:9px 12px;outline:none;" />
+                <button onClick="{{ toggleGeminiVisible }}" style="width:32px;height:32px;border:none;background:transparent;color:{{ theme.muted }};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <sc-if value="{{ geminiKeyVisible }}" hint-placeholder-val="{{ false }}">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </sc-if>
+                  <sc-if value="{{ !geminiKeyVisible }}" hint-placeholder-val="{{ true }}">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-7-11-7a20.3 20.3 0 015.06-5.94M9.9 4.24A10.9 10.9 0 0112 4c7 0 11 7 11 7a20.3 20.3 0 01-2.6 3.6M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+                  </sc-if>
+                </button>
+              </div>
+            </div>
+            <div style="background:{{ theme.canvas }};border:1px solid {{ theme.hairline }};border-radius:10px;padding:14px;">
+              <div style="font-size:13px;color:{{ theme.bodyStrong }};margin-bottom:8px;">GLM</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="{{ glmInputType }}" placeholder="Chave de API do GLM" value="{{ glmKey }}" onChange="{{ setGLMKey }}" style="flex:1;min-width:0;border:1px solid {{ theme.hairlineStrong }};border-radius:8px;background:{{ theme.surface }};color:{{ theme.bodyStrong }};font-size:13px;font-family:'JetBrains Mono',monospace;padding:9px 12px;outline:none;" />
+                <button onClick="{{ toggleGLMVisible }}" style="width:32px;height:32px;border:none;background:transparent;color:{{ theme.muted }};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <sc-if value="{{ glmKeyVisible }}" hint-placeholder-val="{{ false }}">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </sc-if>
+                  <sc-if value="{{ !glmKeyVisible }}" hint-placeholder-val="{{ true }}">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-7-11-7a20.3 20.3 0 015.06-5.94M9.9 4.24A10.9 10.9 0 0112 4c7 0 11 7 11 7a20.3 20.3 0 01-2.6 3.6M14.12 14.12a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+                  </sc-if>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;background:{{ theme.surfaceStrong }};border:1px solid {{ theme.hairlineStrong }};border-radius:9999px;padding:5px;box-shadow:0 10px 28px rgba(0,0,0,0.4);z-index:1000;">
+    <button onClick="{{ goToOnboarding }}" style="padding:6px 12px;border-radius:9999px;border:none;font-size:11.5px;cursor:pointer;background:{{ btnOnboarding }};color:{{ txtOnboarding }};font-family:'Inter',sans-serif;">Onboarding</button>
+    <button onClick="{{ goToChatActive }}" style="padding:6px 12px;border-radius:9999px;border:none;font-size:11.5px;cursor:pointer;background:{{ btnChatActive }};color:{{ txtChatActive }};font-family:'Inter',sans-serif;">Chat</button>
+    <button onClick="{{ goToChatEmpty }}" style="padding:6px 12px;border-radius:9999px;border:none;font-size:11.5px;cursor:pointer;background:{{ btnChatEmpty }};color:{{ txtChatEmpty }};font-family:'Inter',sans-serif;">Vazio</button>
+    <button onClick="{{ goToChatError }}" style="padding:6px 12px;border-radius:9999px;border:none;font-size:11.5px;cursor:pointer;background:{{ btnChatError }};color:{{ txtChatError }};font-family:'Inter',sans-serif;">Erro</button>
+    <button onClick="{{ goToSettings }}" style="padding:6px 12px;border-radius:9999px;border:none;font-size:11.5px;cursor:pointer;background:{{ btnSettings }};color:{{ txtSettings }};font-family:'Inter',sans-serif;">Config</button>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;Comportamento&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'chat',
+    chatView: 'active',
+    theme: 'dark',
+    sidebarCollapsed: false,
+    activeConvId: 'c1',
+    modelMenuOpen: false,
+    selectedModelId: 'llama3.1-8b',
+    numCtx: 8192,
+    ollamaHost: 'http://localhost:11434',
+    settingsOpen: false,
+    cpuThreads: 4,
+    geminiKey: '',
+    geminiKeyVisible: false,
+    glmKey: '',
+    glmKeyVisible: false,
+    isResponding: false,
+    ollamaInfoOpen: false,
+  };
+
+  ollamaVersion = 'v0.32.6';
+
+  models = [
+    { id: 'llama3.1-8b', name: 'Llama 3.1 8B', ram: '~6 GB RAM', ctx: '8K contexto' },
+    { id: 'qwen2.5-14b', name: 'Qwen 2.5 14B', ram: '~10 GB RAM', ctx: '32K contexto' },
+    { id: 'phi3-mini', name: 'Phi-3 Mini', ram: '~2,3 GB RAM', ctx: '4K contexto' },
+  ];
+
+  conversations = [
+    { isHeader: true, label: 'Hoje' },
+    { isItem: true, id: 'c1', title: 'Resumo do relatório trimestral' },
+    { isItem: true, id: 'c2', title: 'Ajustar consulta SQL de vendas' },
+    { isHeader: true, label: 'Ontem' },
+    { isItem: true, id: 'c3', title: 'Script de deploy do Electron' },
+    { isHeader: true, label: 'Anteriores' },
+    { isItem: true, id: 'c4', title: 'Comparar modelos quantizados' },
+    { isItem: true, id: 'c5', title: 'Notas sobre RAG local' },
+  ];
+
+  messages = [
+    { role: 'user', text: 'Anexei as vendas do trimestre. Consegue puxar o total por região?', attachment: { name: 'vendas_2024.csv', rows: '1.240 linhas' } },
+    { role: 'assistant', text: 'Total por região: Sul R$ 482k, Sudeste R$ 1,1M, Nordeste R$ 340k, Centro-Oeste R$ 210k, Norte R$ 96k.', meta: 'Llama 3.1 8B · 8K contexto · 2.140 tokens · 4,8s' },
+    { role: 'user', text: 'Dá pra rodar isso numa janela de contexto maior, tipo 32k?' },
+    { role: 'assistant', text: 'Dá — troque para o Qwen 2.5 14B, que suporta até 32K de contexto. Só considerar que ele usa mais memória (~10 GB de RAM).', meta: 'Llama 3.1 8B · 8K contexto · 890 tokens · 2,1s' },
+    { role: 'user', text: 'Mostra um exemplo de consulta SQL pra isso?' },
+    { role: 'assistant', text: 'Dá pra montar assim, usando os dados que você já anexou:\n\n```sql\nSELECT regiao, SUM(valor) AS total\nFROM vendas\nGROUP BY regiao\nORDER BY total DESC;\n```\n\nAlguns pontos:\n- `regiao` e `valor` são as colunas **originais** do CSV\n- o `GROUP BY` soma tudo por região\n- troque para `ORDER BY total ASC` se quiser ver as menores primeiro' },
+  ];
+
+  DARK = {
+    canvas: '#0f0f0f', surface: '#181818', surfaceElevated: '#202020', surfaceStrong: '#282828',
+    hairline: '#242424', hairlineSoft: '#1c1c1c', hairlineStrong: '#333333',
+    ink: '#ffffff', body: '#a8a8a8', bodyStrong: '#ffffff', muted: '#888888', mutedSoft: '#666666',
+    onPrimary: '#ffffff', primary: '#0007cd', primaryActive: '#0005a3',
+    success: '#33d17a', error: '#ff6b6b', successBg: 'rgba(51,209,122,0.12)', errorBg: 'rgba(255,107,107,0.12)',
+  };
+  LIGHT = {
+    canvas: '#fafafa', surface: '#ffffff', surfaceElevated: '#f3f3f3', surfaceStrong: '#e9e9e9',
+    hairline: '#e6e6e6', hairlineSoft: '#eeeeee', hairlineStrong: '#d4d4d4',
+    ink: '#0f0f0f', body: '#55565c', bodyStrong: '#0f0f0f', muted: '#82838a', mutedSoft: '#a5a6ab',
+    onPrimary: '#ffffff', primary: '#0007cd', primaryActive: '#0005a3',
+    success: '#1f9d5c', error: '#d5393e', successBg: 'rgba(31,157,92,0.1)', errorBg: 'rgba(213,57,62,0.1)',
+  };
+
+  toggleSidebar = () => this.setState(s => ({ sidebarCollapsed: !s.sidebarCollapsed }));
+  goToOnboarding = () => this.setState({ screen: 'onboarding', modelMenuOpen: false });
+  goToSettings = () => this.setState({ screen: 'chat', settingsOpen: true, modelMenuOpen: false });
+  closeSettings = () => this.setState({ settingsOpen: false });
+  stopPropagation = (e) => e.stopPropagation();
+  goToChat = () => this.setState({ screen: 'chat', chatView: 'active' });
+  goToChatActive = () => this.setState({ screen: 'chat', chatView: 'active', modelMenuOpen: false });
+  goToChatEmpty = () => this.setState({ screen: 'chat', chatView: 'empty', modelMenuOpen: false });
+  goToChatError = () => this.setState({ screen: 'chat', chatView: 'error', modelMenuOpen: false });
+  newConversation = () => this.setState({ screen: 'chat', chatView: 'empty' });
+  retryConnection = () => this.setState({ chatView: 'active' });
+  setLight = () => this.setState({ theme: 'light' });
+  setDark = () => this.setState({ theme: 'dark' });
+  selectConv = (e) => {
+    const id = e.currentTarget.getAttribute('data-id');
+    this.setState({ activeConvId: id, screen: 'chat', chatView: 'active' });
+  };
+  toggleModelMenu = () => this.setState(s => ({ modelMenuOpen: !s.modelMenuOpen }));
+  selectModel = (e) => {
+    const id = e.currentTarget.getAttribute('data-id');
+    this.setState({ selectedModelId: id, modelMenuOpen: false });
+  };
+  setNumCtx = (e) => this.setState({ numCtx: Number(e.target.value) });
+  handleComposerInput = (e) => {
+    const el = e.target;
+    const max = 60;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, max) + 'px';
+    el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
+  };
+  setHost = (e) => this.setState({ ollamaHost: e.target.value });
+  selectCpuThreads = (e) => this.setState({ cpuThreads: Number(e.currentTarget.dataset.value) });
+  toggleGeminiVisible = () => this.setState(s => ({ geminiKeyVisible: !s.geminiKeyVisible }));
+  toggleGLMVisible = () => this.setState(s => ({ glmKeyVisible: !s.glmKeyVisible }));
+  setGeminiKey = (e) => this.setState({ geminiKey: e.target.value });
+  setGLMKey = (e) => this.setState({ glmKey: e.target.value });
+  sendMessage = () => this.setState({ isResponding: true });
+  pauseResponse = () => this.setState({ isResponding: false });
+  toggleOllamaInfo = () => this.setState(s => ({ ollamaInfoOpen: !s.ollamaInfoOpen }));
+
+  renderInline(str, theme, keyPrefix) {
+    const tokens = [];
+    const regex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+    let last = 0, m, k = 0;
+    while ((m = regex.exec(str))) {
+      if (m.index > last) tokens.push(str.slice(last, m.index));
+      const t = m[0];
+      if (t.startsWith('**')) tokens.push(React.createElement('strong', { key: keyPrefix + '-b' + k++ }, t.slice(2, -2)));
+      else tokens.push(React.createElement('code', { key: keyPrefix + '-c' + k++, style: { fontFamily: "'JetBrains Mono',monospace", fontSize: '0.9em', background: theme.surfaceElevated, padding: '1px 5px', borderRadius: 4, color: theme.bodyStrong } }, t.slice(1, -1)));
+      last = regex.lastIndex;
+    }
+    if (last < str.length) tokens.push(str.slice(last));
+    return tokens;
+  }
+
+  renderMarkdown(text, theme, keyPrefix) {
+    const segments = [];
+    const fenceRe = /```(\w*)\n([\s\S]*?)```/g;
+    let last = 0, m;
+    while ((m = fenceRe.exec(text))) {
+      if (m.index > last) segments.push({ type: 'text', content: text.slice(last, m.index) });
+      segments.push({ type: 'code', lang: m[1], content: m[2].replace(/\n$/, '') });
+      last = fenceRe.lastIndex;
+    }
+    if (last < text.length) segments.push({ type: 'text', content: text.slice(last) });
+
+    return segments.map((seg, i) => {
+      if (seg.type === 'code') {
+        return React.createElement('div', { key: keyPrefix + '-code-' + i, style: { margin: '10px 0', borderRadius: 10, overflow: 'hidden', border: '1px solid ' + theme.hairline } },
+          seg.lang ? React.createElement('div', { style: { padding: '6px 12px', fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: theme.muted, background: theme.surfaceStrong, borderBottom: '1px solid ' + theme.hairline } }, seg.lang) : null,
+          React.createElement('pre', { style: { margin: 0, padding: '12px 14px', background: theme.surfaceElevated, overflowX: 'auto' } },
+            React.createElement('code', { style: { fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5, color: theme.bodyStrong, lineHeight: 1.6, whiteSpace: 'pre' } }, seg.content)
+          )
+        );
+      }
+      const lines = seg.content.split('\n');
+      const blocks = [];
+      let listBuf = [];
+      const flush = () => { if (listBuf.length) { blocks.push(React.createElement('ul', { key: keyPrefix + '-ul-' + blocks.length, style: { margin: '6px 0', paddingLeft: 20 } }, listBuf)); listBuf = []; } };
+      lines.forEach((line, li) => {
+        const t = line.trim();
+        if (t === '') { flush(); return; }
+        if (t.startsWith('- ')) { listBuf.push(React.createElement('li', { key: keyPrefix + '-li-' + li, style: { marginBottom: 4 } }, this.renderInline(t.slice(2), theme, keyPrefix + '-li' + li))); return; }
+        flush();
+        blocks.push(React.createElement('p', { key: keyPrefix + '-p-' + li, style: { margin: '0 0 8px' } }, this.renderInline(t, theme, keyPrefix + '-p' + li)));
+      });
+      flush();
+      return React.createElement(React.Fragment, { key: keyPrefix + '-frag-' + i }, blocks);
+    });
+  }
+
+  renderVals() {
+    const theme = this.state.theme === 'dark' ? this.DARK : this.LIGHT;
+    const density = this.props.density ?? 'comfortable';
+    const sp = density === 'compact'
+      ? { msgGap: 14, itemPad: '6px 10px', composerPad: 10, threadPad: 16 }
+      : { msgGap: 24, itemPad: '10px 12px', composerPad: 16, threadPad: 28 };
+
+    const selectedModel = this.models.find(m => m.id === this.state.selectedModelId) || this.models[0];
+    const modelsWithState = this.models.map(m => {
+      const sel = m.id === this.state.selectedModelId;
+      return { ...m, border: sel ? theme.primary : theme.hairline, dot: sel ? theme.primary : theme.hairlineStrong, dotBg: sel ? theme.primary : 'transparent' };
+    });
+
+    const activeConv = this.conversations.find(c => c.isItem && c.id === this.state.activeConvId);
+    const conversations = this.conversations.map(c => {
+      if (!c.isItem) return c;
+      const active = c.id === this.state.activeConvId;
+      return { ...c, bg: active ? theme.surfaceElevated : 'transparent', color: active ? theme.bodyStrong : theme.body, accent: active ? theme.primary : 'transparent' };
+    });
+
+    const messages = this.messages.map((m, i) => {
+      const isUser = m.role === 'user';
+      return {
+        ...m,
+        isAssistant: !isUser,
+        hasAttachment: !!m.attachment,
+        align: isUser ? 'flex-end' : 'flex-start',
+        selfAlign: isUser ? 'align-self:flex-end;' : 'align-self:flex-start;',
+        bg: isUser ? theme.surfaceElevated : 'transparent',
+        padding: isUser ? '10px 14px' : '0',
+        content: isUser ? m.text : this.renderMarkdown(m.text, theme, 'msg' + i),
+      };
+    });
+
+    const current = this.state.settingsOpen ? 'settings' : this.state.screen === 'onboarding' ? 'onboarding' : `chat-${this.state.chatView}`;
+    const pick = (name) => current === name ? theme.primary : 'transparent';
+    const pickTxt = (name) => current === name ? theme.onPrimary : theme.muted;
+
+    return {
+      theme, sp,
+      screen: this.state.screen,
+      isOnboarding: this.state.screen === 'onboarding',
+      settingsOpen: this.state.settingsOpen,
+      closeSettings: this.closeSettings,
+      stopPropagation: this.stopPropagation,
+      isChat: this.state.screen === 'chat',
+      chatView: this.state.chatView,
+      isChatActive: this.state.chatView === 'active',
+      isChatEmpty: this.state.chatView === 'empty',
+      isChatError: this.state.chatView === 'error',
+      composerOpacity: this.state.chatView === 'error' ? 0.45 : 1,
+      composerEvents: this.state.chatView === 'error' ? 'none' : 'auto',
+      sidebarCollapsed: this.state.sidebarCollapsed,
+      sidebarWidth: this.state.sidebarCollapsed ? 64 : 252,
+      toggleSidebar: this.toggleSidebar,
+      goToOnboarding: this.goToOnboarding, goToSettings: this.goToSettings, goToChat: this.goToChat, closeSettings: this.closeSettings,
+      goToChatActive: this.goToChatActive, goToChatEmpty: this.goToChatEmpty, goToChatError: this.goToChatError,
+      newConversation: this.newConversation, retryConnection: this.retryConnection,
+      setLight: this.setLight, setDark: this.setDark,
+      lightBg: this.state.theme === 'light' ? theme.primary : 'transparent',
+      lightBorder: this.state.theme === 'light' ? theme.primary : theme.hairlineStrong,
+      darkBg: this.state.theme === 'dark' ? theme.primary : 'transparent',
+      darkBorder: this.state.theme === 'dark' ? theme.primary : theme.hairlineStrong,
+      conversations, activeConvTitle: activeConv ? activeConv.title : 'Nova conversa', selectConv: this.selectConv,
+      models: modelsWithState, selectedModel,
+      modelMenuOpen: this.state.modelMenuOpen, toggleModelMenu: this.toggleModelMenu, selectModel: this.selectModel,
+      messages, handleComposerInput: this.handleComposerInput,
+      numCtx: this.state.numCtx, setNumCtx: this.setNumCtx, numCtxLabel: this.state.numCtx.toLocaleString('pt-BR'),
+      ollamaHost: this.state.ollamaHost, setHost: this.setHost,
+      cpuThreads: this.state.cpuThreads, selectCpuThreads: this.selectCpuThreads,
+      cpuThreadOptions: [2, 4, 6].map(v => ({ value: v, bg: v === this.state.cpuThreads ? theme.primary : 'transparent', border: v === this.state.cpuThreads ? theme.primary : theme.hairlineStrong })),
+      geminiKey: this.state.geminiKey, setGeminiKey: this.setGeminiKey,
+      geminiKeyVisible: this.state.geminiKeyVisible, toggleGeminiVisible: this.toggleGeminiVisible,
+      geminiInputType: this.state.geminiKeyVisible ? 'text' : 'password',
+      glmKey: this.state.glmKey, setGLMKey: this.setGLMKey,
+      glmKeyVisible: this.state.glmKeyVisible, toggleGLMVisible: this.toggleGLMVisible,
+      glmInputType: this.state.glmKeyVisible ? 'text' : 'password',
+      sendMessage: this.sendMessage, pauseResponse: this.pauseResponse,
+      pauseDisabled: !this.state.isResponding,
+      pauseColor: this.state.isResponding ? theme.bodyStrong : theme.mutedSoft,
+      pauseCursor: this.state.isResponding ? 'pointer' : 'not-allowed',
+      pauseOpacity: this.state.isResponding ? 1 : 0.4,
+      ollamaInfoOpen: this.state.ollamaInfoOpen, toggleOllamaInfo: this.toggleOllamaInfo,
+      ollamaVersion: this.ollamaVersion,
+      ollamaPort: (this.state.ollamaHost.match(/:(\d+)/) || [])[1] || '11434',
+      btnOnboarding: pick('onboarding'), txtOnboarding: pickTxt('onboarding'),
+      btnChatActive: pick('chat-active'), txtChatActive: pickTxt('chat-active'),
+      btnChatEmpty: pick('chat-empty'), txtChatEmpty: pickTxt('chat-empty'),
+      btnChatError: pick('chat-error'), txtChatError: pickTxt('chat-error'),
+      btnSettings: pick('settings'), txtSettings: pickTxt('settings'),
+    };
+  }
+}
+</script>
+</body>
+</html>
