@@ -20,8 +20,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    14 persistência das conversas      plan/implemented/14-...          concluída (ago/2026)
    15 orçamento de contexto e modelo   plan/implemented/15-...          concluída (ago/2026)
    ── trilha DS, transversal ao arco ──────────────────────────────────────────────
-▶  DS-1 fundação Tailwind v4          plan/active/DS-1-...             ← estamos aqui (escrito)
-   DS-2 migração da casca e features
+   DS-1 fundação Tailwind v4          plan/implemented/DS-1-...        concluída (ago/2026)
+▶  DS-2 migração da casca e features                                   ← estamos aqui
    DS-3 ajustes do composer e da casca
    ── o arco, retomado depois da DS-3 ─────────────────────────────────────────────
    16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado

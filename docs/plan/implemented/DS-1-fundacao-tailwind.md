@@ -1,8 +1,8 @@
 # DS-1 — Fundação Tailwind v4 sobre os tokens
 
-**Depende de:** [05 — Design tokens](../implemented/05-design-tokens.md) e [10 — Cor, contraste e tema claro](../implemented/10-cor-contraste-e-tema-claro.md) · **Entrega:** a camada de utilidade instalada e provada, o `guard.mjs` estendido para o novo vetor de violação, e os seis primitivos de `shared/ui/` migrados como prova de que funciona ponta a ponta.
+**Depende de:** [05 — Design tokens](05-design-tokens.md) e [10 — Cor, contraste e tema claro](10-cor-contraste-e-tema-claro.md) · **Entrega:** a camada de utilidade instalada e provada, o `guard.mjs` estendido para o novo vetor de violação, e os seis primitivos de `shared/ui/` migrados como prova de que funciona ponta a ponta.
 
-> Primeiro da [trilha DS](README.md#a-trilha-de-design-system-ds-n). **Aceite global, e é o que define o plano: zero mudança visual.** Nenhum pixel muda. Se a tela ficou diferente, algo saiu errado — é o critério mais barato de verificar que existe para uma migração, e o motivo de os ajustes de interface estarem no DS-3 e não aqui.
+> Primeiro da [trilha DS](../active/README.md#a-trilha-de-design-system-ds-n). **Aceite global, e é o que define o plano: zero mudança visual.** Nenhum pixel muda. Se a tela ficou diferente, algo saiu errado — é o critério mais barato de verificar que existe para uma migração, e o motivo de os ajustes de interface estarem no DS-3 e não aqui.
 >
 > Motivo da adoção e as alternativas descartadas: [`HISTORY.md`](../../HISTORY.md) § *Tailwind v4 entra*. As restrições que a ferramenta externa de design recebeu: [`reference/BRIEF-claude-design.md`](../../reference/BRIEF-claude-design.md).
 >
@@ -12,7 +12,7 @@
 
 ## O caso
 
-Os tokens estão certos e medidos desde a fase 10, mas escrever componente contra eles custa um arquivo `.module.css` por componente — 15 arquivos, 1.050 linhas. A [D5.1](../implemented/05-design-tokens.md) adiou o Tailwind prevendo que ele poderia entrar depois **lendo o mesmo arquivo**, sem reescrever token. A previsão se confirmou, e o mecanismo que a torna verdadeira é `@theme inline`.
+Os tokens estão certos e medidos desde a fase 10, mas escrever componente contra eles custa um arquivo `.module.css` por componente — 15 arquivos, 1.050 linhas. A [D5.1](05-design-tokens.md) adiou o Tailwind prevendo que ele poderia entrar depois **lendo o mesmo arquivo**, sem reescrever token. A previsão se confirmou, e o mecanismo que a torna verdadeira é `@theme inline`.
 
 O que este plano **não** é: um redesenho. Nenhum token muda de valor, nenhum componente muda de aparência, nenhuma tela ganha ou perde elemento.
 
@@ -111,7 +111,7 @@ Dois desvios do escrito acima, ambos decididos na execução e ambos por consist
 
 ---
 
-## Passo 2 — `base.css` como `@layer base`
+## Passo 2 — `base.css` como `@layer base` ✅ **concluído em 12/08/2026**
 
 Meia sessão. ⚠️ **O passo 1 já acrescentou um bloco a este arquivo** — as quatro correções ao preflight (DS1.6). Elas entram no `@layer base` junto com o resto e continuam vencendo, porque `base.css` é importado **depois** de `tailwind.css` e, dentro da mesma camada, quem vem depois ganha.
 
@@ -123,7 +123,7 @@ O arquivo vira `@layer base`, preservando o que é comportamento de aplicativo d
 
 ---
 
-## Passo 3 — O ramo `.tsx` do `guard.mjs`
+## Passo 3 — O ramo `.tsx` do `guard.mjs` ✅ **concluído em 12/08/2026**
 
 Uma sessão, e **antes** de qualquer migração. Depois seria tarde: a rede sumiria durante a travessia, que é exatamente quando ela é necessária.
 
@@ -135,7 +135,7 @@ As guardas 6 e 7 existentes **permanecem** — `MarkdownMessage.module.css` cont
 
 ---
 
-## Passo 4 — Os primitivos com variante: `Button` e `Field`
+## Passo 4 — Os primitivos com variante: `Button` e `Field` ✅ **concluído em 12/08/2026**
 
 Uma sessão. São os dois que têm matriz de variantes (`variant` × `size` × `loading`), e por isso os que definem o padrão que o resto segue: as combinações saem para constante fora do JSX; layout de 3–4 classes fica inline.
 
@@ -145,7 +145,7 @@ Dois comportamentos a preservar, e ambos são sutis o bastante para se perder nu
 
 ---
 
-## Passo 5 — Os primitivos sem variante: `Panel`, `Toolbar`, `Dialog`, `StateView`
+## Passo 5 — Os primitivos sem variante: `Panel`, `Toolbar`, `Dialog`, `StateView` ✅ **concluído em 12/08/2026**
 
 Uma sessão. Quatro arquivos, 108 linhas de CSS somadas.
 
@@ -155,11 +155,36 @@ Uma sessão. Quatro arquivos, 108 linhas de CSS somadas.
 
 ---
 
-## Passo 6 — Fechamento
+## Passo 6 — Fechamento ✅ **concluído em 12/08/2026**
+
+> **O aceite global foi verificado de ponta a ponta: 0 pixels de diferença entre o commit anterior ao plano e o estado final**, nos dois temas, 1280×800, `userData` fixo. Não é afirmação — é a mesma comparação que rodou a cada passo.
+>
+> | | Antes | Depois |
+> |---|---|---|
+> | **JS do renderer** | 1.558,97 kB | **1.558,34 kB** — *menor* |
+> | **CSS do renderer** | 34,77 kB | **50,11 kB** (+15,34) |
+> | CSS dos seis primitivos | 225 linhas | **48** (só o `Dialog`) |
+> | Módulos CSS no renderer | 15 | **11** · 877 linhas |
+> | `check:fast` | 333 testes | **333 testes**, nenhum alterado |
+>
+> **O JS encolheu**, e é o dado que não se esperava: cinco `import styles from './X.module.css'` a menos valem mais que o zero que uma ferramenta de build custa. A série do renderer que o projeto mantém (573 → 951 na fase 11 → 1.302 na 12) ganha um ponto que **não sobe**.
+>
+> O CSS sobe 15,34 kB e **o saldo ainda é negativo a receber**: os 11 módulos restantes somam 877 linhas, e o DS-2 leva 10 deles. O preflight responde por ~11 kB desse aumento e é custo fixo, pago uma vez.
 
 Meia sessão. `pnpm check:fast` verde, os dois temas conferidos ao vivo, e **o tamanho do bundle do renderer medido antes e depois** — o projeto registra esse número a cada plano que mexe em dependência (573 → 951 kB na fase 11, → 1.302 kB na fase 12), e a série só é útil se ninguém pular um ponto.
 
 Diário preenchido. O DS-2 nasce na sessão em que começar.
+
+### O que o alvo pede e os primitivos não têm
+
+Anotado, **não construído** — a régua do envelope: variante sem consumidor é ponto de extensão especulativo, e o DS-3 as cria junto de quem as usa.
+
+| Falta | Onde o alvo usa |
+|---|---|
+| Variante **contornada** — fundo transparente com borda visível | o "Nova conversa" da sidebar; hoje o mais próximo é `secondary`, que tem fundo elevado |
+| Forma de **ícone circular** | o envio `↑` e a pausa do composer; hoje toda variante é retangular com `rounded-md` |
+
+⚠️ **E o que não falta, verificado token a token:** os primitivos do handoff são **transcrição** dos do repositório — cinco dos seis idênticos, e no `Dialog` o repositório é o melhor dos dois (tem o `--duration-fast` do fade que o handoff perdeu). Para este plano, *seguir o envelope* e *copiar o repositório* eram a mesma ação. O que o alvo redesenha é **composição e chrome**, não primitivo.
 
 ---
 
@@ -229,5 +254,6 @@ Forma para o DS-2 em diante: **despejo de retângulos durante o trabalho, diff d
 
 | Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
+| 12/08/2026 | 3 | **Passos 2 a 6 — plano concluído.** `base.css` em `@layer base`; guarda 8 no `guard.mjs` (quatro ramos) mais a guarda 7 cobrindo o `tailwind.css`; os seis primitivos migrados, com cinco `.module.css` removidos e o do `Dialog` de 70 para 25 linhas. Medido: **0 pixels** entre o pré-Tailwind e o fim, JS **1.558,97 → 1.558,34 kB** (encolheu), CSS 34,77 → 50,11 kB, 333 testes intactos. Achado que corrigiu o método: os primitivos do handoff são transcrição dos do repositório — *seguir o envelope* e *copiar o repositório* eram a mesma ação, e isso passou a ser verificado em vez de assumido | **DS-1 concluído.** O DS-2 nasce na sessão em que começar, escrito contra a tabela de distância |
 | 12/08/2026 | 2 | **Passo 1 completo.** `@tailwindcss/vite` no bloco `renderer`; `assets/tailwind.css` com `@theme inline` (5 namespaces desligados, 15 cores semânticas, 9 espaços, 4 raios, 8 tamanhos de texto, 2 famílias) e 5 `@utility` de sólido; import no `main.tsx` entre `tokens.css` e `base.css`. **O preflight foi o achado**: quatro divergências com o `base.css`, a pior sendo o modal em `rect=0,0`. Corrigidas, e o resultado é **0 pixel de diferença** nos dois temas. `tokens.css` intacto, 333 testes, CSS +12,51 kB, JS zero. D1.6 e D1.7 nasceram aqui | Passo 2. O `base.css` já ganhou um bloco no passo 1 — ler a ⚠️ do passo 2 antes de começar |
 | 12/08/2026 | 1 | **Passo 0 completo.** `tailwindcss` + `@tailwindcss/vite` 4.3.3 instalados e validados; sonda descartável em dev (CSS lido do dev server) e em build; medição de `getComputedStyle` no Chromium 148 do próprio Electron. Os dois riscos caíram; a D1.5 nasceu do resultado. Custo medido: CSS +11,2 kB, JS zero. Sonda removida, `src/` intacto, `check:fast` verde (333 testes) | Passo 1. A dependência **fica instalada** — instalar, validar e commitar é uma variável por vez, e a validação já aconteceu |

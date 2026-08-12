@@ -10,7 +10,6 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 | # | Plano | Estado |
 |---|---|---|
-| [DS-1](DS-1-fundacao-tailwind.md) | Fundação Tailwind v4 sobre os tokens | **próximo a executar.** Escrito em ago/2026 |
 | [16](16-anexo-mecanismo-e-dataset.md) | Anexo: o mecanismo, e o dataset como primeiro consumidor | escrito e revisado, nenhum passo iniciado. **Ler a skill [`ipc`](../../../.claude/skills/ipc/SKILL.md) antes do passo 2** — é o plano que cria o canal de anexo |
 
 ---
@@ -37,13 +36,15 @@ Isto está escrito porque a leitura oposta é fácil e já aconteceu duas vezes.
 
 | # | Entrega | Aceite que o define |
 |---|---|---|
-| [**DS-1**](DS-1-fundacao-tailwind.md) | **Fundação.** Prova de conceito do `@utility` sob electron-vite, instalação, `@theme inline`, `@utility` dos sólidos, `base.css` como `@layer base`, o ramo `.tsx` do `guard.mjs`, e os seis primitivos de `shared/ui/` migrados | **Zero mudança visual** |
-| **DS-2** | **Migração da casca e das features.** `app/` (2 componentes), `conversation` (5), `settings` (2), `open-dataset` (1) e `Versions`; remoção dos CSS Modules migrados — `MarkdownMessage.module.css` fica, por estilizar HTML gerado sem `className`. Escrito **contra a tabela de distância**: onde o DS-3 vai reestruturar, a migração é mínima | **Zero mudança visual** |
+| [~~**DS-1**~~](../implemented/DS-1-fundacao-tailwind.md) | ✅ **Fundação** — concluída em ago/2026. Prova de conceito do `@utility` sob electron-vite, instalação, `@theme inline`, `@utility` dos sólidos, `base.css` como `@layer base`, o ramo `.tsx` do `guard.mjs`, e os seis primitivos de `shared/ui/` migrados | **Zero mudança visual — verificado, 0 pixels** |
+| **DS-2** | ← **próximo a executar.** **Migração da casca e das features.** `app/` (2 componentes), `conversation` (5), `settings` (2), `open-dataset` (1) e `Versions`; remoção dos CSS Modules migrados — `MarkdownMessage.module.css` fica, por estilizar HTML gerado sem `className`. Escrito **contra a tabela de distância**: onde o DS-3 vai reestruturar, a migração é mínima | **Zero mudança visual** |
 | **DS-3** | **A interface chega ao alvo.** Não são ajustes: cabeçalho e rodapé da sidebar, busca por título, agrupamento por data, barra de acento na conversa ativa, título da conversa como cabeçalho, desmonte da toolbar superior, seletor de modelo como pílula dentro do composer, envio circular e pausa, bolha na mensagem do usuário, escala de tipo. Mais os estados de `alvo/` | **A tela muda, e a mudança é a entrega** — medida contra `alvo-chat.png` |
 
 **Por que três e não um.** Os dois primeiros compartilham o aceite mais forte que existe para migração — *se a tela mudou, algo saiu errado* —, verificável em segundos. O DS-3 tem o aceite oposto. Um plano que contém os dois critérios não consegue fechar um passo: a tela diferente deixa de ser sinal.
 
-**DS-2 e DS-3 não estão escritos**, pela regra do próprio arco: um plano nasce quando é o próximo a executar. A tabela acima é o contrato. E há motivo concreto aqui — o passo 0 do DS-1 tem poder de veto e pode mudar os dois.
+**DS-2 e DS-3 não estão escritos**, pela regra do próprio arco: um plano nasce quando é o próximo a executar. A tabela acima é o contrato. O poder de veto que o passo 0 do DS-1 tinha sobre os dois **não foi exercido** — os dois riscos caíram, e a forma da solução se manteve.
+
+**O que o DS-1 deixa pronto para o DS-2**, e vale ler antes de escrevê-lo: a régua da guarda 8 do [`guard.mjs`](../../../.claude/hooks/guard.mjs), que reprova cor literal e primitivo alcançado por utilidade; o padrão dos primitivos com variante (combinações em constante fora do JSX, layout inline) e a armadilha que ele resolve — **duas utilidades do mesmo grupo são resolvidas pela ordem na folha gerada, nunca pela ordem no `className`**, então o que uma variante sobrescreve não pode estar no base; e o instrumento de aceite, que é despejo de `getBoundingClientRect` durante o trabalho e diff de pixel uma vez no fim (DS1.7).
 
 ---
 
