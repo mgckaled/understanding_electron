@@ -1,5 +1,4 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import styles from './Button.module.css'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type ButtonSize = 'sm' | 'md' | 'lg'
@@ -11,6 +10,36 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode
 }
 
+/*
+ * Variants live in constants, not in the JSX, because they are a matrix.
+ *
+ * ⚠️ Font size and border colour are NOT in BASE, and that is not style: two
+ * utilities of the same group are resolved by their order in the generated
+ * stylesheet, never by their order in the class attribute — so a `text-sm` in
+ * BASE could beat the `text-xs` of a size. Whatever a variant or size overrides
+ * belongs only to them.
+ *
+ * `ease-initial` is CSS `ease`, which is what the module used; Tailwind's own
+ * default is a different curve.
+ */
+const BASE =
+  'relative inline-flex cursor-pointer items-center justify-center gap-3 rounded-md border ' +
+  'font-ui font-semibold whitespace-nowrap transition-colors duration-(--duration-fast) ' +
+  'ease-initial disabled:cursor-not-allowed disabled:opacity-50'
+
+const VARIANT: Record<ButtonVariant, string> = {
+  primary: 'border-transparent bg-accent text-on-accent hover:not-disabled:bg-accent-hover',
+  secondary: 'border-border bg-surface-raised text-text hover:not-disabled:border-border-strong',
+  ghost: 'border-transparent bg-transparent text-text hover:not-disabled:bg-surface-raised',
+  danger: 'border-transparent bg-danger text-on-danger hover:not-disabled:brightness-110'
+}
+
+const SIZE: Record<ButtonSize, string> = {
+  sm: 'h-(--control-height-sm) px-5 text-xs',
+  md: 'h-(--control-height-md) px-6 text-sm',
+  lg: 'h-(--control-height-lg) px-7 text-md'
+}
+
 function Button({
   variant = 'secondary',
   size = 'md',
@@ -20,9 +49,7 @@ function Button({
   children,
   ...props
 }: ButtonProps): React.JSX.Element {
-  const classes = [styles.button, styles[variant], styles[size], className]
-    .filter(Boolean)
-    .join(' ')
+  const classes = [BASE, VARIANT[variant], SIZE[size], className].filter(Boolean).join(' ')
 
   return (
     <button
@@ -31,8 +58,15 @@ function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      <span className={loading ? styles.labelHidden : undefined}>{children}</span>
-      {loading && <span className={styles.spinner} aria-hidden="true" />}
+      {/* `invisible`, never a transparent colour: the spinner inherits
+          currentColor, so it lands on the variant's colour for free. */}
+      <span className={loading ? 'invisible' : undefined}>{children}</span>
+      {loading && (
+        <span
+          className="animate-spinner absolute h-5 w-5 rounded-full border-2 border-current border-r-transparent"
+          aria-hidden="true"
+        />
+      )}
     </button>
   )
 }

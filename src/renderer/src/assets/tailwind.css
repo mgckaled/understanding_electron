@@ -108,3 +108,21 @@
 @utility bg-ok {
   background-color: var(--color-ok);
 }
+
+/*
+ * The Button's loading spinner. Its own name rather than Tailwind's animate-spin
+ * because that one is locked to 1s and this project's is --duration-slow (320ms);
+ * `duration-*` sets transition-duration, never animation-duration.
+ *
+ * The keyframes sit outside: @utility cannot hold an at-rule, and the brief
+ * already lists keyframes among the things that stay in CSS.
+ */
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility animate-spinner {
+  animation: spinner var(--duration-slow) linear infinite;
+}
