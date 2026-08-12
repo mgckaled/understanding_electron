@@ -1,5 +1,6 @@
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { aliases } from './config/aliases'
 
 export default defineConfig({
@@ -17,6 +18,8 @@ export default defineConfig({
     resolve: {
       alias: aliases
     },
-    plugins: [react()]
+    // Renderer only: main and preload have no CSS, and the plugin would just be
+    // a build step with nothing to find.
+    plugins: [react(), tailwindcss()]
   }
 })
