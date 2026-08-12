@@ -28,13 +28,24 @@
  *      Redundant with ESLint by design: this fires on every edit, whereas
  *      lint only runs when invoked.
  *
- *   6. HARDCODED DESIGN VALUE — hex colour in a *.module.css. ESLint does not
- *      lint CSS, so the token rule has no automated enforcement otherwise.
+ *   6. HARDCODED DESIGN VALUE — hex colour in a *.module.css or in the Tailwind
+ *      theme layer. ESLint does not lint CSS, so the token rule has no
+ *      automated enforcement otherwise.
  *
- *   7. UNKNOWN TOKEN — `var(--x)` in a *.module.css with no matching
- *      declaration in tokens.css. Catches the typo that renders as "no style
- *      at all" and is invisible until someone looks at that exact component.
- *      Inert until the design system lands in phase 05.
+ *   7. UNKNOWN TOKEN — `var(--x)` with no matching declaration in tokens.css.
+ *      Catches the typo that renders as "no style at all" and is invisible
+ *      until someone looks at that exact component. Since DS-1 it also covers
+ *      assets/tailwind.css, where the blast radius is the whole app: one wrong
+ *      name in `@theme inline` silently kills a utility family everywhere.
+ *
+ *   8. LITERAL COLOUR OR PRIMITIVE IN JSX — arbitrary colour value
+ *      (`bg-[#0d5bd9]`, `text-[rgb(…)]`), a primitive reached through the v4
+ *      shorthand (`bg-(--gray-3)`), or a literal inside `style={{ }}`, in a
+ *      .tsx under src/renderer/. This is the half that compilation does not
+ *      cover: `--color-*: initial` kills `bg-slate-800` at build time, and
+ *      arbitrary values are exactly what survives it. Written in DS-1 step 3,
+ *      deliberately BEFORE the migration — a guard written afterwards is
+ *      calibrated not to fail the code that already exists.
  *
  * On violation: writes an explanation to stderr and exits 2, which feeds the
  * message back to Claude so it self-corrects. Otherwise exits 0. Any internal
@@ -62,6 +73,15 @@ const VAR_USAGE = /var\(\s*(--[\w-]+)/g
 // not need a line anchor, and must not have one: a compact tokens.css puts
 // several declarations on the same line.
 const VAR_DECL = /(--[\w-]+)\s*:/g
+// Arbitrary utility value carrying a literal colour: bg-[#0d5bd9], text-[rgb(…)].
+const ARBITRARY_COLOR =
+  /[\w-]+-\[\s*(?:#[0-9a-fA-F]{3,8}|(?:rgba?|hsla?|oklch|oklab|lab|lch|color|color-mix)\()/g
+// A primitive reached from a component, through either bracket form the v4
+// grammar accepts: bg-(--gray-3) and text-[var(--blue-11-dark)].
+const PRIMITIVE_UTILITY = /[\w-]+-[[(]\s*(?:var\(\s*)?(--(?:gray|blue|red|amber|green)-[\w-]+)/g
+const STYLE_OBJECT = /style\s*=\s*\{\{([^}]*)\}\}/g
+const LITERAL_COLOR = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|oklch|oklab)\(/
+const CLASSNAME_VALUE = /className\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*`([^`]*)`\s*\}|\{([^}]*)\})/g
 
 /** Token names declared in tokens.css, or null when it does not exist yet. */
 function declaredTokens() {
@@ -90,6 +110,10 @@ try {
 
 const isCss = file.endsWith('.css')
 const isModuleCss = file.endsWith('.module.css')
+// The Tailwind theme layer: not a module, but the file where a wrong token name
+// costs the most — `@theme inline` maps one name to every utility built on it.
+const isThemeCss = rel === 'src/renderer/src/assets/tailwind.css'
+const isRendererTsx = rel.startsWith('src/renderer/') && file.endsWith('.tsx')
 const isTest = /\.(test|spec)\./.test(path.basename(file))
 const code = stripComments(raw, { lineComments: !isCss })
 const violations = []
@@ -148,12 +172,13 @@ if ((rel.startsWith('src/core/') || rel.startsWith('src/shared/')) && ELECTRON_I
   )
 }
 
-// 6 and 7. Design-system rules, module CSS only.
-if (isModuleCss) {
+// 6 and 7. Design-system rules over CSS the components own — the module files
+// plus the Tailwind theme layer, which is not a module but obeys the same rule.
+if (isModuleCss || isThemeCss) {
   const hexes = [...new Set([...code.matchAll(HEX_COLOR)].map((m) => m[0]))]
   if (hexes.length > 0) {
     violations.push(
-      `Cor literal em módulo CSS (${hexes.slice(0, 4).join(', ')}). Componente usa token ` +
+      `Cor literal (${hexes.slice(0, 4).join(', ')}). Componente e camada de tema usam token ` +
         'semântico (`var(--color-*)`); primitivos e literais vivem só em shared/ui/tokens.css.'
     )
   }
@@ -171,6 +196,50 @@ if (isModuleCss) {
           'para este componente específico.'
       )
     }
+  }
+}
+
+// 8. The same design-system rule on the JSX side. What compilation already
+// covers is not repeated here: the `--color-*: initial` of DS-1 makes
+// `bg-slate-800` fail to build. This is what survives that.
+if (isRendererTsx && !isTest) {
+  const arbitrary = [...new Set([...code.matchAll(ARBITRARY_COLOR)].map((m) => m[0]))]
+  if (arbitrary.length > 0) {
+    violations.push(
+      `Cor literal em valor arbitrário (${arbitrary.slice(0, 3).join(', ')}…). A paleta padrão ` +
+        'já não compila, mas o valor arbitrário passa — e é o mesmo furo que a guarda 6 ' +
+        'bloqueia no CSS. Use a utilidade do token: `bg-surface`, `text-accent-text`.'
+    )
+  }
+
+  const primitives = [...new Set([...code.matchAll(PRIMITIVE_UTILITY)].map((m) => m[1]))]
+  if (primitives.length > 0) {
+    violations.push(
+      `Token primitivo alcançado por utilidade: ${primitives.join(', ')}. Os dois níveis ` +
+        'existem para que o tema claro possa remapear só o semântico — um componente preso ' +
+        'ao primitivo não acompanha a troca de tema.'
+    )
+  }
+
+  const styled = [...code.matchAll(STYLE_OBJECT)]
+    .map((m) => m[1])
+    .filter((body) => LITERAL_COLOR.test(body))
+  if (styled.length > 0) {
+    violations.push(
+      'Cor literal em `style={{ }}`. Além de furar o sistema de tokens, estilo inline exige ' +
+        "`style-src 'unsafe-inline'` na CSP — que o ROADMAP registra como dívida a fechar, e " +
+        'foi o motivo de o `shiki` ser recusado na fase 12.'
+    )
+  }
+
+  const inClassName = [...code.matchAll(CLASSNAME_VALUE)]
+    .map((m) => m[1] ?? m[2] ?? m[3] ?? m[4] ?? '')
+    .flatMap((value) => [...value.matchAll(HEX_COLOR)].map((m) => m[0]))
+  if (inClassName.length > 0) {
+    violations.push(
+      `Cor literal dentro de \`className\` (${[...new Set(inClassName)].join(', ')}). ` +
+        'Toda cor vem de token — nenhum `#hex` fora de shared/ui/tokens.css.'
+    )
   }
 }
 
