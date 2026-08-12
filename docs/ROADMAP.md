@@ -19,7 +19,12 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    0  revisão de escopo: documento    ESCOPO.md · HISTORY.md           concluída (ago/2026)
    14 persistência das conversas      plan/implemented/14-...          concluída (ago/2026)
    15 orçamento de contexto e modelo   plan/implemented/15-...          concluída (ago/2026)
-▶  16 anexo: mecanismo + dataset        plan/active/16-...               ← estamos aqui (escrito)
+   ── trilha DS, transversal ao arco ──────────────────────────────────────────────
+▶  DS-1 fundação Tailwind v4          plan/active/DS-1-...             ← estamos aqui (escrito)
+   DS-2 migração da casca e features
+   DS-3 ajustes do composer e da casca
+   ── o arco, retomado depois da DS-3 ─────────────────────────────────────────────
+   16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
    17 anexo: documento e imagem
    18 camada de dados (DuckDB)       study/05-proximos-passos.md
    19 propor: consulta e passos
@@ -29,6 +34,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    observatório                      ← ver abaixo
    nuvem, RAG e ML                   plan/active/09-camada-de-ia.md   fatias 3, 5 e 6
 ```
+
+**A trilha DS entrou em ago/2026 e roda antes do 16**, com numeração própria em vez de inserida no arco — o porquê, e o custo medido de renumerar um plano já escrito, são de [`plan/active/README.md`](plan/active/README.md#a-trilha-de-design-system-ds-n). Executa primeiro por um motivo de custo: cada tela nova encarece a migração, e o 16 traz o clipe, a pré-visualização de anexo e o cartão de dados.
 
 **O arco ganhou um plano em ago/2026**, com a [entrada de escopo de documento e imagem](HISTORY.md). O 16 passa a construir o **mecanismo** de anexo de forma genérica — o clipe no composer, `userData/attachments/<hash>`, as variantes de `MessagePart` — e o dataset é só o seu primeiro consumidor; o 17 acrescenta os extratores de documento e imagem sobre esse mesmo mecanismo. A ordem importa por um motivo concreto: mecanismo de anexo desenhado sabendo que só existe dataset nasce com forma de dataset, e o 17 o reescreveria.
 
@@ -62,7 +69,7 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Segunda janela do app | Progresso endereçado ao remetente, em vez de transmitido a todas | [`06-primeira-feature`](plan/implemented/06-primeira-feature.md) |
 | Sexta fatia em `features/` | `eslint-plugin-boundaries` no lugar do `no-restricted-imports` | [`01-camadas`](plan/implemented/01-camadas-e-fronteiras.md) |
 | ~~Vigésimo canal em `shared/ipc.ts`~~ · ~~Skill própria para IPC~~ **disparado e cumprido em ago/2026** — `ai:loaded` e `ai:unload` levaram a conta a exatamente 20, e a skill [`ipc`](../.claude/skills/ipc/SKILL.md) nasceu na mesma sessão. Escrevê-la pagou por si além do gatilho: reunir o assunto num lugar só expôs que o `CLAUDE.md` ainda prometia `ArrayBuffer` **transferível**, três meses depois de o [`HISTORY`](HISTORY.md) registrar que não existe transferência de posse entre processos. **O próximo limiar fica deliberadamente não declarado** — escolher outro número por reflexo repetiria o erro de fixar régua sem consequência medida. O que de fato reabre o desenho é payload binário, no plano 16 | — | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
-| Design system estável | Endurecer a CSP (hoje permite `style-src 'unsafe-inline'`) | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
+| Design system estável. ⚠️ **A adoção do Tailwind v4 (ago/2026) aproxima este gatilho em vez de afastá-lo:** utilidade compila para CSS estático, e `@theme inline`/`@utility` não emitem `style=""` — o mesmo critério que recusou o `shiki` na fase 12. O que ainda segura o `'unsafe-inline'` é o `<style>` que o Vite injeta em desenvolvimento, não o app empacotado; medir os dois separadamente é o próximo passo | Endurecer a CSP (hoje permite `style-src 'unsafe-inline'`) | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
 | ~~`check:fast` passar de 10s~~ **disparado** — 21,5s (ago/2026) e **27s** medido na fase 08, agora que roda a cada resposta no `Stop` hook, bem acima da meta de 15s da skill `testing`. A fase 13 remediu com 24 arquivos e 172 testes: **16 a 23s**, variando com o cache do Vite, e a maior fatia é `environment` (a subida do jsdom por arquivo), não os testes — 9,4s dos ~16s. Isso muda o alvo da investigação: o custo é de ambiente, não de asserção | Medir a duração do ciclo de retorno | [`08-automacao`](plan/implemented/08-automacao-e-registro.md) |
 | Um spec de nível 4 precisar verificar **cor** | O Playwright emula `prefers-color-scheme` e o padrão dele é `'light'`, então nenhum e2e de hoje exercita o tema escuro. Use `page.emulateMedia({ colorScheme })` — `nativeTheme.themeSource` não chega ao renderer sob teste | [`HISTORY`](HISTORY.md) § armadilhas |
 | Existirem cartões de dados suficientes | RAG sobre cartões e receitas | [`09-camada-de-ia`](plan/active/09-camada-de-ia.md) |

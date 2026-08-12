@@ -10,7 +10,28 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 | # | Plano | Estado |
 |---|---|---|
+| [DS-1](DS-1-fundacao-tailwind.md) | Fundação Tailwind v4 sobre os tokens | **próximo a executar.** Escrito em ago/2026 |
 | [16](16-anexo-mecanismo-e-dataset.md) | Anexo: o mecanismo, e o dataset como primeiro consumidor | escrito e revisado, nenhum passo iniciado. **Ler a skill [`ipc`](../../../.claude/skills/ipc/SKILL.md) antes do passo 2** — é o plano que cria o canal de anexo |
+
+---
+
+## A trilha de design system (DS-N)
+
+Trilha paralela ao arco, com **numeração própria de propósito**. O arco 13–20 é uma sequência em que cada plano destrava o seguinte; a trilha DS é transversal — toca todo componente que existir no momento em que rodar, e não tem lugar natural nessa sequência.
+
+**O prefixo é a decisão, e ela é sobre custo.** Inserir os planos de design system dentro do arco exigiria renumerar o 16, que já está escrito: **28 referências numéricas internas mais 24 siglas `D16.x`**, cada uma pedindo julgamento caso a caso (o arquivo tem `18.399` medido ao lado de `plano 18`). O README já registrava que a renumeração de ago/2026 foi barata *"exatamente porque os arquivos não existiam"* — a condição deixou de valer. Um namespace separado custa zero e não corrompe número medido.
+
+Efeito de segunda ordem, e é o que fechou a escolha: a trilha DS roda **em paralelo** com a ferramenta externa de design, então ter um prefixo próprio torna a origem de cada plano legível sem consultar nada.
+
+| # | Entrega | Aceite que o define |
+|---|---|---|
+| [**DS-1**](DS-1-fundacao-tailwind.md) | **Fundação.** Prova de conceito do `@utility` sob electron-vite, instalação, `@theme inline`, `@utility` dos sólidos, `base.css` como `@layer base`, o ramo `.tsx` do `guard.mjs`, e os seis primitivos de `shared/ui/` migrados | **Zero mudança visual** |
+| **DS-2** | **Migração da casca e das features.** `app/` (2 componentes), `conversation` (5), `settings` (2), `open-dataset` (1) e `Versions`; remoção dos CSS Modules migrados — `MarkdownMessage.module.css` fica, por estilizar HTML gerado sem `className` | **Zero mudança visual** |
+| **DS-3** | **Ajustes do composer e da casca.** Botão de pausa, `<textarea>` com crescimento até 3 linhas, remoção da linha de metadados sob cada resposta, popover de versão do Ollama, agrupamento Hoje/Ontem na lista | **A tela muda, e a mudança é a entrega** |
+
+**Por que três e não um.** Os dois primeiros compartilham o aceite mais forte que existe para migração — *se a tela mudou, algo saiu errado* —, verificável em segundos. O DS-3 tem o aceite oposto. Um plano que contém os dois critérios não consegue fechar um passo: a tela diferente deixa de ser sinal.
+
+**DS-2 e DS-3 não estão escritos**, pela regra do próprio arco: um plano nasce quando é o próximo a executar. A tabela acima é o contrato. E há motivo concreto aqui — o passo 0 do DS-1 tem poder de veto e pode mudar os dois.
 
 ---
 

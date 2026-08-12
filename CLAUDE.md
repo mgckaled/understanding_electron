@@ -182,12 +182,14 @@ Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha
 |---|---|---|
 | Módulo de `core/` | 200 | 300 |
 | Handler de `main/features/` | 100 | 150 |
-| Componente do renderer | 150 | 250 |
+| Componente do renderer | 250 | 400 |
 | Hook | 80 | 120 |
 | `src/main/index.ts` | — | **100, sem exceção** |
 | `src/preload/index.ts` | — | **60, sem exceção** |
 
 As duas últimas linhas são a decisão de manter main e preload finos, tornada mensurável: main que cresce vira lugar de lógica; preload que cresce, lugar de lógica no pior sítio para testá-la. **Divide-se ao tocar** — não varra a base atrás de arquivo grande; divida quando for estendê-lo. E coesão pesa abaixo do teto: componente que orquestra duas features, ou handlers de domínios diferentes no mesmo arquivo, dividem mesmo curtos.
+
+⚠️ **A linha do componente subiu de 150/250 para 250/400 em ago/2026, ao decidir o Tailwind** — e a subida é de **caractere, não de escopo**. Uma `<div>` passa a carregar 8–15 classes, e os dois maiores componentes de hoje (`ConversationView` 230, `ModelSelector` 214) estourariam o teto antigo sem ganhar uma responsabilidade sequer. Só esta linha muda: hook, `core/`, handler, main e preload não têm JSX. **O que divide continua sendo coesão** — 400 linhas de classe não é o mesmo sinal que 400 linhas de decisão, e a régua perdeu poder de alarme na troca. Motivo em [`HISTORY.md`](docs/HISTORY.md).
 
 ### Idioma
 
