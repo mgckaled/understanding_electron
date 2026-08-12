@@ -6,6 +6,39 @@
   box-sizing: border-box;
 }
 
+/* Two corrections to Tailwind's preflight, which resets a web page where this
+   file resets a desktop app. Measured in DS-1 step 1, not guessed: its
+   `* { margin: 0 }` takes the browser's `dialog { margin: auto }` with it, so
+   the modal lands at 0,0 instead of centred, and its `font: inherit` on
+   controls swaps their `line-height: normal` for 1.5, moving every label 1px. */
+dialog {
+  margin: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  line-height: normal;
+}
+
+/* Native control chrome belongs to the platform, not to a page reset: the
+   dropdown popup's padding, the <meter> the token budget draws, and the
+   placeholder colour preflight rewrites as `color-mix(currentcolor 50%)`.
+   Adopting any of them is a DS-3 decision, not a side effect. */
+option {
+  padding: revert;
+}
+
+meter {
+  padding: revert;
+  border: revert;
+}
+
+::placeholder {
+  color: revert;
+}
+
 html {
   height: 100%;
   user-select: none;

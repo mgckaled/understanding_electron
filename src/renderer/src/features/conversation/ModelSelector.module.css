@@ -67,6 +67,10 @@
    control. A disabled input showing a value reads as "you may edit this later". */
 .locked {
   align-self: flex-end;
+  /* Was the browser's 1em on <p>, which Tailwind's preflight zeroes. Written
+     out to keep the pixel identical; the sibling .tooBig sets 0, and which of
+     the two is right is a DS-3 question. */
+  margin: var(--space-5) 0;
   padding: var(--space-2) 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
