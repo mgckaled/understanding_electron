@@ -23,11 +23,23 @@ Trilha paralela ao arco, com **numeração própria de propósito**. O arco 13�
 
 Efeito de segunda ordem, e é o que fechou a escolha: a trilha DS roda **em paralelo** com a ferramenta externa de design, então ter um prefixo próprio torna a origem de cada plano legível sem consultar nada.
 
+### O alvo da trilha, fixado em 12/08/2026
+
+⚠️ **A trilha DS não é uma migração de mecanismo com ajustes no fim. Ela tem um destino visual, e ele é imperativo:** ao fim do DS-3 a interface precisa estar o mais próximo possível de [`reference/handoff-ds-ago2026/alvo-chat.png`](../../reference/handoff-ds-ago2026/alvo-chat.png), com os demais estados em [`alvo/`](../../reference/handoff-ds-ago2026/alvo/). **O que precisar adaptar, adapta** — componente, disposição de elemento, escala de tipo.
+
+**O design system é um envelope, e é isso que torna a ideia simples.** A trilha DS **não constrói feature nenhuma**. Ela deixa a linguagem visual definida, e o alvo tem duas metades: o que **já existe** no app ganha essa linguagem — é o aceite da trilha; o que **ainda não existe** nasce depois, no plano da própria feature, já vestido, porque o DS estará pronto. O cartão de anexo no alvo não é pendência do DS-3: é o retrato de como o [plano 16](16-anexo-mecanismo-e-dataset.md) vai sair.
+
+É por isso que a trilha roda **antes** do arco: quando o 16, o 17 e o 19 chegarem, a pergunta "como isto fica?" já está respondida.
+
+Isto está escrito porque a leitura oposta é fácil e já aconteceu duas vezes. O [`BRIEF`](../../reference/BRIEF-claude-design.md) pediu só a *camada Tailwind* sobre os tokens e nunca mencionou redesenho, então o que voltou da ferramenta foi tratado como *insumo de onde se garimpam ideias*, e cinco dos seis alvos foram descartados. E depois, ao recuperá-los, o alvo foi lido como *lista de features a construir*, o que produziu impasses que não existiam. A [tabela de distância](../../reference/handoff-ds-ago2026/README.md#a-distância-até-o-alvo-item-a-item) aplica a régua item a item.
+
+**O que isso não muda:** o aceite de *zero mudança visual* do DS-1 e do DS-2. Ele não é timidez, é o que torna uma migração de mecanismo auditável — e já se pagou no passo 1 do DS-1, onde pegou o modal de Configurações renderizando em `rect=0,0`, defeito que nenhum nível de teste deste repositório alcança. **O destino é do DS-3**; o que muda no DS-2 é que ele passa a ser escrito **sabendo** o destino, para não investir em componente que o DS-3 vai desmontar.
+
 | # | Entrega | Aceite que o define |
 |---|---|---|
 | [**DS-1**](DS-1-fundacao-tailwind.md) | **Fundação.** Prova de conceito do `@utility` sob electron-vite, instalação, `@theme inline`, `@utility` dos sólidos, `base.css` como `@layer base`, o ramo `.tsx` do `guard.mjs`, e os seis primitivos de `shared/ui/` migrados | **Zero mudança visual** |
-| **DS-2** | **Migração da casca e das features.** `app/` (2 componentes), `conversation` (5), `settings` (2), `open-dataset` (1) e `Versions`; remoção dos CSS Modules migrados — `MarkdownMessage.module.css` fica, por estilizar HTML gerado sem `className` | **Zero mudança visual** |
-| **DS-3** | **Ajustes do composer e da casca.** Botão de pausa, `<textarea>` com crescimento até 3 linhas, remoção da linha de metadados sob cada resposta, popover de versão do Ollama, agrupamento Hoje/Ontem na lista | **A tela muda, e a mudança é a entrega** |
+| **DS-2** | **Migração da casca e das features.** `app/` (2 componentes), `conversation` (5), `settings` (2), `open-dataset` (1) e `Versions`; remoção dos CSS Modules migrados — `MarkdownMessage.module.css` fica, por estilizar HTML gerado sem `className`. Escrito **contra a tabela de distância**: onde o DS-3 vai reestruturar, a migração é mínima | **Zero mudança visual** |
+| **DS-3** | **A interface chega ao alvo.** Não são ajustes: cabeçalho e rodapé da sidebar, busca por título, agrupamento por data, barra de acento na conversa ativa, título da conversa como cabeçalho, desmonte da toolbar superior, seletor de modelo como pílula dentro do composer, envio circular e pausa, bolha na mensagem do usuário, escala de tipo. Mais os estados de `alvo/` | **A tela muda, e a mudança é a entrega** — medida contra `alvo-chat.png` |
 
 **Por que três e não um.** Os dois primeiros compartilham o aceite mais forte que existe para migração — *se a tela mudou, algo saiu errado* —, verificável em segundos. O DS-3 tem o aceite oposto. Um plano que contém os dois critérios não consegue fechar um passo: a tela diferente deixa de ser sinal.
 
