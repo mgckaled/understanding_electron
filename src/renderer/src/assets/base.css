@@ -1,120 +1,133 @@
-/* Desktop app behavior, not web page behavior. See docs/plan/implemented/05-design-tokens.md. */
+/*
+ * Desktop app behavior, not web page behavior. See docs/plan/implemented/05-design-tokens.md.
+ *
+ * The whole file is @layer base (DS-1 step 2). Two consequences, and both are
+ * the point: it now sits in the same layer as Tailwind's preflight and wins by
+ * coming later in main.tsx, and every utility beats it without a specificity
+ * contest, because @layer utilities comes after.
+ *
+ * ⚠️ tokens.css must NOT get the same treatment — it stays outside every layer,
+ * and DS1.5 says why: the theme's self-referencing declarations only lose the
+ * cascade because unlayered beats layered.
+ */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-/* Two corrections to Tailwind's preflight, which resets a web page where this
-   file resets a desktop app. Measured in DS-1 step 1, not guessed: its
-   `* { margin: 0 }` takes the browser's `dialog { margin: auto }` with it, so
-   the modal lands at 0,0 instead of centred, and its `font: inherit` on
-   controls swaps their `line-height: normal` for 1.5, moving every label 1px. */
-dialog {
-  margin: auto;
-}
-
-button,
-input,
-select,
-textarea {
-  line-height: normal;
-}
-
-/* Native control chrome belongs to the platform, not to a page reset: the
-   dropdown popup's padding, the <meter> the token budget draws, and the
-   placeholder colour preflight rewrites as `color-mix(currentcolor 50%)`.
-   Adopting any of them is a DS-3 decision, not a side effect. */
-option {
-  padding: revert;
-}
-
-meter {
-  padding: revert;
-  border: revert;
-}
-
-::placeholder {
-  color: revert;
-}
-
-html {
-  height: 100%;
-  user-select: none;
-  overscroll-behavior: none;
-}
-
-body {
-  height: 100%;
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  background: var(--color-bg);
-  line-height: 1.5;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#root {
-  height: 100%;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-code {
-  font-family: var(--font-mono);
-}
-
-.selectable {
-  user-select: text;
-}
-
-/* Scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border-strong) transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: var(--color-border-strong);
-  border-radius: var(--radius-full);
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-/* Keyboard navigation matters more on desktop than on the web — the ring
-   should only appear when the keyboard was used, never on mouse click. */
-:focus {
-  outline: none;
-}
-
-:focus-visible {
-  outline: 2px solid var(--color-accent-text);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
+@layer base {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    box-sizing: border-box;
+  }
+
+  /* Two corrections to Tailwind's preflight, which resets a web page where this
+     file resets a desktop app. Measured in DS-1 step 1, not guessed: its
+     `* { margin: 0 }` takes the browser's `dialog { margin: auto }` with it, so
+     the modal lands at 0,0 instead of centred, and its `font: inherit` on
+     controls swaps their `line-height: normal` for 1.5, moving every label 1px. */
+  dialog {
+    margin: auto;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    line-height: normal;
+  }
+
+  /* Native control chrome belongs to the platform, not to a page reset: the
+     dropdown popup's padding, the <meter> the token budget draws, and the
+     placeholder colour preflight rewrites as `color-mix(currentcolor 50%)`.
+     Adopting any of them is a DS-3 decision, not a side effect. */
+  option {
+    padding: revert;
+  }
+
+  meter {
+    padding: revert;
+    border: revert;
+  }
+
+  ::placeholder {
+    color: revert;
+  }
+
+  html {
+    height: 100%;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    background: var(--color-bg);
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  code {
+    font-family: var(--font-mono);
+  }
+
+  .selectable {
+    user-select: text;
+  }
+
+  /* Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  /* Keyboard navigation matters more on desktop than on the web — the ring
+     should only appear when the keyboard was used, never on mouse click. */
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-text);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
