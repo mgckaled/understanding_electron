@@ -2,21 +2,24 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger'
 type ButtonSize = 'sm' | 'md' | 'lg'
+type ButtonShape = 'default' | 'circle'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant
   size?: ButtonSize
+  shape?: ButtonShape
   loading?: boolean
   children: ReactNode
 }
 
-// Variants live in constants, not JSX, because they are a matrix. ⚠️ Font size
-// and border colour are NOT in BASE: two utilities of the same group resolve by
-// their order in the generated stylesheet, not the class attribute, so a BASE
-// `text-sm` could beat a size's `text-xs` — whatever a variant or size overrides
-// belongs only to it. `ease-initial` is CSS `ease` (Tailwind's default differs).
+// Variants live in constants, not JSX, because they are a matrix. ⚠️ Font size,
+// border colour and BORDER RADIUS are NOT in BASE: two utilities of the same
+// group resolve by their order in the generated stylesheet, not the class
+// attribute, so a BASE `rounded-md` could beat the circle shape's `rounded-full`
+// — whatever a variant, size or shape overrides belongs only to it. `ease-initial`
+// is CSS `ease` (Tailwind's default differs).
 const BASE =
-  'relative inline-flex cursor-pointer items-center justify-center gap-3 rounded-md border ' +
+  'relative inline-flex cursor-pointer items-center justify-center gap-3 border ' +
   'font-ui font-semibold whitespace-nowrap transition-colors duration-(--duration-fast) ' +
   'ease-initial disabled:cursor-not-allowed disabled:opacity-50'
 
@@ -36,16 +39,29 @@ const SIZE: Record<ButtonSize, string> = {
   lg: 'h-(--control-height-lg) px-7 text-md'
 }
 
+// Rounding is an axis, not a BASE constant (see the ⚠️ above). `circle` is a
+// square icon button: aspect-square ties the width to the size's height, and the
+// important px-[0px] beats the size's px-* (the DS-2 `!` pattern) so padding does
+// not stretch it out of a circle. `px-[0px]`, not `px-0`: with --spacing base off
+// the numeric form emits nothing.
+const SHAPE: Record<ButtonShape, string> = {
+  default: 'rounded-md',
+  circle: 'aspect-square rounded-full px-[0px]!'
+}
+
 function Button({
   variant = 'secondary',
   size = 'md',
+  shape = 'default',
   loading = false,
   disabled,
   className,
   children,
   ...props
 }: ButtonProps): React.JSX.Element {
-  const classes = [BASE, VARIANT[variant], SIZE[size], className].filter(Boolean).join(' ')
+  const classes = [BASE, VARIANT[variant], SIZE[size], SHAPE[shape], className]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <button

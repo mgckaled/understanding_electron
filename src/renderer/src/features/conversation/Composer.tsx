@@ -79,19 +79,55 @@ function Composer({
   // text, so select-text opts back into selection base.css turns off at the root.
   return (
     <form
-      className="flex flex-none flex-col gap-4 border-t border-border bg-bg px-7 pt-5 pb-6"
+      className="flex flex-none flex-col gap-3 border-t border-border bg-bg px-7 pt-5 pb-6"
       onSubmit={submit}
     >
-      <textarea
-        className="w-full resize-y rounded-md border border-border bg-surface px-5 py-4 font-ui text-reading leading-normal select-text focus-visible:border-accent-text focus-visible:outline-none"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={onKeyDown}
-        disabled={disabled}
-        rows={3}
-        placeholder="Pergunte algo ao modelo…"
-        aria-label="Mensagem"
-      />
+      {/* One rounded container holds the textarea and the controls row — the
+          DS-3 composer shape. focus-within lifts the border to accent, replacing
+          the per-control ring the textarea used to carry on its own border. */}
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-5 py-4 focus-within:border-accent-text">
+        <textarea
+          className="w-full resize-none bg-transparent font-ui text-reading leading-normal select-text focus-visible:outline-none"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={onKeyDown}
+          disabled={disabled}
+          rows={3}
+          placeholder="Pergunte algo ao modelo…"
+          aria-label="Mensagem"
+        />
+        {/* Model pill on the left, pause + circular send on the right (DS-3 passo
+            8). The selector keeps its refusal alerts and reload — nothing from
+            plano 15 is collapsed away. */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-[0px]">{modelSelector}</div>
+          <div className="flex flex-none items-center gap-2">
+            {loading && (
+              <Button
+                variant="secondary"
+                shape="circle"
+                size="lg"
+                type="button"
+                onClick={onCancel}
+                aria-label="Cancelar"
+              >
+                <span aria-hidden="true">⏸</span>
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              shape="circle"
+              size="lg"
+              loading={loading}
+              disabled={!canSend}
+              aria-label="Enviar"
+            >
+              <span aria-hidden="true">↑</span>
+            </Button>
+          </div>
+        </div>
+      </div>
       {budget !== null && (
         <div className="flex items-center gap-3 px-2">
           {/* The meter, chrome density and deliberately quiet: it exists so the
@@ -145,24 +181,6 @@ function Composer({
           )}
         </p>
       )}
-
-      {/* The model selector moved here from the removed top toolbar (DS-3 passo
-          7). Its refusal alerts (too-large/unaffordable, role="alert") and the
-          always-available reload live inside it — nothing from plano 15 is
-          collapsed away. */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-[0px]">{modelSelector}</div>
-        <div className="flex flex-none items-start gap-3">
-          {loading && (
-            <Button variant="secondary" type="button" onClick={onCancel}>
-              Cancelar
-            </Button>
-          )}
-          <Button type="submit" variant="primary" loading={loading} disabled={!canSend}>
-            Enviar
-          </Button>
-        </div>
-      </div>
     </form>
   )
 }
