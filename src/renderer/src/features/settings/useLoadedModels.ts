@@ -7,12 +7,10 @@ const SERVICE = 'ollama' as const
 const LOADED_KEY = ['ai', 'loaded'] as const
 
 /**
- * What the provider is holding in memory, and letting go of it.
- *
- * Unlike the catalog, this one is `staleTime: 0` and refetches on mount: the
- * figure changes on its own — the provider drops a model five minutes after the
- * last request — so a cached answer here would be stale by construction rather
- * than by an event nobody can observe.
+ * What the provider is holding in memory, and letting go of it. Unlike the
+ * catalog, `staleTime: 0` and refetches on mount: the figure changes on its own
+ * (the provider drops a model five minutes after the last request), so a cached
+ * answer would be stale by construction.
  */
 export function useLoadedModels(): {
   state: ViewState<LoadedModel[]>

@@ -4,14 +4,10 @@ import StateView from '../../shared/ui/StateView'
 import { useOpenDataset } from './useOpenDataset'
 import styles from './OpenDatasetPanel.module.css'
 
-/*
- * A sidebar section rather than a Panel (D13.7): the shell's chrome supplies
- * the surface, so the card would be a border inside a border. Nothing else
- * changed on purpose — e2e/dev/open-dataset.spec.ts clicks 'Escolher arquivo'
- * and waits for the summary, and that green level-4 test is what decided the
- * component moves instead of being rewritten. Plano 16 moves it into the
- * composer, when attaching a file becomes a property of the conversation.
- */
+// A sidebar section rather than a Panel (D13.7): the shell's chrome supplies the
+// surface, so a card would be a border inside a border. A green level-4 test
+// (open-dataset.spec.ts) decided the component moves instead of being rewritten.
+// Plano 16 moves it into the composer, when attaching becomes part of the conversation.
 function OpenDatasetPanel(): React.JSX.Element {
   const { state, pick, cancel } = useOpenDataset()
   const isLoading = state.status === 'loading'

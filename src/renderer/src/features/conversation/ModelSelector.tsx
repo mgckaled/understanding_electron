@@ -5,20 +5,13 @@ import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
 import styles from './ModelSelector.module.css'
 
-/*
- * The selector that replaced a free-text <input> with `gemma3:4b` hardcoded as
- * its default (D15.1/D15.2). Typing `gemma3:4bb` used to produce a generic
- * upstream error, and nothing in the app knew that only one model can see.
- *
- * Chrome density: this sits in the conversation header, next to the title, and
- * is scanned rather than read.
- */
+// The selector that replaced a free-text <input> defaulting to `gemma3:4b`
+// (D15.1/D15.2): a typo used to produce a generic upstream error, and nothing
+// knew which model can see. Chrome density — in the header, scanned not read.
 
-// Capabilities the app has a word for. Everything else renders under its raw
-// name, which is what keeps the `string[]` promise alive on screen and not only
-// in the type — `insert`, which arrived with the qwen2.5-coder models and which
-// nobody predicted, is the first to take that path. `completion` is on every
-// model, so it says nothing and is dropped.
+// Capabilities the app has a word for; everything else renders under its raw
+// name, keeping the `string[]` promise alive on screen (`insert` arrived
+// unpredicted). `completion` is on every model, says nothing, and is dropped.
 const CAPABILITY_LABEL: Record<string, string> = {
   vision: 'imagem',
   tools: 'ferramentas',
@@ -36,9 +29,8 @@ function formatSize(bytes: number): string {
 }
 
 /**
- * 131072 → "128k", 32768 → "32k". Binary thousands, which is both what the
- * number actually is and how every model card writes it. The exact digits are
- * noise at a glance; the order of magnitude is the decision.
+ * 131072 → "128k", 32768 → "32k". Binary thousands — what the number is and how
+ * model cards write it; the order of magnitude is the decision, not the digits.
  */
 function formatContext(tokens: number | null): string | null {
   return tokens === null ? null : `${Math.round(tokens / 1024)}k`
@@ -66,10 +58,9 @@ type ModelSelectorProps = {
   /** The window in force, and whether it can be changed or even used. */
   contextWindow: ConversationWindow
   /**
-   * `min(what the model was trained for, what this machine can hold)`, for any
-   * model in the list. A function and not a single number for the selection,
-   * because the list needs it too — and taking the rule as a parameter keeps it
-   * defined in ONE place, together with the margin it is computed against.
+   * `min(trained ceiling, what this machine can hold)`, for any model in the
+   * list. A function, not one number for the selection, because the list needs
+   * it too — and passing the rule keeps it defined in ONE place with its margin.
    */
   ceilingOf: (model: AiModel) => number | null
   /** Identity of the conversation, so the window control re-reads on switch. */
@@ -95,16 +86,10 @@ function ModelSelector({
 
   return (
     <div className={styles.selector}>
-      {/*
-       * Field must wrap the SELECT, not the StateView. Field works by cloning
-       * its child to inject `id` (see skill design-system), so a StateView in
-       * between receives the id and the <select> never gets one — leaving a
-       * <label for> pointing at nothing. The label is silently decorative at
-       * that point, and only a query by label text notices.
-       *
-       * It also means Field appears only when there IS a control: a label for
-       * a select that does not exist is worse than no label.
-       */}
+      {/* Field must wrap the SELECT, not the StateView: Field clones its child
+          to inject `id` (skill design-system), so a StateView between would take
+          the id and the <select> would get none, leaving <label for> pointing at
+          nothing. So Field appears only when there IS a control. */}
       {state.status === 'ready' ? (
         <Field label="Modelo">
           <select
@@ -157,10 +142,9 @@ function ModelSelector({
         </p>
       )}
 
-      {/* The second failure mode of the lock, and the one that is not symmetric:
-          the reservation is remade on every load, and free RAM varies by 3 GB on
-          this machine. Refusing is the point — shrinking in silence would undo
-          the guarantee the lock exists to give (D15.13). */}
+      {/* The lock's asymmetric second failure mode: the reservation is remade on
+          every load and free RAM varies by 3 GB here, so refusing is the point —
+          shrinking in silence would undo the lock's guarantee (D15.13). */}
       {contextWindow.status === 'unaffordable' && (
         <p className={styles.tooBig} role="alert">
           Esta conversa reservou {contextWindow.numCtx.toLocaleString('pt-BR')} tokens, e a memória

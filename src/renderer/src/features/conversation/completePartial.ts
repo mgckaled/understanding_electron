@@ -1,16 +1,9 @@
-/*
- * Closes the markdown markers left open by a mid-stream chunk, so a partial reply
- * renders as formatted markdown instead of one runaway code block (D11.4).
- *
- * Deliberately conservative: it closes an open fenced block (``` or ~~~), an odd
- * single backtick and an odd `**`, and nothing else — not single `*` (italic),
- * not `***`, not `_`. A wrong guess here costs a flicker of odd formatting; the
- * opposite error (leaving a fence open) swallows the rest of the answer in code.
- *
- * The fence scan is the whole algorithm: inline markers are counted only on lines
- * OUTSIDE a fence, and if the text ends inside a fence the fence is closed and we
- * stop — everything after an open fence is code, so its `**` must not be balanced.
- */
+// Closes the markdown markers a mid-stream chunk left open, so a partial reply
+// renders as markdown instead of one runaway code block (D11.4). Conservative:
+// it closes an open fence (``` or ~~~), an odd backtick and an odd `**`, nothing
+// else — a wrong guess costs a flicker, but leaving a fence open swallows the
+// rest in code. Inline markers are counted only OUTSIDE a fence; text ending
+// inside a fence closes the fence and stops, since everything after it is code.
 
 const FENCE = /^\s*([`~]{3,})/
 

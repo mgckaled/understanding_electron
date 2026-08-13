@@ -5,55 +5,35 @@ import rehypeHighlight from 'rehype-highlight'
 import { checkExternalUrl } from '@core/url'
 import styles from './MarkdownMessage.module.css'
 
-/*
- * The model's output is untrusted input — the first time external text becomes
- * DOM in this app. react-markdown builds React elements, never an HTML string,
- * so there is no dangerouslySetInnerHTML, and raw HTML is ignored unless
- * rehype-raw is added on purpose. That plugin does NOT enter: the absence is the
- * security decision (D11.2).
- *
- * The rule is NOT "no rehype plugins" — it is "nothing that turns the model's
- * text into HTML" (D12.2). rehypeHighlight below passes that rule: it walks the
- * hast tree react-markdown has already built and adds a className to spans
- * inside <code>. It never parses HTML and never builds a node out of model text.
- * rehype-raw does exactly what the rule forbids, so it stays out — including the
- * day someone wants to "make some HTML work".
- */
+// The model's output is untrusted input. react-markdown builds React elements,
+// never an HTML string, so raw HTML is inert unless rehype-raw is added — and
+// its ABSENCE is the security decision (D11.2). The rule is not "no rehype
+// plugins" but "nothing that turns model text into HTML" (D12.2): rehypeHighlight
+// only adds classNames to spans in an already-built tree, so it passes;
+// rehype-raw does exactly what the rule forbids, so it stays out.
 
 const rehypePlugins: Options['rehypePlugins'] = [
-  // `detect: false` is already the package default, and is written out because
-  // it IS the decision (D12.5): a fence with no info string stays uncoloured,
-  // which is what GitHub does. Auto-detection guesses badly on the short
-  // snippets a chat reply is made of, and a default left unwritten is a default
-  // nobody defends when a later reader wonders why blocks look inconsistent.
-  //
-  // `languages` is deliberately NOT narrowed, and that is a measurement, not a
-  // preference. Narrowing it to the seven grammars this app expects built to
-  // the SAME 516 modules as the default `common` (37), with every variant
-  // landing inside 1 kB of 1.301 kB — noise, not a saving. The reason is in
-  // rehype-highlight itself: `import {common} from 'lowlight'` sits at module
-  // scope (lib/index.js:30) and is consumed as `settings.languages || common`,
-  // so all 37 grammars are reachable for the bundler no matter what is passed.
-  // The option filters what gets highlighted; it is not a bundle lever. Seven
-  // imports for no saving and thirty fewer languages is a bad trade. Shrinking
-  // this for real means a small plugin over `createLowlight`.
+  // `detect: false` is the package default, written out because it IS the
+  // decision (D12.5): a fence with no info string stays uncoloured, as GitHub
+  // does — auto-detection guesses badly on short chat snippets. `languages` is
+  // deliberately NOT narrowed, and that is measured, not preference: narrowing
+  // to seven grammars built the SAME 516 modules as the default (it filters what
+  // highlights, it is not a bundle lever). Real shrinking needs createLowlight.
   [rehypeHighlight, { detect: false }]
 ]
 
-// Images: the CSP is `img-src 'self' data:`, so a remote ![](https://…) is blocked
-// by Chromium and leaves a silent gap. Returning null for the src drops the
-// attribute and lets the alt text show instead — a visible failure beats a mute
-// one. defaultUrlTransform stays as the first layer (it blocks `javascript:`).
+// Images: under CSP `img-src 'self' data:` a remote src is blocked and leaves a
+// silent gap, so returning null drops the attribute and shows the alt text — a
+// visible failure beats a mute one. defaultUrlTransform stays as the first layer.
 function urlTransform(url: string, key: string): string | null {
   if (key === 'src') return null
   return defaultUrlTransform(url)
 }
 
 const components: Components = {
-  // A link renders as a clickable <a> only when checkExternalUrl — the same pure
-  // function main uses — approves it (D11.3). Anything else (relative, bad scheme)
-  // renders as plain text, so no malformed URL reaches the IPC contract, whose
-  // schema would throw on it. No copy of the allow-list lives here.
+  // A link renders as a clickable <a> only when checkExternalUrl approves it
+  // (D11.3) — the same pure function main uses, no copy of the allow-list here.
+  // Anything else renders as plain text, so no bad URL reaches the IPC schema.
   a({ href, children }) {
     if (href === undefined || !checkExternalUrl(href).ok) return <>{children}</>
     return (
@@ -90,11 +70,10 @@ const components: Components = {
   }
 }
 
-// `highlight` is off for the still-streaming reply (D12.6). Tokenising a block
-// that is still growing colours half a token, then corrects itself — an
-// unterminated string literal paints the rest of the block as string until the
-// closing quote arrives. Off during the stream, everything colours at once when
-// the reply lands, which reads as one transition instead of many.
+// `highlight` is off for the still-streaming reply (D12.6): tokenising a growing
+// block colours half a token, and an unterminated string paints the rest until
+// its quote arrives. Off during the stream, everything colours at once when the
+// reply lands — one transition instead of many.
 function MarkdownMessage({
   text,
   highlight = true

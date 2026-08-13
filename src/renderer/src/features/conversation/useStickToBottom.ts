@@ -1,29 +1,13 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react'
 
-/*
- * The list sticks to the bottom while the model writes — UNLESS the user has
- * scrolled up (D13.5). Without the exception it is impossible to re-read the
- * start of an answer while the rest of it arrives.
- *
- * There is deliberately NO scroll listener here, and that is the whole design.
- * The obvious implementation subscribes to 'scroll' and flips a `pinned` flag,
- * and it loses a race that a live stream hits: the DOM dispatches 'scroll'
- * ASYNCHRONOUSLY, at the next rendering opportunity. Set scrollTop and let a
- * token land before the event fires, and the effect still reads pinned=true,
- * scrolls back to the bottom, and the event then arrives with the element
- * already at the bottom — re-pinning it. The user's scroll is undone and the
- * flag never even learns it happened. Measured against a real Ollama stream;
- * a mocked stream in jsdom has neither token cadence nor layout, so it cannot
- * show this.
- *
- * What replaces it is synchronous: compare scrollTop against WHERE WE LEFT IT.
- * Content appended below does not move scrollTop, so an unchanged value means
- * the user did not scroll. A changed value means they did, and the decision is
- * taken from the position itself, in the same frame the content changed.
- *
- * useLayoutEffect, not useEffect: the scroll must happen in the frame the new
- * content is painted, or the list visibly jumps.
- */
+// The list sticks to the bottom while the model writes, UNLESS the user scrolled
+// up (D13.5). There is deliberately NO scroll listener: the obvious `pinned` flag
+// loses a race a live stream hits, because the DOM dispatches 'scroll'
+// ASYNCHRONOUSLY — set scrollTop, let a token land, and the effect re-pins before
+// the event arrives, silently undoing the user's scroll (measured on a real
+// Ollama stream; jsdom cannot show it). Instead, synchronously compare scrollTop
+// against WHERE WE LEFT IT: appended content does not move it, so an unchanged
+// value means the user did not scroll. useLayoutEffect, or the list visibly jumps.
 
 // How close to the bottom still counts as being at the bottom. Sub-pixel
 // layout and a partially visible last line both land a few pixels short.

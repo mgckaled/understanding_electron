@@ -3,18 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AppSettings } from '@shared/ipc'
 import { DEFAULT_APP_SETTINGS } from '@shared/ipc'
 
-/*
- * Machine-scale configuration, now on disk (D14.7). It used to live for the
- * session: the modal accepted a value and forgot it on close — a visible defect.
- *
- * There is no Context here any more, and no provider. Settings turned out to be
- * server cache in full: a value read from storage, written back, with no client
- * state left beside it. The shape of the hook is unchanged, which is why the
- * modal and the conversation view did not have to be.
- *
- * The type and the default moved to `shared/ipc.ts` — main needs both to fill
- * in a key the database has never seen.
- */
+// Machine-scale configuration, now on disk (D14.7): it used to be forgotten on
+// modal close. No Context or provider any more — settings turned out to be pure
+// server cache (read from storage, written back), and the hook's shape is
+// unchanged, so the modal and view did not change. Type and default live in
+// `shared/ipc.ts`, which main needs to fill a key the DB has never seen.
 
 export type Settings = AppSettings
 export const DEFAULT_SETTINGS = DEFAULT_APP_SETTINGS
@@ -25,13 +18,10 @@ type SettingsApi = {
   settings: Settings
   setSettings: Dispatch<SetStateAction<Settings>>
   /**
-   * False until the stored value has arrived.
-   *
-   * It exists because a control that seeds its own state from `settings` on
-   * mount — which is the right shape for a text field — would seed it from the
-   * DEFAULT if it mounted first, and then show the wrong number with nothing on
-   * screen suggesting anything is wrong. Callers that only READ `settings` can
-   * ignore this; callers that COPY it into their own state must not.
+   * False until the stored value has arrived. A control that seeds its own state
+   * from `settings` on mount (right for a text field) would seed the DEFAULT if
+   * it mounted first and show the wrong number. Callers that only READ `settings`
+   * can ignore this; callers that COPY it must not.
    */
   loaded: boolean
 }

@@ -1,47 +1,36 @@
 import type { AiModel, AppError, Conversation, Message, MessageStopped } from '@shared/ipc'
 import { hasCapability } from '@core/ai/models'
 
-/*
- * What survived the move to storage (plano 14).
- *
- * The reducer that used to live here is gone: the list and the transcripts are
- * now a server cache, and a client reducer holding them would be the stale copy
- * D13.2 was written to avoid. What is left is the shape the renderer composes
- * and the one decision about conversations that is genuinely the renderer's.
- */
+// What survived the move to storage (plano 14): the reducer is gone — the list
+// and transcripts are a server cache now, and a client reducer holding them
+// would be the stale copy D13.2 exists to avoid. What is left is the composite
+// shape and the decisions genuinely the renderer's.
 
 export const DEFAULT_TITLE = 'Nova conversa'
 const TITLE_MAX = 48
 
 /**
- * A conversation together with its transcript.
- *
- * `Conversation` in the contract is the ROW (D14.1) — the sidebar lists rows,
- * and the transcript is a second read. This composite is how the renderer puts
- * the two back together for the conversation on screen, and it lives here and
- * not in `shared/` for the same reason `ViewState` does: main has no opinion
- * about it.
+ * A conversation together with its transcript. `Conversation` in the contract is
+ * the ROW (D14.1) and the transcript is a second read; this composite reunites
+ * them for the conversation on screen. It lives here, not in `shared/`, for the
+ * same reason `ViewState` does: main has no opinion about it.
  */
 export type ConversationWithMessages = Conversation & {
   messages: Message[]
   /**
-   * Whether the transcript read has landed. `messages` is `[]` while it is in
-   * flight, which is indistinguishable from an empty conversation — and the two
-   * differ on whether the pair is locked (D15.13), so the caller reads this
-   * instead and assumes locked until it knows better.
+   * Whether the transcript read has landed. `messages` is `[]` while in flight,
+   * indistinguishable from an empty conversation — and the two differ on whether
+   * the pair is locked (D15.13), so the caller assumes locked until this is true.
    */
   messagesLoaded: boolean
 }
 
 /**
- * The title of a conversation is its first user message, truncated (D13.9).
- * Free and instant, and it is what the user just wrote — the alternative of
- * asking the model for a title costs a round trip at 4–6 tok/s that competes
- * with the answer the user is waiting for. Not discarded, just expensive; the
- * trigger to reopen it is a cloud provider being in use.
- *
- * It stays in the renderer even though the title is now a column: main inserts
- * what it receives and never invents Portuguese (D14.5).
+ * A conversation's title is its first user message, truncated (D13.9): free and
+ * what the user just wrote, versus a model round trip at 4–6 tok/s competing
+ * with the answer they wait for (expensive, not discarded; reopens with a cloud
+ * provider). In the renderer because main inserts what it receives and never
+ * invents Portuguese (D14.5).
  */
 export function titleFromText(text: string): string {
   const normalised = text.replace(/\s+/g, ' ').trim()
@@ -50,14 +39,10 @@ export function titleFromText(text: string): string {
 }
 
 /**
- * Which failures leave a partial reply worth keeping (D14.3).
- *
- * Only the two interruptions do. `unavailable` and `upstream` produce nothing:
- * the failure is of the CALL, not a reply that got cut short, so there is no
- * text to keep and a marker would claim something that did not happen.
- *
- * The two are already distinguishable at this point — the handler's `timedOut`
- * flag maps them to different AppErrors, and the renderer reads the `kind`.
+ * Which failures leave a partial reply worth keeping (D14.3): only the two
+ * interruptions. `unavailable` and `upstream` produce nothing — the CALL failed,
+ * not a reply cut short, so a marker would claim something that never happened.
+ * The two are already distinct here via the handler's `timedOut` flag.
  */
 export function stoppedFromError(error: AppError): MessageStopped | null {
   if (error.kind === 'cancelled') return 'cancelled'
@@ -67,14 +52,10 @@ export function stoppedFromError(error: AppError): MessageStopped | null {
 
 /**
  * The models worth offering for a conversation (D15.11): everything installed,
- * minus what cannot converse and minus a variant of a model already listed.
- *
- * The parent has to be PRESENT for the variant to be dropped — with the parent
- * gone the variant is the only way left to run those weights.
- *
- * It filters here and not in main for the reason `resolveModel` below gives:
- * what is installed is a fact, what is worth offering is a judgement about a
- * user interface.
+ * minus what cannot converse and minus a variant whose parent is also listed
+ * (the parent must be PRESENT to drop it, else the variant is the only way to
+ * run those weights). Filtered here, not in main: what is installed is a fact,
+ * what is worth offering is a judgement about a UI.
  */
 export function selectableModels(catalog: AiModel[]): AiModel[] {
   const installed = new Set(catalog.map((model) => model.name))
@@ -86,24 +67,13 @@ export function selectableModels(catalog: AiModel[]): AiModel[] {
 }
 
 /**
- * Which model a conversation will actually be sent with (D15.2).
- *
- * There is no hardcoded default any more. It used to be `gemma3:4b` written
- * into a component, which meant the app could confidently send a model name to
- * an Ollama that had never pulled it — and get back a generic `upstream` error
- * with nothing pointing at the cause.
- *
- * `null` means there is nothing to address a call to — a state the selector
- * draws, not one the send path should try to work around.
- *
- * Once the conversation is LOCKED, falling back to the first installed model is
- * no longer the safe answer: it is the exact instability the lock removes, and
- * it would have the conversation answered by a model its own history never used
- * (D15.13). The uninstalled model becomes `null`, and the offer to duplicate the
- * conversation elsewhere is what the plan defers.
- *
- * It lives here and not in `core/` for the same reason `titleFromText` does:
- * main has no opinion about which model a UI should preselect.
+ * Which model a conversation is actually sent with (D15.2). No hardcoded default
+ * any more (it was `gemma3:4b` in a component, which let the app send a name to
+ * an Ollama that never pulled it and get a blind `upstream` error). `null` means
+ * nothing to address a call to — a state the selector draws. Once LOCKED, the
+ * fallback to the first installed model is dropped: it is the instability the
+ * lock removes (D15.13). Here, not in `core/`, like `titleFromText`: main has no
+ * opinion about which model a UI preselects.
  */
 export function resolveModel(
   chosen: string | undefined,

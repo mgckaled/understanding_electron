@@ -3,20 +3,12 @@ import StateView from '../../shared/ui/StateView'
 import { useLoadedModels } from './useLoadedModels'
 import styles from './Settings.module.css'
 
-/*
- * What the provider is holding in RAM, with a way to let go of it.
- *
- * Brought forward from plano 17, and manual by design. The provider keeps
- * weights resident for five minutes after the last request, which on this
- * machine is long enough to make most of the fleet read as "não cabe" while
- * nothing is running — and the ceiling is computed from free memory, so the
- * only honest fix is to actually free it.
- *
- * NOT automatic on conversation switch: the provider loads on a REQUEST, not on
- * a selection, so switching costs nothing until something is sent. Unloading
- * there would evict a model because the user looked elsewhere, and charge ~50 s
- * to bring it back.
- */
+// What the provider is holding in RAM, with a way to let go of it (antecipado do
+// plano 17). Manual by design: weights stay resident five minutes after the last
+// request, long enough to make the fleet read as "não cabe" while nothing runs,
+// and the ceiling is computed from free memory, so the honest fix is to free it.
+// NOT automatic on switch — the provider loads on a REQUEST, so switching costs
+// nothing until a send.
 
 function formatSize(bytes: number): string {
   return `${(bytes / 1024 ** 3).toFixed(1).replace('.', ',')} GB`

@@ -48,11 +48,9 @@ function ConversationView(): React.JSX.Element {
   // are the same object — see D15.11 for what happened when they were not.
   const installed = catalog.status === 'ready' ? catalog.data : EMPTY_CATALOG
 
-  // Note the branch rather than `conversation?.settings.model ?? pending`: that
-  // spelling leaks. A conversation that has chosen nothing yields `undefined`,
-  // which falls through to whatever was last chosen in a DIFFERENT
-  // conversation — so creating a second one silently inherited the first one's
-  // model. Once a conversation exists, only that conversation decides.
+  // Branch, not `conversation?.settings.model ?? pending`: that spelling leaks —
+  // a conversation that chose nothing yields `undefined` and falls through to
+  // another conversation's last choice. Once one exists, only it decides.
   const chosen = conversation === null ? pending : conversation.settings
   const messages = conversation?.messages ?? []
   // The pair closes on the first send, not at creation (D15.13). An unread
@@ -61,10 +59,9 @@ function ConversationView(): React.JSX.Element {
   const locked = conversation !== null && (!conversation.messagesLoaded || messages.length > 0)
   const model = resolveModel(chosen.model, installed, locked)
 
-  // min(what the model was trained for, what this machine can hold) — the
-  // second bound is the one that matters: phi4-mini truthfully declares 131072
-  // and honouring it means reserving 16 GB of cache on a 16 GB machine. Defined
-  // once here and passed down, so the margin is applied in a single place.
+  // min(trained ceiling, what this machine can hold) — see contextCeiling. The
+  // second bound is what matters (phi4-mini's 131072 = 16 GB cache), and it is
+  // defined once here and passed down so the margin applies in one place.
   const { memory, reload: reloadMemory } = useSystemMemory()
   const ceilingOf = (entry: AiModel): number | null =>
     memory === undefined ? null : contextCeiling(entry, memory.freeBytes, RAM_MARGIN_BYTES)
@@ -95,10 +92,9 @@ function ConversationView(): React.JSX.Element {
   // What the next send would carry: the whole transcript, since the provider is
   // stateless and every turn resends everything.
   const historyChars = messages.reduce((total, message) => total + messageText(message).length, 0)
-  // Generic ratio on the first turn, this conversation's own from then on — the
-  // exact count only exists AFTER a call (D15.4). NOT `historyChars`: that
-  // already holds the reply, which the call being measured never sent, and the
-  // two together made the formula cancel itself (D15.14).
+  // Generic ratio on the first turn, this conversation's own after (the exact
+  // count exists only AFTER a call, D15.4). NOT `historyChars`: it already holds
+  // the reply the measured call never sent, which cancels the formula (D15.14).
   const charsPerToken = calibrateRatio(lastPrompt?.chars ?? 0, lastPrompt?.tokens)
   const isLoading = state.status === 'loading'
   const isReady = availability.status === 'ready'
@@ -156,8 +152,7 @@ function ConversationView(): React.JSX.Element {
 
         {/* Under the lock, falling back to the first installed model would have
             the conversation answered by a model its own history never used
-            (D15.13). Offering to duplicate it elsewhere is what the plan
-            defers; saying so is not. */}
+            (D15.13). Saying the model is gone is not what the plan defers. */}
         {locked && model === null && chosen.model !== undefined && (
           <p className={styles.unavailable} role="alert">
             O modelo <strong>{chosen.model}</strong> desta conversa não está mais instalado. Ela
@@ -207,10 +202,9 @@ function ConversationView(): React.JSX.Element {
         )}
       </div>
 
-      {/* No model installed is as blocking as no service: there is nothing to
-          address the call to, so the composer says so by being closed. A model
-          too large for the free memory is the third case — the reason for it is
-          in the header, next to the choice that fixes it. */}
+      {/* No model installed is as blocking as no service — nothing to address
+          the call to, so the composer stays closed. A model too large for free
+          memory is the third case, explained in the header next to the fix. */}
       <Composer
         disabled={!isReady || model === null || numCtx === null}
         loading={isLoading}

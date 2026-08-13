@@ -31,11 +31,10 @@ function ConversationRow({
           defaultValue={conversation.title}
           aria-label="Novo título da conversa"
           autoFocus
-          // One commit path, two triggers. Enter and Escape both just blur;
-          // Escape puts the original title back first, so cancelling commits a
-          // no-op rename. Committing on Enter directly would unmount the input
-          // and leave a blur that fires — or does not — depending on the
-          // browser, which is the kind of race that shows up once in ten tries.
+          // One commit path, two triggers: Enter and Escape both just blur
+          // (Escape restores the original first, so cancel commits a no-op).
+          // Committing on Enter directly would race the unmount-then-blur across
+          // browsers.
           onBlur={(event) => onRename(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {

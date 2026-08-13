@@ -1,12 +1,8 @@
 import Button from '../../shared/ui/Button/Button'
 import { useConversations } from './conversationsContext'
 
-/*
- * Lives in the sidebar's nav region, above the list — the shape both reference
- * apps use. Landed in step 4 rather than step 5 because step 4's own acceptance
- * is "create two conversations, talk in both, switch between them", and without
- * this there is no way to reach the second one.
- */
+// Lives in the sidebar's nav region, above the list — the shape both reference
+// apps use.
 function NewConversationButton(): React.JSX.Element {
   const { create } = useConversations()
 

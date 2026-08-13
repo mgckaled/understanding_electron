@@ -6,28 +6,14 @@ import { useSettings } from './settingsContext'
 import LoadedModels from './LoadedModels'
 import styles from './Settings.module.css'
 
-/*
- * Settings is a detour, not a destination (D13.8). It is opened because of what
- * you are already doing — "the model is slow, let me drop the threads" — and
- * you come back to the exact same place. A navigation destination would UNMOUNT
- * the conversation; a modal keeps it visible behind, and "I did not lose my
- * place" stops being something to trust and becomes something you can see.
- *
- * Since plano 14 the value survives the close: it lives in app_settings, in the
- * same database as the conversations (D14.7).
- *
- * The trigger and the dialog live together because the open state is theirs and
- * nothing else reads it. The dialog is a SIBLING in the tree, never a
- * replacement — that is what makes a reply keep streaming behind it.
- */
+// Settings is a detour, not a destination (D13.8): a navigation destination would
+// UNMOUNT the conversation, but this modal keeps it visible behind, so a reply
+// keeps streaming. The trigger and dialog live together because the open state is
+// theirs alone, and the dialog is a SIBLING in the tree, never a replacement.
 
-/*
- * The field keeps its own text, and that is not ceremony. Clamping on every
- * keystroke means clearing the field snaps it to 1, so a user who clears it and
- * types "2" ends up with 12 — found by the level-2 test, and it would have
- * shipped. The text is free to be empty or half-typed; only a value that parses
- * is committed, and blur puts the committed value back on screen.
- */
+// The field keeps its own text: clamping on every keystroke makes clearing it
+// snap to 1, so clearing and typing "2" yields 12 (caught by the level-2 test).
+// Only a value that parses is committed; blur puts the committed value back.
 function ThreadsField(): React.JSX.Element {
   const { settings, setSettings } = useSettings()
   const [text, setText] = useState(String(settings.numThread))
@@ -67,15 +53,10 @@ function Settings(): React.JSX.Element {
         <p className={styles.scope}>
           Ajustes desta máquina. Valem para todas as conversas e não mudam o que o modelo responde.
         </p>
-        {/*
-         * Two conditions, and both are load-bearing since plano 14. `open`,
-         * because <dialog> keeps its children in the DOM when closed, so the
-         * field's initial useState would otherwise run at boot. `loaded`,
-         * because that initial useState copies the value — mounting before the
-         * database answered would freeze the DEFAULT into the field and show a
-         * number that is simply not the one in storage, with nothing on screen
-         * suggesting anything is wrong.
-         */}
+        {/* Both conditions load-bearing: `open`, because <dialog> keeps children
+            in the DOM when closed, so the field's initial useState would run at
+            boot; `loaded`, because that useState copies the value, and mounting
+            before the DB answered would freeze the DEFAULT into the field. */}
         {open && loaded && <ThreadsField />}
         {/* Only while open: its query refetches on mount, and mounting it with
             the modal closed would poll the provider from boot onwards. */}
