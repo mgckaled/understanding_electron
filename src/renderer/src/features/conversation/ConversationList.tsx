@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Conversation } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
+import { groupByDate } from './conversations'
 import { useConversations } from './conversationsContext'
 
 type RowProps = {
@@ -13,7 +14,11 @@ type RowProps = {
   onRemove: () => void
 }
 
-const ROW_BASE = 'flex items-center gap-1 rounded-md hover:bg-surface-raised'
+// border-l-2 is always present — it is the accent bar's width, reserved so the
+// active state only swaps the colour and the title never shifts. The colour is
+// conditional PER ROW, never in BASE, so a variant does not lose to it by
+// stylesheet order (the DS-1/DS-2 order trap).
+const ROW_BASE = 'flex items-center gap-1 rounded-md border-l-2 hover:bg-surface-raised'
 
 // px-3! overrides the Button's own px-5: both set padding-inline, and without
 // the important the component's utility wins by stylesheet order, not by class
@@ -33,7 +38,7 @@ function ConversationRow({
 }: RowProps): React.JSX.Element {
   if (editing) {
     return (
-      <li className={ROW_BASE}>
+      <li className={`${ROW_BASE} border-transparent`}>
         <input
           className="w-full rounded-md border border-accent-text bg-surface-sunken px-4 py-3 font-ui text-sm text-text select-text"
           defaultValue={conversation.title}
@@ -64,7 +69,15 @@ function ConversationRow({
   const selectTone = active ? 'text-text font-semibold' : 'text-text-muted'
 
   return (
-    <li className={[ROW_BASE, 'group', active && 'bg-surface-raised'].filter(Boolean).join(' ')}>
+    <li
+      className={[
+        ROW_BASE,
+        'group',
+        active ? 'border-accent-text bg-surface-raised' : 'border-transparent'
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <button
         type="button"
         className={`flex-1 min-w-[0px] cursor-pointer overflow-hidden rounded-md border-0 bg-transparent px-4 py-3 text-left font-ui text-sm text-ellipsis whitespace-nowrap ${selectTone}`}
@@ -106,28 +119,39 @@ function ConversationList(): React.JSX.Element {
     setEditingId(null)
   }
 
+  // Date grouping (Hoje/Ontem/Anteriores) replaces the single "Conversas"
+  // heading. The clock is read once at mount (lazy initial state, so the impure
+  // Date.now() stays out of render) and passed to the pure groupByDate, which
+  // never touches the clock so its level-1 test stays deterministic.
+  const [now] = useState(() => Date.now())
+  const groups = groupByDate(conversations, now)
+
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase">
-        Conversas
-      </h2>
+    <section className="flex flex-col gap-5">
       {conversations.length === 0 ? (
         <p className="text-xs text-text-faint">Nenhuma conversa ainda.</p>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {conversations.map((conversation) => (
-            <ConversationRow
-              key={conversation.id}
-              conversation={conversation}
-              active={conversation.id === activeId}
-              editing={conversation.id === editingId}
-              onSelect={() => select(conversation.id)}
-              onStartRename={() => setEditingId(conversation.id)}
-              onRename={(title) => commitRename(conversation.id, title)}
-              onRemove={() => remove(conversation.id)}
-            />
-          ))}
-        </ul>
+        groups.map((group) => (
+          <div key={group.label} className="flex flex-col gap-2">
+            <h2 className="text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase">
+              {group.label}
+            </h2>
+            <ul className="flex flex-col gap-1">
+              {group.conversations.map((conversation) => (
+                <ConversationRow
+                  key={conversation.id}
+                  conversation={conversation}
+                  active={conversation.id === activeId}
+                  editing={conversation.id === editingId}
+                  onSelect={() => select(conversation.id)}
+                  onStartRename={() => setEditingId(conversation.id)}
+                  onRename={(title) => commitRename(conversation.id, title)}
+                  onRemove={() => remove(conversation.id)}
+                />
+              ))}
+            </ul>
+          </div>
+        ))
       )}
     </section>
   )

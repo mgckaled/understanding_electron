@@ -1,6 +1,7 @@
-import type { AiModel } from '@shared/ipc'
+import type { AiModel, Conversation } from '@shared/ipc'
 import {
   DEFAULT_TITLE,
+  groupByDate,
   resolveModel,
   selectableModels,
   stoppedFromError,
@@ -130,5 +131,52 @@ describe('resolveModel', () => {
     // A state the selector draws — not one the send path should work around.
     expect(resolveModel('gemma3:4b', [], false)).toBeNull()
     expect(resolveModel(undefined, [], false)).toBeNull()
+  })
+})
+
+describe('groupByDate', () => {
+  const NOON = new Date('2026-08-13T12:00:00').getTime()
+  const startOfToday = new Date(NOON).setHours(0, 0, 0, 0)
+  const DAY = 24 * 60 * 60 * 1000
+
+  function conversation(id: string, updatedAt: number): Conversation {
+    return { id, title: id, createdAt: updatedAt, updatedAt, settings: {} }
+  }
+
+  it('buckets by updatedAt relative to the passed now, not the wall clock', () => {
+    const groups = groupByDate(
+      [
+        conversation('a', startOfToday + 3 * 60 * 60 * 1000), // this morning
+        conversation('b', startOfToday - 2 * 60 * 60 * 1000), // late yesterday
+        conversation('c', startOfToday - 3 * DAY) // three days ago
+      ],
+      NOON
+    )
+
+    expect(groups.map((group) => group.label)).toEqual(['Hoje', 'Ontem', 'Anteriores'])
+    expect(groups.map((group) => group.conversations.map((c) => c.id))).toEqual([
+      ['a'],
+      ['b'],
+      ['c']
+    ])
+  })
+
+  it('drops a bucket with nothing in it', () => {
+    const groups = groupByDate([conversation('a', startOfToday + 1000)], NOON)
+
+    expect(groups.map((group) => group.label)).toEqual(['Hoje'])
+  })
+
+  it('keeps the input order inside a bucket, which the store gives as updated_at DESC', () => {
+    const groups = groupByDate(
+      [conversation('newer', startOfToday + 2000), conversation('older', startOfToday + 1000)],
+      NOON
+    )
+
+    expect(groups[0]?.conversations.map((c) => c.id)).toEqual(['newer', 'older'])
+  })
+
+  it('is empty for no conversations', () => {
+    expect(groupByDate([], NOON)).toEqual([])
   })
 })

@@ -83,3 +83,39 @@ export function resolveModel(
   if (chosen !== undefined && catalog.some((model) => model.name === chosen)) return chosen
   return locked ? null : (catalog[0]?.name ?? null)
 }
+
+export type ConversationDateLabel = 'Hoje' | 'Ontem' | 'Anteriores'
+
+export type ConversationGroup = {
+  label: ConversationDateLabel
+  conversations: Conversation[]
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Buckets conversations into Hoje / Ontem / Anteriores by `updatedAt`, relative
+ * to `now` PASSED IN — never read from the clock here, so the level-1 test does
+ * not depend on the wall time and stops breaking at midnight. Order within a
+ * bucket is the input's, which the store already keeps as `updated_at DESC`.
+ * Empty buckets are dropped, so the sidebar never shows a label with nothing
+ * under it.
+ */
+export function groupByDate(conversations: Conversation[], now: number): ConversationGroup[] {
+  const startOfToday = new Date(now).setHours(0, 0, 0, 0)
+  const startOfYesterday = startOfToday - DAY_MS
+  const buckets: Record<ConversationDateLabel, Conversation[]> = {
+    Hoje: [],
+    Ontem: [],
+    Anteriores: []
+  }
+  for (const conversation of conversations) {
+    if (conversation.updatedAt >= startOfToday) buckets.Hoje.push(conversation)
+    else if (conversation.updatedAt >= startOfYesterday) buckets.Ontem.push(conversation)
+    else buckets.Anteriores.push(conversation)
+  }
+  const order: ConversationDateLabel[] = ['Hoje', 'Ontem', 'Anteriores']
+  return order
+    .map((label) => ({ label, conversations: buckets[label] }))
+    .filter((group) => group.conversations.length > 0)
+}
