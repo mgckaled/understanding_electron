@@ -1,7 +1,6 @@
 import { useState, type SyntheticEvent } from 'react'
 import { budgetFor } from '@core/ai/budget'
 import Button from '../../shared/ui/Button/Button'
-import styles from './Composer.module.css'
 
 // Fixed at the bottom of the conversation, never inside the scrolling list. The
 // draft is local client state (D13.2) and stays that way; what plano 14 may add
@@ -67,10 +66,16 @@ function Composer({
     if (event.key === 'Enter' && !event.shiftKey) submit(event)
   }
 
+  // Chrome density (D13.6): the composer's controls are chrome, but the draft
+  // is read at the reading size, matching the answer — and it is the user's own
+  // text, so select-text opts back into selection base.css turns off at the root.
   return (
-    <form className={styles.composer} onSubmit={submit}>
+    <form
+      className="flex flex-none flex-col gap-4 border-t border-border bg-bg px-7 pt-5 pb-6"
+      onSubmit={submit}
+    >
       <textarea
-        className={styles.textarea}
+        className="w-full resize-y rounded-md border border-border bg-surface px-5 py-4 font-ui text-reading leading-normal select-text focus-visible:border-accent-text focus-visible:outline-none"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={onKeyDown}
@@ -80,12 +85,13 @@ function Composer({
         aria-label="Mensagem"
       />
       {budget !== null && (
-        <div className={styles.budget}>
+        <div className="flex items-center gap-3 px-2">
           {/* The meter, chrome density and deliberately quiet: it exists so the
               overflow is VISIBLE BEFORE it happens (D15.4) — without it the first
-              sign of trouble is a confident answer about half a conversation. */}
+              sign of trouble is a confident answer about half a conversation. Only
+              size by utility: base.css restores the native padding/border. */}
           <meter
-            className={styles.meter}
+            className="h-[6px] w-[120px]"
             min={0}
             max={1}
             low={0.7}
@@ -94,7 +100,7 @@ function Composer({
             value={Math.min(budget.used, 1)}
             aria-label="Orçamento de contexto"
           />
-          <span className={styles.budgetText}>
+          <span className="text-2xs text-text-faint tabular-nums">
             ~{budget.estimated.toLocaleString('pt-BR')} de {budget.limit.toLocaleString('pt-BR')}{' '}
             tokens
           </span>
@@ -102,7 +108,10 @@ function Composer({
       )}
 
       {overflows && budget !== null && (
-        <p className={styles.overflow} role="alert">
+        <p
+          className="rounded-md border border-warn-text bg-surface-sunken px-4 py-3 text-xs text-warn-text"
+          role="alert"
+        >
           {budget.messageAloneOverflows ? (
             <>
               Esta mensagem sozinha não cabe na janela de contexto.{' '}
@@ -129,7 +138,7 @@ function Composer({
         </p>
       )}
 
-      <div className={styles.actions}>
+      <div className="flex justify-end gap-3">
         {loading && (
           <Button variant="secondary" type="button" onClick={onCancel}>
             Cancelar
