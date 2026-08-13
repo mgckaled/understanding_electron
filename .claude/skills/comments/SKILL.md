@@ -1,6 +1,6 @@
 ---
 name: comments
-description: Convenção de comentário e docstring do crivo — as duas perguntas em ordem (comentar? e, se for docstring, em que forma?), o veto à narrativa de decisão dentro do .ts (que tem dono no HISTORY.md, citada por id) reafirmado sobre a regra de ~3 linhas, e a forma TSDoc para o doc-comment que sobra: /** */ com sumário em terceira pessoa, @param nome - descrição e @returns (com s, sem tipo entre chaves porque o TS já tipa), só tags Core, @remarks/@example desencorajados porque convidam de volta a narrativa banida, {@link} para referência cruzada, e o bloco acima do símbolo em vez de /** */ no meio da assinatura. Cobre também o que NÃO ganha docstring, o veto a blocos /* */ de narrativa, e o idioma inglês na docstring. Use ao escrever ou editar qualquer código, adicionar um comentário, documentar uma função exportada, um handler, um tipo do contrato ou um hook, ou decidir se um símbolo precisa de doc-comment.
+description: Convenção de comentário e docstring do crivo — as duas perguntas em ordem (comentar? e, se for docstring, em que forma?), o veto à narrativa de decisão dentro do .ts (que tem dono no HISTORY.md, citada por id) reafirmado sobre a regra de ~3 linhas, e a forma TSDoc para o doc-comment que sobra: /** */ com sumário em terceira pessoa, @param nome - descrição e @returns (com s, sem tipo entre chaves porque o TS já tipa), um conjunto curado de tags (@typeParam, @deprecated, @defaultValue, @throws com guarda, {@link}) e não as de biblioteca publicada (release tags, @packageDocumentation, @privateRemarks, modifiers de OO), @remarks/@example desencorajados porque convidam de volta a narrativa banida, e o bloco acima do símbolo em vez de /** */ no meio da assinatura. Cobre também o que NÃO ganha docstring, o veto a blocos /* */ de narrativa, e o idioma inglês na docstring. Use ao escrever ou editar qualquer código, adicionar um comentário, documentar uma função exportada, um handler, um tipo do contrato ou um hook, ou decidir se um símbolo precisa de doc-comment.
 ---
 
 # Comentário e docstring — crivo
@@ -39,8 +39,33 @@ Regras da forma, cada uma um erro que o parser oficial marca:
 - **`/** */`**, nunca `/* */`, para doc-comment. Sumário numa linha, em **terceira pessoa** (`Sends…`, não `Send…`).
 - **`@param nome - descrição`** — o hífen é obrigatório. **`@returns`** com o `s` (não `@return`).
 - **Sem tipo entre chaves** (`@param {string} name`): o TypeScript já tipa; repetir é ruído que envelhece.
-- **Só tags Core.** `@remarks` e `@example` são justamente o convite de volta à narrativa banida na pergunta 1 — **não use**; razão longa vai ao `HISTORY.md`, citada por id. `{@link outra}` para referência cruzada.
+- **Um conjunto curado, não todas as tags.** `@remarks` e `@example` — mesmo sendo padrão — ficam **fora**: são o convite de volta à narrativa banida na pergunta 1; razão longa vai ao `HISTORY.md`, citada por sigla. As tags que este projeto usa estão logo abaixo.
 - **O bloco vai ACIMA do símbolo**, não `/** */` no meio da assinatura, um por parâmetro — corrija esse padrão ao tocar (`useConversationChat` o tem hoje).
+
+Ordem dentro do bloco: **sumário → `@remarks` (se houver — e raramente há) → block tags (`@param`, `@returns`, …) → modifiers no fim.** **Não há tag de cabeçalho de arquivo** no TSDoc (`@file`/`@module`/`@fileOverview` não existem no padrão); contexto de arquivo, quando indispensável, é `//` comum sob a pergunta 1.
+
+### As demais tags — cada uma com o "não serve para"
+
+Isto **estende o vocabulário, não a licença**: a pergunta 1 continua valendo e o padrão segue sendo *não comentar*. Cada tag só entra quando diz o que o código não diz — senão é o erro do `{tipo}` com outra grafia.
+
+| Tag | Usa quando | Não serve para |
+|---|---|---|
+| **`@typeParam T -`** | o parâmetro de tipo não é evidente | `ViewState<T>` onde `T` é o dado renderizado — óbvio, não documenta |
+| **`@deprecated <motivo>`** | um símbolo vai sair; aponta o substituto por `{@link}` | repetir "não use" — o editor já risca o nome sozinho |
+| **`@defaultValue <v>`** | o default é decidido longe da assinatura | um default visível (`numThread = 4`) — repeti-lo é o `{tipo}` regrafado |
+| **`@throws <cond>`** | e **só** quando a exceção é o sinal certo pela régua da skill [`ipc`](../ipc/SKILL.md): bug/invariante (ex.: zod rejeitando payload fora do schema) | função que devolve `Result` — essa **nunca** leva `@throws`, ou a docstring mente |
+| **`{@link Símbolo.membro}`** | referência cruzada a outro símbolo do código | é a **única** tag de referência — não há `@see` aqui; para apontar decisão, a sigla `(D15.2)` |
+
+### O que NÃO copiar da doc de biblioteca
+
+O TSDoc tem tags que existem para **pacote publicado** lido pelo API Extractor — num app são cargo-cult:
+
+- **Release tags** (`@alpha`/`@beta`/`@public`/`@internal`/`@experimental`) — versionam API pública externa, que o app não tem; a fronteira de import já é ESLint, não `@internal`.
+- **`@packageDocumentation`** — só no `.d.ts` de entrada de um pacote.
+- **Modifiers de OO** (`@sealed`/`@virtual`/`@override`/`@readonly`/`@eventProperty`/`@decorator`) — para API de classe e decorator; a base é funcional + hooks, e `readonly` o TS já expressa no tipo.
+- **`@privateRemarks`** — é o lugar *sancionado* para nota interna não publicada, e fica fora **por isso mesmo**: reintroduziria no `.ts` a narrativa que a pergunta 1 manda para o `HISTORY.md`. Nota longa não ganha um tag; ganha uma sigla.
+
+> **Enforcement de sintaxe, pendente:** o `eslint-plugin-tsdoc` (regra `tsdoc/syntax`) é a checagem padrão da *forma* — pega `@return` sem `s`, `{tipo}`, tag desconhecida —, não da política. Não adotado; se entrar, passa pela régua de dependência da skill [`architecture`](../architecture/SKILL.md).
 
 ## O que NÃO ganha docstring
 
