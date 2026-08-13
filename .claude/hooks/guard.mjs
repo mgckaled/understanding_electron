@@ -47,6 +47,12 @@
  *      deliberately BEFORE the migration — a guard written afterwards is
  *      calibrated not to fail the code that already exists.
  *
+ *   9. NARRATIVE BLOCK COMMENT — a `/*`-style block comment in a .ts/.tsx that
+ *      is not a `/**` doc-comment, not a directive (eslint, ts-, __PURE__…) and
+ *      not a JSX comment. The flooding symptom the `comments` skill bans:
+ *      narrative goes in `//` (≤3 lines) or a `/**` docstring, and long
+ *      rationale in HISTORY.md by decision id. Added by R-1.
+ *
  * On violation: writes an explanation to stderr and exits 2, which feeds the
  * message back to Claude so it self-corrects. Otherwise exits 0. Any internal
  * error exits 0, so the hook never breaks the session.
@@ -239,6 +245,27 @@ if (isRendererTsx && !isTest) {
     violations.push(
       `Cor literal dentro de \`className\` (${[...new Set(inClassName)].join(', ')}). ` +
         'Toda cor vem de token — nenhum `#hex` fora de shared/ui/tokens.css.'
+    )
+  }
+}
+
+// 9. Narrative `/* */` block in .ts/.tsx — the flooding symptom the `comments`
+// skill bans. `/** */` doc-comments, directives and JSX `{/* */}` are allowed.
+const isTsLike = /\.(?:ts|tsx|mts|cts)$/.test(file)
+if (isTsLike && !isTest) {
+  const BLOCK_DIRECTIVE =
+    /^\/\*[\s!]*(?:eslint|global|prettier|ts-|@ts-|c8|istanbul|v8|@?__PURE__|webpack|@?vite)/
+  const narrative = [...raw.matchAll(/\/\*(?!\*)[\s\S]*?\*\//g)].filter((m) => {
+    if (BLOCK_DIRECTIVE.test(m[0])) return false
+    // A JSX comment `{/* … */}` is the only way to comment inside JSX — allowed.
+    return !raw.slice(0, m.index).trimEnd().endsWith('{')
+  })
+  if (narrative.length > 0) {
+    violations.push(
+      'Bloco de comentário `/* */` em .ts/.tsx. A skill `comments` proíbe narrativa em ' +
+        'bloco: use `//` para nota curta (até ~3 linhas, só o que o código não diz) ou ' +
+        '`/** */` para docstring TSDoc; razão longa vai ao HISTORY.md, citada pela sigla. ' +
+        'Comentário JSX `{/* */}` e diretivas continuam permitidos.'
     )
   }
 }

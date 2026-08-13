@@ -24,7 +24,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
 ▶  DS-2 migração da casca e features   plan/active/DS-2-...             ← estamos aqui (escrito)
    DS-3 ajustes do composer e da casca
    ── trilha R (refatoração), transversal ─────────────────────────────────────────
-   R-1 comentários e TSDoc            plan/active/R-1-...              escrito
+   R-1 comentários e TSDoc            plan/implemented/R-1-...         concluída (ago/2026)
    ── o arco, retomado depois da DS-3 ─────────────────────────────────────────────
    16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
    17 anexo: documento e imagem
