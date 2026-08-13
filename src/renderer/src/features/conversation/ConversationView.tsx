@@ -15,10 +15,14 @@ import MarkdownMessage from './MarkdownMessage'
 import ModelSelector from './ModelSelector'
 import Composer from './Composer'
 import { completePartial } from './completePartial'
-import styles from './ConversationView.module.css'
 
 /** Stable identity, so a catalog that is loading does not re-run memos. */
 const EMPTY_CATALOG: AiModel[] = []
+
+// Reused class strings: the muted status line and the warn notice, each drawn
+// from three different branches below.
+const STATUS = 'text-xs text-text-muted'
+const UNAVAILABLE = 'mb-5 text-sm text-warn-text'
 
 // The unavailable gate carries a specific hint (D9.3); other errors fall back
 // to the shared generic message.
@@ -107,11 +111,18 @@ function ConversationView(): React.JSX.Element {
     conversation?.id ?? null
   )
 
+  // Header and composer are fixed; only the thread scrolls (D13.5). min-h-[0px]
+  // is what lets the middle track shrink instead of pushing the document — the
+  // shell already settled that the document itself never scrolls.
   return (
-    <section className={styles.view}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>{conversation?.title ?? 'Assistente local'}</h1>
-        <div className={styles.controls}>
+    <section className="flex flex-1 flex-col min-h-[0px]">
+      {/* Chrome density (D13.6): the compact fase 05 desktop scale. */}
+      <header className="flex flex-none items-start justify-between gap-5 border-b border-border px-7 py-5">
+        {/* A title taken from the first message can be long; the header must not grow. */}
+        <h1 className="overflow-hidden text-md font-semibold whitespace-nowrap text-ellipsis text-text">
+          {conversation?.title ?? 'Assistente local'}
+        </h1>
+        <div className="flex flex-none items-start gap-5">
           <ModelSelector
             state={catalog}
             selected={model}
@@ -134,18 +145,21 @@ function ConversationView(): React.JSX.Element {
             scopeKey={conversation?.id ?? 'sem-conversa'}
             onNumCtx={(tokens) => choose({ numCtx: tokens })}
           />
-          {isReady && <span className={styles.status}>Ollama {availability.data.version}</span>}
+          {isReady && <span className={STATUS}>Ollama {availability.data.version}</span>}
         </div>
       </header>
 
-      <div className={styles.thread} ref={threadRef}>
+      {/* The one scrolling surface. Its ref is measured by useStickToBottom, so
+          this div must stay the scroll container — swapping the element would
+          make the hook watch the wrong node (see HISTORY.md § useStickToBottom). */}
+      <div className="flex-1 min-h-[0px] overflow-y-auto p-7" ref={threadRef}>
         {availability.status === 'loading' && (
-          <p className={styles.status} role="status">
+          <p className={STATUS} role="status">
             Verificando o Ollama…
           </p>
         )}
         {availability.status === 'error' && (
-          <p className={styles.unavailable} role="alert">
+          <p className={UNAVAILABLE} role="alert">
             {availabilityText(availability.error)}
           </p>
         )}
@@ -154,33 +168,43 @@ function ConversationView(): React.JSX.Element {
             the conversation answered by a model its own history never used
             (D15.13). Saying the model is gone is not what the plan defers. */}
         {locked && model === null && chosen.model !== undefined && (
-          <p className={styles.unavailable} role="alert">
+          <p className={UNAVAILABLE} role="alert">
             O modelo <strong>{chosen.model}</strong> desta conversa não está mais instalado. Ela
             fica somente leitura — reinstale o modelo ou comece uma conversa nova.
           </p>
         )}
 
         {messages.length === 0 && (
-          <p className={styles.empty}>Pergunte algo ao modelo para começar uma conversa.</p>
+          <p className="text-reading text-text-faint">
+            Pergunte algo ao modelo para começar uma conversa.
+          </p>
         )}
 
         {messages.length > 0 && (
-          <ol className={styles.messages}>
+          <ol className="flex flex-col gap-7">
             {messages.map((message) => (
-              <li
-                key={message.id}
-                className={message.role === 'user' ? styles.user : styles.assistant}
-              >
-                <span className={styles.role}>
+              // .user and .assistant were the same rule; the role only decides
+              // the author label and markdown-vs-plain below.
+              <li key={message.id} className="flex flex-col gap-2">
+                <span className="text-2xs tracking-[0.04em] text-text-faint uppercase">
                   {message.role === 'user' ? 'Você' : 'Assistente'}
                   {message.stopped !== undefined && (
-                    <span className={styles.stopped}>· {STOPPED_LABEL[message.stopped]}</span>
+                    // Why a reply stopped, next to the author label (D14.3). Warn,
+                    // not danger — a cut answer is a turn that says less, not an
+                    // error; lower case because the reason is a sentence, the label a tag.
+                    <span className="ml-2 tracking-normal text-warn-text normal-case">
+                      · {STOPPED_LABEL[message.stopped]}
+                    </span>
                   )}
                 </span>
                 {message.role === 'assistant' ? (
                   <MarkdownMessage text={messageText(message)} />
                 ) : (
-                  <p className={styles.content}>{messageText(message)}</p>
+                  // Reading density (D13.6). Model output is copyable data —
+                  // select-text opts back into selection base.css turns off at the root.
+                  <p className="text-reading leading-normal whitespace-pre-wrap text-text select-text">
+                    {messageText(message)}
+                  </p>
                 )}
               </li>
             ))}
@@ -188,17 +212,20 @@ function ConversationView(): React.JSX.Element {
         )}
 
         {belongsHere && isLoading && streaming !== '' && (
-          <div className={styles.streaming} aria-live="polite">
+          <div
+            className="mt-7 text-reading leading-normal whitespace-pre-wrap text-text-muted select-text"
+            aria-live="polite"
+          >
             <MarkdownMessage text={completePartial(streaming)} highlight={false} />
           </div>
         )}
         {belongsHere && state.status === 'error' && (
-          <p className={styles.unavailable} role="alert">
+          <p className={UNAVAILABLE} role="alert">
             {errorMessage(state.error)}
           </p>
         )}
         {belongsHere && state.status === 'cancelled' && (
-          <p className={styles.status}>Resposta cancelada.</p>
+          <p className={STATUS}>Resposta cancelada.</p>
         )}
       </div>
 
