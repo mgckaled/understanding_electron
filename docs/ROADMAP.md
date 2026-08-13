@@ -22,7 +22,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    ── trilha DS, transversal ao arco ──────────────────────────────────────────────
    DS-1 fundação Tailwind v4          plan/implemented/DS-1-...        concluída (ago/2026)
    DS-2 migração da casca e features   plan/implemented/DS-2-...        concluída (ago/2026)
-▶  DS-3 ajustes do composer e da casca                                 ← estamos aqui (não escrito)
+▶  DS-3 a interface chega ao alvo    plan/active/DS-3-...            ← estamos aqui (escrito)
    ── trilha R (refatoração), transversal ─────────────────────────────────────────
    R-1 comentários e TSDoc            plan/implemented/R-1-...         concluída (ago/2026)
    ── o arco, retomado depois da DS-3 ─────────────────────────────────────────────

@@ -52,11 +52,11 @@ Levantada em 12/08/2026 comparando `alvo-chat.png` com a tela real do app constr
 |---|---|---|---|
 | 1 | Cabeçalho da sidebar: título **"Chat local"** + ícone de recolher à direita | só o `«` solto | DS-3 |
 | 2 | **"Nova conversa" contornado**, com `+`, largura cheia | preenchido, variante `secondary` | DS-3 |
-| 3 | **Campo de busca** de conversas | não existe | **não é da trilha DS.** Filtro de título no cliente, plano próprio quando for a hora. **Não** é a FTS5 do [`ROADMAP § 2`](../../ROADMAP.md), que é busca no texto das mensagens |
+| 3 | **Campo de busca** de conversas | não existe | **DS-3** (passo 5), como filtro de título no cliente — a lista de títulos já está em memória. **Não** é a FTS5 do [`ROADMAP § 2`](../../ROADMAP.md), que é busca no texto das mensagens e precisa de índice. (Corrigido: a revisão de 12/08 já mandava a busca para o DS-3; esta linha estava desalinhada dela) |
 | 4 | Conversas **agrupadas por data** (Hoje / Ontem / Anteriores) | lista plana | DS-3 |
 | 5 | Conversa ativa com **barra de acento à esquerda** | fundo elevado | DS-3 |
 | 6 | Rodapé: **ponto verde + "Ollama (v0.32.6)" + engrenagem** | versões de Electron/Chromium/Node, e Configurações é botão na nav | DS-3 |
-| 7 | Cabeçalho da conversa é **o título dela** | `"Assistente local"` fixo | DS-3 |
+| 7 | Cabeçalho da conversa é **o título dela** | já é o título; `"Assistente local"` é só o fallback sem conversa (`ConversationView.tsx`) | DS-3 — item quase feito; só o texto de fallback a revisar |
 | 8 | **Sem toolbar superior.** O seletor de modelo é uma pílula compacta **dentro do composer** | toolbar com modelo, contexto, "até 32k", selos e versão do Ollama | DS-3 — os elementos existem, o que muda é onde se acomodam. Nada do plano 15 deixa de existir |
 | 9 | Composer é **um contêiner arredondado** com pílula de modelo + pausa + **envio circular com `↑`** | textarea, medidor e botão "Enviar" retangular | DS-3. O clipe do alvo é do plano 16 |
 | 10 | Mensagem do usuário é **bolha à direita**; a do assistente é **texto puro à esquerda** | a conferir na migração | DS-3 |
