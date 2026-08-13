@@ -1,7 +1,6 @@
 import Button from '../../shared/ui/Button/Button'
 import StateView from '../../shared/ui/StateView'
 import { useLoadedModels } from './useLoadedModels'
-import styles from './Settings.module.css'
 
 // What the provider is holding in RAM, with a way to let go of it (antecipado do
 // plano 17). Manual by design: weights stay resident five minutes after the last
@@ -23,10 +22,11 @@ function minutesLeft(expiresAt: number): number | null {
 function LoadedModels(): React.JSX.Element {
   const { state, unload, unloading } = useLoadedModels()
 
+  // Chrome density (D13.6): a modal is scanned, not read.
   return (
-    <section className={styles.section}>
-      <h3 className={styles.heading}>Modelos em memória</h3>
-      <p className={styles.scope}>
+    <section className="mt-7 border-t border-border pt-6">
+      <h3 className="mb-3 text-sm text-text">Modelos em memória</h3>
+      <p className="mb-6 text-xs text-text-muted">
         O Ollama mantém os pesos carregados por alguns minutos após a última resposta. Enquanto
         isso, eles contam contra o teto de contexto dos demais modelos.
       </p>
@@ -34,13 +34,19 @@ function LoadedModels(): React.JSX.Element {
         state={state}
         emptyMessage="Nenhum modelo carregado."
         render={(models) => (
-          <ul className={styles.loaded}>
+          <ul className="flex flex-col gap-3">
             {models.map((model) => {
               const left = minutesLeft(model.expiresAt)
               return (
-                <li key={model.name} className={styles.loadedItem}>
-                  <span className={styles.loadedName}>{model.name}</span>
-                  <span className={styles.loadedMeta}>
+                <li
+                  key={model.name}
+                  className="flex items-center gap-4 rounded-md border border-border bg-surface-sunken px-4 py-3"
+                >
+                  {/* The name is the copyable part — it is what `ollama stop <name>` takes. */}
+                  <span className="flex-1 font-mono text-xs text-text select-text">
+                    {model.name}
+                  </span>
+                  <span className="text-2xs text-text-muted whitespace-nowrap">
                     {formatSize(model.sizeBytes)}
                     {left === null ? '' : ` · sai em ~${left} min`}
                   </span>

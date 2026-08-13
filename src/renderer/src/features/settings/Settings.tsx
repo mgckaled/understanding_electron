@@ -4,7 +4,6 @@ import Dialog from '../../shared/ui/Dialog/Dialog'
 import Field from '../../shared/ui/Field/Field'
 import { useSettings } from './settingsContext'
 import LoadedModels from './LoadedModels'
-import styles from './Settings.module.css'
 
 // Settings is a detour, not a destination (D13.8): a navigation destination would
 // UNMOUNT the conversation, but this modal keeps it visible behind, so a reply
@@ -29,7 +28,7 @@ function ThreadsField(): React.JSX.Element {
   return (
     <Field label="Threads de CPU" hint="Núcleos que o Ollama pode usar nesta máquina.">
       <input
-        className={styles.number}
+        className="w-[96px] rounded-md border border-border bg-surface-sunken px-4 py-3 font-ui text-sm text-text focus-visible:border-accent-text focus-visible:outline-none"
         type="number"
         min={1}
         value={text}
@@ -50,7 +49,7 @@ function Settings(): React.JSX.Element {
         Configurações
       </Button>
       <Dialog open={open} title="Configurações" onClose={() => setOpen(false)}>
-        <p className={styles.scope}>
+        <p className="mb-6 text-xs text-text-muted">
           Ajustes desta máquina. Valem para todas as conversas e não mudam o que o modelo responde.
         </p>
         {/* Both conditions load-bearing: `open`, because <dialog> keeps children
