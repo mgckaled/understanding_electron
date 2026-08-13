@@ -45,6 +45,7 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | Contrato IPC, `window.api`, `Result` vs exceção, eventos, payload binário | skill [`ipc`](.claude/skills/ipc/SKILL.md) |
 | Tokens, primitivos, `ViewState`, convenções de desktop | skill [`design-system`](.claude/skills/design-system/SKILL.md) |
 | Níveis de teste, mocks, o que não testar | skill [`testing`](.claude/skills/testing/SKILL.md) |
+| Convenção de comentário e docstring (TSDoc) | skill [`comments`](.claude/skills/comments/SKILL.md) |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow) | [`docs/study/05-proximos-passos.md`](docs/study/05-proximos-passos.md) |
 | IA local e de nuvem, ML, RAG | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
 | Decisões, alternativas descartadas, armadilhas | [`docs/HISTORY.md`](docs/HISTORY.md) |
@@ -175,6 +176,7 @@ Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha
 - **Componente só toca token semântico** (`var(--color-*)`): nenhum `#hex` nem `var(--gray-N)` fora de `tokens.css` — skill [`design-system`](.claude/skills/design-system/SKILL.md).
 - **O design system é um envelope: define a linguagem visual, não constrói feature.** Diante de um alvo visual, o que **já existe** ganha a linguagem (é da trilha DS); o que **ainda não existe** nasce depois, no plano da própria feature, já vestido. Alvo não é checklist de feature — ler a régua antes de tratar uma ausência como pendência, skill `design-system`.
 - **Cinco níveis de teste**, cada coisa no seu. `core`/`shared` (1), `renderer` (2) e handlers do `main` (3) rodam em `check:fast` e no hook de edição; E2E em dev (4) e empacotado (5) ficam fora do ciclo — skill [`testing`](.claude/skills/testing/SKILL.md).
+- **Todo comentário e docstring sai no padrão ao tocar o arquivo.** Duas perguntas em ordem — comentar? (só o que o código não diz; narrativa de decisão vai ao `HISTORY.md` citada por id, não ao `.ts`) e, se for docstring, forma TSDoc (`@param nome - desc`, `@returns`, sem tipo entre chaves, só tags Core). Divide-se ao tocar, não varre a base — skill [`comments`](.claude/skills/comments/SKILL.md).
 - **Régua de tamanho** — arquivo que cresce é sintoma. Tabela abaixo.
 
 #### Régua de tamanho
@@ -198,7 +200,7 @@ Código em inglês, sempre — identificador, comentário, docstring e log, sem 
 
 ### Comentários
 
-**O comentário diz o que o código não consegue dizer, em até ~3 linhas.** Restrição externa que o próximo leitor violaria sem saber (`capabilities` vem do `/api/show` porque o `/api/tags` omite `vision`), número medido, armadilha diagnosticada — isso fica. Narrativa do que mudou, alternativa descartada e razão longa **não**: têm dono, e o dono é o plano ou o [`HISTORY.md`](docs/HISTORY.md), com o fonte apontando pela sigla da decisão (`D15.2`). Comentário longo dentro do `.ts` é a mesma dívida que a regra de fonte única proíbe, agravada por envelhecer onde ninguém releva. Regra adotada em ago/2026, a pedido, depois de o plano 15 acumular blocos de 25 linhas sobre constantes de uma linha.
+**O comentário diz o que o código não consegue dizer, em até ~3 linhas** — restrição externa que o próximo leitor violaria sem saber (`capabilities` vem do `/api/show` porque o `/api/tags` omite `vision`), número medido, armadilha diagnosticada. Narrativa do que mudou, alternativa descartada e razão longa **não**: têm dono no [`HISTORY.md`](docs/HISTORY.md), e o fonte aponta pela sigla da decisão (`D15.2`). O doc-comment que sobra sai em **TSDoc** (`/** */`, sumário em terceira pessoa, `@param nome - desc`, `@returns`, sem tipo entre chaves, só tags Core — `@remarks`/`@example` ficam fora porque convidam de volta a narrativa banida). Regra completa, o antes/depois no fonte real e a reconciliação que impede reverter a decisão de ago/2026: skill [`comments`](.claude/skills/comments/SKILL.md).
 
 ### Segurança
 

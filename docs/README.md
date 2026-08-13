@@ -79,6 +79,7 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Contrato IPC, `window.api`, `Result` vs exceção, eventos, payload binário | skill `ipc` | apontam |
 | Tokens, primitivos, `ViewState`, convenções de desktop | skill `design-system` | apontam |
 | Níveis de teste, mocks, o que não testar | skill `testing` | apontam |
+| Convenção de comentário e docstring (TSDoc) | skill `comments` | apontam |
 | Stack fixada, versões, regras invioláveis | [`CLAUDE.md`](../CLAUDE.md) | apontam |
 | Armadilhas diagnosticadas | [`HISTORY.md`](HISTORY.md) + `study/04-diario-de-bordo.md` | apontam |
 | Histórico, decisões, alternativas descartadas | [`HISTORY.md`](HISTORY.md) | apontam |
