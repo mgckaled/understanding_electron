@@ -7,7 +7,8 @@ function NewConversationButton(): React.JSX.Element {
   const { create } = useConversations()
 
   return (
-    <Button variant="secondary" onClick={() => create()}>
+    <Button variant="outline" className="w-full" onClick={() => create()}>
+      <span aria-hidden="true">+</span>
       Nova conversa
     </Button>
   )

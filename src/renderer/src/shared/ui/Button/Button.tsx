@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -24,6 +24,9 @@ const VARIANT: Record<ButtonVariant, string> = {
   primary: 'border-transparent bg-accent text-on-accent hover:not-disabled:bg-accent-hover',
   secondary: 'border-border bg-surface-raised text-text hover:not-disabled:border-border-strong',
   ghost: 'border-transparent bg-transparent text-text hover:not-disabled:bg-surface-raised',
+  // Like secondary but with a see-through fill: a visible border on the window
+  // ground, the DS-3 target's shape for "Nova conversa". Born with that consumer.
+  outline: 'border-border bg-transparent text-text hover:not-disabled:border-border-strong',
   danger: 'border-transparent bg-danger text-on-danger hover:not-disabled:brightness-110'
 }
 
