@@ -113,23 +113,52 @@ function ConversationRow({
 function ConversationList(): React.JSX.Element {
   const { conversations, activeId, select, rename, remove } = useConversations()
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
 
   const commitRename = (id: string, title: string): void => {
     rename(id, title)
     setEditingId(null)
   }
 
+  // Client-side title filter (DS-3): the titles are already in memory, so this
+  // never touches IPC — it is NOT the FTS5 over message text the ROADMAP gates.
+  const needle = query.trim().toLowerCase()
+  const filtered =
+    needle === ''
+      ? conversations
+      : conversations.filter((conversation) => conversation.title.toLowerCase().includes(needle))
+
   // Date grouping (Hoje/Ontem/Anteriores) replaces the single "Conversas"
   // heading. The clock is read once at mount (lazy initial state, so the impure
   // Date.now() stays out of render) and passed to the pure groupByDate, which
   // never touches the clock so its level-1 test stays deterministic.
   const [now] = useState(() => Date.now())
-  const groups = groupByDate(conversations, now)
+  const groups = groupByDate(filtered, now)
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-4">
+      {conversations.length > 0 && (
+        <div className="relative">
+          <span
+            className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-text-faint"
+            aria-hidden="true"
+          >
+            🔍
+          </span>
+          <input
+            type="search"
+            className="w-full rounded-md border border-border bg-surface-sunken py-3 pr-4 pl-9 font-ui text-sm text-text select-text focus-visible:border-accent-text focus-visible:outline-none"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar conversas"
+            aria-label="Buscar conversas"
+          />
+        </div>
+      )}
       {conversations.length === 0 ? (
         <p className="text-xs text-text-faint">Nenhuma conversa ainda.</p>
+      ) : groups.length === 0 ? (
+        <p className="text-xs text-text-faint">Nenhuma conversa encontrada.</p>
       ) : (
         groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-2">
