@@ -186,32 +186,33 @@ function ConversationView(): React.JSX.Element {
 
         {messages.length > 0 && (
           <ol className="flex flex-col gap-7">
-            {messages.map((message) => (
-              // .user and .assistant were the same rule; the role only decides
-              // the author label and markdown-vs-plain below.
-              <li key={message.id} className="flex flex-col gap-2">
-                <span className="text-2xs tracking-[0.04em] text-text-faint uppercase">
-                  {message.role === 'user' ? 'Você' : 'Assistente'}
-                  {message.stopped !== undefined && (
-                    // Why a reply stopped, next to the author label (D14.3). Warn,
-                    // not danger — a cut answer is a turn that says less, not an
-                    // error; lower case because the reason is a sentence, the label a tag.
-                    <span className="ml-2 tracking-normal text-warn-text normal-case">
-                      · {STOPPED_LABEL[message.stopped]}
-                    </span>
-                  )}
-                </span>
-                {message.role === 'assistant' ? (
-                  <MarkdownMessage text={messageText(message)} />
-                ) : (
-                  // Reading density (D13.6). Model output is copyable data —
-                  // select-text opts back into selection base.css turns off at the root.
-                  <p className="text-reading leading-normal whitespace-pre-wrap text-text select-text">
+            {messages.map((message) =>
+              message.role === 'user' ? (
+                // User turn: a bubble on the right. Alignment and fill carry the
+                // authorship, so the "Você" label the target drops is gone.
+                // Reading density (D13.6); select-text opts back into selection
+                // that base.css turns off at the root.
+                <li key={message.id} className="flex justify-end">
+                  <p className="max-w-[80%] rounded-lg bg-surface-raised px-5 py-4 text-reading leading-normal whitespace-pre-wrap text-text select-text">
                     {messageText(message)}
                   </p>
-                )}
-              </li>
-            ))}
+                </li>
+              ) : (
+                // Assistant turn: plain text on the left, no bubble, no label.
+                <li key={message.id} className="flex flex-col gap-2">
+                  <MarkdownMessage text={messageText(message)} />
+                  {message.stopped !== undefined && (
+                    // Why a reply stopped (D14.3). It used to sit beside the author
+                    // label the target removed; `stopped` is only ever on an
+                    // assistant message, so its home is here, under the text. Warn,
+                    // not danger — a cut answer says less, it is not an error.
+                    <span className="text-2xs text-warn-text">
+                      {STOPPED_LABEL[message.stopped]}
+                    </span>
+                  )}
+                </li>
+              )
+            )}
           </ol>
         )}
 
