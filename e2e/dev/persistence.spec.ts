@@ -41,7 +41,9 @@ function row(page: Page, title: string): ReturnType<Page['getByRole']> {
 async function open(): Promise<{ app: ElectronApplication; page: Page }> {
   const app = await electron.launch({ args: ['.', `--user-data-dir=${userDataDir}`] })
   const page = await app.firstWindow()
-  await page.getByRole('heading', { name: 'Conversas' }).waitFor()
+  // The sidebar's "Conversas" heading was replaced by date groups (DS-3), so the
+  // stable "shell is up" signal is the New conversation button the test uses next.
+  await page.getByRole('button', { name: 'Nova conversa' }).waitFor()
   return { app, page }
 }
 

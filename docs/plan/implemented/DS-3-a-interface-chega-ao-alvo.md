@@ -1,10 +1,10 @@
 # DS-3 — a interface chega ao alvo (casca, lista, mensagem; composer por último)
 
-**Depende de:** [DS-1](../implemented/DS-1-fundacao-tailwind.md) e [DS-2](../implemented/DS-2-migracao-da-casca-e-features.md), concluídos em ago/2026 · **Entrega:** a interface levada ao alvo [`alvo-chat.png`](../../reference/handoff-ds-ago2026/alvo-chat.png), ordenada do menos ao mais acoplado ao plano 15.
+**Depende de:** [DS-1](DS-1-fundacao-tailwind.md) e [DS-2](DS-2-migracao-da-casca-e-features.md), concluídos em ago/2026 · **Entrega:** a interface levada ao alvo [`alvo-chat.png`](../../reference/handoff-ds-ago2026/alvo-chat.png), ordenada do menos ao mais acoplado ao plano 15.
 
-> Terceiro e último da [trilha DS](README.md#a-trilha-de-design-system-ds-n). **Aceite global oposto ao de DS-1/DS-2: a tela muda, e a mudança é a entrega** — medida contra `alvo-chat.png`.
+> Terceiro e último da [trilha DS](../active/README.md#a-trilha-de-design-system-ds-n). **Aceite global oposto ao de DS-1/DS-2: a tela muda, e a mudança é a entrega** — medida contra `alvo-chat.png`.
 >
-> **O design system é um envelope** — a régua é da skill [`design-system`](../../../.claude/skills/design-system/SKILL.md), o alvo é do [handoff](../../reference/handoff-ds-ago2026/README.md). Este plano **não constrói feature nenhuma**: leva ao alvo o que **já existe** no app. O que ainda não existe (clipe, cartão de anexo) é do [plano 16](16-anexo-mecanismo-e-dataset.md); credencial de nuvem é do [plano 09](09-camada-de-ia.md).
+> **O design system é um envelope** — a régua é da skill [`design-system`](../../../.claude/skills/design-system/SKILL.md), o alvo é do [handoff](../../reference/handoff-ds-ago2026/README.md). Este plano **não constrói feature nenhuma**: leva ao alvo o que **já existe** no app. O que ainda não existe (clipe, cartão de anexo) é do [plano 16](../active/16-anexo-mecanismo-e-dataset.md); credencial de nuvem é do [plano 09](../active/09-camada-de-ia.md).
 
 ---
 
@@ -20,7 +20,7 @@ DS-1 provou a camada Tailwind e DS-2 migrou casca e features, ambos com o aceite
 - o rodapé de status consome o canal `ai:isAvailable` que **já existe** (retorna `AiAvailability` com `version`) — nenhum canal novo;
 - os únicos recortes reais — clipe, cartão de anexo, credenciais de nuvem — **já pertencem ao plano 16 / plano 09**.
 
-**Logo o eixo que resta é risco / acoplamento ao plano 15**, não "feature vs. envelope" — o mesmo critério da [DS2.2](../implemented/DS-2-migracao-da-casca-e-features.md#ds22--a-ordem-é-por-quanto-o-ds-3-preserva-não-por-tamanho). Daí um **plano único**, ordenado do menos ao mais acoplado, com o composer e o seletor nos **últimos passos** (7–8). Se o plano se mostrar longo, esses passos viram um `DS-4-*.md` ao custo de um arquivo — a opção fica preservada sem ser gasta (ver DS3.1).
+**Logo o eixo que resta é risco / acoplamento ao plano 15**, não "feature vs. envelope" — o mesmo critério da [DS2.2](DS-2-migracao-da-casca-e-features.md#ds22--a-ordem-é-por-quanto-o-ds-3-preserva-não-por-tamanho). Daí um **plano único**, ordenado do menos ao mais acoplado, com o composer e o seletor nos **últimos passos** (7–8). Se o plano se mostrar longo, esses passos viram um `DS-4-*.md` ao custo de um arquivo — a opção fica preservada sem ser gasta (ver DS3.1).
 
 **O que este plano não é:** um redesenho do modal de Configurações. Ver o veredito dos `alvo/*.png` abaixo.
 
@@ -45,7 +45,7 @@ Os estados de `alvo/` são dominados pelo **modal de Configurações**, cujas di
 
 ## Princípios que atravessam o plano
 
-- **Cada passo tem aceite como fato observável, não "parece com o alvo".** Sem isso o plano cai no defeito que o [README](README.md) descreve — *um plano que não consegue fechar um passo*. Pixel-diff contra o mockup **não serve** (cor/tipografia não vêm dele, e o protótipo reprova pelo menos um par AA); o instrumento é despejo de `getBoundingClientRect` durante o trabalho + revisão ao vivo nos dois temas ao fim de cada passo.
+- **Cada passo tem aceite como fato observável, não "parece com o alvo".** Sem isso o plano cai no defeito que o [README](../active/README.md) descreve — *um plano que não consegue fechar um passo*. Pixel-diff contra o mockup **não serve** (cor/tipografia não vêm dele, e o protótipo reprova pelo menos um par AA); o instrumento é despejo de `getBoundingClientRect` durante o trabalho + revisão ao vivo nos dois temas ao fim de cada passo.
 - **Persistir o harness de revisão Playwright** (o do DS-1 não foi persistido, e o DS-2 fechou sem ele). ⚠️ O padrão do Playwright é `colorScheme: 'light'` — usar `page.emulateMedia({ colorScheme })` ou o tema escuro nunca é exercitado (skill [`testing`](../../../.claude/skills/testing/SKILL.md)).
 - **A guarda 8 do [`guard.mjs`](../../../.claude/hooks/guard.mjs)** vale a cada edição `.tsx`. Nenhum token de cor novo é necessário — `bg-ok` (ponto verde) e `border-accent-text` (barra de acento) já existem.
 - **A escala de tipo (item 12) mexe só na superfície de leitura.** A mensagem já usa `--font-size-reading` (18px); o chrome fica em `--font-size-sm` (13px). **Nenhum token de `tokens.css` muda** (DS3.2).
@@ -57,7 +57,7 @@ Os estados de `alvo/` são dominados pelo **modal de Configurações**, cujas di
 ### Passo 0 — Registro e instrumentação (sem código de app)
 
 - Este arquivo, com a tabela de diário (feito).
-- **Corrigir os donos que ainda contradizem o alvo** (fonte única): a linha 3 e a linha 7 da tabela de distância do [handoff](../../reference/handoff-ds-ago2026/README.md); a linha do DS-3 no [`ROADMAP`](../../ROADMAP.md); e no [README](README.md) a linha do DS-3 e a promessa "Mais os estados de `alvo/`".
+- **Corrigir os donos que ainda contradizem o alvo** (fonte única): a linha 3 e a linha 7 da tabela de distância do [handoff](../../reference/handoff-ds-ago2026/README.md); a linha do DS-3 no [`ROADMAP`](../../ROADMAP.md); e no [README](../active/README.md) a linha do DS-3 e a promessa "Mais os estados de `alvo/`".
 - Persistir um script Playwright de revisão em `e2e/dev/` que despeja retângulos e captura os dois temas com `emulateMedia({ colorScheme })`.
 
 **Aceite:** arquivo com diário; ponteiros corrigidos; as quatro linhas contraditórias nos donos consertadas.
@@ -164,3 +164,4 @@ O alvo não mostra o medidor, o campo de contexto, os selos nem os alertas de re
 | Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
 | 13/08/2026 | 1 | **Planejamento do DS-3.** Lidos os quatro donos de `docs/` e o handoff inteiro; invocadas as skills `design-system`, `architecture`, `testing`, `ipc`. Achado que reenquadrou o escopo: a tabela de distância inteira é renderer sem IPC/dado novo, logo não há fronteira de feature entre DS-3 e DS-4 (DS3.1). Decidido plano único (composer por último) e escala de tipo só na leitura (DS3.2). Validado por dois revisores Opus; achados incorporados (medidor é do `Composer` não do `ModelSelector`; a pílula não pode esconder os `role="alert"` nem o ↻; passo 2 dividido em 2a/2b; `groupByDate(…, now)` puro; lar do `stopped`; ponto verde não congela; armadilha de ordem do `rounded`). **Passo 0 iniciado:** este arquivo criado, ponteiros dos donos corrigidos | Passo 0 — persistir o harness Playwright, depois Passo 1 |
+| 13/08/2026 | 2 | **Passos 0–9 — plano concluído.** Todos os passos executados, um commit por passo. Passo 1 (cabeçalho Sidebar); 2a (extração de `useAiAvailability`) — **desvio medido: `useState`+`useEffect`, não `useQuery`**, porque a cadência da query resolve o availability um tick depois do medidor e o gate do composer corria com o teste que digita (2 testes de contextBudget falhavam de forma não-determinística); 2b (rodapé de status + engrenagem; `OllamaStatus` novo, `Versions` intacto realocado ao modal; api-mock passa a resolver `app.info` realista); 3 (variante `outline`); 4 (`groupByDate` + 4 testes, barra de acento); 5 (busca por título); 6 (bolha à direita, `stopped` realocado sob o assistente); 7 (toolbar desmontada, `ModelSelector` como slot do `Composer`); 8 (eixo `shape` no Button, composer arredondado, envio circular). **Verificação em três níveis:** `check:fast` **340 testes** (333→340: +3 `OllamaStatus`, +4 `groupByDate`); **e2e dev 5/5** — o `persistence.spec` esperava o heading "Conversas" removido no passo 4 (consertado, e2e não roda no `check:fast`); **revisão visual ao vivo nos dois temas** (harness Playwright descartável, `emulateMedia`), tudo próximo do `alvo-chat.png`, modal centralizado com as versões movidas. Bundle: CSS **41,58 → 42,99 kB** (+1,41), JS **~1.558 → 1.563,68 kB** (+~5). Desvios documentados: `OpenDatasetPanel`/ABRIR ARQUIVO fica (plano 16); sem clipe/cartão (plano 16); sem nuvem (plano 09); sem alternador de tema/2-4-6 (recusados) | **DS-3 concluído.** Trilha DS encerrada; próximo é o arco (plano 16) |
