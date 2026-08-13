@@ -67,38 +67,28 @@ export type ChatRequest = {
   service: AiService
   model: string
   messages: ChatMessage[]
-  // Optional cap on the CPU threads Ollama uses for this call's inference —
-  // maps to the request's options.num_thread. Undefined lets Ollama decide.
+  /** Cap on CPU threads for this call's inference — options.num_thread. Undefined lets Ollama decide. */
   numThread?: number
-  // The context window to reserve for this call — maps to options.num_ctx.
-  // Undefined lets Ollama decide, which on this machine means 4096: a number
-  // nobody chose, and small enough that a single 8k-token document overflows
-  // it on its own (D15.2).
+  /**
+   * Context window to reserve — options.num_ctx. Undefined lets Ollama decide,
+   * which here means 4096: a number nobody chose that one 8k-token document
+   * overflows (D15.2).
+   */
   numCtx?: number
 }
 
-// The final, authoritative reply. Live tokens arrive first as JobEvent 'chunk'
-// payloads; this is the assembled whole, mirroring how dataset:scan emits
-// progress events yet still returns the final DatasetSummary as its Result.
+/**
+ * The final, authoritative reply. Live tokens arrive first as JobEvent 'chunk'
+ * payloads; this is the assembled whole.
+ */
 export type ChatReply = {
   content: string
   /**
-   * Tokens the provider actually read from the prompt, and produced (D15.4).
-   *
-   * `promptTokens` is the ONLY exact count available: there is no
-   * tokenize-before-sending — /api/tokenize returns 404 on this runtime — so
-   * every estimate before the call is characters divided by a ratio. This
-   * number comes back after, and dividing it by the characters that were sent
-   * gives the real density OF THIS CONVERSATION, which calibrates the next
-   * estimate.
-   *
-   * It is also the only evidence of silent truncation: when it comes back
-   * SMALLER than what was sent, the provider dropped the beginning and answered
-   * anyway.
-   *
-   * Optional because a cloud provider may not report them, and their absence
-   * must not break anything — the meter degrades to an estimate, which is what
-   * it already is on the first turn.
+   * Tokens the provider read from the prompt, and produced (D15.4). The ONLY
+   * exact count — nothing tokenizes before sending — so dividing it by the chars
+   * sent calibrates the next estimate; when it comes back SMALLER than sent, the
+   * provider silently truncated. Optional: a cloud provider may not report it,
+   * and the meter degrades to the estimate it already is on the first turn.
    */
   promptTokens?: number
   evalTokens?: number
@@ -111,17 +101,11 @@ export type AiAvailability = {
 
 /**
  * The attention parameters that decide what a context window COSTS in RAM
- * (D15.2). They ride along for free: the same /api/show response that carries
- * `contextLength` carries these, so reading them adds no network call.
- *
- * Without them the selector would offer whatever ceiling the model declares —
- * and phi4-mini declares 131072, which is 16 GB of KV cache on a 16 GB machine.
- * The true datum and the right answer diverge, which is exactly the case a
- * derived bound exists for.
- *
- * `null` when model_info has no usable attention block — an embedder, or a
- * shape this build does not recognize. Absence is data: the budget math simply
- * declines to bound such a model instead of guessing.
+ * (D15.2). They ride along free — the same /api/show response that carries
+ * `contextLength` carries these — and without them the selector would offer
+ * phi4-mini's declared 131072, which is 16 GB of KV cache on a 16 GB machine.
+ * `null` for an embedder or an unrecognized shape: absence is data, and the
+ * budget math declines to bound such a model instead of guessing.
  */
 export type AiModelAttention = {
   blockCount: number
@@ -137,19 +121,13 @@ export type AiModelAttention = {
 }
 
 /**
- * A model the app can talk to, normalized away from any one provider's wire
- * shape (D15.1).
- *
- * `capabilities` is string[] and not a closed union on purpose, and that stopped
- * being a precaution in ago/2026: the qwen2.5-coder models arrived declaring
- * `insert`, a fourth capability no model in the fleet had. A z.enum would have
- * turned a newly installed model into a parse error for the whole catalog.
- * Enumerating a third party's vocabulary is a bet that the third party stopped
- * working. Ask about a capability through core/ai, never by indexing this.
- *
- * `provider` carries one value today (D15.9). It exists now because adding it
- * later would touch this file, preload, renderer, main and every settings blob
- * already on disk — the same argument that made Message a list of parts.
+ * A model the app can talk to, normalized away from any provider's wire shape
+ * (D15.1). `capabilities` is string[], not a closed union, on purpose: the
+ * qwen2.5-coder models arrived declaring a fourth capability (`insert`), and a
+ * z.enum would have turned a new model into a parse error for the whole catalog
+ * — ask through core/ai, never by indexing this. `provider` carries one value
+ * today (D15.9); it exists now because adding it later would touch every layer
+ * and every settings blob on disk.
  */
 export type AiModel = {
   provider: AiService
@@ -161,25 +139,19 @@ export type AiModel = {
   contextLength: number | null
   attention: AiModelAttention | null
   /**
-   * The model this one was derived from with `ollama create` — the two are the
-   * same conversation under two names (D15.11). Null for a model pulled from a
-   * registry.
-   *
-   * The parent's NAME and not a boolean, because whoever hides a variant has to
-   * check the parent is installed first: with the parent gone, the variant is
-   * the only way left to run those weights.
+   * The model this was derived from with `ollama create` — same weights under
+   * two names (D15.11); null for a registry pull. The parent's NAME, not a
+   * boolean, because hiding a variant means first checking the parent is
+   * installed: with it gone, the variant is the only way to run those weights.
    */
   variantOf: string | null
 }
 
 /**
- * A model the provider is holding in memory right now — `/api/ps`.
- *
- * Distinct from `AiModel`, which is what is INSTALLED: one is disk, the other
- * is RAM, and the whole point of showing this is that the second is the scarce
- * one. Weights stay resident for five minutes after the last request by
- * default, which on this machine is long enough to make the rest of the fleet
- * read as "não cabe" while nothing is happening.
+ * A model the provider is holding in memory right now — `/api/ps`. Distinct
+ * from `AiModel` (what is INSTALLED): one is disk, the other RAM, and RAM is the
+ * scarce one. Weights stay resident five minutes after the last request, long
+ * enough to make the rest of the fleet read as "não cabe" while nothing runs.
  */
 export type LoadedModel = {
   name: string
@@ -189,22 +161,13 @@ export type LoadedModel = {
   expiresAt: number
 }
 
-// The application's conversation (D13.3). Distinct from ChatMessage above,
-// which is the provider's wire shape and stays exactly as it is — a pure
-// function translates one into the other, and that function is where plano 16
-// hangs the three-level privacy boundary.
-//
-// The decision this encodes is that a message is a LIST OF TYPED PARTS, not a
-// string with attachments hung beside it. Only 'text' is written here; the
-// other variants ('image', 'dataset', 'proposal', 'result') are not features
-// this plan builds. What is decided now is the SHAPE, because retrofitting it
-// would touch this file, preload, renderer, main, and — from plano 14 on — the
-// rows already written to disk. Case 1 of the rule in docs/HISTORY.md
-// § flexibilidade é forma de dado e slot.
-//
-// The schemas were born in plano 14, together with the channels — a schema
-// exists to validate an IPC payload, and until there was IPC there was none.
-// The types are inferred from them and never written in parallel.
+// The application's conversation message (D13.3), distinct from ChatMessage
+// (the provider's wire shape); a pure function translates one to the other, and
+// that function is where plano 16 hangs the three-level privacy boundary. The
+// decision encoded here is that a message is a LIST OF TYPED PARTS, not a string
+// with attachments beside it — only 'text' is written now, but fixing the SHAPE
+// later would touch every layer and the rows already on disk (D13.3 § slot).
+// The schemas were born with the channels in plano 14; the types are inferred.
 export const messagePartSchema = z.object({ kind: z.literal('text'), text: z.string() })
 export type MessagePart = z.infer<typeof messagePartSchema>
 
@@ -212,13 +175,10 @@ export const messageRoleSchema = z.enum(['user', 'assistant'])
 export type MessageRole = z.infer<typeof messageRoleSchema>
 
 /**
- * Why a reply stopped before it finished (D14.3).
- *
- * A conversation that discards half an answer lies by omission: you remember
- * asking, the app shows the question with no answer, and there is no way to
- * tell "the model did not reply" from "I cancelled". With the marker the screen
- * says what happened, and the partial still informs the next turn — on a CPU
- * with no GPU, throwing away forty seconds of generation is expensive.
+ * Why a reply stopped before finishing (D14.3). Without the marker a discarded
+ * half-answer lies by omission — you cannot tell "the model did not reply" from
+ * "I cancelled" — and the partial still informs the next turn, which on a
+ * GPU-less CPU is forty seconds of generation not thrown away.
  */
 export const messageStoppedSchema = z.enum(['cancelled', 'timeout'])
 export type MessageStopped = z.infer<typeof messageStoppedSchema>
@@ -228,32 +188,28 @@ export const messageSchema = z.object({
   role: messageRoleSchema,
   parts: z.array(messagePartSchema).min(1),
   createdAt: z.number().int().nonnegative(),
-  // The model that produced this message, recorded per message and not only
-  // per conversation (D13.4). The pair does lock on the first send since
-  // D15.13, so mixed authorship inside one transcript is no longer reachable —
-  // what keeps this here is that a locked model can be uninstalled and the
-  // app's default moves between sessions.
+  /**
+   * The model that produced this message, recorded per message (D13.4). Kept
+   * even though the pair locks on the first send (D15.13): a locked model can be
+   * uninstalled and the app's default moves between sessions.
+   */
   model: z.string().min(1).optional(),
-  // A column, not a part: it is metadata ABOUT the turn, not content. Inside
-  // `parts` the interface would have to open the JSON to know whether to draw
-  // a label. Absent means the reply finished.
+  /**
+   * A column, not a part: metadata ABOUT the turn, not content — inside `parts`
+   * the interface would open the JSON to know whether to draw a label. Absent
+   * means the reply finished.
+   */
   stopped: messageStoppedSchema.optional()
 })
 export type Message = z.infer<typeof messageSchema>
 
 /**
- * What a conversation chooses for itself (D15.2). Conversation scale and not
- * machine scale by the D13.4 ruler: both of these change WHAT THE MODEL
- * ANSWERS — `numCtx` changes how much of its own history it can see — whereas
- * `numThread` is a property of this computer.
- *
- * Every field is optional, and that is the whole design: absent means "the
- * app's default", so a conversation created before a setting existed needs no
- * migration and no backfill. It lands in the `settings` JSON column that D14.1
- * created empty, which is why this plan adds no CREATE TABLE.
- *
- * Plano 15 writes two keys; the system prompt joins them the day there is
- * something to put in it.
+ * What a conversation chooses for itself (D15.2) — conversation scale, not
+ * machine scale (D13.4): both change WHAT THE MODEL ANSWERS, whereas `numThread`
+ * is a property of this computer. Every field optional by design: absent means
+ * "the app's default", so a conversation predating a setting needs no migration.
+ * It lands in the `settings` JSON column D14.1 created, so this plan adds no
+ * CREATE TABLE.
  */
 export const conversationSettingsSchema = z.object({
   model: z.string().min(1).optional(),
@@ -263,22 +219,13 @@ export const conversationSettingsSchema = z.object({
 export type ConversationSettings = z.infer<typeof conversationSettingsSchema>
 
 /**
- * A conversation ROW — the shape of a line in the `conversations` table, and
- * what the sidebar lists. The transcript is a separate read (D14.1: a message
- * is a row, not an item inside a conversation blob), so `messages` is
- * deliberately absent here: loading every transcript to draw a list of titles
- * is the cost the relational shape exists to avoid.
- *
- * `settings` DOES ride along (D15.6), and that is a different question from the
- * one D14.1 answered. It is a couple of hundred bytes already sitting in the
- * row, and the active conversation needs it before any send — a separate read
- * would be a second trip for data that already arrived. The trigger to split it
- * is written down: `settings` growing to hold a long system prompt, at which
- * point the list would carry kilobytes per conversation to draw titles.
- *
- * The renderer composes this with `conversation:messages` for the active
- * conversation; that composite type belongs to the renderer, not here, because
- * main has no opinion about it.
+ * A conversation ROW — a line in the `conversations` table, what the sidebar
+ * lists. The transcript is a separate read (D14.1: a message is a row, not an
+ * item in a blob), so `messages` is absent here — loading every transcript to
+ * draw a list of titles is the cost the relational shape avoids. `settings` DOES
+ * ride along (D15.6): a couple hundred bytes already in the row that the active
+ * conversation needs before any send. The renderer composes this with
+ * `conversation:messages`; that composite type belongs to the renderer.
  */
 export type Conversation = {
   id: string
@@ -288,16 +235,11 @@ export type Conversation = {
   settings: ConversationSettings
 }
 
-/*
- * Machine-scale configuration (D13.4/D14.7). The criterion is not "rarely
- * changed": it is a property OF THIS COMPUTER. Stored per conversation,
- * reopening an old one would restore a thread count belonging to a different
- * machine — hence its own key-value table, and not a conversation column.
- *
- * The table is key-value so a new setting costs no migration (plano 17 adds
- * the loaded-model policy as a new key). The CONTRACT is typed anyway: the
- * flexibility that pays is in storage, not in what crosses the boundary.
- */
+// Machine-scale configuration (D13.4/D14.7): a property OF THIS COMPUTER, not
+// "rarely changed". Stored per conversation, reopening an old one would restore
+// a thread count from a different machine — hence its own key-value table. The
+// table is key-value so a new setting costs no migration; the CONTRACT is typed
+// anyway, because the flexibility that pays is in storage, not at the boundary.
 export const appSettingsSchema = z.object({
   /** Cap on the CPU threads Ollama may use — maps to options.num_thread. */
   numThread: z.number().int().positive()
@@ -322,12 +264,10 @@ export const argsSchema = {
   'dataset:scan': z.object({ path: z.string(), jobId: z.string() }),
   'job:cancel': z.object({ jobId: z.string() }),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
-  // N+1 requests behind one channel (D15.1): /api/tags does not report `vision`
-  // and does not report any context ceiling, so each model needs its own
-  // /api/show. Measured at 4,9 s for 14 models, and it loads nothing — the cost
-  // is latency, not RAM. Cached by the renderer with an infinite staleTime and
-  // a reload button, because installing a model is a system event the app has
-  // no way to observe.
+  // N+1 behind one channel (D15.1): /api/tags omits `vision` and the context
+  // ceiling, so each model needs its own /api/show (~4,9 s for 14, loads
+  // nothing). Renderer caches with infinite staleTime and a reload button,
+  // since installing a model is a system event the app cannot observe.
   'ai:models': z.object({ service: aiServiceSchema }),
   // What is resident, and letting go of it. Two channels and not one because
   // one is a question and the other is an action — merging them would make a
@@ -343,10 +283,8 @@ export const argsSchema = {
     jobId: z.string()
   }),
   // Conversation storage (plano 14). The renderer mints `id` and stamps
-  // `createdAt` (D14.5) — same argument as JobId: identity generated on the
-  // side that acts does not have to wait for a reply to know what it is
-  // talking about, and it makes invalidation predictable. So no handler here
-  // generates identity or stamps time; it inserts what it receives.
+  // `createdAt` (D14.5) — identity generated on the side that acts, like JobId,
+  // so no handler here generates identity or time; it inserts what it receives.
   'conversation:list': z.void(),
   'conversation:messages': z.object({ conversationId: z.string().min(1) }),
   'conversation:create': z.object({
@@ -356,22 +294,18 @@ export const argsSchema = {
   }),
   'conversation:rename': z.object({ id: z.string().min(1), title: z.string() }),
   'conversation:remove': z.object({ id: z.string().min(1) }),
-  // `title` present means "and rename it to this" — the first user message
-  // becomes the title (D13.9), and the decision of what that title is stays in
-  // the renderer, where `titleFromText` already lives and is tested. Folding it
-  // into the append keeps one call, one invalidation, and no window in which
-  // the sidebar shows a stale title.
+  // `title` present means "and rename to this" — the first user message becomes
+  // the title (D13.9), decided in the renderer where `titleFromText` lives.
+  // Folding it into the append keeps one call and no stale-title window.
   'conversation:append': z.object({
     conversationId: z.string().min(1),
     message: messageSchema,
     title: z.string().optional()
   }),
-  // A merge patch, like settings:write and for the same reason: a key added
-  // later is written by whoever owns it, without every writer having to know
-  // the full shape. Applied with SQLite's json_patch so it is one atomic
-  // statement instead of read-modify-write — and a null value removes its key,
-  // which is RFC 7386 merge-patch semantics and how a setting goes back to the
-  // app default.
+  // A merge patch, like settings:write: a key added later is written by whoever
+  // owns it. Applied with SQLite's json_patch — one atomic statement, not
+  // read-modify-write — where a null value removes its key (RFC 7386), which is
+  // how a setting returns to the app default.
   'conversation:settings': z.object({
     id: z.string().min(1),
     patch: conversationSettingsSchema
@@ -424,13 +358,11 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['ai:chat']>
     result: Result<ChatReply>
   }
-  // None of the conversation channels returns Result, and that is a decision,
-  // not an omission. Result exists for failures the UI has to REACT to — file
-  // missing, service down, user cancelled. An indexed insert into a local
-  // SQLite file has no such failure: what is left is programming defect, which
-  // must throw and hurt in the console. Wrapping everything trains the reader
-  // to ignore `ok`. Absence is expressed as data instead: an empty list, and an
-  // append addressed to a conversation that is gone is dropped (see handlers).
+  // No conversation channel returns Result, by decision: Result is for failures
+  // the UI must REACT to (file missing, service down, cancelled). An indexed
+  // insert into a local SQLite file has none — what is left is programming
+  // defect, which must throw. Absence is data instead: an empty list, and an
+  // append to a conversation that is gone is dropped (see handlers).
   'conversation:list': {
     args: z.infer<(typeof argsSchema)['conversation:list']>
     result: Conversation[]
