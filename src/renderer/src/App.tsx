@@ -15,15 +15,10 @@ import { createQueryClient } from './shared/queryClient'
 // and writing it is the hooks' job (D14.4).
 const queryClient = createQueryClient()
 
-/*
- * Composition only: which component goes in which slot (D13.1). The shell knows
- * regions, this file knows content — that split is what lets app/ never import
- * from features/, and what keeps the settings surface and the reviewable-steps
- * block of plano 18 out of the shell's source.
- *
- * The providers wrap the whole shell because both columns read from them: the
- * list lives in the sidebar and the view in the main region.
- */
+// Composition only: which component goes in which slot (D13.1). The shell knows
+// regions, this file knows content — the split that lets app/ never import from
+// features/ and keeps plano 18's blocks out of the shell's source. The providers
+// wrap the whole shell because both columns read from them.
 function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>

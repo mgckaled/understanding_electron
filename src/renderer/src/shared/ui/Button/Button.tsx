@@ -10,18 +10,11 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode
 }
 
-/*
- * Variants live in constants, not in the JSX, because they are a matrix.
- *
- * ⚠️ Font size and border colour are NOT in BASE, and that is not style: two
- * utilities of the same group are resolved by their order in the generated
- * stylesheet, never by their order in the class attribute — so a `text-sm` in
- * BASE could beat the `text-xs` of a size. Whatever a variant or size overrides
- * belongs only to them.
- *
- * `ease-initial` is CSS `ease`, which is what the module used; Tailwind's own
- * default is a different curve.
- */
+// Variants live in constants, not JSX, because they are a matrix. ⚠️ Font size
+// and border colour are NOT in BASE: two utilities of the same group resolve by
+// their order in the generated stylesheet, not the class attribute, so a BASE
+// `text-sm` could beat a size's `text-xs` — whatever a variant or size overrides
+// belongs only to it. `ease-initial` is CSS `ease` (Tailwind's default differs).
 const BASE =
   'relative inline-flex cursor-pointer items-center justify-center gap-3 rounded-md border ' +
   'font-ui font-semibold whitespace-nowrap transition-colors duration-(--duration-fast) ' +

@@ -2,23 +2,12 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 import Button from '../Button/Button'
 import styles from './Dialog.module.css'
 
-/*
- * The native <dialog> with showModal(), and no dependency (D13.8) — the same
- * line on which fase 10 refused a contrast library for fifteen lines of
- * arithmetic. showModal() gives the top layer, a focus trap, Esc, focus
- * returned to the trigger, and a stylable ::backdrop, all from the platform.
- *
- * `closedby="any"` makes a click outside close it with no handler of our own.
- * Read from the real Chromium rather than a compatibility table, as the plan
- * asked: Electron 42 ships Chromium 148.0.7778.280, where `closedBy` is in
- * HTMLDialogElement's IDL and reflects the attribute. No manual ::backdrop
- * click handling is needed.
- *
- * It lives in shared/ui/ and not inside a feature — unlike MarkdownMessage,
- * which D11.1 kept in its feature for having a single consumer, this one
- * already has a second consumer named: the overwrite confirmation ESCOPO.md
- * requires before writing over a source file.
- */
+// The native <dialog> with showModal() and no dependency (D13.8): the platform
+// gives the top layer, focus trap, Esc, focus returned to the trigger, and a
+// stylable ::backdrop. `closedby="any"` closes on outside click with no handler
+// of ours — confirmed in the real Chromium 148 the Electron 42 ships (`closedBy`
+// in the IDL). In shared/ui/, not a feature, because it has a second consumer:
+// the overwrite confirmation ESCOPO.md requires.
 
 type DialogProps = {
   open: boolean

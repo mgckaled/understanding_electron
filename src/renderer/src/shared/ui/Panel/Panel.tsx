@@ -7,12 +7,9 @@ type PanelProps = {
   className?: string
 }
 
-/*
- * Skip Panel inside the sidebar, or any region the shell already gives a
- * surface to: the sidebar's own --color-surface already draws the boundary, so
- * a Panel there is a border inside a border. OpenDatasetPanel uses a plain
- * <section> for exactly this reason.
- */
+// Skip Panel inside the sidebar, or any region the shell already gives a surface:
+// the sidebar's own --color-surface draws the boundary, so a Panel there is a
+// border inside a border (OpenDatasetPanel uses a plain <section> for this).
 function Panel({ title, actions, children, className }: PanelProps): React.JSX.Element {
   const classes = ['rounded-lg border border-border bg-surface', className]
     .filter(Boolean)
