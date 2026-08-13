@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
 import Field from '../../shared/ui/Field/Field'
+import Versions from '../../components/Versions'
 import { useSettings } from './settingsContext'
 import LoadedModels from './LoadedModels'
 
@@ -45,8 +46,10 @@ function Settings(): React.JSX.Element {
 
   return (
     <>
-      <Button variant="ghost" onClick={() => setOpen(true)}>
-        Configurações
+      {/* The gear now lives in the sidebar footer, next to the Ollama status
+          (DS-3): an icon trigger, not the labelled button it was in the nav. */}
+      <Button variant="ghost" size="sm" onClick={() => setOpen(true)} aria-label="Configurações">
+        <span aria-hidden="true">⚙</span>
       </Button>
       <Dialog open={open} title="Configurações" onClose={() => setOpen(false)}>
         <p className="mb-6 text-xs text-text-muted">
@@ -60,6 +63,14 @@ function Settings(): React.JSX.Element {
         {/* Only while open: its query refetches on mount, and mounting it with
             the modal closed would poll the provider from boot onwards. */}
         {open && <LoadedModels />}
+        {/* The build versions moved here from the sidebar footer, which the DS-3
+            target gives to the Ollama status. Gated on `open` so app:info does
+            not fetch at boot. */}
+        {open && (
+          <div className="mt-6 border-t border-border pt-5">
+            <Versions />
+          </div>
+        )}
       </Dialog>
     </>
   )

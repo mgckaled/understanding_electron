@@ -182,7 +182,9 @@ describe('ModelSelector', () => {
     })
     render(providers(<ConversationView />))
 
-    await screen.findByText('Ollama 0.5.1')
+    // The Ollama version moved to the sidebar footer (DS-3), so the selector's
+    // own error is the sync point — and it is the state this test is about.
+    await screen.findByText('Serviço indisponível no momento.')
     // The composer and the rest of the view still render; only the selector is
     // in an error state. A catalog that fails must not take the screen with it.
     expect(screen.getByPlaceholderText(PROMPT)).toBeInTheDocument()

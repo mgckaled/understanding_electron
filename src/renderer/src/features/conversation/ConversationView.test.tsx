@@ -15,6 +15,15 @@ const ready = { ok: true, value: { service: 'ollama', version: '0.5.1' } } as co
 
 const PROMPT = 'Pergunte algo ao modelo…'
 
+/**
+ * The view is usable once availability resolved and the composer is enabled. The
+ * Ollama version that used to signal this moved to the sidebar footer (DS-3),
+ * outside this view, so the composer's own enabled state is the sync point.
+ */
+async function whenReady(): Promise<void> {
+  await waitFor(() => expect(screen.getByPlaceholderText(PROMPT)).toBeEnabled())
+}
+
 /*
  * The only thing plano 14 changed in this file is this wrapper — the server
  * cache needs its provider, and a fresh QueryClient per test keeps them from
@@ -58,7 +67,7 @@ async function reply(
   vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content } })
   const user = userEvent.setup()
   const container = renderView()
-  await screen.findByText('Ollama 0.5.1')
+  await whenReady()
   await user.type(screen.getByPlaceholderText(PROMPT), prompt)
   await user.click(screen.getByRole('button', { name: 'Enviar' }))
   return { api, container }
@@ -86,7 +95,7 @@ async function interrupted(error: AppError, chunk?: string): Promise<Api> {
   const user = userEvent.setup()
 
   renderView()
-  await screen.findByText('Ollama 0.5.1')
+  await whenReady()
   await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
   await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
@@ -117,7 +126,7 @@ describe('ConversationView', () => {
     const user = userEvent.setup()
 
     renderView()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
     await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
@@ -149,7 +158,7 @@ describe('ConversationView', () => {
     const user = userEvent.setup()
 
     renderView()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
     await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
     await user.click(await screen.findByRole('button', { name: 'Cancelar' }))
@@ -165,7 +174,7 @@ describe('ConversationView', () => {
     const user = userEvent.setup()
 
     renderView()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
     await user.type(screen.getByPlaceholderText(PROMPT), 'p1')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
     await screen.findByText('r1')
@@ -194,7 +203,7 @@ describe('ConversationView — troca de conversa', () => {
     const user = userEvent.setup()
 
     renderShell()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
 
     await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
@@ -228,7 +237,7 @@ describe('ConversationView — troca de conversa', () => {
     const user = userEvent.setup()
 
     renderShell()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
     await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
@@ -263,7 +272,7 @@ describe('ConversationView — troca de conversa', () => {
     const user = userEvent.setup()
 
     renderShell()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
     await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
     await screen.findByText('resposta A')
@@ -288,7 +297,7 @@ describe('Configurações', () => {
     const user = userEvent.setup()
 
     renderShell()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
     await user.type(screen.getByPlaceholderText(PROMPT), 'p1')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
     await screen.findByText('r1')
@@ -462,7 +471,7 @@ describe('ConversationView — realce de sintaxe', () => {
     const user = userEvent.setup()
 
     const container = renderView()
-    await screen.findByText('Ollama 0.5.1')
+    await whenReady()
     await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 

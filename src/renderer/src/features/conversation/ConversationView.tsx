@@ -150,7 +150,6 @@ function ConversationView(): React.JSX.Element {
             scopeKey={conversation?.id ?? 'sem-conversa'}
             onNumCtx={(tokens) => choose({ numCtx: tokens })}
           />
-          {isReady && <span className={STATUS}>Ollama {availability.data.version}</span>}
         </div>
       </header>
 

@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import AppShell from './app/AppShell'
 import Sidebar from './app/Sidebar'
-import Versions from './components/Versions'
+import OllamaStatus from './components/OllamaStatus'
 import OpenDatasetPanel from './features/open-dataset/OpenDatasetPanel'
 import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
@@ -26,19 +26,19 @@ function App(): React.JSX.Element {
         <AppShell
           sidebar={
             <Sidebar
-              nav={
-                <>
-                  <NewConversationButton />
-                  <Settings />
-                </>
-              }
+              nav={<NewConversationButton />}
               content={
                 <>
                   <ConversationList />
                   <OpenDatasetPanel />
                 </>
               }
-              footer={<Versions />}
+              footer={
+                <div className="flex items-center justify-between gap-3">
+                  <OllamaStatus />
+                  <Settings />
+                </div>
+              }
             />
           }
           main={<ConversationView />}

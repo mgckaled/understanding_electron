@@ -23,7 +23,19 @@ export const TEST_MODEL: AiModel = {
 export function createApiMock(): Api {
   return {
     app: {
-      info: vi.fn(),
+      // Resolves a realistic AppInfo by default, for the same reason memory and
+      // ai.models do below: Versions now renders inside the Settings modal, so
+      // any test that opens Configurações mounts it, and a bare vi.fn() resolving
+      // `undefined` would make `.info().then(...)` throw in tests that have
+      // nothing to do with build versions.
+      info: vi.fn().mockResolvedValue({
+        electron: '42.8.0',
+        chrome: '148.0.0',
+        node: '24.18.0',
+        app: '1.0.0',
+        platform: 'win32',
+        isDev: true
+      }),
       // A realistic figure by default, for the same reason ai.models resolves a
       // real catalog: `undefined` here would make every context ceiling NaN,
       // breaking tests that have nothing to do with memory. ~6 GB free of 16 is
