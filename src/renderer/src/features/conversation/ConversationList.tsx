@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { Conversation } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import { useConversations } from './conversationsContext'
-import styles from './ConversationList.module.css'
 
 type RowProps = {
   conversation: Conversation
@@ -13,6 +12,15 @@ type RowProps = {
   onRename: (title: string) => void
   onRemove: () => void
 }
+
+const ROW_BASE = 'flex items-center gap-1 rounded-md hover:bg-surface-raised'
+
+// px-3! overrides the Button's own px-5: both set padding-inline, and without
+// the important the component's utility wins by stylesheet order, not by class
+// order. `invisible` (visibility, not display) keeps the reserved width, so
+// revealing the actions on hover/focus never shoves the title — this is the
+// first use of the group pattern in the project (the group sits on the row).
+const ACTION = 'flex-none px-3! invisible group-hover:visible group-focus-within:visible'
 
 function ConversationRow({
   conversation,
@@ -25,9 +33,9 @@ function ConversationRow({
 }: RowProps): React.JSX.Element {
   if (editing) {
     return (
-      <li className={styles.row}>
+      <li className={ROW_BASE}>
         <input
-          className={styles.rename}
+          className="w-full rounded-md border border-accent-text bg-surface-sunken px-4 py-3 font-ui text-sm text-text select-text"
           defaultValue={conversation.title}
           aria-label="Novo título da conversa"
           autoFocus
@@ -51,11 +59,15 @@ function ConversationRow({
     )
   }
 
+  // The title takes the row and truncates; the two actions keep their width. A
+  // wrapping title would make rows of different heights out of nothing.
+  const selectTone = active ? 'text-text font-semibold' : 'text-text-muted'
+
   return (
-    <li className={[styles.row, active && styles.active].filter(Boolean).join(' ')}>
+    <li className={[ROW_BASE, 'group', active && 'bg-surface-raised'].filter(Boolean).join(' ')}>
       <button
         type="button"
-        className={styles.select}
+        className={`flex-1 min-w-[0px] cursor-pointer overflow-hidden rounded-md border-0 bg-transparent px-4 py-3 text-left font-ui text-sm text-ellipsis whitespace-nowrap ${selectTone}`}
         onClick={onSelect}
         aria-current={active || undefined}
       >
@@ -64,7 +76,7 @@ function ConversationRow({
       <Button
         variant="ghost"
         size="sm"
-        className={styles.action}
+        className={ACTION}
         aria-label={`Renomear ${conversation.title}`}
         onClick={onStartRename}
       >
@@ -73,7 +85,7 @@ function ConversationRow({
       <Button
         variant="ghost"
         size="sm"
-        className={styles.action}
+        className={ACTION}
         aria-label={`Excluir ${conversation.title}`}
         onClick={onRemove}
       >
@@ -95,12 +107,14 @@ function ConversationList(): React.JSX.Element {
   }
 
   return (
-    <section className={styles.section}>
-      <h2 className={styles.title}>Conversas</h2>
+    <section className="flex flex-col gap-3">
+      <h2 className="text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase">
+        Conversas
+      </h2>
       {conversations.length === 0 ? (
-        <p className={styles.empty}>Nenhuma conversa ainda.</p>
+        <p className="text-xs text-text-faint">Nenhuma conversa ainda.</p>
       ) : (
-        <ul className={styles.list}>
+        <ul className="flex flex-col gap-1">
           {conversations.map((conversation) => (
             <ConversationRow
               key={conversation.id}
