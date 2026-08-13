@@ -10,7 +10,6 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 | # | Plano | Estado |
 |---|---|---|
-| [DS-2](DS-2-migracao-da-casca-e-features.md) | Migração da casca e das features | **próximo a executar.** Escrito em ago/2026 |
 | [16](16-anexo-mecanismo-e-dataset.md) | Anexo: o mecanismo, e o dataset como primeiro consumidor | escrito e revisado, nenhum passo iniciado. **Ler a skill [`ipc`](../../../.claude/skills/ipc/SKILL.md) antes do passo 2** — é o plano que cria o canal de anexo |
 
 ---
@@ -38,8 +37,8 @@ Isto está escrito porque a leitura oposta é fácil e já aconteceu duas vezes.
 | # | Entrega | Aceite que o define |
 |---|---|---|
 | [~~**DS-1**~~](../implemented/DS-1-fundacao-tailwind.md) | ✅ **Fundação** — concluída em ago/2026. Prova de conceito do `@utility` sob electron-vite, instalação, `@theme inline`, `@utility` dos sólidos, `base.css` como `@layer base`, o ramo `.tsx` do `guard.mjs`, e os seis primitivos de `shared/ui/` migrados | **Zero mudança visual — verificado, 0 pixels** |
-| [**DS-2**](DS-2-migracao-da-casca-e-features.md) | ← **próximo a executar**, escrito em ago/2026. **Migração da casca e das features.** `app/` (2 componentes), `conversation` (5), `settings` (2), `open-dataset` (1) e `Versions`; remoção dos CSS Modules migrados — `MarkdownMessage.module.css` fica, por estilizar HTML gerado sem `className`. Escrito **contra a tabela de distância**: onde o DS-3 vai reestruturar, a migração é mínima | **Zero mudança visual** |
-| **DS-3** | **A interface chega ao alvo.** Não são ajustes: cabeçalho e rodapé da sidebar, busca por título, agrupamento por data, barra de acento na conversa ativa, título da conversa como cabeçalho, desmonte da toolbar superior, seletor de modelo como pílula dentro do composer, envio circular e pausa, bolha na mensagem do usuário, escala de tipo. Mais os estados de `alvo/` | **A tela muda, e a mudança é a entrega** — medida contra `alvo-chat.png` |
+| [~~**DS-2**~~](../implemented/DS-2-migracao-da-casca-e-features.md) | ✅ **Casca e features** — concluída em ago/2026. Os nove módulos com `className` migrados (`app/`, `conversation`, `settings`, `open-dataset`, `Versions`); restam **dois por limite físico** — `MarkdownMessage` e `Dialog`. Onde o DS-3 reescreve, a migração foi mínima | **Zero mudança visual — revisado ao vivo nos dois temas** |
+| **DS-3** | ← **próximo a executar** (ainda não escrito). **A interface chega ao alvo.** Não são ajustes: cabeçalho e rodapé da sidebar, busca por título, agrupamento por data, barra de acento na conversa ativa, título da conversa como cabeçalho, desmonte da toolbar superior, seletor de modelo como pílula dentro do composer, envio circular e pausa, bolha na mensagem do usuário, escala de tipo. Mais os estados de `alvo/` | **A tela muda, e a mudança é a entrega** — medida contra `alvo-chat.png` |
 
 **Por que três e não um.** Os dois primeiros compartilham o aceite mais forte que existe para migração — *se a tela mudou, algo saiu errado* —, verificável em segundos. O DS-3 tem o aceite oposto. Um plano que contém os dois critérios não consegue fechar um passo: a tela diferente deixa de ser sinal.
 

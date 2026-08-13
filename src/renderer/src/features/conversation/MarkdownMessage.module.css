@@ -1,6 +1,10 @@
 /*
- * Typography for the assistant's markdown reply. Only semantic tokens — guard.mjs
- * blocks a #hex or a --gray-N here. See docs/plan/implemented/11-markdown-*.md.
+ * Typography for the assistant's markdown reply. This file stays in CSS after
+ * DS-2 — react-markdown builds the HTML, so there is no className to hang a
+ * utility on, the same physical limit that keeps Dialog's ::backdrop here. It is
+ * one of the two module CSS files the migration deliberately left behind.
+ * Only semantic tokens — guard.mjs blocks a #hex or a --gray-N here. See
+ * docs/plan/implemented/11-markdown-*.md.
  * No syntax highlighting on purpose (D11.5): a code block is mono, a sunken
  * surface, a border and horizontal scroll — legible, honest about not being coloured.
  */
