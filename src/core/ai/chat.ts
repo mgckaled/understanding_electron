@@ -2,11 +2,10 @@ import type { ChatMessage, ChatReply, Result } from '@shared/ipc'
 import { ok, err } from '../result'
 import type { ChatFn } from './types'
 
-// Pure orchestration around the injected network seam. Owns only the cancelled
-// short-circuit — domain logic, not infrastructure. HTTP and network failures
-// thrown by ChatFn propagate to the main handler, which alone can classify them
-// (upstream vs unavailable vs timeout), mirroring how scanDelimited leaves fs
-// errors for scanDataset to map.
+// Pure orchestration around the injected network seam: owns only the cancelled
+// short-circuit. HTTP and network failures thrown by ChatFn propagate to the
+// main handler, which alone can classify them (upstream vs unavailable vs
+// timeout).
 export async function runChat(
   chat: ChatFn,
   request: { messages: ChatMessage[]; model: string; numThread?: number; numCtx?: number },

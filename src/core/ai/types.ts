@@ -13,11 +13,9 @@ export type ChatFn = (
     signal?: AbortSignal
     onChunk?: (text: string) => void
   }
-  // Resolves to ChatReply and not to a bare string since plano 15: the final
-  // line of the stream carries the token counters, and the adapter used to read
-  // that line and throw them away. They are the only exact count that exists —
-  // nothing can tokenize before sending — so discarding them left the meter
-  // with no way to calibrate itself.
+  // Resolves to ChatReply, not a bare string: the stream's final line carries
+  // the token counters, the only exact count that exists (nothing tokenizes
+  // before sending), which the meter needs to calibrate (D15.4).
 ) => Promise<ChatReply>
 
 // Availability probe seam for the gate (D9.3). Resolves to the service version

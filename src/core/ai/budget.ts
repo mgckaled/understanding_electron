@@ -1,35 +1,23 @@
-/*
- * How many TOKENS the next send costs, and whether it is allowed to happen
- * (D15.4, D15.5) — plus which window it has to fit into once the conversation
- * locks one (D15.13).
- *
- * The RAM side of the same question lives in `memory.ts`. The only thing that
- * crosses is a ceiling in tokens, which is why nothing here takes an `AiModel`.
- */
+// How many TOKENS the next send costs, whether it is allowed (D15.4, D15.5),
+// and which window it must fit once the conversation locks one (D15.13). The
+// RAM side is in memory.ts; only a ceiling in tokens crosses, so nothing here
+// takes an AiModel.
 
 /**
- * Characters per token for Portuguese prose, measured on this project's own
- * documents in ago/2026 (D15.4).
- *
- * Only a starting point, and knowingly a rough one: the same measurement found
- * 3,8 for varied prose and 4,3–5,1 for text that repeats itself, so estimating
- * by character is wrong by up to a third depending on what is being written. It
- * is enough for a meter and NOT enough for a gate — which is why the gate
- * carries a margin and the ratio recalibrates itself after the first turn.
+ * Characters per token for Portuguese prose, measured on this project's docs
+ * (D15.4). A rough starting point — the same measurement found 3,8 for varied
+ * prose and up to 5,1 for repetitive text — so the gate carries a margin and
+ * the ratio recalibrates after the first turn.
  */
 export const DEFAULT_CHARS_PER_TOKEN = 3.8
 
 /**
  * The characters-per-token ratio this conversation actually exhibits.
  *
- * There is no way to tokenize before sending, so every estimate before a call
- * is a guess. But every reply comes back with `prompt_eval_count`, which is the
- * exact count of what was just read — dividing the characters that were sent by
- * it gives the real density of THIS conversation: its language, its style, its
- * attachments. The error shrinks each turn instead of accumulating.
- *
- * Falls back to the default when there is nothing to learn from, which includes
- * a provider that does not report counters at all.
+ * No tokenizer runs before sending, so each pre-call estimate is a guess; every
+ * reply returns `prompt_eval_count`, the exact count read, and dividing sent
+ * chars by it gives this conversation's real density. Falls back to the default
+ * when there is nothing to learn from (including a provider with no counters).
  */
 export function calibrateRatio(sentChars: number, promptTokens: number | undefined): number {
   if (promptTokens === undefined || promptTokens <= 0 || sentChars <= 0) {
@@ -56,23 +44,17 @@ export const GATE_MARGIN = 0.9
 /**
  * The window the app reserves when the conversation has not chosen one (D15.2).
  *
- * It replaces Ollama's own default of 4096 on this machine — a number nobody
- * chose, and one that a single 8k-token document overflows on its own, silently.
- *
- * 32768 and not the model's trained ceiling, even though the ceiling is often
- * affordable: reserving the window is cheap, FILLING it is not. gemma3:4b can
- * hold its declared 131072 in RAM, and filling it would be ~87 minutes of
- * prefill on this CPU. 32k is where the measurements were taken and is already
- * eight times what the provider would have picked.
+ * Replaces Ollama's 4096 on this machine — a number nobody chose that one
+ * 8k-token document overflows. 32768 and not the trained ceiling because
+ * reserving a window is cheap and FILLING it is not: gemma3:4b's declared
+ * 131072 would be ~87 minutes of prefill on this CPU.
  */
 export const DEFAULT_NUM_CTX = 32768
 
 /**
- * The smallest window worth reserving — below it there is no conversation to be
- * had. Also the step of the control the user types into, so the two agree.
- *
- * `contextCeiling` legitimately returns 0 for a model that does not fit, and
- * this is the line between that and a window (D15.10).
+ * The smallest window worth reserving, and the step of the control the user
+ * types into. `contextCeiling` legitimately returns 0 for a model that does not
+ * fit; this is the line between that and a real window (D15.10).
  */
 export const MIN_NUM_CTX = 1024
 
@@ -86,15 +68,10 @@ export function fitsInMemory(ceiling: number | null): boolean {
 }
 
 /**
- * The window actually in force: what the conversation chose, else the app's
- * default, never above what this machine can hold.
- *
- * `null` ceiling means the model could not be costed, and then the app's own
- * default stands — refusing to reserve anything would silently hand the
- * decision back to the provider, which is the behaviour this replaces.
- *
- * Returns `null` when the model does not fit at all, rather than a token or two:
- * a window that small is a fiction the meter and the gate both act on (D15.10).
+ * The window in force: what the conversation chose, else the app's default,
+ * never above what the machine can hold (a `null` ceiling means uncosted, so
+ * the default stands). Returns `null` when the model does not fit at all, not a
+ * token or two — a window that small is a fiction the meter and gate act on (D15.10).
  */
 export function effectiveNumCtx(chosen: number | undefined, ceiling: number | null): number | null {
   if (!fitsInMemory(ceiling)) return null
@@ -122,10 +99,10 @@ export type ConversationWindow =
 /**
  * Which of the four the conversation is in.
  *
- * `unaffordable` is the second failure mode of the lock, and the asymmetric one:
- * the reservation is remade on EVERY load and free RAM varies by 3 GB on this
- * machine, so a window locked while idle may not be allocatable later. Refusing
- * is the point — shrinking in silence is exactly what the lock removes.
+ * `unaffordable` is the lock's asymmetric failure mode: the reservation is
+ * remade on every load and free RAM varies by 3 GB here, so a window locked
+ * while idle may not allocate later — refusing is the point, since shrinking in
+ * silence is what the lock removes.
  */
 export function conversationWindow(input: {
   locked: boolean

@@ -21,29 +21,12 @@ export type OllamaShow = {
 }
 
 /**
- * Reads a numeric `model_info` value by its path BELOW the family prefix.
- *
- * Two traps live in this one function, and both were found in real payloads.
- *
- * 1. The prefix is not derivable from the model name. `mistral:7b` answers
- *    under `llama.context_length`, which it shares with `llama3.1:8b` — the
- *    family segment is DROPPED, never constructed from the name.
- *
- * 2. Matching by suffix, which is the obvious way to drop it, is correct only
- *    by luck. A vision model carries a second, parallel namespace —
- *    `gemma3.block_count` is 34, `gemma3.vision.block_count` is 27, and both
- *    end in `.block_count`. Ollama happens to return model_info sorted, and
- *    `vision` happens to sort after `attention`, `block_count` and
- *    `embedding_length`, so first-match-wins gets the right answer today. A
- *    sub-namespace sorting EARLIER would not be so kind: an `audio.*` tower
- *    would shadow `block_count`. Dropping exactly one segment removes the
- *    dependency on key order entirely — `vision.block_count` is not
- *    `block_count`, whatever the order.
- *
- * Considered and not taken: reading `general.architecture` (which reports
- * `gemma3`, `llama`, `phi3`) and building the key from it. That would be
- * authoritative rather than guessing, and it works — it just needs one more
- * field to be present, and buys nothing this does not already give.
+ * Reads a numeric `model_info` value by its path BELOW the family prefix. Two
+ * traps, both found in real payloads: the family segment is DROPPED, never
+ * built from the model name (`mistral:7b` answers under `llama.context_length`);
+ * and it must drop exactly one segment, not match by suffix — a vision model
+ * carries a parallel `gemma3.vision.block_count` that also ends in
+ * `.block_count`, and only dropping one segment is order-independent (D15.8).
  */
 function readInfo(info: Record<string, unknown> | undefined, path: string): number | null {
   if (info === undefined) return null
@@ -91,12 +74,10 @@ function readAttention(info: Record<string, unknown> | undefined): AiModelAttent
 
 /**
  * Folds one /api/tags entry and its /api/show response into the app's shape.
- *
- * Capabilities come from `show` and never from `tag`, which is not a
- * preference: /api/tags omits `vision` entirely — gemma3:4b appears there as
- * ["completion"] and here as ["completion","vision"] — while reporting `tools`
- * correctly in both, which is what makes the trap convincing. A gate built on
- * the tags list would refuse the only model on this machine that can see.
+ * Capabilities come from `show`, never `tag`: /api/tags omits `vision` entirely
+ * (gemma3:4b is ["completion"] there, ["completion","vision"] here) while
+ * reporting `tools` in both, so a gate built on tags would refuse the only
+ * model on this machine that can see.
  */
 export function normalizeOllamaModel(tag: OllamaTag, show: OllamaShow): AiModel {
   return {
@@ -114,12 +95,10 @@ export function normalizeOllamaModel(tag: OllamaTag, show: OllamaShow): AiModel 
 }
 
 /**
- * The one place that answers "can this model do X?".
- *
- * It exists with a single caller today and will have two in plano 17 (the
- * image gate, on both the compose and the send path). A decision two callers
- * have to take does not live beside one of them — validation placed next to a
- * caller becomes a bypass in the second.
+ * The one place that answers "can this model do X?". A decision two callers
+ * take (plano 17 adds the image gate on both compose and send paths) does not
+ * live beside one of them — validation next to a caller becomes a bypass in the
+ * second.
  */
 export function hasCapability(model: AiModel, capability: string): boolean {
   return model.capabilities.includes(capability)
@@ -134,14 +113,10 @@ export type OllamaRunning = {
 }
 
 /**
- * `/api/ps` to `LoadedModel`.
- *
- * `size` is the RESIDENT figure, weights plus the KV cache the loaded window
- * reserved — not the size on disk that `/api/tags` reports, which is why the
- * two never agree for the same model.
- *
- * An unparseable `expires_at` becomes 0 rather than NaN: absence has to have
- * the shape of absence, or the interface does arithmetic on a silent NaN.
+ * `/api/ps` to `LoadedModel`. `size` is the RESIDENT figure — weights plus the
+ * loaded window's KV cache — not the disk size `/api/tags` reports, which is
+ * why the two never agree. An unparseable `expires_at` becomes 0, not NaN, so
+ * absence has the shape of absence instead of poisoning arithmetic.
  */
 export function normalizeOllamaRunning(entry: OllamaRunning): LoadedModel {
   const expiresAt = entry.expires_at === undefined ? NaN : Date.parse(entry.expires_at)
