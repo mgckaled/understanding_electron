@@ -109,4 +109,4 @@ O maior aglomerado: `ConversationView.tsx` (45, quase todo bucket-1), `MarkdownM
 
 | Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
-| 13/08/2026 | 1 | Passo 0 (plano nasce, trilha R no ROADMAP) e Passo 1 (shared+core): `/* */` narrativos convertidos em `//`, ensaios do plano 15 comprimidos citando a sigla. −103 linhas líquidas, todo invariante mantido, diff só-comentário vazio, 333 testes | Passo 2 (`ipc.ts`) |
+| 13/08/2026 | 1 | Passos 0–3: plano + trilha R; `shared`+`core`, `ipc.ts` (por símbolo, R1.3: `//` de campo → `/** */` de membro) e `main`+`preload` no padrão. Blocos `/* */` convertidos, ensaios comprimidos citando a sigla, scaffold do `index.ts` removido. ~−269 linhas de comentário, todo invariante mantido, diff só-comentário vazio a cada passo, 333 testes | Passo 4 (renderer chrome) |
