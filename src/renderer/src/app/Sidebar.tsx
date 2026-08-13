@@ -31,8 +31,14 @@ function Sidebar({ nav, content, footer }: SidebarProps): React.JSX.Element {
       {/* Each region is pinned to its own row with row-start-*: without it an
           absent nav would slide content into row 2 and the footer into the
           flexible row, so it stops sitting at the bottom — and the bug shows up
-          only in the composition that omits a slot. */}
-      <div className="row-start-1 flex justify-end p-3">
+          only in the composition that omits a slot. Header: app title left,
+          collapse toggle right. The title drops when collapsed so it never
+          overflows the narrow rail; justify-center then keeps the lone toggle
+          centred in the 44px column. */}
+      <div
+        className={`row-start-1 flex items-center p-3 ${collapsed ? 'justify-center' : 'justify-between'}`}
+      >
+        {!collapsed && <span className="font-ui text-sm font-semibold text-text">Chat local</span>}
         <Button
           variant="ghost"
           size="sm"
