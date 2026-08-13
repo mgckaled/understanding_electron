@@ -43,13 +43,10 @@ function broadcastJobEvent(event: JobEvent): void {
 }
 
 /**
- * Wires every channel and returns the shutdown it owns.
- *
- * The database is opened here because this is the composition root — the only
- * place allowed to know that the file lives under app.getPath('userData'). It
- * hands back `close` instead of closing itself on some event, so main/index.ts
- * keeps the lifecycle and this file keeps the wiring. Closing matters: a clean
- * close folds the -wal and -shm files back into crivo.db.
+ * Wires every channel and returns the shutdown it owns. The database opens here
+ * because this is the composition root — the only place allowed to know the file
+ * lives under app.getPath('userData'). It hands back `close` so main/index.ts
+ * keeps the lifecycle; a clean close folds -wal and -shm back into crivo.db.
  */
 export function registerAll(): () => void {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))

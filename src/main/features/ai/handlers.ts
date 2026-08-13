@@ -61,13 +61,9 @@ export async function models(
 
 /**
  * What the provider holds in memory, and dropping it (antecipado do plano 17).
- *
- * Weights stay resident for five minutes after the last request by default, and
- * on this machine that is long enough to make the rest of the fleet read as
- * "não cabe" while nothing is running. Manual and never automatic: unloading on
- * conversation switch would evict a model because the user LOOKED at another
- * conversation, and pay ~50 s to bring it back — the provider only loads on a
- * request, so switching costs nothing until something is sent.
+ * Manual, never automatic: the provider only loads on a request, so switching
+ * conversation costs nothing until a send, and evicting on switch would pay
+ * ~50 s to reload a model the user merely LOOKED away from.
  */
 export async function loaded(
   { service }: { service: AiService },

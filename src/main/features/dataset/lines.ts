@@ -3,10 +3,9 @@ import { createInterface } from 'node:readline'
 
 export async function* readLines(path: string): AsyncGenerator<string> {
   const stream = createReadStream(path)
-  // Without this listener, an 'error' with no handler on the input stream
-  // (e.g. ENOENT, EISDIR) crashes the process. The for-await loop below
-  // still rejects with that same error — confirmed empirically, see
-  // docs/HISTORY.md.
+  // Without this listener, an unhandled 'error' on the stream (ENOENT, EISDIR)
+  // crashes the process; the for-await loop below still rejects with that same
+  // error — confirmed empirically, see docs/HISTORY.md.
   stream.on('error', () => {})
 
   const rl = createInterface({ input: stream, crlfDelay: Infinity })
@@ -16,10 +15,9 @@ export async function* readLines(path: string): AsyncGenerator<string> {
     }
   } finally {
     rl.close()
-    // rl.close() only releases readline's control of the stream — it does
-    // not destroy it (confirmed empirically: bytesRead kept growing after a
-    // for-await break with only rl.close()). Without this, cancelling a
-    // scan does not stop the disk read. See docs/HISTORY.md.
+    // rl.close() releases readline but does NOT destroy the stream (confirmed
+    // empirically: bytesRead kept growing after a for-await break), so without
+    // this, cancelling a scan would not stop the disk read. See docs/HISTORY.md.
     stream.destroy()
   }
 }

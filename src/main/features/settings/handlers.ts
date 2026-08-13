@@ -3,15 +3,10 @@ import type { Args, AppSettings } from '@shared/ipc'
 import { appSettingsSchema, DEFAULT_APP_SETTINGS } from '@shared/ipc'
 import { inTransaction } from '../../db/transaction'
 
-/*
- * One storage mechanism, one migration ladder (D14.7): machine settings share
- * the conversation database rather than bringing a second file and a second
- * versioning story.
- *
- * Values are stored as JSON so a future setting of any shape costs no schema
- * change — the table's own flexibility, deliberately not extended to the
- * contract, which stays typed.
- */
+// One storage mechanism, one migration ladder (D14.7): machine settings share
+// the conversation database, not a second file with its own versioning. Values
+// are JSON so a future setting of any shape costs no schema change — the table's
+// flexibility, deliberately not extended to the contract, which stays typed.
 
 export function readSettings(_args: void, db: DatabaseSync): AppSettings {
   const stored: Record<string, unknown> = {}
@@ -23,14 +18,10 @@ export function readSettings(_args: void, db: DatabaseSync): AppSettings {
     }
   }
 
-  /*
-   * This is the one read validated against a schema, and the exception proves
-   * the rule rather than breaking it: "no zod on the way out" means main should
-   * not distrust its own in-memory output. These bytes came off DISK — possibly
-   * written by an older build, possibly edited by hand — and the ladder cannot
-   * help, because a key-value table has no schema to migrate. Validating here
-   * IS the migration path for settings.
-   */
+  // The one read validated against a schema, the exception that proves the rule:
+  // "no zod on the way out" is about not distrusting main's own output, but
+  // these bytes came off DISK (older build, hand-edited) and a key-value table
+  // has no schema to migrate — validating here IS the migration path.
   const parsed = appSettingsSchema.safeParse({ ...DEFAULT_APP_SETTINGS, ...stored })
   return parsed.success ? parsed.data : DEFAULT_APP_SETTINGS
 }

@@ -3,16 +3,10 @@ import type { Args, Conversation, Message } from '@shared/ipc'
 import { inTransaction } from '../../db/transaction'
 import { toConversation, toMessage } from './rows'
 
-/*
- * Conversations are the application's first data of its own (ESCOPO.md):
- * everything until here is derived from a file the user owns, and a
- * conversation is not.
- *
- * Every handler takes the database as a parameter (DIP), which is what makes
- * all of them callable as plain functions against ':memory:' in a level-3 test
- * — no Electron, no mock. The composition root in ipc/register-all.ts is the
- * only place that knows where the file lives.
- */
+// Conversations are the app's first data of its own (ESCOPO.md). Every handler
+// takes the database as a parameter (DIP), so all are callable as plain
+// functions against ':memory:' in a level-3 test — no Electron, no mock; only
+// ipc/register-all.ts knows where the file lives.
 
 export function listConversations(_args: void, db: DatabaseSync): Conversation[] {
   // `settings` rides along (D15.6): it is a couple of hundred bytes already in
@@ -72,15 +66,11 @@ export function updateConversationSettings(
   { id, patch }: Args<'conversation:settings'>,
   db: DatabaseSync
 ): void {
-  // json_patch merges in one statement, so two settings written from different
-  // controls cannot clobber each other through a read-modify-write window. A
-  // null value removes its key (RFC 7386), which is how a setting goes back to
-  // the app default — and how the contract expresses "unset" without a second
-  // channel. Verified against the embedded SQLite (3.53) before being used.
-  //
-  // An unknown id touches zero rows and is dropped, exactly as appendMessage
-  // does: settings arriving for a conversation the user just deleted is a race,
-  // not a defect.
+  // json_patch merges in one statement, so two controls writing settings cannot
+  // clobber each other through a read-modify-write window; a null value removes
+  // its key (RFC 7386), how a setting returns to the app default. An unknown id
+  // touches zero rows and is dropped, like appendMessage: settings for a
+  // just-deleted conversation is a race, not a defect.
   db.prepare('UPDATE conversations SET settings = json_patch(settings, ?) WHERE id = ?').run(
     JSON.stringify(patch),
     id
@@ -96,11 +86,9 @@ export function appendMessage(
       .prepare('UPDATE conversations SET updated_at = ?, title = COALESCE(?, title) WHERE id = ?')
       .run(message.createdAt, title ?? null, conversationId)
 
-    // A reply can land after its conversation was deleted — the user cancels a
-    // long answer and removes the conversation while the partial is on its way.
-    // The message has nowhere to live, so it is dropped instead of raising a
-    // foreign-key error: nothing about it is a programming defect. Detected by
-    // the UPDATE's own row count, which costs no extra query.
+    // A reply can land after its conversation was deleted (cancel + remove while
+    // the partial is on its way). It is dropped, not a foreign-key error —
+    // nothing here is a defect — detected by the UPDATE's own row count.
     if (Number(touched.changes) === 0) return
 
     db.prepare(

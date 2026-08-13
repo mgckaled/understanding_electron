@@ -20,10 +20,8 @@ type OllamaChatLine = {
   message?: { role: string; content: string }
   done?: boolean
   error?: string
-  // Only on the final line. prompt_eval_count is the exact token count of what
-  // the model ACTUALLY read — the only exact count that exists, since nothing
-  // can tokenize before sending, and the only evidence of silent truncation
-  // when it comes back smaller than what was sent.
+  // Only on the final line — the exact token count the model actually read. See
+  // ChatReply.promptTokens for why it is the only exact count and the truncation signal.
   prompt_eval_count?: number
   eval_count?: number
 }
@@ -47,18 +45,12 @@ async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
 }
 
 /**
- * The catalog: /api/tags once, then /api/show per model (D15.1).
- *
- * The N+1 is deliberate, because one call does not answer the question.
- * /api/tags reports neither `vision` nor any context ceiling, so a selector
- * built on it alone would mislabel every model. Measured at ~4,9 s for 14
- * models, and it loads nothing — /api/ps stays empty across the whole sweep,
- * so the cost is latency, not RAM.
- *
- * Sequential, not Promise.all: this hits a local server that is also the one
- * running inference. Firing fourteen parallel requests at a process that may be
- * mid-generation would buy a few seconds and contend with the thing the user is
- * actually waiting for. The renderer pays this once and caches it.
+ * The catalog: /api/tags once, then /api/show per model (D15.1). The N+1 is
+ * deliberate — /api/tags reports neither `vision` nor a context ceiling, so a
+ * selector built on it alone mislabels every model (~4,9 s for 14, loads
+ * nothing). Sequential, not Promise.all: this hits the local server also running
+ * inference, and firing fourteen parallel requests would contend with the answer
+ * the user is waiting for. The renderer pays it once and caches.
  */
 export const ollamaModels: ModelsFn = async ({ signal }) => {
   const tags = await requestJson<{ models?: OllamaTag[] }>('/api/tags', { signal })
@@ -84,10 +76,8 @@ export const ollamaLoaded: LoadedFn = async ({ signal }) => {
 
 /**
  * Drops one model's weights now, instead of waiting out `keep_alive`.
- *
- * `/api/generate` with no prompt and `keep_alive: 0` is the documented unload
- * (confirmed against the Ollama API docs, not guessed). It answers with
- * `done_reason: 'unload'` and never runs inference, so it costs nothing.
+ * `/api/generate` with no prompt and `keep_alive: 0` is the documented unload:
+ * answers `done_reason: 'unload'`, never runs inference, costs nothing.
  */
 export const ollamaUnload: UnloadFn = async (model, { signal }) => {
   await requestJson('/api/generate', {
@@ -156,9 +146,8 @@ export const ollamaChat: ChatFn = async (
           assembled += piece
           onChunk?.(piece)
         }
-        // The final line carries the counters, and this used to `return
-        // assembled` and drop them on the floor. They are the only exact token
-        // count the app can ever have.
+        // The final line carries the counters — the only exact token count the
+        // app can have, so they must not be dropped.
         if (parsed.done === true) {
           return {
             content: assembled,

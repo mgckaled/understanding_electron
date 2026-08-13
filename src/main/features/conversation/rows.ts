@@ -8,19 +8,11 @@ import type {
 } from '@shared/ipc'
 import { conversationSettingsSchema } from '@shared/ipc'
 
-/*
- * node:sqlite hands back `Record<string, null | number | bigint | string |
- * Uint8Array>` — there is no row generic like better-sqlite3's. So the typing
- * has to be rebuilt at this edge, and doing it in one place is what keeps the
- * casts from spreading across six handlers.
- *
- * These do NOT validate with zod, on purpose. The rule is zod on the arguments
- * crossing renderer → main, never on the way out (skill `architecture`): main
- * wrote these rows itself, and re-parsing its own writes is distrusting itself
- * at the cost of latency on every read. A corrupted `parts` payload makes
- * JSON.parse throw, which is the right answer for corrupted storage — a defect,
- * loud, not a Result the UI is asked to render.
- */
+// node:sqlite hands back a loose Record with no row generic, so the typing is
+// rebuilt at this edge in one place to keep casts from spreading across six
+// handlers. These do NOT validate with zod, on purpose (skill `architecture`:
+// zod on the way in, never out): main wrote these rows, and a corrupted `parts`
+// makes JSON.parse throw — the right answer for corrupted storage, a loud defect.
 
 type Row = Record<string, unknown>
 
@@ -38,17 +30,11 @@ export function toConversation(row: Row): Conversation {
 }
 
 /**
- * The one read in this file that IS validated, and it is the same exception
- * readSettings makes for app_settings rather than a new one: these bytes came
- * off DISK, possibly written by an older build, and the migration ladder has
- * nothing to migrate for a schemaless JSON blob. Validating here IS the
- * migration path.
- *
- * Note what it degrades to. A blob this build cannot read becomes "nothing
- * chosen", which is precisely what a brand-new conversation looks like, so the
- * app falls back to its own defaults. The alternative — throwing, as `parts`
- * does — would make one bad row take down the whole sidebar, and unlike a
- * corrupted transcript there is nothing here that cannot simply be picked again.
+ * The one read here that IS validated (same exception readSettings makes): these
+ * bytes came off DISK, possibly from an older build, and for a schemaless JSON
+ * blob validating here IS the migration path. It degrades to "nothing chosen" —
+ * what a new conversation looks like, so the app uses its defaults — rather than
+ * throwing like `parts` and taking the whole sidebar down over one re-pickable row.
  */
 function toConversationSettings(value: unknown): ConversationSettings {
   try {

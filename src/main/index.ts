@@ -7,10 +7,9 @@ import { registerAll } from './ipc/register-all'
 import icon from '../../resources/icon.png?asset'
 
 /**
- * The only way this process hands a URL to the OS. Both callers below used to
- * call `shell.openExternal` directly, bypassing the scheme allow-list that the
- * `shell:openExternal` IPC channel enforces — the protection existed and was
- * tested, but not on the paths that a page could actually reach.
+ * The only way this process hands a URL to the OS — every caller goes through
+ * `checkExternalUrl`'s scheme allow-list, so no path reaches `shell.openExternal`
+ * unchecked.
  */
 function openExternalIfAllowed(url: string): void {
   const checked = checkExternalUrl(url)
@@ -18,7 +17,6 @@ function openExternalIfAllowed(url: string): void {
 }
 
 function createWindow(): void {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
@@ -54,8 +52,6 @@ function createWindow(): void {
     }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -63,11 +59,7 @@ function createWindow(): void {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId(APP_ID)
 
   // Default open or close DevTools by F12 in development
