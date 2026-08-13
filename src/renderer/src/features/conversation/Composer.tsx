@@ -1,4 +1,4 @@
-import { useState, type SyntheticEvent } from 'react'
+import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { budgetFor } from '@core/ai/budget'
 import Button from '../../shared/ui/Button/Button'
 
@@ -27,6 +27,13 @@ type ComposerProps = {
   /** The reserved window, or null when it cannot be known yet. */
   limit: number | null
   charsPerToken: number
+  /**
+   * The model selector, moved out of the removed top toolbar and into the
+   * composer's controls row (DS-3 passo 7). A slot, not a merge: the eight props
+   * it needs stay wired in ConversationView, and the two files stay under the
+   * size rule.
+   */
+  modelSelector: ReactNode
 }
 
 function Composer({
@@ -37,7 +44,8 @@ function Composer({
   onCancel,
   historyChars,
   limit,
-  charsPerToken
+  charsPerToken,
+  modelSelector
 }: ComposerProps): React.JSX.Element {
   const [draft, setDraft] = useState('')
 
@@ -138,15 +146,22 @@ function Composer({
         </p>
       )}
 
-      <div className="flex justify-end gap-3">
-        {loading && (
-          <Button variant="secondary" type="button" onClick={onCancel}>
-            Cancelar
+      {/* The model selector moved here from the removed top toolbar (DS-3 passo
+          7). Its refusal alerts (too-large/unaffordable, role="alert") and the
+          always-available reload live inside it — nothing from plano 15 is
+          collapsed away. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-[0px]">{modelSelector}</div>
+        <div className="flex flex-none items-start gap-3">
+          {loading && (
+            <Button variant="secondary" type="button" onClick={onCancel}>
+              Cancelar
+            </Button>
+          )}
+          <Button type="submit" variant="primary" loading={loading} disabled={!canSend}>
+            Enviar
           </Button>
-        )}
-        <Button type="submit" variant="primary" loading={loading} disabled={!canSend}>
-          Enviar
-        </Button>
+        </div>
       </div>
     </form>
   )

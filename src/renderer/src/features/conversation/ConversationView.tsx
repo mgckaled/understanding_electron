@@ -121,36 +121,14 @@ function ConversationView(): React.JSX.Element {
   // shell already settled that the document itself never scrolls.
   return (
     <section className="flex flex-1 flex-col min-h-[0px]">
-      {/* Chrome density (D13.6): the compact fase 05 desktop scale. */}
-      <header className="flex flex-none items-start justify-between gap-5 border-b border-border px-7 py-5">
-        {/* A title taken from the first message can be long; the header must not grow. */}
+      {/* Chrome density (D13.6): the compact fase 05 desktop scale. The top
+          toolbar is gone (DS-3 passo 7) — the header is just the conversation
+          title now, and the model selector moved into the composer below. A
+          title taken from the first message can be long; the header must not grow. */}
+      <header className="flex flex-none items-center border-b border-border px-7 py-5">
         <h1 className="overflow-hidden text-md font-semibold whitespace-nowrap text-ellipsis text-text">
           {conversation?.title ?? 'Assistente local'}
         </h1>
-        <div className="flex flex-none items-start gap-5">
-          <ModelSelector
-            state={catalog}
-            selected={model}
-            // Two different reasons to be inert: busy, which passes, and
-            // locked, which does not (D15.13).
-            disabled={isLoading}
-            locked={locked}
-            onSelect={(name) => choose({ model: name })}
-            // Both, because both readings are snapshots the app cannot observe
-            // changing: a model installed since launch, and memory freed since.
-            onReload={() => {
-              reload()
-              reloadMemory()
-            }}
-            contextWindow={contextWindow}
-            ceilingOf={ceilingOf}
-            // Remounts the window control when the conversation changes, so it
-            // re-reads that conversation's value instead of showing the last
-            // one typed.
-            scopeKey={conversation?.id ?? 'sem-conversa'}
-            onNumCtx={(tokens) => choose({ numCtx: tokens })}
-          />
-        </div>
       </header>
 
       {/* The one scrolling surface. Its ref is measured by useStickToBottom, so
@@ -248,6 +226,30 @@ function ConversationView(): React.JSX.Element {
         historyChars={historyChars}
         limit={numCtx}
         charsPerToken={charsPerToken}
+        modelSelector={
+          <ModelSelector
+            state={catalog}
+            selected={model}
+            // Two different reasons to be inert: busy, which passes, and
+            // locked, which does not (D15.13).
+            disabled={isLoading}
+            locked={locked}
+            onSelect={(name) => choose({ model: name })}
+            // Both, because both readings are snapshots the app cannot observe
+            // changing: a model installed since launch, and memory freed since.
+            onReload={() => {
+              reload()
+              reloadMemory()
+            }}
+            contextWindow={contextWindow}
+            ceilingOf={ceilingOf}
+            // Remounts the window control when the conversation changes, so it
+            // re-reads that conversation's value instead of showing the last
+            // one typed.
+            scopeKey={conversation?.id ?? 'sem-conversa'}
+            onNumCtx={(tokens) => choose({ numCtx: tokens })}
+          />
+        }
       />
     </section>
   )
