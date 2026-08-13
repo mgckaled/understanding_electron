@@ -15,51 +15,40 @@ import { useActiveConversation, useConversations } from './conversationsContext'
 
 const SERVICE = 'ollama' as const
 
-/*
- * The turns come from the store; the streaming text does NOT (D13.2). Only the
- * finished turn is committed. Without that split every token would re-render
- * the conversation list — not a premature optimisation, just not undoing what
- * the fatia-1 hook already had right.
+/**
+ * Streams the model's reply to the active conversation, committing only the
+ * finished turn to the store — the streaming text is kept out of it (D13.2).
+ *
+ * @param model - `null` when the machine has no model installed (D15.2); the
+ *   caller must guard, since there is then no model to address the call to.
+ * @param numCtx - Context window this conversation reserves (D15.2). Undefined
+ *   lets Ollama decide, which here is 4096 — a number nobody chose.
  */
 export function useConversationChat(
-  /**
-   * `null` means the machine has no model installed at all (D15.2). It is a
-   * parameter and not an assumption because the alternative — defaulting to a
-   * name — is exactly what let the app send `gemma3:4b` to an Ollama that had
-   * never pulled it, and get back a generic upstream error.
-   */
   model: string | null,
   numThread?: number,
-  /**
-   * The context window this conversation reserves (D15.2). Undefined lets
-   * Ollama decide, which on this machine is 4096 — a number nobody chose, and
-   * one a single 8k-token document overflows on its own.
-   */
   numCtx?: number
 ): {
   availability: ViewState<AiAvailability>
   streaming: string
   /**
-   * The conversation the last request was addressed to. Deliberately not
-   * cleared when the request ends: `state` (loading, error, cancelled) belongs
-   * to that conversation too, so switching away has to take the whole in-flight
-   * surface with it, not just the streaming text.
+   * The conversation the last request addressed. Deliberately not cleared when
+   * it ends: its loading, error and cancelled state belong to that conversation
+   * too, so switching away takes the whole in-flight surface, not just the text.
    */
   lastRequestId: string | null
   state: ViewState<ChatReply>
   /**
-   * The last call's two halves: the characters that WERE SENT, and the
-   * `prompt_eval_count` the provider reported for exactly them. They travel
-   * together because a ratio built from one of them and a figure from another
-   * moment is not a ratio (D15.14).
+   * The last call's two halves: the chars SENT, and the `prompt_eval_count` the
+   * provider reported for exactly them — together because a ratio built from one
+   * and a figure from another moment is not a ratio (D15.14).
    */
   lastPrompt: { chars: number; tokens: number } | undefined
   send: (prompt: string) => Promise<void>
   cancel: () => void
 } {
   const { activeId, create, append, updateSettings } = useConversations()
-  // The history now comes from the transcript query rather than from a list
-  // that carried every message inside it (D14.1).
+  // History comes from the transcript query now, not a list carrying every message (D14.1).
   const active = useActiveConversation()
   const [availability, setAvailability] = useState<ViewState<AiAvailability>>({ status: 'loading' })
   const [streaming, setStreaming] = useState('')
@@ -85,13 +74,9 @@ export function useConversationChat(
     }
   }, [])
 
-  /*
-   * The accumulated text also lives in a ref, and that is not duplication.
-   * `send` captures `streaming` from the render it was created in, so by the
-   * time the request settles the closure holds an empty string — the very text
-   * D14.3 says to save would be the one thing not reachable. The ref is read at
-   * settle time; the state is what re-renders the view.
-   */
+  // The accumulated text also lives in a ref, and that is NOT duplication:
+  // `send` captures `streaming` from its render, so at settle time the closure
+  // holds an empty string. The ref is read at settle; state is what re-renders.
   const partialRef = useRef('')
   useJobChunks(jobId, (text) => {
     partialRef.current += text
@@ -116,9 +101,8 @@ export function useConversationChat(
       // empty app creates one instead of demanding the user make one first.
       const conversationId = activeId ?? create()
 
-      // Where the pair closes (D15.13). It writes only what is MISSING, which is
-      // what makes it both the first-send lock and the one-time backfill for a
-      // conversation that predates it — and what keeps it from ever rewriting a
+      // Writes only what is MISSING (D15.13): both the first-send lock and the
+      // one-time backfill for a conversation that predates it, never rewriting a
       // pair already recorded.
       const recorded = conversationId === active?.id ? active.settings : {}
       const pair: ConversationSettings = {
@@ -153,18 +137,15 @@ export function useConversationChat(
       clearStreaming()
 
       if (result.ok) {
-        // The pair the meter calibrates on: what went out, and what the
-        // provider counted for it. `sentChars` misses the chat template's own
-        // markers, which the count includes — so the ratio comes out low and
-        // the estimate high, which is the safe direction.
+        // What the meter calibrates on: chars out, and the count the provider
+        // returned for them. `sentChars` misses the template's markers, so the
+        // ratio comes out low and the estimate high — the safe direction.
         if (result.value.promptTokens !== undefined) {
           setLastPrompt({ chars: sentChars, tokens: result.value.promptTokens })
         }
-        // Addressed to the conversation captured at send time, never to
-        // whichever one is active when the reply lands: switching mid-stream
-        // must not drop the answer into the wrong transcript. The model is
-        // recorded on the message, which is what keeps authorship readable in
-        // a conversation that changed models halfway (D13.4).
+        // Addressed to the conversation captured at send time, never whichever is
+        // active when the reply lands: switching mid-stream must not drop the
+        // answer into the wrong transcript. Model is on the message (D13.4).
         append(conversationId, {
           role: 'assistant',
           parts: [{ kind: 'text', text: result.value.content }],

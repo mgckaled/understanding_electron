@@ -4,20 +4,9 @@ import type { Conversation, ConversationSettings, Message } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
 import { DEFAULT_TITLE, titleFromText, type ConversationWithMessages } from './conversations'
 
-/*
- * The division promised by D13.2, now executed (D14.4):
- *
- *   SERVER cache  → TanStack Query: the conversation list, the transcript
- *   CLIENT state  → Context, for good: which conversation is selected
- *
- * These two hooks are the only place either one is touched. No component calls
- * useContext, and none calls useQueryClient — the same rule, for the same
- * reason. That is what made this plan's step 3 change two files instead of six.
- *
- * No optimistic updates: they exist to hide network latency, and the write here
- * is a microsecond INSERT in the same process. Invalidating after the mutation
- * is simpler and has no reconciliation state to get wrong.
- */
+// SERVER cache (list, transcript) lives in TanStack Query; CLIENT state (which
+// conversation is selected) in Context. These two hooks are the ONLY place
+// either is touched — no component calls useContext or useQueryClient (D14.4).
 
 const CONVERSATIONS_KEY = ['conversations'] as const
 const messagesKey = (conversationId: string): readonly unknown[] => [
@@ -70,10 +59,9 @@ export function useConversations(): ConversationsApi {
   })
   const conversations = data ?? NO_CONVERSATIONS
 
-  // Every write shares one scope, so they run in SERIES. Without it, "create a
-  // conversation" and "append the first message" would be two calls in flight
-  // at once, and the append could reach the database first — where it would be
-  // dropped for having no conversation to belong to.
+  // Every write shares one scope, so they run in SERIES: without it "create a
+  // conversation" and "append the first message" race, and the append can reach
+  // the DB first, dropped for having no conversation to belong to.
   const invalidate = (): Promise<void> =>
     queryClient.invalidateQueries({ queryKey: ['conversations'] })
   const scope = { id: 'conversations' }
@@ -99,10 +87,9 @@ export function useConversations(): ConversationsApi {
       window.api.conversation.append(args.id, args.message, args.title),
     onSuccess: invalidate
   })
-  // Same scope as the rest, which matters here for a concrete reason: picking a
-  // model and sending the first message are two writes to the same row, and the
-  // send reads `settings` back from the list. Serialised, the order is the one
-  // the user performed.
+  // Same scope, for a concrete reason: picking a model and sending the first
+  // message are two writes to the same row, and send reads `settings` back.
+  // Serialised, the order is the one the user performed.
   const updateSettings = useMutation({
     scope,
     mutationFn: (args: { id: string; patch: ConversationSettings }) =>
@@ -110,10 +97,9 @@ export function useConversations(): ConversationsApi {
     onSuccess: invalidate
   })
 
-  // On first open, the most recent conversation (D14.6). It costs zero columns:
-  // the list already arrives ORDER BY updated_at DESC, so `[0]` IS that one.
-  // An empty database opens with no active conversation, in the empty state
-  // ConversationView already draws.
+  // On first open, the most recent conversation (D14.6): the list arrives ORDER
+  // BY updated_at DESC, so `[0]` IS that one. An empty database opens with no
+  // active conversation, the empty state ConversationView already draws.
   const activeId = selectedId ?? conversations[0]?.id ?? null
 
   return useMemo(
@@ -140,10 +126,9 @@ export function useConversations(): ConversationsApi {
       },
       append: (id: string, message: NewMessage) => {
         const full: Message = { ...message, id: crypto.randomUUID(), createdAt: Date.now() }
-        // A conversation that is not in the list yet was just created, so it
-        // still carries the default title — that is why `?? DEFAULT_TITLE` and
-        // not `?? ''`. Getting it wrong loses the title of the very first turn,
-        // which is the only turn that sets one (D13.9).
+        // A conversation not in the list yet was just created, so it still
+        // carries the default title — hence `?? DEFAULT_TITLE`, not `?? ''`.
+        // Wrong, it loses the title of the first turn, the only one that sets it (D13.9).
         const current = conversations.find((item) => item.id === id)?.title ?? DEFAULT_TITLE
         const renames = current === DEFAULT_TITLE && message.role === 'user'
         append.mutate({
