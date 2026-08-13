@@ -151,3 +151,4 @@ A régua do envelope, aplicada. O alvo pede busca de conversas, agrupamento por 
 
 | Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
+| 13/08/2026 | 1 | **Passo 1 — casca (`AppShell`, `Sidebar`).** Dois módulos CSS (80 linhas) migrados para utilidade, com os comentários load-bearing (D13.5, `minmax(0,1fr)` vs `1fr`, pino de linha `row-start-*`) levados ao TSX. **Achado bloqueante medido e escalado ao `HISTORY.md`:** `min-w-0`/`min-h-0` não emitem CSS com a base `--spacing` desligada — trocados por `min-w-[0px]`/`min-h-[0px]`. Verificado no CSS gerado: transição composta = `width 200ms ease` idêntica, grids exatos, bordas com `solid` do preflight. `check:fast` verde (333 testes, `Sidebar.test.tsx` intacto), CSS 50,11 → 49,59 kB. Verificação por fidelidade de tradução + emissão no CSS + testes; revisão visual ao vivo fica consolidada no fim (o harness de pixel-diff do DS-1 não foi persistido) | Passo 2 — `ConversationList` |

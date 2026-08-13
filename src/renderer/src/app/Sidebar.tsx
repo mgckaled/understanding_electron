@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react'
 import Button from '../shared/ui/Button/Button'
-import styles from './Sidebar.module.css'
 
 // Three regions, not one (D13.1): nav, content, footer — the shape a sidebar
 // that is only "the list of conversations" must be restructured into once a
@@ -14,13 +13,26 @@ type SidebarProps = {
   footer?: ReactNode
 }
 
+// The content track is minmax(0, 1fr), never a plain 1fr: 1fr floors at
+// min-content, so a long conversation list would stretch the track instead of
+// scrolling inside it. Width is the one property collapse toggles, so it stays
+// out of BASE — two utilities of the same group resolve by stylesheet order,
+// not class order (the DS-1 lesson).
+const SIDEBAR_BASE =
+  'grid h-full grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden border-r border-border ' +
+  'bg-surface transition-[width] duration-(--duration-base) ease-initial'
+
 function Sidebar({ nav, content, footer }: SidebarProps): React.JSX.Element {
   const [collapsed, setCollapsed] = useState(false)
-  const classes = [styles.sidebar, collapsed && styles.collapsed].filter(Boolean).join(' ')
+  const width = collapsed ? 'w-(--sidebar-width-collapsed)' : 'w-(--sidebar-width)'
 
   return (
-    <aside className={classes}>
-      <div className={styles.chrome}>
+    <aside className={`${SIDEBAR_BASE} ${width}`}>
+      {/* Each region is pinned to its own row with row-start-*: without it an
+          absent nav would slide content into row 2 and the footer into the
+          flexible row, so it stops sitting at the bottom — and the bug shows up
+          only in the composition that omits a slot. */}
+      <div className="row-start-1 flex justify-end p-3">
         <Button
           variant="ghost"
           size="sm"
@@ -34,9 +46,17 @@ function Sidebar({ nav, content, footer }: SidebarProps): React.JSX.Element {
 
       {!collapsed && (
         <>
-          {nav && <nav className={styles.nav}>{nav}</nav>}
-          <div className={styles.content}>{content}</div>
-          {footer && <div className={styles.footer}>{footer}</div>}
+          {nav && <nav className="row-start-2 flex flex-col gap-2 px-4 pb-4">{nav}</nav>}
+          {/* The only region of the sidebar that scrolls. `min-h-[0px]`, not
+              min-h-0: --spacing base is off, so the numeric form emits nothing. */}
+          <div className="row-start-3 flex min-h-[0px] flex-col gap-5 overflow-y-auto px-4">
+            {content}
+          </div>
+          {footer && (
+            <div className="row-start-4 border-t border-border p-4 text-2xs text-text-muted">
+              {footer}
+            </div>
+          )}
         </>
       )}
     </aside>
