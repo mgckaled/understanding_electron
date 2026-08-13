@@ -1,11 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type {
-  AiAvailability,
-  ChatMessage,
-  ChatReply,
-  ConversationSettings,
-  JobId
-} from '@shared/ipc'
+import { useCallback, useRef, useState } from 'react'
+import type { ChatMessage, ChatReply, ConversationSettings, JobId } from '@shared/ipc'
 import { toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
@@ -29,7 +23,6 @@ export function useConversationChat(
   numThread?: number,
   numCtx?: number
 ): {
-  availability: ViewState<AiAvailability>
   streaming: string
   /**
    * The conversation the last request addressed. Deliberately not cleared when
@@ -50,7 +43,6 @@ export function useConversationChat(
   const { activeId, create, append, updateSettings } = useConversations()
   // History comes from the transcript query now, not a list carrying every message (D14.1).
   const active = useActiveConversation()
-  const [availability, setAvailability] = useState<ViewState<AiAvailability>>({ status: 'loading' })
   const [streaming, setStreaming] = useState('')
   const [lastRequestId, setLastRequestId] = useState<string | null>(null)
   const [lastPrompt, setLastPrompt] = useState<{ chars: number; tokens: number } | undefined>(
@@ -58,21 +50,6 @@ export function useConversationChat(
   )
   const [jobId, setJobId] = useState<JobId | null>(null)
   const { state, run } = useAsyncAction<ChatReply>()
-
-  useEffect(() => {
-    let active = true
-    void window.api.ai.isAvailable(SERVICE).then((result) => {
-      if (!active) return
-      setAvailability(
-        result.ok
-          ? { status: 'ready', data: result.value }
-          : { status: 'error', error: result.error }
-      )
-    })
-    return () => {
-      active = false
-    }
-  }, [])
 
   // The accumulated text also lives in a ref, and that is NOT duplication:
   // `send` captures `streaming` from its render, so at settle time the closure
@@ -186,5 +163,5 @@ export function useConversationChat(
     if (jobId !== null) void window.api.job.cancel(jobId)
   }, [jobId])
 
-  return { availability, streaming, lastRequestId, state, lastPrompt, send, cancel }
+  return { streaming, lastRequestId, state, lastPrompt, send, cancel }
 }

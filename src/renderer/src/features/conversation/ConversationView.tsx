@@ -9,6 +9,7 @@ import { useSettings } from '../settings/settingsContext'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
 import { useAiModels } from './useAiModels'
+import { useAiAvailability } from './useAiAvailability'
 import { resolveModel } from './conversations'
 import { useStickToBottom } from './useStickToBottom'
 import MarkdownMessage from './MarkdownMessage'
@@ -90,8 +91,12 @@ function ConversationView(): React.JSX.Element {
       ? contextWindow.numCtx
       : null
 
-  const { availability, streaming, lastRequestId, state, send, cancel, lastPrompt } =
-    useConversationChat(model, settings.numThread, numCtx ?? undefined)
+  const { streaming, lastRequestId, state, send, cancel, lastPrompt } = useConversationChat(
+    model,
+    settings.numThread,
+    numCtx ?? undefined
+  )
+  const availability = useAiAvailability()
 
   // What the next send would carry: the whole transcript, since the provider is
   // stateless and every turn resends everything.
