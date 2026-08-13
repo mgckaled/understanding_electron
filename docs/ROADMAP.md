@@ -23,6 +23,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    DS-1 fundação Tailwind v4          plan/implemented/DS-1-...        concluída (ago/2026)
 ▶  DS-2 migração da casca e features   plan/active/DS-2-...             ← estamos aqui (escrito)
    DS-3 ajustes do composer e da casca
+   ── trilha R (refatoração), transversal ─────────────────────────────────────────
+   R-1 comentários e TSDoc            plan/active/R-1-...              escrito
    ── o arco, retomado depois da DS-3 ─────────────────────────────────────────────
    16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
    17 anexo: documento e imagem
@@ -36,6 +38,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
 ```
 
 **A trilha DS entrou em ago/2026 e roda antes do 16**, com numeração própria em vez de inserida no arco — o porquê, e o custo medido de renumerar um plano já escrito, são de [`plan/active/README.md`](plan/active/README.md#a-trilha-de-design-system-ds-n). Executa primeiro por um motivo de custo: cada tela nova encarece a migração, e o 16 traz o clipe, a pré-visualização de anexo e o cartão de dados.
+
+**A trilha R (refatoração) entrou em ago/2026**, também com numeração própria e transversal ao arco: aplica um padrão já decidido ao código que o precede, sem tocar comportamento. O [`R-1`](plan/active/R-1-comentarios-e-tsdoc.md) leva a skill [`comments`](../.claude/skills/comments/SKILL.md) ao `src/` inteiro e fecha, com um guard, o pior sintoma de reincidência.
 
 **O arco ganhou um plano em ago/2026**, com a [entrada de escopo de documento e imagem](HISTORY.md). O 16 passa a construir o **mecanismo** de anexo de forma genérica — o clipe no composer, `userData/attachments/<hash>`, as variantes de `MessagePart` — e o dataset é só o seu primeiro consumidor; o 17 acrescenta os extratores de documento e imagem sobre esse mesmo mecanismo. A ordem importa por um motivo concreto: mecanismo de anexo desenhado sabendo que só existe dataset nasce com forma de dataset, e o 17 o reescreveria.
 
