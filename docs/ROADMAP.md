@@ -28,9 +28,9 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    ── segunda rodada de handoff, transversal ──────────────────────────────────────
    DS-4 popover, tema e acabamento final  plan/implemented/DS-4-...        concluída (ago/2026)
    ── terceira rodada de handoff, transversal ─────────────────────────────────────
-▶  DS-5 ícones, fonte e acabamento      plan/active/DS-5-...             escrito, não iniciado
+   DS-5 ícones, fonte e acabamento      plan/implemented/DS-5-...        concluída (ago/2026)
    ── o arco, retomado depois da DS-5 ─────────────────────────────────────────────
-   16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
+▶  16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
    17 anexo: documento e imagem
    18 camada de dados (DuckDB)       study/05-proximos-passos.md
    19 propor: consulta e passos
@@ -41,7 +41,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    nuvem, RAG e ML                   plan/active/09-camada-de-ia.md   fatias 3, 5 e 6
 ```
 
-**A trilha DS entrou em ago/2026 e roda antes do 16**, com numeração própria em vez de inserida no arco — o porquê, e o custo medido de renumerar um plano já escrito, são de [`plan/active/README.md`](plan/active/README.md#a-trilha-de-design-system-ds-n). Executa primeiro por um motivo de custo: cada tela nova encarece a migração, e o 16 traz o clipe, a pré-visualização de anexo e o cartão de dados.
+**A trilha DS entrou em ago/2026 e roda antes do 16**, com numeração própria em vez de inserida no arco — o porquê, e o custo medido de renumerar um plano já escrito, são de [`plan/active/README.md`](plan/active/README.md#a-trilha-de-design-system-ds-n). Executa primeiro por um motivo de custo: cada tela nova encarece a migração, e o 16 traz a pré-visualização de anexo e o cartão de dados. ⚠️ **O clipe em si, a DS-5 já pôs** — para abrir um dataset, não para anexar à conversa; ver o gatilho logo abaixo sobre a colisão que isso abre para o 16.
 
 **A trilha R (refatoração) entrou em ago/2026**, também com numeração própria e transversal ao arco: aplica um padrão já decidido ao código que o precede, sem tocar comportamento. O [`R-1`](plan/active/R-1-comentarios-e-tsdoc.md) leva a skill [`comments`](../.claude/skills/comments/SKILL.md) ao `src/` inteiro e fecha, com um guard, o pior sintoma de reincidência.
 
@@ -64,6 +64,7 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 
 | Quando acontecer | Revisitar | Registrado em |
 |---|---|---|
+| **O plano 16 desenhar o clipe de anexo de mensagem** | A DS-5 já pôs um ícone de clipe no composer — só que para *abrir um dataset para análise* (`AttachButton.tsx`, relocando o `OpenDatasetPanel` da sidebar, sem tocar `MessagePart`). O clipe do 16 é outra coisa: anexar documento/imagem **à conversa**, com `userData/attachments/<hash>` e job de extração. Dois gestos diferentes (workbench vs. contexto de mensagem) pedindo o mesmo símbolo no mesmo canto da tela — o 16 precisa decidir se funde os dois (um clipe, duas opções), se separa visualmente, ou se um deles migra. Não decidido aqui de propósito: exige ver a forma real do mecanismo de anexo antes de escolher | [`plan/implemented/DS-5-icones-fonte-e-acabamento.md`](plan/implemented/DS-5-icones-fonte-e-acabamento.md) § Fase 5 |
 | DuckDB instalado e carregando | `shamefullyHoist: false` no `pnpm-workspace.yaml` | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
 | ~~Primeira query reexecutada sobre o mesmo dataset~~ · ~~data marcada: plano 14~~ **fechado** — adotado em ago/2026 (`@tanstack/react-query` 5.101.4), e a promessa se cumpriu: três hooks tocados, **zero componentes**. O que a fez se cumprir está no [`HISTORY`](HISTORY.md) § *um hook público sobrevive à troca de fonte* | ~~Adotar TanStack Query para o **cache de servidor**~~ | [`14-persistencia`](plan/implemented/14-persistencia-das-conversas.md) |
 | Busca em texto completo sobre todo o histórico (FTS5) — **disponibilidade confirmada** no binário do Electron 42.8.0 (SQLite 3.53.1), então o gatilho é só de "quando", não mais de "se dá" | Tirar o SQLite síncrono do main — até lá, listar e inserir são operações indexadas de microssegundos | [`HISTORY`](HISTORY.md) § Decisão: persistência em `node:sqlite` |

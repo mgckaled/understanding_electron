@@ -24,7 +24,13 @@ test('picks a file and shows the scan summary', async () => {
     [fixturePath]
   )
 
+  // The trigger moved into the composer as a clip icon (DS5, item 7) — open
+  // its popover first, then "Escolher arquivo" inside it. The popover closes
+  // itself before the native dialog opens (DS5.5), so the result is read back
+  // by reopening the clip.
+  await page.getByRole('button', { name: 'Anexar arquivo' }).click()
   await page.getByRole('button', { name: 'Escolher arquivo' }).click()
+  await page.getByRole('button', { name: 'Anexar arquivo' }).click()
 
   await expect(page.getByText('id, name, city')).toBeVisible()
   await expect(page.getByText('2', { exact: true })).toBeVisible()
