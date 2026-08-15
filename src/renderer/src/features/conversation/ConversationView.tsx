@@ -18,6 +18,7 @@ import { useStickToBottom } from './useStickToBottom'
 import MarkdownMessage from './MarkdownMessage'
 import { ModelPicker, ContextControl } from './ModelSelector'
 import Composer from './Composer'
+import TurnActions from './TurnActions'
 import { completePartial } from './completePartial'
 
 /** Stable identity, so a catalog that is loading does not re-run memos. */
@@ -198,6 +199,7 @@ function ConversationView(): React.JSX.Element {
                       {STOPPED_LABEL[message.stopped]}
                     </span>
                   )}
+                  <TurnActions text={messageText(message)} />
                 </li>
               )
             )}
