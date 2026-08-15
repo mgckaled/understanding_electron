@@ -19,7 +19,7 @@ executável, formal, com os três documentos conciliados contra o código real
 **Por que `DS-4-` e não `NN-` (o arco):** o `IMPLEMENTATION_PLAN.md` foi escrito fora
 do repositório e sugere `NN-tailwind-e-interface-do-chat.md`, sem saber que a trilha DS
 já existe com numeração própria ([`plan/active/README.md` § A trilha de design
-system](README.md)). O pedido desta sessão confirma a leitura certa: "a última sobre
+system](../active/README.md)). O pedido desta sessão confirma a leitura certa: "a última sobre
 ds antes de seguirmos os planos do arco (16 em diante)" — é DS-4, quarto plano da
 mesma trilha que DS-1/2/3, não um plano do arco 13–20. Confirmado: `plan/active/` e
 `plan/implemented/` não tinham nenhum `DS-4-*` antes deste arquivo — era o próximo
@@ -278,6 +278,14 @@ com fonte primária (docs do Electron, suporte do Chromium 148), não assumidos.
 estados (Sistema/Claro/Escuro), não dois como o protótipo, porque sem "Sistema" não
 haveria caminho de volta a seguir o SO.
 
+**Verificação ao vivo, corrigida na Fase 8:** um primeiro script de checagem
+reportou o renderer preso em claro em todo estado, mesmo com o main correto — falso
+negativo do driver, não do mecanismo. O Playwright emula `prefers-color-scheme` por
+CDP com padrão `'light'` (skill `testing`) e essa emulação vence
+`nativeTheme.themeSource`; `page.emulateMedia({ colorScheme: null })` limpa a
+emulação, e com ela limpa os três estados batem nos dois lados, nos dois sentidos.
+Escalado ao `HISTORY.md` — o mecanismo em si nunca esteve quebrado.
+
 ### DS4.3 — Textarea auto-crescente é CSS puro
 
 `field-sizing: content` substitui o cálculo em JS que o `DS-4-BASE.md` propunha —
@@ -354,3 +362,4 @@ corre com o teste que digita, `HISTORY.md`).
 
 | Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
+| 15/08/2026 | 1 | **Fases 0–8 — plano concluído.** Um commit por fase (passos 0–7 já commitados na sessão anterior; esta sessão fechou a Fase 8). Fase 0: plano escrito com dois passes de validação por advisor Opus; único spec de e2e afetado identificado antecipadamente (`persistence.spec.ts`). Fases 1–2: threads segmentado 2/4/6, textarea `field-sizing: content`. Fase 3: primitivo `Popover` sobre `popover="auto"` + anchor positioning, controle 100% imperativo verificado ao vivo sem duplo-toggle. Fases 4–5: kebab na lista de conversas, popover de host:porta do Ollama, `retry` em `useAiAvailability`. Fase 6: alternador de tema manual — `nativeTheme.themeSource` como único mecanismo, **zero linhas mudadas em `tokens.css`**. Fase 7: `ModelSelector` migrado para pílula + popover, `budget` como render-prop (DS4.8), aviso de recusa mantido sempre visível fora do popover (DS4.5). **Fase 8 encontrou e corrigiu uma armadilha própria da sessão**: o primeiro script de verificação ao vivo do tema relatou o mecanismo quebrado (renderer preso em claro mesmo com `nativeTheme` correto no main) — causa era a emulação `prefers-color-scheme: 'light'` do Playwright por CDP vencendo `nativeTheme.themeSource`, já registrada na skill `testing` e não aplicada ao script descartável; `page.emulateMedia({ colorScheme: null })` confirmou o mecanismo correto nos dois sentidos. QA visual refeita com pares explícitos `emulateMedia({ colorScheme: 'dark' \| 'light' })` contra o `.dc.html`: os três popovers (modelo, Ollama, kebab), o alternador de tema e o composer multilinha revisados nos dois temas, sem desvio de tokens. **Verificação em três níveis:** `check:fast` **348 testes**, 0 erros; e2e dev **5/5**; revisão ao vivo nos dois temas com `emulateMedia` explícito. Bundle: CSS **42,99 → 44,96 kB** (+1,97), JS **1.563,68 → 1.571,29 kB** (+7,61). Não-alvos documentados: onboarding do protótipo, chips de sugestão, cartão de anexo (plano 16), linha de metadados sob a resposta (nunca existiu), acento/fontes do protótipo (tokens.css é a fonte), credenciais de nuvem (plano 09, DS4.6) | **DS-4 concluído.** Trilha DS encerrada definitivamente; próximo é o arco (plano 16) |

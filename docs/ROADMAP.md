@@ -26,9 +26,9 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    ── trilha R (refatoração), transversal ─────────────────────────────────────────
    R-1 comentários e TSDoc            plan/implemented/R-1-...         concluída (ago/2026)
    ── segunda rodada de handoff, transversal ──────────────────────────────────────
-▶  DS-4 popover, tema e acabamento final  plan/active/DS-4-...          escrito, não iniciado
+   DS-4 popover, tema e acabamento final  plan/implemented/DS-4-...        concluída (ago/2026)
    ── o arco, retomado depois da DS-4 ─────────────────────────────────────────────
-   16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
+▶  16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
    17 anexo: documento e imagem
    18 camada de dados (DuckDB)       study/05-proximos-passos.md
    19 propor: consulta e passos
