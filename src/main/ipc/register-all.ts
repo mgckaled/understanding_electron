@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, shell, dialog, BrowserWindow } from 'electron'
+import { app, shell, dialog, nativeTheme, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import type { JobEvent } from '@shared/ipc'
 import { JOB_EVENT_CHANNEL } from '@shared/channels'
@@ -52,6 +52,11 @@ function broadcastJobEvent(event: JobEvent): void {
 export function registerAll(): () => void {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))
 
+  // Read once, synchronously, before any window exists to ask — the renderer's
+  // own `prefers-color-scheme` already follows this once set (DS4.2), and
+  // `main/index.ts` reads `nativeTheme.shouldUseDarkColors` for the same reason.
+  nativeTheme.themeSource = readSettings(undefined, db).theme
+
   handle('app:info', () => getAppInfo(app.getVersion, is.dev))
   handle('app:memory', () => getSystemMemory(freemem, totalmem))
   handle('shell:openExternal', (args) => openExternal(args, shell.openExternal))
@@ -76,7 +81,10 @@ export function registerAll(): () => void {
   handle('conversation:settings', (args) => updateConversationSettings(args, db))
 
   handle('settings:read', (args) => readSettings(args, db))
-  handle('settings:write', (args) => writeSettings(args, db))
+  handle('settings:write', (args) => {
+    writeSettings(args, db)
+    if (args.theme !== undefined) nativeTheme.themeSource = args.theme
+  })
 
   return () => db.close()
 }

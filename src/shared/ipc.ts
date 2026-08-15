@@ -243,16 +243,21 @@ export type Conversation = {
 // a thread count from a different machine — hence its own key-value table. The
 // table is key-value so a new setting costs no migration; the CONTRACT is typed
 // anyway, because the flexibility that pays is in storage, not at the boundary.
+/** `system` follows `nativeTheme.shouldUseDarkColors`; `light`/`dark` override it (DS4.2). */
+export const themeSchema = z.enum(['system', 'light', 'dark'])
+export type Theme = z.infer<typeof themeSchema>
+
 export const appSettingsSchema = z.object({
   /** Cap on the CPU threads Ollama may use — maps to options.num_thread. */
-  numThread: z.number().int().positive()
+  numThread: z.number().int().positive(),
+  theme: themeSchema
 })
 export type AppSettings = z.infer<typeof appSettingsSchema>
 
 // Capped for a laptop already running VS Code, a browser and this agent. The
 // inference lives in the Ollama process, so this is the one lever the app has
 // over its CPU appetite. See plano 09 D9.1.
-export const DEFAULT_APP_SETTINGS: AppSettings = { numThread: 4 }
+export const DEFAULT_APP_SETTINGS: AppSettings = { numThread: 4, theme: 'system' }
 
 // job:event is not an invoke/handle channel — ipcMain never `.handle()`s it,
 // so it has no entry in argsSchema/IpcContract. main broadcasts JobEvent

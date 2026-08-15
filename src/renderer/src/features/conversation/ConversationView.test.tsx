@@ -354,7 +354,11 @@ describe('Configurações', () => {
     await user.click(screen.getByRole('button', { name: 'Configurações' }))
     const firstThreads = screen.getByRole('group', { name: 'Threads de CPU' })
     await user.click(within(firstThreads).getByRole('button', { name: '2' }))
-    await waitFor(() => expect(api.settings.write).toHaveBeenCalledWith({ numThread: 2 }))
+    // The whole current settings object, not a true patch — setSettings spreads
+    // `previous` (DS-4 passo 6: `theme` rides along once it exists).
+    await waitFor(() =>
+      expect(api.settings.write).toHaveBeenCalledWith({ numThread: 2, theme: 'system' })
+    )
     first.unmount()
 
     // Same window.api, so the same database — but a brand new tree and a brand
@@ -365,6 +369,30 @@ describe('Configurações', () => {
 
     const threads = await screen.findByRole('group', { name: 'Threads de CPU' })
     expect(within(threads).getByRole('button', { name: '2' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+  })
+
+  it('changes the theme from the sidebar (DS-4 passo 6)', async () => {
+    const api = installApiMock()
+    const user = userEvent.setup()
+
+    render(providers(<Settings />))
+    await user.click(screen.getByRole('button', { name: 'Configurações' }))
+    const theme = screen.getByRole('group', { name: 'Aparência' })
+
+    expect(within(theme).getByRole('button', { name: 'Sistema' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+
+    await user.click(within(theme).getByRole('button', { name: 'Escuro' }))
+
+    await waitFor(() =>
+      expect(api.settings.write).toHaveBeenCalledWith({ numThread: 4, theme: 'dark' })
+    )
+    expect(within(theme).getByRole('button', { name: 'Escuro' })).toHaveAttribute(
       'aria-pressed',
       'true'
     )

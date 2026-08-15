@@ -50,14 +50,15 @@ describe('writeSettings', () => {
   it('persists a value and reads it back', () => {
     writeSettings({ numThread: 2 }, db)
 
-    expect(readSettings(undefined, db)).toEqual({ numThread: 2 })
+    // Unwritten fields still resolve — readSettings merges with the defaults.
+    expect(readSettings(undefined, db)).toEqual({ numThread: 2, theme: 'system' })
   })
 
   it('overwrites rather than accumulating rows for the same key', () => {
     writeSettings({ numThread: 2 }, db)
     writeSettings({ numThread: 6 }, db)
 
-    expect(readSettings(undefined, db)).toEqual({ numThread: 6 })
+    expect(readSettings(undefined, db)).toEqual({ numThread: 6, theme: 'system' })
     expect(db.prepare('SELECT COUNT(*) AS n FROM app_settings').get()?.['n']).toBe(1)
   })
 

@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import type { Theme } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
 import Versions from '../../components/Versions'
@@ -55,6 +56,27 @@ function SegmentedField<T extends string | number>({
   )
 }
 
+const THEME_OPTIONS: { value: Theme; label: string }[] = [
+  { value: 'system', label: 'Sistema' },
+  { value: 'light', label: 'Claro' },
+  { value: 'dark', label: 'Escuro' }
+]
+
+// A third option the prototype never needed (it had no OS to follow): without
+// it, choosing Claro/Escuro once would leave no way back to "segue o sistema".
+function ThemeField(): React.JSX.Element {
+  const { settings, setSettings } = useSettings()
+
+  return (
+    <SegmentedField
+      label="Aparência"
+      options={THEME_OPTIONS}
+      value={settings.theme}
+      onChange={(theme) => setSettings((previous) => ({ ...previous, theme }))}
+    />
+  )
+}
+
 const THREAD_OPTIONS = [2, 4, 6].map((value) => ({ value, label: String(value) }))
 
 function ThreadsField(): React.JSX.Element {
@@ -93,6 +115,11 @@ function Settings(): React.JSX.Element {
             in the DOM when closed, so the field's initial useState would run at
             boot; `loaded`, because that useState copies the value, and mounting
             before the DB answered would freeze the DEFAULT into the field. */}
+        {open && loaded && (
+          <div className="mb-7">
+            <ThemeField />
+          </div>
+        )}
         {open && loaded && <ThreadsField />}
         {/* Only while open: its query refetches on mount, and mounting it with
             the modal closed would poll the provider from boot onwards. */}

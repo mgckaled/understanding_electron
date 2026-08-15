@@ -107,6 +107,16 @@ Resultado: `bg-accent` compila, `text-accent` **não existe**. As variantes `-te
 
 ## Tema: sistema operacional decide, sem alternador
 
+> ⚠️ **Revertido em ago/2026 (DS-4, DS4.2), a pedido explícito do usuário.** O texto
+> abaixo é o prompt que de fato foi colado na ferramenta nesta sessão — preservado
+> por ser o registro do que foi pedido, não a decisão em vigor. **A decisão atual:**
+> `AppSettings.theme` (`system`/`light`/`dark`) com alternador segmentado em
+> Configurações. O mecanismo não contradiz o parágrafo abaixo tanto quanto parece —
+> `nativeTheme.themeSource` setado no main já propaga `prefers-color-scheme` para o
+> renderer, então **`tokens.css` continua sem `data-theme` e sem uma linha mudada**;
+> só ganhou um emissor a mais (o main, via IPC) além do SO. Ver skill `design-system`
+> § Tema e `docs/HISTORY.md`.
+
 - **Não** usar `data-theme` no `<html>`.
 - **Não** usar a variante `dark:` do Tailwind.
 - O tema claro já funciona pela redefinição em `@media (prefers-color-scheme: light)` dentro do arquivo de tokens, e com `@theme inline` isso propaga sozinho para todas as utilidades.

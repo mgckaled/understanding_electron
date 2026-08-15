@@ -1,6 +1,6 @@
 ---
 name: design-system
-description: Tokens de design do crivo — o design system como envelope (define a linguagem visual, não constrói feature; o que já existe ganha a linguagem, o que ainda não existe nasce depois já vestido), os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, as duas densidades (chrome compacto vs superfície de leitura), tema pelo sistema operacional sem alternador manual, comportamento de desktop (seleção de texto, foco, movimento), os cinco primitivos (Button, Field, Panel, Toolbar, Dialog) em CSS Modules, ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor, medida ou tamanho de texto, abrir um modal, decidir onde um estado de UI mora, ou tratar um AppError na interface.
+description: Tokens de design do crivo — o design system como envelope (define a linguagem visual, não constrói feature; o que já existe ganha a linguagem, o que ainda não existe nasce depois já vestido), os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, as duas densidades (chrome compacto vs superfície de leitura), tema por `nativeTheme` com alternador manual (Sistema/Claro/Escuro), comportamento de desktop (seleção de texto, foco, movimento), os seis primitivos (Button, Field, Panel, Toolbar, Dialog, Popover) em CSS Modules, ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor, medida ou tamanho de texto, abrir um modal ou popover, decidir onde um estado de UI mora, ou tratar um AppError na interface.
 ---
 
 # Design tokens — crivo
@@ -64,11 +64,11 @@ E o mesmo para `danger`, `warn`, `ok`. **Regra de primeira linha:** ao pintar `c
 
 O que garante isso não é o CSS — é o teste `tokens.contrast.test.ts`, que resolve cada `var()` até o `#hex` e mede WCAG AA nos dois temas, para uma lista de pares **escrita à mão** (`[primeiro-plano, fundo, razão-mínima]`). Esse registro é a fonte da **intenção** de cada token: a linha `['warn-text', 'surface', 4.5]` afirma que `--color-warn-text` existe para ser primeiro plano sobre superfície — nenhuma análise estática de `tokens.css` sabe disso, porque o uso vive no CSS do componente. Cor nova (inclusive `--syntax-*` quando chegar) nasce com sua linha lá.
 
-## Tema pelo sistema operacional, sem alternador
+## Tema: alternador manual sobre `nativeTheme`, `tokens.css` nunca muda (DS4.2)
 
-`prefers-color-scheme` decide, e mais nada. Um alternador manual exige persistir a escolha, sincronizar `nativeTheme` no main e propagar por IPC — trabalho real que nada no app pede hoje. Como a estrutura de tokens não muda quando ele chegar, adiar não cobra juros depois.
+Decisão revertida em ago/2026, a pedido explícito do usuário — a versão anterior desta seção dizia "sem alternador". Três estados em `AppSettings.theme` (`system`/`light`/`dark`, `shared/ipc.ts`), com um alternador segmentado em Configurações. O mecanismo é só `nativeTheme.themeSource`: setá-lo no main **já propaga `prefers-color-scheme` para o renderer** (documentado no próprio Electron — `nativeTheme.on('updated')`/a query CSS casam com o valor setado), então `@media (prefers-color-scheme: light)` em `tokens.css` continua sendo o único lugar que decide cor por tema, **sem nenhuma linha alterada**. `register-all.ts` lê o `theme` salvo e seta `themeSource` antes de qualquer janela existir (sem flash); `settings:write` seta de novo quando o campo muda. Confirmado ao vivo: trocar de tema muda `--color-bg` na hora, e reabrir o app já bota no tema salvo.
 
-`--color-bg` é o único valor que precisa existir em dois lugares: o CSS e o `backgroundColor` do `BrowserWindow` em `src/main/index.ts` (fase 03) não compartilham fonte. Os dois arquivos têm comentário cruzado — ao mudar um, mude o outro.
+`--color-bg` é o único valor que precisa existir em dois lugares: o CSS e o `backgroundColor` do `BrowserWindow` em `src/main/index.ts` não compartilham fonte — agora **dois** valores possíveis do lado do main (`nativeTheme.shouldUseDarkColors` decide qual), lidos frescos a cada `createWindow()` para cobrir tanto o boot quanto a recriação de janela no macOS. Os dois arquivos têm comentário cruzado — ao mudar um, mude o outro.
 
 ## `ViewState<T>` mora no renderer, não em `shared/`
 
@@ -98,11 +98,13 @@ Um campo de texto mantém o próprio rascunho (`useState(String(valor))`) — é
 
 `src/renderer/src/shared/ui/messages.ts` mapeia `AppError['kind']` para texto, via `Record<ErrorKind, string>` — o `pnpm typecheck` força toda entrada nova da união a ganhar mensagem aqui. O fallback genérico dentro de `errorMessage()` é a garantia gêmea em runtime: protege contra um `kind` que este build não conhece (main mais novo que o renderer), não contra esquecimento em desenvolvimento — isso o typecheck já pega.
 
-## Os cinco primitivos: um diretório, um `.module.css`
+## Os seis primitivos: um diretório, um `.module.css`
 
-`Button`, `Field`, `Panel`, `Toolbar` e `Dialog` em `src/renderer/src/shared/ui/<Nome>/`, cada um com seu módulo CSS ao lado.
+`Button`, `Field`, `Panel`, `Toolbar`, `Dialog` e `Popover` em `src/renderer/src/shared/ui/<Nome>/`, cada um com seu módulo CSS ao lado.
 
 `Dialog` (fase 13, D13.8) é o `<dialog>` nativo com `showModal()`, sem dependência: camada superior, foco preso, `Esc`, foco devolvido ao gatilho e `::backdrop` estilizável vêm da plataforma. `closedby="any"` fecha ao clicar fora sem handler próprio — confirmado no Chromium 148 que o Electron 42 embute, lendo o IDL, não uma tabela de compatibilidade. **Configuração é modal, não rota:** um destino de navegação desmonta o que estava na tela; o modal é irmão na árvore, então uma resposta em fluxo continua chegando atrás. Duas armadilhas registradas: `eslint-plugin-react` ainda não conhece `closedby` (liberado em `eslint.config.mjs`, não por linha) e **o jsdom não implementa `<dialog>` de forma alguma** — há um polyfill mínimo em `test/setup-renderer.ts` que só permite montar o componente; camada superior, foco preso e `Esc` só se verificam ao vivo. CSS Modules já funciona sem configuração no Vite (arquivo terminado em `.module.css`), com nomes de classe exportados exatamente como escritos — sem conversão automática para camelCase, então as classes já nascem em camelCase no `.module.css` para acesso direto via `styles.algumaCoisa`.
+
+`Popover` (DS-4, passo 3) é o atributo nativo `popover="auto"` + CSS anchor positioning — mesmo raciocínio do `Dialog`, plataforma em vez de biblioteca. Controle 100% imperativo (`open` prop → `useEffect` → `showPopover()`/`hidePopover()`), nunca `popovertarget` declarativo; um listener de `toggle` sincroniza o fechamento nativo (clique fora, `Esc`) de volta ao `onClose`. **jsdom também não implementa a Popover API** — mesma família de shim do `Dialog` em `test/setup-renderer.ts` — e tem uma armadilha própria além da ausência: a folha de estilo default do próprio jsdom já tem `[popover]:not(:popover-open) { display:none }`, que o shim não alcança, então **todo** conteúdo de `Popover` computa `display:none` sob jsdom independente do estado real — consultas de nível 2 com `getByRole` precisam de `{ hidden: true }` (`docs/HISTORY.md` § jsdom esconde popover).
 
 `Field` clona o `children` (`cloneElement`) para injetar `id`/`aria-describedby` no controle real, o que o deixa agnóstico ao tipo de input. `Button` esconde o rótulo com `visibility: hidden` durante `loading` (não `color: transparent`) para o spinner herdar `currentColor` — a cor certa do `variant`, sem precisar de uma cor extra por variante.
 

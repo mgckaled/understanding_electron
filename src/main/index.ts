@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, nativeTheme, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { APP_ID } from '@shared/meta'
@@ -22,7 +22,9 @@ function createWindow(): void {
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#16171a', // must match --color-bg in shared/ui/tokens.css (dark theme)
+    // Read fresh (not captured once) to also cover a macOS `activate` re-creation.
+    // Must match --color-bg in shared/ui/tokens.css for both themes (DS4.2).
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#16171a' : '#f5f6f7',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
