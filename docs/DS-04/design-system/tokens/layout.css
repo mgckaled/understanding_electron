@@ -1,6 +1,0 @@
-/* Shell-specific measurements. Three consumers share these: the sidebar's own
-   width, its collapse transition, and the persisted width the app restores. */
-:root {
-  --sidebar-width: 264px;
-  --sidebar-width-collapsed: 44px;
-}
