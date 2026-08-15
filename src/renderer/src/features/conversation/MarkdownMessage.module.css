@@ -129,13 +129,42 @@
   overflow: hidden;
 }
 
-.lang {
-  display: block;
-  padding: var(--space-2) var(--space-4);
+/* The header row: language label (may be absent) on the left, copy button
+   always on the right — both outside <pre>, same reason as before (DS5). */
+/* No justify-content: space-between — with only the copy button present
+   (no language label), that would flush it left instead of right. The
+   button's own margin-left: auto handles the push regardless of sibling count. */
+.codeBlockHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--color-border);
+}
+
+.lang {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: var(--font-size-2xs);
+}
+
+.copyButton {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: var(--space-2);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+.copyButton:hover {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
 }
 
 .codeBlock pre {
