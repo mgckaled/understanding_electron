@@ -102,12 +102,14 @@ function Composer({
           placeholder="Pergunte algo ao modelo…"
           aria-label="Mensagem"
         />
-        {/* Left to right (DS5, item 9/17): clip · model pill · context pill ·
-            reload — pause + circular send stay on the right (DS-3 passo 8).
-            The selector keeps its refusal alerts and reload — nothing from
-            plano 15 is collapsed away. */}
+        {/* Left to right (F-1 fixup, item 4): clip · model pill · reload ·
+            context counter — pause + circular send stay on the right (DS-3
+            passo 8). gap-6, not gap-3 (item 3): distinct items get more air;
+            each item's own label stays close to its control via Field's own
+            gap-2, untouched. The selector keeps its refusal alerts — nothing
+            from plano 15 is collapsed away. */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-[0px] flex-wrap items-center gap-3">
+          <div className="flex min-w-[0px] flex-wrap items-center gap-5">
             <AttachButton />
             {modelSelector(budget)}
           </div>

@@ -208,8 +208,12 @@ function ConversationView(): React.JSX.Element {
         )}
 
         {belongsHere && isLoading && streaming !== '' && (
+          // whitespace-pre-wrap does NOT belong here (F-1 fixup, item 2): unlike
+          // the plain-text user bubble above, MarkdownMessage already turns blank
+          // lines into <p> margin — inheriting pre-wrap on top of that renders the
+          // source's raw "\n\n" as an extra visual blank line, doubling the gap.
           <div
-            className="mt-7 text-reading leading-normal whitespace-pre-wrap text-text-muted select-text"
+            className="mt-7 text-reading leading-normal text-text-muted select-text"
             aria-live="polite"
           >
             <MarkdownMessage text={completePartial(streaming)} highlight={false} />
@@ -260,6 +264,31 @@ function ConversationView(): React.JSX.Element {
               onSelect={(name) => choose({ model: name })}
               ceilingOf={ceilingOf}
             />
+            {/* Button + shape="square" (DS-5 fixup), not a raw <button> with
+                hand-picked padding — the hover box now matches every other
+                icon-only trigger in the row. size="md" (F-1 fixup, item 3),
+                matching AttachButton's paperclip — the two icon-only triggers
+                in this row read as the same weight now. Moved ahead of the
+                context counter (item 4): clip · model · reload · context. */}
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              shape="square"
+              // Both, because both readings are snapshots the app cannot observe
+              // changing: a model installed since launch, and memory freed since.
+              onClick={() => {
+                reload()
+                reloadMemory()
+              }}
+              // Installing a model is a system event with no notification, so the
+              // catalog can only be wrong in one direction — stale. The button is
+              // the whole answer to that, which is why it is always available.
+              title="Recarregar a lista de modelos"
+              aria-label="Recarregar a lista de modelos"
+            >
+              <RefreshCw size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
+            </Button>
             {catalog.status === 'ready' && (
               <ContextControl
                 contextWindow={contextWindow}
@@ -275,28 +304,6 @@ function ConversationView(): React.JSX.Element {
                 budget={budget}
               />
             )}
-            {/* Button + shape="square" (DS-5 fixup), not a raw <button> with
-                hand-picked padding — the hover box now matches every other
-                icon-only trigger in the row. */}
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              shape="square"
-              // Both, because both readings are snapshots the app cannot observe
-              // changing: a model installed since launch, and memory freed since.
-              onClick={() => {
-                reload()
-                reloadMemory()
-              }}
-              // Installing a model is a system event with no notification, so the
-              // catalog can only be wrong in one direction — stale. The button is
-              // the whole answer to that, which is why it is always available.
-              title="Recarregar a lista de modelos"
-              aria-label="Recarregar a lista de modelos"
-            >
-              <RefreshCw size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            </Button>
           </>
         )}
       />

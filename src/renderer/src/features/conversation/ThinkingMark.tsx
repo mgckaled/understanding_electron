@@ -1,7 +1,29 @@
+import { useEffect, useState } from 'react'
 import { DOTS, MARK_SCALE, useThinkingLoop, type Dot, type Variance } from './useThinkingLoop'
 
 // F-1: the crivo monogram as the "model is working" signal, always visible
 // between the thread and the composer.
+
+const DOT_FRAMES = ['.', '..', '...']
+const DOT_FRAME_MS = 450
+
+// A JS interval, not a CSS animation (F-1 fixup, item 1): the browser cannot
+// animate the discrete `content` of a pseudo-element through three text
+// values without a flicker-prone steps() trick, and the interval's lifetime
+// already matches the span's mount/unmount (isStreaming), so nothing extra
+// to clean up beyond the usual effect teardown.
+function useCyclingDots(active: boolean): string {
+  const [frame, setFrame] = useState(0)
+  useEffect(() => {
+    if (!active) return undefined
+    const id = setInterval(
+      () => setFrame((current) => (current + 1) % DOT_FRAMES.length),
+      DOT_FRAME_MS
+    )
+    return () => clearInterval(id)
+  }, [active])
+  return DOT_FRAMES[frame]
+}
 
 type DotStyle = React.CSSProperties & Record<`--thinking-${string}`, string | number>
 
@@ -33,15 +55,20 @@ type ThinkingMarkProps = {
  */
 function ThinkingMark({ isStreaming }: ThinkingMarkProps): React.JSX.Element {
   const { activeIds, variance, onDotIteration } = useThinkingLoop(isStreaming)
+  const dots = useCyclingDots(isStreaming)
 
   return (
     <div
-      className="flex-none bg-bg px-7 py-4"
+      className="flex-none bg-bg px-7 py-5"
       role={isStreaming ? 'status' : undefined}
+      // A stable name for assistive tech (F-1 fixup, item 1): the visible
+      // "respondendo…" span below re-renders every 450ms, and without this,
+      // a status region would announce every one of those dot changes.
+      aria-label={isStreaming ? 'Gerando resposta' : undefined}
       aria-hidden={isStreaming ? undefined : true}
     >
-      <div className="flex items-center gap-3">
-        <div className="relative h-[35px] w-[44px]">
+      <div className="flex items-center gap-5">
+        <div className="relative h-[46px] w-[57px]">
           {DOTS.map((dot) => {
             const isActive = activeIds.has(dot.id)
             return (
@@ -54,7 +81,11 @@ function ThinkingMark({ isStreaming }: ThinkingMarkProps): React.JSX.Element {
             )
           })}
         </div>
-        {isStreaming && <span className="text-sm text-text-muted italic">respondendo…</span>}
+        {isStreaming && (
+          <span className="text-lg text-text-muted italic" aria-hidden="true">
+            respondendo{dots}
+          </span>
+        )}
       </div>
     </div>
   )

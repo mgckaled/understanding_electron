@@ -139,7 +139,7 @@ function ModelPicker({
       <Field label="Modelo" inline>
         <button
           type="button"
-          className="flex max-w-[200px] cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-sunken px-4 py-2 font-ui text-xs text-text disabled:cursor-not-allowed disabled:text-text-faint"
+          className="flex h-(--control-height-md) max-w-[200px] cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-sunken px-5 font-ui text-sm text-text disabled:cursor-not-allowed disabled:text-text-faint"
           style={{ anchorName }}
           disabled={disabled || locked}
           aria-haspopup="listbox"
@@ -148,7 +148,7 @@ function ModelPicker({
           <span className="min-w-[0px] overflow-hidden text-ellipsis whitespace-nowrap">
             {current?.name ?? selected ?? 'Selecionar modelo'}
           </span>
-          <ChevronDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          <ChevronDown size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
         </button>
       </Field>
       <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
@@ -253,14 +253,14 @@ function ContextControl({
       <Field label="Janela de contexto" inline>
         <button
           type="button"
-          className="flex max-w-[120px] cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-sunken px-4 py-2 font-ui text-xs text-text disabled:cursor-not-allowed disabled:text-text-faint"
+          className="flex h-(--control-height-md) max-w-[120px] cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-sunken px-5 font-ui text-sm text-text disabled:cursor-not-allowed disabled:text-text-faint"
           style={{ anchorName }}
           disabled={disabled}
           aria-haspopup="dialog"
           onClick={() => setOpen((value) => !value)}
         >
           <span>{label}</span>
-          <ChevronDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          <ChevronDown size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
         </button>
       </Field>
       <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>

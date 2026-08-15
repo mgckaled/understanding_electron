@@ -22,9 +22,9 @@ export const DOTS: readonly Dot[] = [
   { id: 'd14', cx: 38.45, cy: -11.02, r: 1.3, opacity: 0.3 }
 ]
 
-// Local viewBox unit → px. The ring spans ~50 local units; 0.7 puts it at
-// ~35px, close to the composer's own control height.
-export const MARK_SCALE = 0.7
+// Local viewBox unit → px. The ring spans ~50 local units; 0.91 (1.3x the
+// original 0.7 — F-1 fixup, item 1) puts it at ~46px.
+export const MARK_SCALE = 0.91
 // The ring's centre, not the full dot set's centroid — d13/d14 are loose
 // sparks outside the ring on purpose, and averaging them in would pull every
 // ring dot's outward vector off-radial.

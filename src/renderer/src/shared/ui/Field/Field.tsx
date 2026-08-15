@@ -35,7 +35,10 @@ function Field({ label, hint, error, children, inline = false }: FieldProps): Re
   return (
     <div className={inline ? 'flex flex-none items-center gap-2' : 'flex flex-col gap-2'}>
       <label
-        className="flex-none text-xs font-semibold whitespace-nowrap text-text-muted"
+        // text-sm, not text-xs (F-1 fixup, item 3): only the inline form sits
+        // in the composer's controls row, next to md-scale icon buttons —
+        // block labels (Settings, elsewhere) are untouched.
+        className={`flex-none font-semibold whitespace-nowrap text-text-muted ${inline ? 'text-sm' : 'text-xs'}`}
         htmlFor={inputId}
       >
         {label}
