@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger'
 type ButtonSize = 'sm' | 'md' | 'lg'
-type ButtonShape = 'default' | 'circle'
+type ButtonShape = 'default' | 'circle' | 'square'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant
@@ -39,14 +39,19 @@ const SIZE: Record<ButtonSize, string> = {
   lg: 'h-(--control-height-lg) px-7 text-md'
 }
 
-// Rounding is an axis, not a BASE constant (see the ⚠️ above). `circle` is a
-// square icon button: aspect-square ties the width to the size's height, and the
-// important px-[0px] beats the size's px-* (the DS-2 `!` pattern) so padding does
-// not stretch it out of a circle. `px-[0px]`, not `px-0`: with --spacing base off
-// the numeric form emits nothing.
+// Rounding is an axis, not a BASE constant (see the ⚠️ above). `circle` and
+// `square` are both icon-only buttons: aspect-square ties the width to the
+// size's height, and the important px-[0px] beats the size's px-* (the DS-2
+// `!` pattern) so padding does not stretch it off-square. `px-[0px]`, not
+// `px-0`: with --spacing base off the numeric form emits nothing. `square`
+// exists because every icon-only trigger in the app (gear, clip, kebab,
+// reload, collapse, Dialog's close) used a TEXT button's horizontal padding
+// before DS5, so the hover highlight read as a wide rectangle, never a box
+// around the icon (DS-5 fixup).
 const SHAPE: Record<ButtonShape, string> = {
   default: 'rounded-md',
-  circle: 'aspect-square rounded-full px-[0px]!'
+  circle: 'aspect-square rounded-full px-[0px]!',
+  square: 'aspect-square rounded-md px-[0px]!'
 }
 
 function Button({

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Button from '../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../shared/ui/icon'
 
@@ -41,17 +41,22 @@ function Sidebar({ nav, content, footer }: SidebarProps): React.JSX.Element {
         className={`row-start-1 flex items-center p-3 ${collapsed ? 'justify-center' : 'justify-between'}`}
       >
         {!collapsed && <span className="font-ui text-sm font-semibold text-text">Chat local</span>}
+        {/* PanelLeftOpen/Close, not chevrons (DS-5 fixup, item 5) — the target
+            uses the sidebar-panel glyph, and the two icons already differ by
+            state (an arrow inside the panel, pointing the direction the click
+            takes you), so there is nothing extra to encode by hand. */}
         <Button
           variant="ghost"
           size="sm"
+          shape="square"
           onClick={() => setCollapsed((value) => !value)}
           aria-expanded={!collapsed}
           aria-label={collapsed ? 'Expandir a barra lateral' : 'Recolher a barra lateral'}
         >
           {collapsed ? (
-            <ChevronsRight size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            <PanelLeftOpen size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           ) : (
-            <ChevronsLeft size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            <PanelLeftClose size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           )}
         </Button>
       </div>

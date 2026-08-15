@@ -24,12 +24,11 @@ type RowProps = {
 // stylesheet order (the DS-1/DS-2 order trap).
 const ROW_BASE = 'flex items-center gap-1 rounded-md border-l-2 hover:bg-surface-raised'
 
-// px-3! overrides the Button's own px-5: both set padding-inline, and without
-// the important the component's utility wins by stylesheet order, not by class
-// order. `invisible` (visibility, not display) keeps the reserved width, so
-// revealing the actions on hover/focus never shoves the title — this is the
-// first use of the group pattern in the project (the group sits on the row).
-const ACTION = 'flex-none px-3! invisible group-hover:visible group-focus-within:visible'
+// `shape="square"` (Button) already overrides the size's own px-* — `invisible`
+// (visibility, not display) keeps the reserved width, so revealing the action
+// on hover/focus never shoves the title. First use of the group pattern in the
+// project (the group sits on the row).
+const ACTION = 'flex-none invisible group-hover:visible group-focus-within:visible'
 
 function ConversationRow({
   conversation,
@@ -101,6 +100,7 @@ function ConversationRow({
       <Button
         variant="ghost"
         size="sm"
+        shape="square"
         className={ACTION}
         style={{ anchorName }}
         aria-label={`Mais ações para ${conversation.title}`}
@@ -110,31 +110,36 @@ function ConversationRow({
         <MoreVertical size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
       </Button>
       <Popover open={menuOpen} onClose={() => setMenuOpen(false)} anchorName={anchorName}>
-        {/* Titled per item: a screen reader landing directly on one, without the
-            row's own context, has no other way to know which conversation it acts on. */}
-        <div className="flex min-w-[160px] flex-col gap-1">
+        {/* Titled per item VIA aria-label, not visible text (DS-5 fixup): the
+            row's own title can be long, and repeating it inside every menu
+            item wrapped the popover far past the target's width. A screen
+            reader landing directly on one still gets which conversation it
+            acts on — just from the label, not the label the sighted user sees. */}
+        <div className="flex min-w-[180px] flex-col gap-1">
           <button
             type="button"
-            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-2 text-left font-ui text-xs text-text hover:bg-surface"
+            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-text hover:bg-surface"
+            aria-label={`Editar título de ${conversation.title}`}
             onClick={() => {
               setMenuOpen(false)
               onStartRename()
             }}
           >
             <Pencil size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            {`Editar título de ${conversation.title}`}
+            Editar título
           </button>
           {/* danger-text, never the solid danger fill, as text (D10.1). */}
           <button
             type="button"
-            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-2 text-left font-ui text-xs text-danger-text hover:bg-surface"
+            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-danger-text hover:bg-surface"
+            aria-label={`Excluir ${conversation.title}`}
             onClick={() => {
               setMenuOpen(false)
               onRemove()
             }}
           >
             <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            {`Excluir ${conversation.title}`}
+            Excluir
           </button>
         </div>
       </Popover>

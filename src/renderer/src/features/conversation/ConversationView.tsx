@@ -270,9 +270,14 @@ function ConversationView(): React.JSX.Element {
                 budget={budget}
               />
             )}
-            <button
+            {/* Button + shape="square" (DS-5 fixup), not a raw <button> with
+                hand-picked padding — the hover box now matches every other
+                icon-only trigger in the row. */}
+            <Button
               type="button"
-              className="cursor-pointer self-end rounded-md border border-border bg-transparent px-3 py-2 text-xs leading-none text-text-muted hover:text-text"
+              variant="secondary"
+              size="sm"
+              shape="square"
               // Both, because both readings are snapshots the app cannot observe
               // changing: a model installed since launch, and memory freed since.
               onClick={() => {
@@ -286,7 +291,7 @@ function ConversationView(): React.JSX.Element {
               aria-label="Recarregar a lista de modelos"
             >
               <RefreshCw size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            </button>
+            </Button>
           </>
         )}
       />

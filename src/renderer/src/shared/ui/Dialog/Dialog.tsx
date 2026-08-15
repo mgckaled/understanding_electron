@@ -48,7 +48,7 @@ function Dialog({ open, title, onClose, children }: DialogProps): React.JSX.Elem
         <h2 className="text-md font-semibold" id={titleId}>
           {title}
         </h2>
-        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fechar">
+        <Button variant="ghost" size="sm" shape="square" onClick={onClose} aria-label="Fechar">
           <X size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
         </Button>
       </div>

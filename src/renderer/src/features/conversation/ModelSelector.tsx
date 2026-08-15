@@ -136,7 +136,7 @@ function ModelPicker({
           to inject `id` (skill design-system), so a StateView between would take
           the id and the button would get none, leaving <label for> pointing at
           nothing. A <button> is labelable, so <label htmlFor> still resolves. */}
-      <Field label="Modelo">
+      <Field label="Modelo" inline>
         <button
           type="button"
           className="flex max-w-[200px] cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-sunken px-4 py-2 font-ui text-xs text-text disabled:cursor-not-allowed disabled:text-text-faint"
@@ -179,7 +179,7 @@ function ModelPicker({
                   setOpen(false)
                 }}
                 onMouseEnter={() => setHighlighted(index)}
-                className={`cursor-pointer rounded-md px-4 py-2 font-ui text-xs text-text ${
+                className={`cursor-pointer rounded-md px-4 py-2 font-ui text-md text-text ${
                   index === highlighted ? 'bg-surface-raised' : ''
                 }`}
               >
@@ -250,7 +250,7 @@ function ContextControl({
 
   return (
     <>
-      <Field label="Janela de contexto">
+      <Field label="Janela de contexto" inline>
         <button
           type="button"
           className="flex max-w-[120px] cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-sunken px-4 py-2 font-ui text-xs text-text disabled:cursor-not-allowed disabled:text-text-faint"

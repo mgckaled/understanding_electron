@@ -106,10 +106,17 @@ function Settings(): React.JSX.Element {
     <>
       {/* The gear now lives in the sidebar footer, next to the Ollama status
           (DS-3): an icon trigger, not the labelled button it was in the nav.
-          size="md" (28px), not "sm" (24px) — a 24px icon (DS5 item 1: notably
-          bigger than the sm icons around it) needs the taller control to keep
-          any padding at all. */}
-      <Button variant="ghost" size="md" onClick={() => setOpen(true)} aria-label="Configurações">
+          shape="square" (DS-5 fixup): an icon-only button reads as a hover
+          box around the icon, not a wide rectangle sized for text. size="lg"
+          (34px), not "md" — the lg icon (26px, DS5 item 1: notably bigger
+          than its sm/md neighbours) needs the taller control for real padding. */}
+      <Button
+        variant="ghost"
+        size="lg"
+        shape="square"
+        onClick={() => setOpen(true)}
+        aria-label="Configurações"
+      >
         <SettingsIcon size={ICON_SIZE.lg} strokeWidth={ICON_STROKE} />
       </Button>
       <Dialog open={open} title="Configurações" onClose={() => setOpen(false)}>

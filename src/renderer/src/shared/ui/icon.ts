@@ -4,7 +4,9 @@
  * component, never a CSS declaration a selector resolves — unlike `--space-*`
  * or `--font-size-*`, there is no `var()` consumer to keep in sync.
  */
-export const ICON_SIZE = { sm: 14, md: 16, lg: 24 } as const
+// +2px across the board (DS-5 fixup) — read small next to the chrome type
+// bump the same plan already made (Fase 4).
+export const ICON_SIZE = { sm: 16, md: 18, lg: 26 } as const
 
 /**
  * Thinner than lucide-react's own default (2), to match the flat, shadow-free,

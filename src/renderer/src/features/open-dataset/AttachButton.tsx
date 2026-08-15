@@ -30,9 +30,12 @@ function AttachButton(): React.JSX.Element {
 
   return (
     <>
+      {/* shape="square" (DS-5 fixup): icon-only, so the hover box wraps the
+          icon, not a text button's horizontal padding. */}
       <Button
         variant="ghost"
         size="md"
+        shape="square"
         style={{ anchorName }}
         aria-label="Anexar arquivo"
         aria-haspopup="dialog"

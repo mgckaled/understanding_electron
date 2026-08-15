@@ -10,9 +10,15 @@ type FieldProps = {
   hint?: string
   error?: string
   children: ReactElement<FieldControlProps>
+  /**
+   * Label beside the control instead of above it (DS-5 fixup) — a composer
+   * row of pills wants one line, not each label pushing its own pill down
+   * a row and every pill ending at a different height.
+   */
+  inline?: boolean
 }
 
-function Field({ label, hint, error, children }: FieldProps): React.JSX.Element {
+function Field({ label, hint, error, children, inline = false }: FieldProps): React.JSX.Element {
   const inputId = useId()
   const hintId = useId()
   const errorId = useId()
@@ -27,8 +33,11 @@ function Field({ label, hint, error, children }: FieldProps): React.JSX.Element 
     : children
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-xs font-semibold text-text-muted" htmlFor={inputId}>
+    <div className={inline ? 'flex flex-none items-center gap-2' : 'flex flex-col gap-2'}>
+      <label
+        className="flex-none text-xs font-semibold whitespace-nowrap text-text-muted"
+        htmlFor={inputId}
+      >
         {label}
       </label>
       {control}
