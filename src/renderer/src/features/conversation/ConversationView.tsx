@@ -234,7 +234,10 @@ function ConversationView(): React.JSX.Element {
         historyChars={historyChars}
         limit={numCtx}
         charsPerToken={charsPerToken}
-        modelSelector={
+        // A render-prop, not a plain element (DS4.8): `budget` only exists inside
+        // Composer (the draft lives there, D13.2), so this function is defined
+        // here and only ever CALLED by Composer, at the point `budget` exists.
+        modelSelector={(budget) => (
           <ModelSelector
             state={catalog}
             selected={model}
@@ -256,8 +259,9 @@ function ConversationView(): React.JSX.Element {
             // one typed.
             scopeKey={conversation?.id ?? 'sem-conversa'}
             onNumCtx={(tokens) => choose({ numCtx: tokens })}
+            budget={budget}
           />
-        }
+        )}
       />
     </section>
   )

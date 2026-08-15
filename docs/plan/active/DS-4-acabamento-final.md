@@ -295,6 +295,14 @@ gatilho para fechar um popover aberto não o reabre, porque `showPopover()`/
 `hidePopover()` num estado já correspondente é *no-op* de especificação.
 `popovertarget` declarativo não foi necessário.
 
+**Segundo achado, na Fase 7, também só por verificação ao vivo:** `Popover` não
+aceita `className` — qualquer classe de autor que sete `display` (`flex`
+incluída) vence a regra do UA stylesheet que esconde `[popover]:not(:popover-open)`,
+porque origem da cascata (UA vs. autor) é ortogonal à especificidade. O
+`ModelSelector` tinha passado `className="flex ..."` direto no `Popover`; o
+popover ficava "fechado" (`:popover-open` `false`) mas visualmente presente.
+Escalado ao `HISTORY.md`.
+
 ### DS4.5 — Orçamento de contexto: medidor migra, aviso de recusa fica
 
 Ver tabela de decisões acima. Resolve a tensão entre `DS-4-BASE.md § 1(b)` e D15.5/

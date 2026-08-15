@@ -4,6 +4,11 @@ import styles from './Popover.module.css'
 // Native `[popover]` + CSS anchor positioning, control fully imperative (DS4.4):
 // no click-outside listener, no position:fixed measured by hand.
 
+// ⚠️ No `className` prop, on purpose: an author `display` class on this root
+// (even Tailwind's `flex`) beats the UA stylesheet's hide-when-closed rule
+// regardless of specificity. Consumers wrap their content in their own inner
+// `<div className="flex …">` instead — see HISTORY.md § um className no Popover.
+
 type PopoverProps = {
   open: boolean
   onClose: () => void
@@ -11,16 +16,9 @@ type PopoverProps = {
    *  `style={{ anchorName }}` — Popover only knows the panel side of the pair. */
   anchorName: string
   children: ReactNode
-  className?: string
 }
 
-function Popover({
-  open,
-  onClose,
-  anchorName,
-  children,
-  className
-}: PopoverProps): React.JSX.Element {
+function Popover({ open, onClose, anchorName, children }: PopoverProps): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
 
   // Synchronising a prop to an imperative DOM API — same shape as Dialog's own
@@ -50,13 +48,7 @@ function Popover({
     <div
       ref={ref}
       popover="auto"
-      className={[
-        styles.popover,
-        'rounded-lg border border-border-strong bg-surface-raised p-2 font-ui text-sm text-text',
-        className
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={`${styles.popover} rounded-lg border border-border-strong bg-surface-raised p-2 font-ui text-sm text-text`}
       style={{ positionAnchor: anchorName }}
     >
       {children}

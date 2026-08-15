@@ -57,32 +57,52 @@ function mount(): Api {
   return api
 }
 
-function selector(): HTMLSelectElement {
-  return screen.getByLabelText('Modelo') as HTMLSelectElement
+// The pill trigger, replacing the native <select> (DS-4 passo 7). A <button>
+// is labelable, so `Field`'s <label for> still resolves the accessible name.
+// Async (find, not get): the catalog is still loading for a tick after mount.
+function modelTrigger(): Promise<HTMLElement> {
+  return screen.findByRole('button', { name: 'Modelo' })
+}
+
+// jsdom's own default stylesheet forces `[popover]:not(:popover-open)` to
+// `display: none` regardless of real state (see the shim in
+// test/setup-renderer.ts) — every query into popover content needs
+// `hidden: true`, whether the popover was opened or not.
+function modelOption(name: RegExp): HTMLElement {
+  return screen.getByRole('option', { name, hidden: true })
+}
+
+async function chooseModel(user: ReturnType<typeof userEvent.setup>, name: RegExp): Promise<void> {
+  await user.click(await modelTrigger())
+  await user.click(modelOption(name))
 }
 
 describe('ModelSelector', () => {
   it('lists the installed models with size and context ceiling', async () => {
+    const user = userEvent.setup()
     mount()
+    await user.click(await modelTrigger())
 
-    await screen.findByRole('option', { name: /gemma3:4b/ })
+    await waitFor(() => modelOption(/gemma3:4b/))
     // The option text is what the catalog knows, which is the whole reason for
     // the extra /api/show per model: neither number exists in /api/tags.
-    expect(screen.getByRole('option', { name: /gemma3:4b/ })).toHaveTextContent('3,1 GB')
-    expect(screen.getByRole('option', { name: /gemma3:4b/ })).toHaveTextContent('128k')
-    expect(screen.getByRole('option', { name: /qwen2\.5-coder:3b/ })).toHaveTextContent('32k')
+    expect(modelOption(/gemma3:4b/)).toHaveTextContent('3,1 GB')
+    expect(modelOption(/gemma3:4b/)).toHaveTextContent('128k')
+    expect(modelOption(/qwen2\.5-coder:3b/)).toHaveTextContent('32k')
   })
 
   it('preselects the first installed model instead of a hardcoded name', async () => {
     mount()
 
-    await waitFor(() => expect(selector().value).toBe('gemma3:4b'))
+    expect(await modelTrigger()).toHaveTextContent('gemma3:4b')
   })
 
   it('badges vision on the model that has it, and nothing else', async () => {
+    const user = userEvent.setup()
     mount()
+    await user.click(await modelTrigger())
 
-    await screen.findByText('imagem')
+    expect(await screen.findByText('imagem')).toBeInTheDocument()
     expect(screen.queryByText('ferramentas')).not.toBeInTheDocument()
   })
 
@@ -92,9 +112,8 @@ describe('ModelSelector', () => {
     // screen: a closed list would silently drop it.
     const user = userEvent.setup()
     mount()
-    await screen.findByRole('option', { name: /qwen/ })
 
-    await user.selectOptions(selector(), 'qwen2.5-coder:3b')
+    await chooseModel(user, /qwen2\.5-coder:3b/)
 
     expect(await screen.findByText('insert')).toBeInTheDocument()
     expect(screen.getByText('ferramentas')).toBeInTheDocument()
@@ -103,9 +122,8 @@ describe('ModelSelector', () => {
   it('sends the chosen model, not the default one', async () => {
     const user = userEvent.setup()
     const api = mount()
-    await screen.findByRole('option', { name: /qwen/ })
 
-    await user.selectOptions(selector(), 'qwen2.5-coder:3b')
+    await chooseModel(user, /qwen2\.5-coder:3b/)
     await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
@@ -123,7 +141,7 @@ describe('ModelSelector', () => {
     // conversation was using.
     const user = userEvent.setup()
     mount()
-    await screen.findByRole('option', { name: /qwen/ })
+    await modelTrigger()
 
     // Captured once, while it is still the only thing by that name: a created
     // conversation carries DEFAULT_TITLE, which IS 'Nova conversa', so after the
@@ -131,15 +149,18 @@ describe('ModelSelector', () => {
     // true` rule the testing skill records for per-row actions.
     const newConversation = screen.getByRole('button', { name: 'Nova conversa' })
 
+    // Picked AFTER the conversation exists, not before: choosing while `pending`
+    // (no conversation yet) would not carry over — a fresh conversation's own
+    // `settings` starts empty, it does not inherit `pending` (ConversationView).
     await user.click(newConversation)
-    await user.selectOptions(selector(), 'qwen2.5-coder:3b')
-    await waitFor(() => expect(selector().value).toBe('qwen2.5-coder:3b'))
+    await chooseModel(user, /qwen2\.5-coder:3b/)
+    await waitFor(async () => expect(await modelTrigger()).toHaveTextContent('qwen2.5-coder:3b'))
 
     await user.click(newConversation)
 
     // The second conversation chose nothing, so it falls back to the catalog's
     // first entry — it does not inherit the previous conversation's pick.
-    await waitFor(() => expect(selector().value).toBe('gemma3:4b'))
+    await waitFor(async () => expect(await modelTrigger()).toHaveTextContent('gemma3:4b'))
   })
 
   it('records the whole pair on the send that creates the conversation', async () => {
@@ -148,9 +169,7 @@ describe('ModelSelector', () => {
     // grey control, floating value.
     const user = userEvent.setup()
     const api = mount()
-    await screen.findByRole('option', { name: /qwen/ })
-
-    await user.selectOptions(selector(), 'qwen2.5-coder:3b')
+    await chooseModel(user, /qwen2\.5-coder:3b/)
     await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
@@ -188,13 +207,14 @@ describe('ModelSelector', () => {
     // The composer and the rest of the view still render; only the selector is
     // in an error state. A catalog that fails must not take the screen with it.
     expect(screen.getByPlaceholderText(PROMPT)).toBeInTheDocument()
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Modelo' })).not.toBeInTheDocument()
   })
 
   it('refetches the catalog when asked, because installing a model is invisible', async () => {
     const user = userEvent.setup()
     const api = mount()
-    await screen.findByRole('option', { name: /qwen/ })
+    await user.click(await modelTrigger())
+    await waitFor(() => modelOption(/qwen/))
     expect(api.ai.models).toHaveBeenCalledTimes(1)
 
     await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
@@ -207,7 +227,8 @@ describe('ModelSelector', () => {
     // figure the ceiling is computed from.
     const user = userEvent.setup()
     const api = mount()
-    await screen.findByRole('option', { name: /qwen/ })
+    await user.click(await modelTrigger())
+    await waitFor(() => modelOption(/qwen/))
     expect(api.app.memory).toHaveBeenCalledTimes(1)
 
     await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
@@ -217,9 +238,9 @@ describe('ModelSelector', () => {
 })
 
 /*
- * What the <select> actually draws. Level 1 covered `selectableModels` and
- * passed while the options came from the unfiltered state — the filter worked
- * and the list on screen came from somewhere else (D15.11).
+ * What the list actually draws. Level 1 covered `selectableModels` and passed
+ * while the options came from the unfiltered state — the filter worked and the
+ * list on screen came from somewhere else (D15.11).
  */
 describe('what the list offers', () => {
   const VARIANT: AiModel = {
@@ -243,24 +264,30 @@ describe('what the list offers', () => {
   }
 
   it('leaves a Modelfile variant of a listed model out of the options', async () => {
+    const user = userEvent.setup()
     mountWith([TEST_MODEL, VARIANT, CODER])
+    await user.click(await modelTrigger())
 
-    await screen.findByRole('option', { name: /gemma3:4b/ })
-    expect(screen.queryByRole('option', { name: /custom/ })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('option')).toHaveLength(2)
+    await waitFor(() => modelOption(/gemma3:4b/))
+    expect(screen.queryByRole('option', { name: /custom/, hidden: true })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('option', { hidden: true })).toHaveLength(2)
   })
 
   it('leaves out a model that cannot converse', async () => {
+    const user = userEvent.setup()
     mountWith([TEST_MODEL, EMBEDDER])
+    await user.click(await modelTrigger())
 
-    await screen.findByRole('option', { name: /gemma3:4b/ })
-    expect(screen.queryByRole('option', { name: /nomic/ })).not.toBeInTheDocument()
+    await waitFor(() => modelOption(/gemma3:4b/))
+    expect(screen.queryByRole('option', { name: /nomic/, hidden: true })).not.toBeInTheDocument()
   })
 
   it('keeps the variant when its parent is not installed', async () => {
+    const user = userEvent.setup()
     mountWith([VARIANT, CODER])
+    await user.click(await modelTrigger())
 
-    expect(await screen.findByRole('option', { name: /custom/ })).toBeInTheDocument()
+    expect(await screen.findByRole('option', { name: /custom/, hidden: true })).toBeInTheDocument()
   })
 
   it('reports empty when nothing left can converse', async () => {
@@ -285,25 +312,26 @@ describe('the pair locks on the first send', () => {
   it('stops offering another model once there is a turn', async () => {
     const user = userEvent.setup()
     mount()
-    await screen.findByRole('option', { name: /qwen/ })
-    expect(selector()).toBeEnabled()
+    expect(await modelTrigger()).toBeEnabled()
 
     await send(user)
 
-    await waitFor(() => expect(selector()).toBeDisabled())
+    await waitFor(async () => expect(await modelTrigger()).toBeDisabled())
   })
 
   it('turns the window from a control into a stated number', async () => {
     const user = userEvent.setup()
     mount()
-    await screen.findByLabelText('Contexto')
+    await user.click(await modelTrigger())
+    await screen.findByLabelText('Contexto', { selector: 'input' })
+    await user.click(await modelTrigger())
 
     await send(user)
 
     expect(await screen.findByText(/32\.768 tokens · travado/)).toBeInTheDocument()
     // Not a disabled input: one still reads as "editable later", which is the
     // opposite of what the lock promises.
-    expect(screen.queryByLabelText('Contexto')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Contexto', { selector: 'input' })).not.toBeInTheDocument()
   })
 
   it('refuses the send when the locked window no longer fits, without shrinking it', async () => {
@@ -312,7 +340,9 @@ describe('the pair locks on the first send', () => {
     // would give back the instability the lock removes.
     const user = userEvent.setup()
     const api = mount()
-    await screen.findByLabelText('Contexto')
+    await user.click(await modelTrigger())
+    await screen.findByLabelText('Contexto', { selector: 'input' })
+    await user.click(await modelTrigger())
     await send(user)
     await screen.findByText(/travado/)
 
@@ -321,6 +351,7 @@ describe('the pair locks on the first send', () => {
       totalBytes: 16 * 1024 ** 3
     })
     await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
+    await user.click(await modelTrigger())
 
     expect(await screen.findByText(/reservou 32\.768 tokens/)).toBeInTheDocument()
     expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
@@ -331,10 +362,9 @@ describe('the pair locks on the first send', () => {
     // conversation would be answered by a model its transcript never used.
     const user = userEvent.setup()
     const api = mount()
-    await screen.findByRole('option', { name: /qwen/ })
-    await user.selectOptions(selector(), 'qwen2.5-coder:3b')
+    await chooseModel(user, /qwen2\.5-coder:3b/)
     await send(user)
-    await waitFor(() => expect(selector()).toBeDisabled())
+    await waitFor(async () => expect(await modelTrigger()).toBeDisabled())
 
     vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [TEST_MODEL] })
     await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
@@ -371,21 +401,29 @@ describe('a model that does not fit', () => {
   it('marks it in the list instead of disabling the option', async () => {
     // Free RAM is a snapshot of a machine the user is also using: closing a
     // browser changes the answer, so a dead option would be worse than a mark.
+    const user = userEvent.setup()
     mountBig()
+    await user.click(await modelTrigger())
 
-    expect(await screen.findByRole('option', { name: /não cabe/ })).toBeEnabled()
+    expect(await screen.findByRole('option', { name: /não cabe/, hidden: true })).toBeEnabled()
   })
 
   it('says why, instead of offering a context window of zero', async () => {
+    const user = userEvent.setup()
     mountBig()
+    await user.click(await modelTrigger())
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Não cabe na memória livre/)
-    expect(screen.queryByLabelText('Contexto')).not.toBeInTheDocument()
+    expect(await screen.findByRole('alert', { hidden: true })).toHaveTextContent(
+      /Não cabe na memória livre/
+    )
+    expect(screen.queryByLabelText('Contexto', { selector: 'input' })).not.toBeInTheDocument()
   })
 
   it('closes the composer, because there is no window to send into', async () => {
+    const user = userEvent.setup()
     mountBig()
-    await screen.findByRole('alert')
+    await user.click(await modelTrigger())
+    await screen.findByRole('alert', { hidden: true })
 
     expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()

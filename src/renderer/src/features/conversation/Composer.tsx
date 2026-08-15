@@ -1,5 +1,5 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
-import { budgetFor } from '@core/ai/budget'
+import { budgetFor, type Budget } from '@core/ai/budget'
 import Button from '../../shared/ui/Button/Button'
 
 // Fixed at the bottom of the conversation, never inside the scrolling list. The
@@ -29,11 +29,11 @@ type ComposerProps = {
   charsPerToken: number
   /**
    * The model selector, moved out of the removed top toolbar and into the
-   * composer's controls row (DS-3 passo 7). A slot, not a merge: the eight props
-   * it needs stay wired in ConversationView, and the two files stay under the
-   * size rule.
+   * composer's controls row (DS-3 passo 7). A render-prop, not a plain node
+   * (DS4.8): `budget` is computed HERE (below), but the popover that displays
+   * it is defined in ConversationView, which has no `draft` to compute it from.
    */
-  modelSelector: ReactNode
+  modelSelector: (budget: Budget | null) => ReactNode
 }
 
 function Composer({
@@ -103,7 +103,7 @@ function Composer({
             8). The selector keeps its refusal alerts and reload — nothing from
             plano 15 is collapsed away. */}
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-[0px]">{modelSelector}</div>
+          <div className="min-w-[0px]">{modelSelector(budget)}</div>
           <div className="flex flex-none items-center gap-2">
             {loading && (
               <Button
@@ -131,29 +131,9 @@ function Composer({
           </div>
         </div>
       </div>
-      {budget !== null && (
-        <div className="flex items-center gap-3 px-2">
-          {/* The meter, chrome density and deliberately quiet: it exists so the
-              overflow is VISIBLE BEFORE it happens (D15.4) — without it the first
-              sign of trouble is a confident answer about half a conversation. Only
-              size by utility: base.css restores the native padding/border. */}
-          <meter
-            className="h-[6px] w-[120px]"
-            min={0}
-            max={1}
-            low={0.7}
-            high={0.9}
-            optimum={0}
-            value={Math.min(budget.used, 1)}
-            aria-label="Orçamento de contexto"
-          />
-          <span className="text-2xs text-text-faint tabular-nums">
-            ~{budget.estimated.toLocaleString('pt-BR')} de {budget.limit.toLocaleString('pt-BR')}{' '}
-            tokens
-          </span>
-        </div>
-      )}
-
+      {/* The meter used to sit here (D15.4) — it moved into the model popover
+          (DS4.5). The refusal below did NOT move: D15.5 wants it visible before
+          the overflow happens, and a popover the user has not opened is not that. */}
       {overflows && budget !== null && (
         <p
           className="rounded-md border border-warn-text bg-surface-sunken px-4 py-3 text-xs text-warn-text"
