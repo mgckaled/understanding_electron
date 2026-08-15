@@ -1,0 +1,301 @@
+<!-- @dsCard group="crivo" viewport="1440x900" subtitle="Full conversation shell — sidebar, thread, composer, settings" -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>crivo — UI kit</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root" style="height:100vh;"></div>
+<script type="text/plain" id="app-src">
+// Standalone-preview shim: the Design System tab injects the real bundle as
+// window.Crivo automatically. This fallback only runs when that bundle is
+// absent (e.g. opening this file directly), so the kit still renders.
+if (!window.Crivo) {
+  function Button({ variant = 'secondary', size = 'md', loading = false, disabled, className, children, ...props }) {
+    const pad = { sm: '0 12px', md: '0 16px', lg: '0 24px' }[size];
+    const height = { sm: 24, md: 28, lg: 34 }[size];
+    const styles = {
+      primary: { background: 'var(--color-accent)', color: 'var(--color-on-accent)' },
+      secondary: { background: 'var(--color-surface-raised)', color: 'var(--color-text)', border: '1px solid var(--color-border)' },
+      ghost: { background: 'transparent', color: 'var(--color-text)' },
+      danger: { background: 'var(--color-danger)', color: 'var(--color-on-danger)' },
+    }[variant];
+    return (
+      <button disabled={disabled || loading} className={className} {...props} style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, height, padding: pad,
+        borderRadius: 6, border: '1px solid transparent', fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600,
+        cursor: disabled || loading ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, whiteSpace: 'nowrap', ...styles
+      }}>{children}</button>
+    );
+  }
+  function Field({ label, hint, error, children }) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)' }}>{label}</label>
+        {children}
+        {hint && !error && <span style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>{hint}</span>}
+        {error && <span style={{ fontSize: 12, color: 'var(--color-danger-text)' }}>{error}</span>}
+      </div>
+    );
+  }
+  function Dialog({ open, title, onClose, children }) {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      const node = ref.current;
+      if (!node || !open) return;
+      node.showModal();
+      return () => node.close();
+    }, [open]);
+    return (
+      <dialog ref={ref} onClose={onClose} style={{
+        width: 'min(420px, 90vw)', padding: 0, background: 'var(--color-surface)', color: 'var(--color-text)',
+        border: '1px solid var(--color-border)', borderRadius: 10, fontFamily: 'var(--font-ui)', fontSize: 13
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--color-border)' }}>
+          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{title}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fechar"><span>×</span></Button>
+        </div>
+        <div style={{ padding: 16 }}>{children}</div>
+      </dialog>
+    );
+  }
+  window.Crivo = { Button, Field, Dialog };
+}
+
+// Sidebar, ConversationView, SettingsDialog — inlined from the sibling .jsx
+// files (kept as the readable source of record) because external
+// type="text/babel" <script src> loads are unreliable in some sandboxed
+// preview contexts; inlining guarantees the demo always renders.
+function Sidebar({ collapsed, onToggle, conversations, activeId, onSelect, onNew, onOpenSettings, modelName }) {
+  const { Button } = window.Crivo;
+  return (
+    <aside style={{
+      display: 'grid', gridTemplateRows: 'auto auto minmax(0,1fr) auto',
+      width: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)',
+      height: '100%', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)',
+      overflow: 'hidden', transition: 'width var(--duration-base) ease'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 'var(--space-3)' }}>
+        <Button variant="ghost" size="sm" onClick={onToggle} aria-label={collapsed ? 'Expandir' : 'Recolher'}>
+          <span aria-hidden="true">{collapsed ? '»' : '«'}</span>
+        </Button>
+      </div>
+      {!collapsed && (
+        <React.Fragment>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', padding: '0 var(--space-4) var(--space-4)' }}>
+            <Button variant="secondary" onClick={onNew}>Nova conversa</Button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', minHeight: 0, padding: '0 var(--space-4)', overflowY: 'auto' }}>
+            <section>
+              <h2 style={{ margin: '0 0 6px', fontSize: 'var(--font-size-2xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-text-faint)' }}>Conversas</h2>
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', margin: 0, padding: 0, listStyle: 'none' }}>
+                {conversations.map((c) => (
+                  <li key={c.id} style={{ borderRadius: 'var(--radius-md)', background: c.id === activeId ? 'var(--color-surface-raised)' : 'transparent' }}>
+                    <button onClick={() => onSelect(c.id)} style={{
+                      width: '100%', textAlign: 'left', padding: 'var(--space-3) var(--space-4)', background: 'none', border: 'none',
+                      borderRadius: 'var(--radius-md)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: 'var(--font-size-sm)',
+                      color: c.id === activeId ? 'var(--color-text)' : 'var(--color-text-muted)', fontWeight: c.id === activeId ? 600 : 400,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                    }}>{c.title}</button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <section>
+              <h2 style={{ margin: '0 0 6px', fontSize: 'var(--font-size-2xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-text-faint)' }}>Abrir arquivo</h2>
+              <Button variant="primary" size="sm">Escolher arquivo</Button>
+              <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 8px', margin: '10px 0 0', fontSize: 'var(--font-size-xs)' }}>
+                <dt style={{ color: 'var(--color-text-muted)' }}>Separador</dt><dd style={{ margin: 0, color: 'var(--color-text)' }}>;</dd>
+                <dt style={{ color: 'var(--color-text-muted)' }}>Colunas</dt><dd style={{ margin: 0, color: 'var(--color-text)' }}>data, cidade, valor</dd>
+                <dt style={{ color: 'var(--color-text-muted)' }}>Linhas</dt><dd style={{ margin: 0, color: 'var(--color-text)' }}>1.240</dd>
+              </dl>
+            </section>
+          </div>
+          <div style={{ padding: 'var(--space-4)', borderTop: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-2xs)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{modelName}</span>
+            <Button variant="ghost" size="sm" onClick={onOpenSettings}>Configurações</Button>
+          </div>
+        </React.Fragment>
+      )}
+    </aside>
+  );
+}
+
+function ConversationView({ conversation, models, selectedModel, onSelectModel, draft, onDraftChange, onSend }) {
+  const { Button, Field } = window.Crivo;
+  const messages = conversation ? conversation.messages : [];
+  const budgetUsed = Math.min(0.35 + draft.length / 400, 1);
+
+  return (
+    <section style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
+      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-5)', padding: 'var(--space-5) var(--space-7)', borderBottom: '1px solid var(--color-border)' }}>
+        <h1 style={{ margin: 0, fontSize: 'var(--font-size-md)', fontWeight: 600, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {conversation ? conversation.title : 'Assistente local'}
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+          <Field label="Modelo">
+            <select value={selectedModel} onChange={(e) => onSelectModel(e.target.value)} style={{
+              maxWidth: 280, padding: 'var(--space-2) var(--space-4)', background: 'var(--color-surface-sunken)', color: 'var(--color-text)',
+              border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-ui)', fontSize: 'var(--font-size-xs)'
+            }}>
+              {models.map((m) => <option key={m.name} value={m.name}>{m.name} · {m.size} · {m.ctx}</option>)}
+            </select>
+          </Field>
+          <button title="Recarregar a lista de modelos" aria-label="Recarregar a lista de modelos" style={{
+            alignSelf: 'flex-end', padding: 'var(--space-2) var(--space-3)', background: 'transparent', color: 'var(--color-text-muted)',
+            border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-xs)', cursor: 'pointer'
+          }}>↻</button>
+          <span style={{ alignSelf: 'flex-end', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>Ollama 0.32.6</span>
+        </div>
+      </header>
+
+      <div style={{ flex: 1, minHeight: 0, padding: 'var(--space-7)', overflowY: 'auto' }}>
+        {messages.length === 0 ? (
+          <p style={{ margin: 0, color: 'var(--color-text-faint)', fontSize: 'var(--font-size-reading)' }}>Pergunte algo ao modelo para começar uma conversa.</p>
+        ) : (
+          <ol style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-7)', margin: 0, padding: 0, listStyle: 'none' }}>
+            {messages.map((m) => (
+              <li key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <span style={{ fontSize: 'var(--font-size-2xs)', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-text-faint)' }}>
+                  {m.role === 'user' ? 'Você' : 'Assistente'}
+                </span>
+                <p style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5, fontSize: 'var(--font-size-reading)', color: 'var(--color-text)' }}>{m.text}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      <form onSubmit={(e) => { e.preventDefault(); onSend(); }} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', padding: 'var(--space-5) var(--space-7) var(--space-6)', borderTop: '1px solid var(--color-border)', background: 'var(--color-bg)' }}>
+        <textarea value={draft} onChange={(e) => onDraftChange(e.target.value)} rows={3} placeholder="Pergunte algo ao modelo…" style={{
+          width: '100%', padding: 'var(--space-4) var(--space-5)', background: 'var(--color-surface)', color: 'var(--color-text)',
+          border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-ui)', fontSize: 'var(--font-size-reading)', lineHeight: 1.5, resize: 'vertical'
+        }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '0 var(--space-2)' }}>
+          <meter min={0} max={1} low={0.7} high={0.9} optimum={0} value={budgetUsed} style={{ width: 120, height: 6 }} />
+          <span style={{ color: 'var(--color-text-faint)', fontSize: 'var(--font-size-2xs)' }}>~{Math.round(budgetUsed * 8192).toLocaleString('pt-BR')} de 8.192 tokens</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+          <Button type="submit" variant="primary" disabled={draft.trim() === ''}>Enviar</Button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+function SettingsDialog({ open, onClose, numThread, onNumThread }) {
+  const { Dialog, Field, Button } = window.Crivo;
+  const loaded = [{ name: 'gemma3:4b', size: '3,3 GB', minutesLeft: 4 }];
+  return (
+    <Dialog open={open} title="Configurações" onClose={onClose}>
+      <p style={{ margin: '0 0 var(--space-6)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
+        Ajustes desta máquina. Valem para todas as conversas e não mudam o que o modelo responde.
+      </p>
+      <Field label="Threads de CPU" hint="Núcleos que o Ollama pode usar nesta máquina.">
+        <input type="number" min={1} value={numThread} onChange={(e) => onNumThread(e.target.value)} style={{
+          width: 96, padding: 'var(--space-3) var(--space-4)', background: 'var(--color-surface-sunken)', color: 'var(--color-text)',
+          border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-ui)', fontSize: 'var(--font-size-sm)'
+        }} />
+      </Field>
+
+      <section style={{ marginTop: 'var(--space-7)', paddingTop: 'var(--space-6)', borderTop: '1px solid var(--color-border)' }}>
+        <h3 style={{ margin: '0 0 var(--space-3)', color: 'var(--color-text)', fontSize: 'var(--font-size-sm)' }}>Modelos em memória</h3>
+        <p style={{ margin: '0 0 var(--space-3)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-xs)' }}>
+          O Ollama mantém os pesos carregados por alguns minutos após a última resposta.
+        </p>
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', margin: 0, padding: 0, listStyle: 'none' }}>
+          {loaded.map((m) => (
+            <li key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', background: 'var(--color-surface-sunken)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+              <span style={{ flex: 1, color: 'var(--color-text)', fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size-xs)' }}>{m.name}</span>
+              <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-2xs)', whiteSpace: 'nowrap' }}>{m.size} · sai em ~{m.minutesLeft} min</span>
+              <Button variant="secondary">Descarregar</Button>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </Dialog>
+  );
+}
+
+const MODELS = [
+  { name: 'gemma3:4b', size: '3,3 GB', ctx: '8k' },
+  { name: 'qwen2.5:7b', size: '4,7 GB', ctx: '32k' },
+  { name: 'phi4-mini', size: '2,5 GB', ctx: '128k' },
+];
+
+function App() {
+  const [collapsed, setCollapsed] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [numThread, setNumThread] = React.useState('8');
+  const [model, setModel] = React.useState(MODELS[0].name);
+  const [draft, setDraft] = React.useState('');
+  const [conversations, setConversations] = React.useState([
+    { id: '1', title: 'Resumo do relatório trimestral', messages: [
+      { id: 'm1', role: 'user', text: 'Anexei as vendas do trimestre. Consegue puxar o total por região?' },
+      { id: 'm2', role: 'assistant', text: 'Total por região: Sul R$ 482k, Sudeste R$ 1,1M, Nordeste R$ 340k.' },
+    ] },
+    { id: '2', title: 'Ajustar consulta SQL de vendas', messages: [] },
+  ]);
+  const [activeId, setActiveId] = React.useState('1');
+  const active = conversations.find((c) => c.id === activeId) ?? null;
+
+  const send = () => {
+    if (draft.trim() === '') return;
+    setConversations((prev) => prev.map((c) => c.id !== activeId ? c : {
+      ...c, messages: [...c.messages, { id: String(Date.now()), role: 'user', text: draft }]
+    }));
+    setDraft('');
+  };
+
+  const newConversation = () => {
+    const id = String(Date.now());
+    setConversations((prev) => [{ id, title: 'Nova conversa', messages: [] }, ...prev]);
+    setActiveId(id);
+  };
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', height: '100%', overflow: 'hidden', background: 'var(--color-bg)' }}>
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((v) => !v)}
+        conversations={conversations}
+        activeId={activeId}
+        onSelect={setActiveId}
+        onNew={newConversation}
+        onOpenSettings={() => setSettingsOpen(true)}
+        modelName={model}
+      />
+      <main style={{ display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%', overflow: 'hidden' }}>
+        <ConversationView
+          conversation={active}
+          models={MODELS}
+          selectedModel={model}
+          onSelectModel={setModel}
+          draft={draft}
+          onDraftChange={setDraft}
+          onSend={send}
+        />
+      </main>
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} numThread={numThread} onNumThread={setNumThread} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+<script>
+(function(){
+  var code = document.getElementById('app-src').textContent;
+  var out = Babel.transform(code, { presets: [['react', { runtime: 'classic' }]] }).code;
+  var s = document.createElement('script');
+  s.text = out;
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>

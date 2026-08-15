@@ -1,0 +1,35 @@
+<!-- @dsCard group="Components" viewport="700x300" subtitle="Native <dialog>, click 'Abrir' to see it" name="Dialog" -->
+<link rel="stylesheet" href="../../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<div id="root" style="background:var(--color-bg);padding:20px;height:100%;"></div>
+<script type="text/plain" id="app-src">
+const { Dialog, Button, Field } = window.Crivo;
+function Demo() {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <div style={{ fontFamily: 'var(--font-ui)' }}>
+      <Button variant="ghost" onClick={() => setOpen(true)}>Configurações</Button>
+      <Dialog open={open} title="Configurações" onClose={() => setOpen(false)}>
+        <p style={{ margin: '0 0 16px', color: 'var(--color-text-muted)', fontSize: 12 }}>
+          Ajustes desta máquina. Valem para todas as conversas.
+        </p>
+        <Field label="Threads de CPU" hint="Núcleos que o Ollama pode usar nesta máquina.">
+          <input type="number" min={1} defaultValue={8} style={{ width: 96, padding: '6px 8px', background: 'var(--color-surface-sunken)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 6 }} />
+        </Field>
+      </Dialog>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+<script>
+(function(){
+  var code = document.getElementById('app-src').textContent;
+  var out = Babel.transform(code, { presets: [['react', { runtime: 'classic' }]] }).code;
+  var s = document.createElement('script');
+  s.text = out;
+  document.body.appendChild(s);
+})();
+</script>
