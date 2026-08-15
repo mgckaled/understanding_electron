@@ -1,0 +1,44 @@
+/*
+ * What is left here is only what no utility in a className can reach:
+ *
+ *   - position-anchor is instance-specific (each consumer's trigger carries its
+ *     own anchor-name), so Popover.tsx sets it inline — but position-area and
+ *     position-try-fallbacks are the same "sit above the trigger, flip below if
+ *     that would overflow" strategy for every consumer, and there is no Tailwind
+ *     utility for either.
+ *   - @starting-style needs a rule, not a class, to supply the from-state — same
+ *     reason Dialog.module.css keeps its own fade.
+ *   - the UA stylesheet centers `[popover]` in the viewport by default (the same
+ *     `inset: 0; margin: auto` a plain `<dialog>` gets); anchoring replaces that.
+ *
+ * Everything else — surface, border, radius, font, padding — is a utility on
+ * the element passed via className. See Popover.tsx.
+ */
+
+.popover {
+  margin: 0;
+  position-area: top;
+  position-try-fallbacks: flip-block;
+}
+
+/* Fade in on open, mirroring Dialog.module.css. prefers-reduced-motion is
+   already zeroed globally in base.css. */
+@media (prefers-reduced-motion: no-preference) {
+  .popover {
+    opacity: 0;
+    transition:
+      opacity var(--duration-fast) ease,
+      display var(--duration-fast) allow-discrete,
+      overlay var(--duration-fast) allow-discrete;
+  }
+
+  .popover:popover-open {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .popover:popover-open {
+      opacity: 0;
+    }
+  }
+}

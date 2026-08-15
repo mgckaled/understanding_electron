@@ -1,0 +1,71 @@
+import { useEffect, useRef, type ReactNode } from 'react'
+import styles from './Popover.module.css'
+
+// The native `[popover]` + CSS anchor positioning (DS-4 passo 3): no click-outside
+// listener, no position:fixed measured by hand. `popover="auto"` gives light-dismiss
+// and Esc for free — verified live against a real Chromium build that clicking the
+// trigger to close an open popover does not reopen it (open/hidePopover() on an
+// already-matching state is a spec no-op), so control stays fully imperative and
+// never touches `popovertarget`.
+
+type PopoverProps = {
+  open: boolean
+  onClose: () => void
+  /** From `toAnchorName(useId())` in the consumer, matching the trigger's own
+   *  `style={{ anchorName }}` — Popover only knows the panel side of the pair. */
+  anchorName: string
+  children: ReactNode
+  className?: string
+}
+
+function Popover({
+  open,
+  onClose,
+  anchorName,
+  children,
+  className
+}: PopoverProps): React.JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Synchronising a prop to an imperative DOM API — same shape as Dialog's own
+  // effect. The `matches` guards make each call safe to repeat: showPopover()
+  // throws if already shown, hidePopover() is a no-op if already hidden.
+  useEffect(() => {
+    const node = ref.current
+    if (node === null) return
+    if (open && !node.matches(':popover-open')) node.showPopover()
+    if (!open && node.matches(':popover-open')) node.hidePopover()
+  }, [open])
+
+  // Browser-initiated closes (light-dismiss, Esc) never call onClose on their
+  // own — this is the only path back to React state, mirroring Dialog's native
+  // `onClose` on the `close` event.
+  useEffect(() => {
+    const node = ref.current
+    if (node === null) return
+    const onToggle = (event: Event): void => {
+      if ((event as ToggleEvent).newState === 'closed') onClose()
+    }
+    node.addEventListener('toggle', onToggle)
+    return () => node.removeEventListener('toggle', onToggle)
+  }, [onClose])
+
+  return (
+    <div
+      ref={ref}
+      popover="auto"
+      className={[
+        styles.popover,
+        'rounded-lg border border-border-strong bg-surface-raised p-2 font-ui text-sm text-text',
+        className
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={{ positionAnchor: anchorName }}
+    >
+      {children}
+    </div>
+  )
+}
+
+export default Popover
