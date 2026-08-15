@@ -1,12 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import styles from './Popover.module.css'
 
-// The native `[popover]` + CSS anchor positioning (DS-4 passo 3): no click-outside
-// listener, no position:fixed measured by hand. `popover="auto"` gives light-dismiss
-// and Esc for free — verified live against a real Chromium build that clicking the
-// trigger to close an open popover does not reopen it (open/hidePopover() on an
-// already-matching state is a spec no-op), so control stays fully imperative and
-// never touches `popovertarget`.
+// Native `[popover]` + CSS anchor positioning, control fully imperative (DS4.4):
+// no click-outside listener, no position:fixed measured by hand.
 
 type PopoverProps = {
   open: boolean

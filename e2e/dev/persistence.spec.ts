@@ -33,7 +33,7 @@ test.afterAll(() => {
   }
 })
 
-/** Exact, because "Renomear <título>" and "Excluir <título>" contain it too. */
+/** Exact, because "Editar título de <título>" and "Excluir <título>" contain it too. */
 function row(page: Page, title: string): ReturnType<Page['getByRole']> {
   return page.getByRole('button', { name: title, exact: true })
 }
@@ -55,10 +55,13 @@ test('a conversa sobrevive ao fechamento do aplicativo', async () => {
   expect(await first.app.evaluate(({ app }) => app.getPath('userData'))).toBe(userDataDir)
 
   await first.page.getByRole('button', { name: 'Nova conversa' }).click()
-  // The row's action buttons are visibility: hidden until the row is hovered —
-  // a detail no level-2 test can see, because jsdom applies no CSS.
+  // The row's kebab is visibility: hidden until the row is hovered — a detail
+  // no level-2 test can see, because jsdom applies no CSS. It opens a Popover
+  // (DS-4 passo 4) with the rename/delete actions, replacing the two buttons
+  // that used to sit directly in the row.
   await first.page.locator('li', { hasText: 'Nova conversa' }).first().hover()
-  await first.page.getByRole('button', { name: 'Renomear Nova conversa' }).click()
+  await first.page.getByRole('button', { name: 'Mais ações para Nova conversa' }).click()
+  await first.page.getByRole('button', { name: 'Editar título de Nova conversa' }).click()
   await first.page.getByLabel('Novo título da conversa').fill(TITLE)
   await first.page.keyboard.press('Enter')
   await row(first.page, TITLE).waitFor()

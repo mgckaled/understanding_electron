@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { Conversation } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
+import Popover from '../../shared/ui/Popover/Popover'
+import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import { groupByDate } from './conversations'
 import { useConversations } from './conversationsContext'
 
@@ -36,6 +38,12 @@ function ConversationRow({
   onRename,
   onRemove
 }: RowProps): React.JSX.Element {
+  // Hooks stay unconditional — this row toggles in and out of `editing` without
+  // remounting, so both must run every render regardless of which branch below
+  // returns.
+  const [menuOpen, setMenuOpen] = useState(false)
+  const anchorName = toAnchorName(useId())
+
   if (editing) {
     return (
       <li className={`${ROW_BASE} border-transparent`}>
@@ -64,7 +72,7 @@ function ConversationRow({
     )
   }
 
-  // The title takes the row and truncates; the two actions keep their width. A
+  // The title takes the row and truncates; the kebab keeps its width. A
   // wrapping title would make rows of different heights out of nothing.
   const selectTone = active ? 'text-text font-semibold' : 'text-text-muted'
 
@@ -86,24 +94,46 @@ function ConversationRow({
       >
         {conversation.title}
       </button>
+      {/* Same ACTION class as any row control: hidden until hover/focus, width
+          still reserved so revealing it never shifts the title. */}
       <Button
         variant="ghost"
         size="sm"
         className={ACTION}
-        aria-label={`Renomear ${conversation.title}`}
-        onClick={onStartRename}
+        style={{ anchorName }}
+        aria-label={`Mais ações para ${conversation.title}`}
+        aria-haspopup="true"
+        onClick={() => setMenuOpen((current) => !current)}
       >
-        <span aria-hidden="true">✎</span>
+        <span aria-hidden="true">⋮</span>
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={ACTION}
-        aria-label={`Excluir ${conversation.title}`}
-        onClick={onRemove}
-      >
-        <span aria-hidden="true">×</span>
-      </Button>
+      <Popover open={menuOpen} onClose={() => setMenuOpen(false)} anchorName={anchorName}>
+        {/* Titled per item: a screen reader landing directly on one, without the
+            row's own context, has no other way to know which conversation it acts on. */}
+        <div className="flex min-w-[160px] flex-col gap-1">
+          <button
+            type="button"
+            className="cursor-pointer rounded-md px-4 py-2 text-left font-ui text-xs text-text hover:bg-surface"
+            onClick={() => {
+              setMenuOpen(false)
+              onStartRename()
+            }}
+          >
+            {`Editar título de ${conversation.title}`}
+          </button>
+          {/* danger-text, never the solid danger fill, as text (D10.1). */}
+          <button
+            type="button"
+            className="cursor-pointer rounded-md px-4 py-2 text-left font-ui text-xs text-danger-text hover:bg-surface"
+            onClick={() => {
+              setMenuOpen(false)
+              onRemove()
+            }}
+          >
+            {`Excluir ${conversation.title}`}
+          </button>
+        </div>
+      </Popover>
     </li>
   )
 }

@@ -259,7 +259,11 @@ describe('ConversationView — troca de conversa', () => {
 
     renderShell()
     await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
-    await user.click(screen.getByRole('button', { name: 'Renomear Nova conversa' }))
+    await user.click(screen.getByRole('button', { name: 'Mais ações para Nova conversa' }))
+    // hidden: true — see the Popover shim in test/setup-renderer.ts.
+    await user.click(
+      screen.getByRole('button', { name: 'Editar título de Nova conversa', hidden: true })
+    )
     await user.type(screen.getByLabelText('Novo título da conversa'), 'Vendas{Enter}')
 
     expect(screen.getByRole('button', { name: 'Nova conversaVendas' })).toBeInTheDocument()
@@ -278,9 +282,13 @@ describe('ConversationView — troca de conversa', () => {
     await screen.findByText('resposta A')
     await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
 
-    await user.click(screen.getByRole('button', { name: 'Excluir Nova conversa' }))
+    await user.click(screen.getByRole('button', { name: 'Mais ações para Nova conversa' }))
+    // hidden: true — same jsdom limitation noted above.
+    await user.click(screen.getByRole('button', { name: 'Excluir Nova conversa', hidden: true }))
 
-    expect(screen.queryByRole('button', { name: 'Excluir Nova conversa' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Mais ações para Nova conversa' })
+    ).not.toBeInTheDocument()
     expect(await screen.findByText('resposta A')).toBeInTheDocument()
   })
 })

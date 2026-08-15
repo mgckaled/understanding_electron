@@ -286,9 +286,14 @@ Chromium 148 suporta nativamente, e o app roda só nesse motor.
 ### DS4.4 — `Popover` nasce sobre o atributo nativo, não `position:fixed` manual
 
 Mesmo raciocínio que já pôs o `<dialog>` nativo no `Dialog`. `popover="auto"` dá
-*light-dismiss* e `Esc` de graça; a forma exata do controle (imperativo vs.
-`popovertarget` declarativo) foi decidida ao vivo na Fase 3, contra o risco de
-duplo-toggle que o `auto` introduz.
+*light-dismiss* e `Esc` de graça. **Verificado ao vivo na Fase 3** (script Playwright
+descartável contra Chromium real, headless shell 151 — mesma família do 148 que o
+Electron 42 embute): controle 100% imperativo (`open` prop → `useEffect` →
+`showPopover()`/`hidePopover()`, com um listener de `toggle` sincronizando o
+fechamento nativo de volta ao React) **não sofre o duplo-toggle** — clicar no
+gatilho para fechar um popover aberto não o reabre, porque `showPopover()`/
+`hidePopover()` num estado já correspondente é *no-op* de especificação.
+`popovertarget` declarativo não foi necessário.
 
 ### DS4.5 — Orçamento de contexto: medidor migra, aviso de recusa fica
 

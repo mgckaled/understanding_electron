@@ -29,15 +29,11 @@ if (typeof HTMLDialogElement !== 'undefined' && !HTMLDialogElement.prototype.sho
   }
 }
 
-/*
- * jsdom 30.0.1 does not implement the Popover API either — no showPopover /
- * hidePopover, and `:popover-open` is not a selector `.matches()` recognizes. Same
- * shape as the <dialog> shim above: enough to mount and drive a component built on
- * `popover="auto"`, not a stand-in for the platform. Light-dismiss, Esc and CSS
- * anchor positioning have no equivalent here — verified live against a real
- * Chromium build instead (DS-4 plan, Fase 3: clicking a trigger to close an open
- * popover does not reopen it).
- */
+// jsdom 30.0.1 has no Popover API (no showPopover/hidePopover, `:popover-open`
+// unknown to `.matches()`) — this shim is the minimum to mount and drive it, not a
+// stand-in for the platform (see the <dialog> shim above for the same shape).
+// ⚠️ Query popover content with `getByRole(..., { hidden: true })`: jsdom's own
+// default stylesheet forces `display: none` regardless of this shim's state — see HISTORY.md § jsdom hides popover content.
 if (typeof HTMLElement !== 'undefined' && !HTMLElement.prototype.showPopover) {
   const OPEN_ATTR = 'data-popover-open-shim'
 
