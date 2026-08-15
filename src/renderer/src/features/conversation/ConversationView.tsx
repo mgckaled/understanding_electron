@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import type { AiModel, AppError, ConversationSettings, MessageStopped } from '@shared/ipc'
 import { messageText } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
 import Button from '../../shared/ui/Button/Button'
+import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
 import { useActiveConversation, useConversations } from './conversationsContext'
@@ -14,7 +16,7 @@ import { useAiAvailability } from './useAiAvailability'
 import { resolveModel } from './conversations'
 import { useStickToBottom } from './useStickToBottom'
 import MarkdownMessage from './MarkdownMessage'
-import ModelSelector from './ModelSelector'
+import { ModelPicker, ContextControl } from './ModelSelector'
 import Composer from './Composer'
 import { completePartial } from './completePartial'
 
@@ -237,30 +239,53 @@ function ConversationView(): React.JSX.Element {
         // A render-prop, not a plain element (DS4.8): `budget` only exists inside
         // Composer (the draft lives there, D13.2), so this function is defined
         // here and only ever CALLED by Composer, at the point `budget` exists.
+        // Two pills, not one (DS5.6, item 9) — Composer's prop type never
+        // changes, only what this function returns.
         modelSelector={(budget) => (
-          <ModelSelector
-            state={catalog}
-            selected={model}
-            // Two different reasons to be inert: busy, which passes, and
-            // locked, which does not (D15.13).
-            disabled={isLoading}
-            locked={locked}
-            onSelect={(name) => choose({ model: name })}
-            // Both, because both readings are snapshots the app cannot observe
-            // changing: a model installed since launch, and memory freed since.
-            onReload={() => {
-              reload()
-              reloadMemory()
-            }}
-            contextWindow={contextWindow}
-            ceilingOf={ceilingOf}
-            // Remounts the window control when the conversation changes, so it
-            // re-reads that conversation's value instead of showing the last
-            // one typed.
-            scopeKey={conversation?.id ?? 'sem-conversa'}
-            onNumCtx={(tokens) => choose({ numCtx: tokens })}
-            budget={budget}
-          />
+          <>
+            <ModelPicker
+              state={catalog}
+              selected={model}
+              // Two different reasons to be inert: busy, which passes, and
+              // locked, which does not (D15.13).
+              disabled={isLoading}
+              locked={locked}
+              onSelect={(name) => choose({ model: name })}
+              ceilingOf={ceilingOf}
+            />
+            {catalog.status === 'ready' && (
+              <ContextControl
+                contextWindow={contextWindow}
+                current={current}
+                ceiling={ceiling}
+                disabled={isLoading}
+                locked={locked}
+                // Remounts the window control when the conversation changes, so
+                // it re-reads that conversation's value instead of showing the
+                // last one typed.
+                scopeKey={conversation?.id ?? 'sem-conversa'}
+                onNumCtx={(tokens) => choose({ numCtx: tokens })}
+                budget={budget}
+              />
+            )}
+            <button
+              type="button"
+              className="cursor-pointer self-end rounded-md border border-border bg-transparent px-3 py-2 text-xs leading-none text-text-muted hover:text-text"
+              // Both, because both readings are snapshots the app cannot observe
+              // changing: a model installed since launch, and memory freed since.
+              onClick={() => {
+                reload()
+                reloadMemory()
+              }}
+              // Installing a model is a system event with no notification, so the
+              // catalog can only be wrong in one direction — stale. The button is
+              // the whole answer to that, which is why it is always available.
+              title="Recarregar a lista de modelos"
+              aria-label="Recarregar a lista de modelos"
+            >
+              <RefreshCw size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            </button>
+          </>
         )}
       />
     </section>

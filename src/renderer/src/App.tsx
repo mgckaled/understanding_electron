@@ -2,7 +2,6 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import AppShell from './app/AppShell'
 import Sidebar from './app/Sidebar'
 import OllamaStatus from './components/OllamaStatus'
-import OpenDatasetPanel from './features/open-dataset/OpenDatasetPanel'
 import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
 import ConversationsProvider from './features/conversation/ConversationsProvider'
@@ -27,12 +26,10 @@ function App(): React.JSX.Element {
           sidebar={
             <Sidebar
               nav={<NewConversationButton />}
-              content={
-                <>
-                  <ConversationList />
-                  <OpenDatasetPanel />
-                </>
-              }
+              // The "Abrir arquivo" section moved into the composer as the
+              // clip (DS5, item 7) — the sidebar's content slot is
+              // ConversationList alone now.
+              content={<ConversationList />}
               footer={
                 <div className="flex items-center justify-between gap-3">
                   <OllamaStatus />

@@ -3,6 +3,7 @@ import { ArrowUp, Pause } from 'lucide-react'
 import { budgetFor, type Budget } from '@core/ai/budget'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
+import AttachButton from '../open-dataset/AttachButton'
 
 // Fixed at the bottom of the conversation, never inside the scrolling list. The
 // draft is local client state (D13.2) and stays that way; what plano 14 may add
@@ -101,11 +102,15 @@ function Composer({
           placeholder="Pergunte algo ao modelo…"
           aria-label="Mensagem"
         />
-        {/* Model pill on the left, pause + circular send on the right (DS-3 passo
-            8). The selector keeps its refusal alerts and reload — nothing from
+        {/* Left to right (DS5, item 9/17): clip · model pill · context pill ·
+            reload — pause + circular send stay on the right (DS-3 passo 8).
+            The selector keeps its refusal alerts and reload — nothing from
             plano 15 is collapsed away. */}
         <div className="flex items-center justify-between gap-3">
-          <div className="min-w-[0px]">{modelSelector(budget)}</div>
+          <div className="flex min-w-[0px] flex-wrap items-center gap-3">
+            <AttachButton />
+            {modelSelector(budget)}
+          </div>
           <div className="flex flex-none items-center gap-2">
             {loading && (
               <Button
