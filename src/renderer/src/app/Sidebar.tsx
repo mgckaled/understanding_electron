@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
+import { ChevronsLeft, ChevronsRight } from 'lucide-react'
 import Button from '../shared/ui/Button/Button'
+import { ICON_SIZE, ICON_STROKE } from '../shared/ui/icon'
 
 // Three regions, not one (D13.1): nav, content, footer — the shape a sidebar
 // that is only "the list of conversations" must be restructured into once a
@@ -46,7 +48,11 @@ function Sidebar({ nav, content, footer }: SidebarProps): React.JSX.Element {
           aria-expanded={!collapsed}
           aria-label={collapsed ? 'Expandir a barra lateral' : 'Recolher a barra lateral'}
         >
-          <span aria-hidden="true">{collapsed ? '»' : '«'}</span>
+          {collapsed ? (
+            <ChevronsRight size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          ) : (
+            <ChevronsLeft size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          )}
         </Button>
       </div>
 

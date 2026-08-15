@@ -1,7 +1,9 @@
 import { useId, useState } from 'react'
+import { Settings as SettingsIcon } from 'lucide-react'
 import type { Theme } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
+import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Versions from '../../components/Versions'
 import { useSettings } from './settingsContext'
 import LoadedModels from './LoadedModels'
@@ -103,9 +105,12 @@ function Settings(): React.JSX.Element {
   return (
     <>
       {/* The gear now lives in the sidebar footer, next to the Ollama status
-          (DS-3): an icon trigger, not the labelled button it was in the nav. */}
-      <Button variant="ghost" size="sm" onClick={() => setOpen(true)} aria-label="Configurações">
-        <span aria-hidden="true">⚙</span>
+          (DS-3): an icon trigger, not the labelled button it was in the nav.
+          size="md" (28px), not "sm" (24px) — a 24px icon (DS5 item 1: notably
+          bigger than the sm icons around it) needs the taller control to keep
+          any padding at all. */}
+      <Button variant="ghost" size="md" onClick={() => setOpen(true)} aria-label="Configurações">
+        <SettingsIcon size={ICON_SIZE.lg} strokeWidth={ICON_STROKE} />
       </Button>
       <Dialog open={open} title="Configurações" onClose={() => setOpen(false)}>
         <p className="mb-6 text-xs text-text-muted">

@@ -1,6 +1,8 @@
 import { useId, useState } from 'react'
+import { MoreVertical, Pencil, Search, Trash2 } from 'lucide-react'
 import type { Conversation } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
+import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import { groupByDate } from './conversations'
@@ -105,7 +107,7 @@ function ConversationRow({
         aria-haspopup="true"
         onClick={() => setMenuOpen((current) => !current)}
       >
-        <span aria-hidden="true">⋮</span>
+        <MoreVertical size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
       </Button>
       <Popover open={menuOpen} onClose={() => setMenuOpen(false)} anchorName={anchorName}>
         {/* Titled per item: a screen reader landing directly on one, without the
@@ -113,23 +115,25 @@ function ConversationRow({
         <div className="flex min-w-[160px] flex-col gap-1">
           <button
             type="button"
-            className="cursor-pointer rounded-md px-4 py-2 text-left font-ui text-xs text-text hover:bg-surface"
+            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-2 text-left font-ui text-xs text-text hover:bg-surface"
             onClick={() => {
               setMenuOpen(false)
               onStartRename()
             }}
           >
+            <Pencil size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
             {`Editar título de ${conversation.title}`}
           </button>
           {/* danger-text, never the solid danger fill, as text (D10.1). */}
           <button
             type="button"
-            className="cursor-pointer rounded-md px-4 py-2 text-left font-ui text-xs text-danger-text hover:bg-surface"
+            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-2 text-left font-ui text-xs text-danger-text hover:bg-surface"
             onClick={() => {
               setMenuOpen(false)
               onRemove()
             }}
           >
+            <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
             {`Excluir ${conversation.title}`}
           </button>
         </div>
@@ -169,11 +173,8 @@ function ConversationList(): React.JSX.Element {
     <section className="flex flex-col gap-4">
       {conversations.length > 0 && (
         <div className="relative">
-          <span
-            className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-text-faint"
-            aria-hidden="true"
-          >
-            🔍
+          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-text-faint">
+            <Search size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           </span>
           <input
             type="search"

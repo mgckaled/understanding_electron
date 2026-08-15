@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { ChevronDown, RefreshCw } from 'lucide-react'
 import type { AiModel } from '@shared/ipc'
 import { fitsInMemory, MIN_NUM_CTX, type Budget, type ConversationWindow } from '@core/ai/budget'
 import Field from '../../shared/ui/Field/Field'
+import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import StateView from '../../shared/ui/StateView'
@@ -152,7 +154,7 @@ function ModelSelector({
             <span className="min-w-[0px] overflow-hidden text-ellipsis whitespace-nowrap">
               {current?.name ?? selected ?? 'Selecionar modelo'}
             </span>
-            <span aria-hidden="true">⌄</span>
+            <ChevronDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           </button>
         </Field>
       ) : (
@@ -176,7 +178,7 @@ function ModelSelector({
         title="Recarregar a lista de modelos"
         aria-label="Recarregar a lista de modelos"
       >
-        ↻
+        <RefreshCw size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
       </button>
 
       {state.status === 'ready' && (

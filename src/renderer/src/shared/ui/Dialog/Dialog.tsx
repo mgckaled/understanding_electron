@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { X } from 'lucide-react'
 import Button from '../Button/Button'
+import { ICON_SIZE, ICON_STROKE } from '../icon'
 import styles from './Dialog.module.css'
 
 // The native <dialog> with showModal() and no dependency (D13.8): the platform
@@ -47,7 +49,7 @@ function Dialog({ open, title, onClose, children }: DialogProps): React.JSX.Elem
           {title}
         </h2>
         <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fechar">
-          <span aria-hidden="true">×</span>
+          <X size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
         </Button>
       </div>
       <div className="p-6">{children}</div>

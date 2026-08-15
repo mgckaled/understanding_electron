@@ -1,6 +1,8 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
+import { ArrowUp, Pause } from 'lucide-react'
 import { budgetFor, type Budget } from '@core/ai/budget'
 import Button from '../../shared/ui/Button/Button'
+import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 
 // Fixed at the bottom of the conversation, never inside the scrolling list. The
 // draft is local client state (D13.2) and stays that way; what plano 14 may add
@@ -114,7 +116,7 @@ function Composer({
                 onClick={onCancel}
                 aria-label="Cancelar"
               >
-                <span aria-hidden="true">⏸</span>
+                <Pause size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
               </Button>
             )}
             <Button
@@ -126,7 +128,7 @@ function Composer({
               disabled={!canSend}
               aria-label="Enviar"
             >
-              <span aria-hidden="true">↑</span>
+              <ArrowUp size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
             </Button>
           </div>
         </div>
