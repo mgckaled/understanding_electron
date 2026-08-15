@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
-import Field from '../../shared/ui/Field/Field'
 import Versions from '../../components/Versions'
 import { useSettings } from './settingsContext'
 import LoadedModels from './LoadedModels'
@@ -11,32 +10,67 @@ import LoadedModels from './LoadedModels'
 // keeps streaming. The trigger and dialog live together because the open state is
 // theirs alone, and the dialog is a SIBLING in the tree, never a replacement.
 
-// The field keeps its own text: clamping on every keystroke makes clearing it
-// snap to 1, so clearing and typing "2" yields 12 (caught by the level-2 test).
-// Only a value that parses is committed; blur puts the committed value back.
-function ThreadsField(): React.JSX.Element {
-  const { settings, setSettings } = useSettings()
-  const [text, setText] = useState(String(settings.numThread))
-
-  const change = (raw: string): void => {
-    setText(raw)
-    const parsed = Number.parseInt(raw, 10)
-    if (Number.isFinite(parsed) && parsed >= 1) {
-      setSettings((previous) => ({ ...previous, numThread: parsed }))
-    }
-  }
+/**
+ * A row of mutually exclusive `Button`s standing in for `Field` (DS-4 passo 1):
+ * `Field`'s `<label for>` targets a labelable element, which a `role="group"` of
+ * buttons is not — `aria-labelledby` is the group's own way to carry that label.
+ * Generic because Configurações reuses the exact shape for two unrelated value
+ * types (threads is a number, theme is a string enum).
+ */
+function SegmentedField<T extends string | number>({
+  label,
+  hint,
+  options,
+  value,
+  onChange
+}: {
+  label: string
+  hint?: string
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (value: T) => void
+}): React.JSX.Element {
+  const labelId = useId()
 
   return (
-    <Field label="Threads de CPU" hint="Núcleos que o Ollama pode usar nesta máquina.">
-      <input
-        className="w-[96px] rounded-md border border-border bg-surface-sunken px-4 py-3 font-ui text-sm text-text focus-visible:border-accent-text focus-visible:outline-none"
-        type="number"
-        min={1}
-        value={text}
-        onChange={(event) => change(event.target.value)}
-        onBlur={() => setText(String(settings.numThread))}
-      />
-    </Field>
+    <div className="flex flex-col gap-2">
+      <span className="text-xs font-semibold text-text-muted" id={labelId}>
+        {label}
+      </span>
+      <div className="flex gap-2" role="group" aria-labelledby={labelId}>
+        {options.map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            variant={option.value === value ? 'primary' : 'secondary'}
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
+      {hint && <span className="text-xs text-text-faint">{hint}</span>}
+    </div>
+  )
+}
+
+const THREAD_OPTIONS = [2, 4, 6].map((value) => ({ value, label: String(value) }))
+
+function ThreadsField(): React.JSX.Element {
+  const { settings, setSettings } = useSettings()
+
+  return (
+    <SegmentedField
+      label="Threads de CPU"
+      hint="Núcleos que o Ollama pode usar nesta máquina."
+      options={THREAD_OPTIONS}
+      // No option marks active when a value predates this control (any positive
+      // integer used to be reachable) — silently rounding it would change a
+      // persisted setting the user never asked to change.
+      value={settings.numThread}
+      onChange={(numThread) => setSettings((previous) => ({ ...previous, numThread }))}
+    />
   )
 }
 
