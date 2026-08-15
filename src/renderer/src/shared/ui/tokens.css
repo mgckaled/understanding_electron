@@ -106,11 +106,16 @@
   --radius-lg: 10px;
   --radius-full: 9999px;
 
-  /* Type — sizes calibrated for desktop, body is 13 */
-  --font-size-2xs: 11px;
-  --font-size-xs: 12px;
-  --font-size-sm: 13px;
-  --font-size-md: 14px;
+  /* Type — sizes calibrated for desktop, body is 14 (DS5, item 6: the
+     bottom four steps moved up by 1px — 2xs/xs/sm/md, never lg up — after a
+     live audit found chrome reading small next to the 18px reading surface.
+     Verified against Button's SIZE map before committing: sm (24px control,
+     now 13px text) and md (28px control, now 15px text) both keep several px
+     of margin, line-height: normal considered. --control-height-* untouched. */
+  --font-size-2xs: 12px;
+  --font-size-xs: 13px;
+  --font-size-sm: 14px;
+  --font-size-md: 15px;
   --font-size-lg: 16px;
   --font-size-xl: 20px;
   --font-size-2xl: 28px;
