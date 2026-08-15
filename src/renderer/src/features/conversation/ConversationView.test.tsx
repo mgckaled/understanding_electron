@@ -119,6 +119,24 @@ describe('ConversationView', () => {
     expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
   })
 
+  it('retries the probe when "Tentar novamente" is clicked', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValueOnce({
+      ok: false,
+      error: { kind: 'unavailable', service: 'ollama', hint: 'Rode ollama serve na porta 11434.' }
+    })
+    const user = userEvent.setup()
+
+    renderView()
+    await screen.findByRole('alert')
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    await whenReady()
+
+    expect(api.ai.isAvailable).toHaveBeenCalledTimes(2)
+  })
+
   it('sends the prompt and renders the assistant reply', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)

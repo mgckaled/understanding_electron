@@ -13,6 +13,9 @@ import {
 // resolution race that makes `localhost` intermittently slow on Windows.
 const OLLAMA_HOST = 'http://127.0.0.1:11434'
 
+/** For display only (the footer's popover) — never re-parsed back into a URL. */
+export const ollamaDisplayHost = OLLAMA_HOST.replace(/^https?:\/\//, '')
+
 // One line of the /api/chat stream. The chat endpoint carries text under
 // message.content (unlike /api/generate, which uses `response`); an error mid
 // stream arrives as { error } while the HTTP status stays 200.

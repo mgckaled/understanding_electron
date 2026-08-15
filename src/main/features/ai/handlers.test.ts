@@ -27,6 +27,17 @@ describe('isAvailable', () => {
     expect(result).toEqual({ ok: true, value: { service: 'ollama', version: '0.5.1' } })
   })
 
+  it('carries the host through when the caller passes one', async () => {
+    const probe: ProbeFn = async () => '0.5.1'
+
+    const result = await isAvailable({ service: 'ollama' }, probe, '127.0.0.1:11434')
+
+    expect(result).toEqual({
+      ok: true,
+      value: { service: 'ollama', version: '0.5.1', host: '127.0.0.1:11434' }
+    })
+  })
+
   it('degrades to unavailable with a hint when the probe throws', async () => {
     const probe: ProbeFn = async () => {
       throw new Error('ECONNREFUSED')

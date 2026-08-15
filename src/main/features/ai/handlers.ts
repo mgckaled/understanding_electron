@@ -29,13 +29,21 @@ const HINTS: Record<AiService, string> = {
   ollama: 'Verifique se o Ollama está em execução (ollama serve) na porta 11434.'
 }
 
+/**
+ * Whether the service answers, carrying its version and (for a local provider)
+ * where it lives.
+ *
+ * @param host - Display host:port, kept out of `ProbeFn` itself: a future cloud
+ *   provider fulfils that seam with no endpoint to report.
+ */
 export async function isAvailable(
   { service }: { service: AiService },
-  probe: ProbeFn
+  probe: ProbeFn,
+  host?: string
 ): Promise<Result<AiAvailability>> {
   try {
     const version = await probe({ signal: AbortSignal.timeout(PING_TIMEOUT_MS) })
-    return ok({ service, version })
+    return ok({ service, version, host })
   } catch {
     // Service down and a missing key look identical to the UI (D9.3): one card,
     // disabled, carrying the hint — no path breaks.

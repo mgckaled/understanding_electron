@@ -4,6 +4,7 @@ import { messageText } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
+import Button from '../../shared/ui/Button/Button'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
 import { useActiveConversation, useConversations } from './conversationsContext'
@@ -96,7 +97,7 @@ function ConversationView(): React.JSX.Element {
     settings.numThread,
     numCtx ?? undefined
   )
-  const availability = useAiAvailability()
+  const { state: availability, retry: retryAvailability } = useAiAvailability()
 
   // What the next send would carry: the whole transcript, since the provider is
   // stateless and every turn resends everything.
@@ -140,10 +141,17 @@ function ConversationView(): React.JSX.Element {
             Verificando o Ollama…
           </p>
         )}
+        {/* mb-5 moves from the <p> (UNAVAILABLE below) to this row, now that a
+            button sits beside the text. */}
         {availability.status === 'error' && (
-          <p className={UNAVAILABLE} role="alert">
-            {availabilityText(availability.error)}
-          </p>
+          <div className="mb-5 flex items-center gap-4">
+            <p className="text-sm text-warn-text" role="alert">
+              {availabilityText(availability.error)}
+            </p>
+            <Button variant="secondary" size="sm" onClick={retryAvailability}>
+              Tentar novamente
+            </Button>
+          </div>
         )}
 
         {/* Under the lock, falling back to the first installed model would have

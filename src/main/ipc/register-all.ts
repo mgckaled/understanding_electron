@@ -20,6 +20,7 @@ import {
 } from '../features/ai/handlers'
 import {
   ollamaChat,
+  ollamaDisplayHost,
   ollamaLoaded,
   ollamaModels,
   ollamaProbe,
@@ -60,7 +61,7 @@ export function registerAll(): () => void {
   // Single provider in step 1 — the args.service enum admits only 'ollama'.
   // Step 3 (cloud opt-in) replaces the fixed adapters with a service→provider
   // resolver; nothing else in this file changes.
-  handle('ai:isAvailable', (args) => aiIsAvailable(args, ollamaProbe))
+  handle('ai:isAvailable', (args) => aiIsAvailable(args, ollamaProbe, ollamaDisplayHost))
   handle('ai:models', (args) => aiModels(args, ollamaModels))
   handle('ai:loaded', (args) => aiLoaded(args, ollamaLoaded))
   handle('ai:unload', (args) => aiUnload(args, ollamaUnload))

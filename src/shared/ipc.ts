@@ -97,6 +97,9 @@ export type ChatReply = {
 export type AiAvailability = {
   service: AiService
   version: string
+  /** Display form of the provider's endpoint (e.g. `127.0.0.1:11434`) — absent
+   *  for a provider with no host:port to show, like a future cloud one. */
+  host?: string
 }
 
 /**

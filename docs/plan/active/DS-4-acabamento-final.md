@@ -321,6 +321,25 @@ protótipo escolhida sobre cobrir o teto real da máquina de desenvolvimento.
 clique na pílula deveria abrir). O render-prop entrega `budget` como argumento de
 chamada, no ponto exato em que existe, sem virar prop de ninguém.
 
+### DS4.9 — `host` não entra em `ProbeFn`; entra como parâmetro de `isAvailable`
+
+`ProbeFn`/`ModelsFn` são deliberadamente não moldados como HTTP — um provedor de
+nuvem os cumpre a partir de uma tabela, sem host:porta nenhum (comentário do
+próprio `core/ai/types.ts`). Dar a `ProbeFn` um `host: string` obrigatório
+quebraria essa promessa para o primeiro provedor que a fatia 3 do plano 09
+acrescentar. `ollama.ts` exporta `ollamaDisplayHost` (constante, não função — o
+valor não muda em runtime); `register-all.ts`, que já sabe que está ligando o
+adaptador Ollama especificamente, passa isso como terceiro parâmetro opcional de
+`isAvailable`. `AiAvailability.host` é opcional pelo mesmo motivo.
+
+### DS4.10 — `useAiAvailability` ganha `retry` espelhando `useAiModels`, não `useQuery`
+
+Mesma forma que `useAiModels` já usa (`{ state, reload }`) — precedente direto a
+seguir, não inventar um segundo idioma para "estado com recarregamento manual".
+Continua **não** virando `useQuery`: a conversão já foi medida e descartada no
+DS-3 (a cadência de query resolve a disponibilidade um tick depois do medidor e
+corre com o teste que digita, `HISTORY.md`).
+
 ---
 
 ## Diário de execução
