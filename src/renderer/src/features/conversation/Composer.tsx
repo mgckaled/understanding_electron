@@ -86,13 +86,16 @@ function Composer({
           DS-3 composer shape. focus-within lifts the border to accent, replacing
           the per-control ring the textarea used to carry on its own border. */}
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-5 py-4 focus-within:border-accent-text">
+        {/* field-sizing:content grows the box with what is typed — Chromium-only,
+            fine here since the app only ever runs on the embedded Chromium — so
+            no onInput/scrollHeight math is needed; min/max in `lh` bound it to
+            1..3 lines and overflow-y-auto takes over once the 4th line arrives. */}
         <textarea
-          className="w-full resize-none bg-transparent font-ui text-reading leading-normal select-text focus-visible:outline-none"
+          className="w-full resize-none bg-transparent font-ui text-reading leading-normal select-text focus-visible:outline-none [field-sizing:content] min-h-[1lh] max-h-[3lh] overflow-y-auto"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
           disabled={disabled}
-          rows={3}
           placeholder="Pergunte algo ao modelo…"
           aria-label="Mensagem"
         />
