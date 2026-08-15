@@ -29,6 +29,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    DS-4 popover, tema e acabamento final  plan/implemented/DS-4-...        concluída (ago/2026)
    ── terceira rodada de handoff, transversal ─────────────────────────────────────
    DS-5 ícones, fonte e acabamento      plan/implemented/DS-5-...        concluída (ago/2026)
+   ── trilha F (features avulsas), transversal ────────────────────────────────────
+   F-1  marca "pensando" no chat        plan/implemented/F-1-...         concluída (ago/2026)
    ── o arco, retomado depois da DS-5 ─────────────────────────────────────────────
 ▶  16 anexo: mecanismo + dataset        plan/active/16-...               escrito, não iniciado
    17 anexo: documento e imagem
@@ -44,6 +46,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
 **A trilha DS entrou em ago/2026 e roda antes do 16**, com numeração própria em vez de inserida no arco — o porquê, e o custo medido de renumerar um plano já escrito, são de [`plan/active/README.md`](plan/active/README.md#a-trilha-de-design-system-ds-n). Executa primeiro por um motivo de custo: cada tela nova encarece a migração, e o 16 traz a pré-visualização de anexo e o cartão de dados. ⚠️ **O clipe em si, a DS-5 já pôs** — para abrir um dataset, não para anexar à conversa; ver o gatilho logo abaixo sobre a colisão que isso abre para o 16.
 
 **A trilha R (refatoração) entrou em ago/2026**, também com numeração própria e transversal ao arco: aplica um padrão já decidido ao código que o precede, sem tocar comportamento. O [`R-1`](plan/active/R-1-comentarios-e-tsdoc.md) leva a skill [`comments`](../.claude/skills/comments/SKILL.md) ao `src/` inteiro e fecha, com um guard, o pior sintoma de reincidência.
+
+**A trilha F (features avulsas) entrou em ago/2026**, também com numeração própria e transversal ao arco — mas por um motivo diferente de DS e R: nem envelope (DS nunca constrói feature) nem refatoração (R garante zero mudança de comportamento) cobrem uma feature nova, pequena, local, que não pertence à sequência de dados/IA. O [`F-1`](plan/implemented/F-1-marca-pensando.md) — o monograma do crivo animando enquanto o modelo responde — é o primeiro; nasceu de um guia de ferramenta externa, fora do arco por natureza, não por adiamento.
 
 **O arco ganhou um plano em ago/2026**, com a [entrada de escopo de documento e imagem](HISTORY.md). O 16 passa a construir o **mecanismo** de anexo de forma genérica — o clipe no composer, `userData/attachments/<hash>`, as variantes de `MessagePart` — e o dataset é só o seu primeiro consumidor; o 17 acrescenta os extratores de documento e imagem sobre esse mesmo mecanismo. A ordem importa por um motivo concreto: mecanismo de anexo desenhado sabendo que só existe dataset nasce com forma de dataset, e o 17 o reescreveria.
 

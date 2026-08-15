@@ -126,3 +126,58 @@
 @utility animate-spinner {
   animation: spinner var(--duration-slow) linear infinite;
 }
+
+/*
+ * ThinkingMark's 14 dots (F-1). One shared keyframe, parameterised by
+ * per-dot custom properties ThinkingMark.tsx sets inline — the pattern
+ * Tailwind's own docs show for per-instance values on a shared utility.
+ *
+ * `thinking-dot` alone IS the rest position, and 0%/100% below match it
+ * exactly on purpose: prefers-reduced-motion in base.css forces a single
+ * 0.01ms iteration, which has to land here or a reduced-motion user sees
+ * the mark frozen off-shape.
+ */
+@utility thinking-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--thinking-r) * 2 * 1px);
+  height: calc(var(--thinking-r) * 2 * 1px);
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent-text);
+  opacity: var(--thinking-rest-opacity);
+  transform: translate(-50%, -50%) translate(var(--thinking-rest-x), var(--thinking-rest-y))
+    scale(1);
+}
+
+@keyframes dotThinking {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(var(--thinking-rest-x), var(--thinking-rest-y))
+      scale(1);
+    opacity: var(--thinking-rest-opacity);
+  }
+  12% {
+    transform: translate(-50%, -50%) translate(var(--thinking-rest-x), var(--thinking-rest-y))
+      scale(var(--thinking-pulse-scale));
+    opacity: 1;
+  }
+  45%,
+  60% {
+    transform: translate(-50%, -50%)
+      translate(
+        calc(var(--thinking-rest-x) + var(--thinking-dx)),
+        calc(var(--thinking-rest-y) + var(--thinking-dy))
+      )
+      scale(0.6);
+    opacity: 0.4;
+  }
+}
+
+/* Added and removed per dot, at that dot's own animationiteration boundary
+   (ThinkingMark.tsx) — never all 14 at once, since --thinking-dot-delay
+   staggers when each one actually wraps back to rest. */
+@utility animate-thinking-dot {
+  animation: dotThinking var(--duration-thinking-cycle, 2400ms) ease-in-out infinite;
+  animation-delay: var(--thinking-dot-delay);
+}

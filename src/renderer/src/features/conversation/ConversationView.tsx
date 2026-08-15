@@ -18,6 +18,7 @@ import { useStickToBottom } from './useStickToBottom'
 import MarkdownMessage from './MarkdownMessage'
 import { ModelPicker, ContextControl } from './ModelSelector'
 import Composer from './Composer'
+import ThinkingMark from './ThinkingMark'
 import TurnActions from './TurnActions'
 import { completePartial } from './completePartial'
 
@@ -223,6 +224,10 @@ function ConversationView(): React.JSX.Element {
           <p className={STATUS}>Resposta cancelada.</p>
         )}
       </div>
+
+      {/* Own band, not inside the scrolling thread above — useStickToBottom
+          measures that div specifically (D13.5), and this sits outside it. */}
+      <ThinkingMark isStreaming={belongsHere && isLoading} />
 
       {/* No model installed is as blocking as no service — nothing to address
           the call to, so the composer stays closed. A model too large for free

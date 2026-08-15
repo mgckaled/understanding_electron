@@ -143,6 +143,24 @@
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
+  /* The one continuous, attention-calling loop in the system (F-1) — every
+     other duration above is for hover/focus/collapse, under a second. */
+  --duration-thinking-cycle: 2400ms;
+
+  /* ThinkingMark (F-1) per-dot animation channel — not a primitive nor a
+     semantic value like the rest of this file: the one shared @keyframes it
+     drives (assets/tailwind.css) needs a name for each per-dot value, and
+     ThinkingMark.tsx always overrides every one of these inline, per dot.
+     Declared here with inert defaults so a real typo in the pair still
+     fails loud instead of rendering nothing (guard.mjs rule 7). */
+  --thinking-r: 0;
+  --thinking-rest-x: 0px;
+  --thinking-rest-y: 0px;
+  --thinking-rest-opacity: 1;
+  --thinking-pulse-scale: 1.5;
+  --thinking-dx: 0px;
+  --thinking-dy: 0px;
+  --thinking-dot-delay: 0ms;
 
   /* Fonts */
   --font-ui:

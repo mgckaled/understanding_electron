@@ -49,7 +49,9 @@ O nível 2 cobre muito, e a linha onde ele para não é óbvia. Três achados, e
 
 **4. O Playwright emula `prefers-color-scheme`, e o padrão dele é `'light'`.** Não é "não interfere" — é emular claro ativamente, por CDP, e essa emulação **ganha do `nativeTheme.themeSource`**: o main reporta `shouldUseDarkColors: true` e o renderer continua respondendo claro. Consequência que vale saber antes de escrever qualquer spec sobre cor: **nenhum e2e deste repositório exercita o tema escuro.** Para verificar tema, `page.emulateMedia({ colorScheme: 'dark' })`.
 
-Forma comum às quatro: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Para saber o que ele suporta, leia o `lib/` instalado — a matriz do jsdom é grande o bastante para dar a impressão errada por omissão.
+**5. O jsdom não roda o motor de animação do CSS, e não entrega `animationiteration`/`animationend` ao React.** Medido ao testar a marca "pensando" ([F-1](../../../docs/plan/implemented/F-1-marca-pensando.md)): `window.AnimationEvent` é `undefined`, e mesmo um `Event('animationiteration', { bubbles: true })` disparado à mão via `dispatchEvent` não chega ao `onAnimationIteration` de um componente React — confirmado com um componente de uma linha, sem `@keyframes` real nem CSS nenhum envolvido, então não é sobre o CSS não carregar. Regra: teste de nível 2 que precisa provar um handler de evento de animação chama a função **diretamente** (via `renderHook`, se o handler mora num hook), nunca via `fireEvent.animation*`; se o handler for interno a um componente sem hook extraível, essa parte só se prova ao vivo.
+
+Forma comum às cinco: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Para saber o que ele suporta, leia o `lib/` instalado — a matriz do jsdom é grande o bastante para dar a impressão errada por omissão.
 
 ## O que persiste é testado contra o banco real, nunca contra uma fake
 
