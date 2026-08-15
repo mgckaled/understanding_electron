@@ -142,7 +142,12 @@
   /* Fonts */
   --font-ui:
     'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
+  /* JetBrains Mono, self-hosted via @fontsource (DS5.2) — reverses the "no
+     bundled webfont" decision (skill design-system) for every monospace
+     consumer, not just code: host:porta, model names, hashes. The system
+     stack survives as fallback if the font file fails to load, never removed. */
+  --font-mono:
+    'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
 }
 
 /* Light theme redefines only the semantic layer — primitives stay fixed. It

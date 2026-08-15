@@ -68,7 +68,9 @@ Nomes exatos, já em uso. Não renomear, não inventar, não acrescentar.
 **Raio**: `sm`=4, `md`=6, `lg`=10, `full`=9999.
 **Altura de controle**: `sm`=24, `md`=28, `lg`=34. **Linha de tabela**: 28.
 **Duração**: `fast`=120ms, `base`=200ms, `slow`=320ms.
-**Fonte**: `--font-ui` (`'Segoe UI Variable', 'Segoe UI', system-ui, …`) e `--font-mono` (`ui-monospace, 'Cascadia Code', Consolas, …`).
+**Fonte**: `--font-ui` (`'Segoe UI Variable', 'Segoe UI', system-ui, …`) e `--font-mono`
+(`'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, …` — JetBrains Mono
+auto-hospedada via `@fontsource`, DS5.2; a pilha do sistema segue como *fallback*).
 **Layout da casca**: `--sidebar-width`=264px, `--sidebar-width-collapsed`=44px.
 
 ## Restrição 3 — cor de estado tem duas formas, e uma delas não pode virar texto

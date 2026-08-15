@@ -3,6 +3,10 @@
 import './shared/ui/tokens.css'
 import './assets/tailwind.css'
 import './assets/base.css'
+// Self-hosted (DS5.2) — bundled by Vite, no network request at runtime, no CSP
+// change. Only 400 is imported: every --font-mono consumer in the app (code,
+// host:porta, model name) renders at normal weight, never bold.
+import '@fontsource/jetbrains-mono/400.css'
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
