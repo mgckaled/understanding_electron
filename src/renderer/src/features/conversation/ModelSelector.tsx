@@ -223,14 +223,9 @@ type ContextControlProps = {
   /** Identity of the conversation, so the window control re-reads on switch. */
   scopeKey: string
   onNumCtx: (tokens: number) => void
-  /**
-   * The Composer's own gate (DS4.5/DS4.8, D13.2) — this popover only displays
-   * it, the refusal alert stays in the Composer, always visible.
-   */
-  budget: Budget | null
 }
 
-/** The context-window pill: ceiling/reservation, the refusal states, and the budget meter. */
+/** The context-window pill: ceiling/reservation and the refusal states. */
 function ContextControl({
   contextWindow,
   current,
@@ -238,8 +233,7 @@ function ContextControl({
   disabled,
   locked,
   scopeKey,
-  onNumCtx,
-  budget
+  onNumCtx
 }: ContextControlProps): React.JSX.Element {
   const fits = fitsInMemory(ceiling)
   const [open, setOpen] = useState(false)
@@ -265,28 +259,6 @@ function ContextControl({
       </Field>
       <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
         <div className="flex w-[240px] flex-col gap-1">
-          {/* Migrated from Composer (DS4.5), then off ModelPicker (DS5.6) — the
-              gate itself (budgetFor, canSend) stays in Composer; this is
-              presentation only. */}
-          {budget !== null && (
-            <div className="flex items-center gap-3 px-2 pt-1">
-              <meter
-                className="h-[6px] w-[120px]"
-                min={0}
-                max={1}
-                low={0.7}
-                high={0.9}
-                optimum={0}
-                value={Math.min(budget.used, 1)}
-                aria-label="Orçamento de contexto"
-              />
-              <span className="text-2xs text-text-faint tabular-nums">
-                ~{budget.estimated.toLocaleString('pt-BR')} de{' '}
-                {budget.limit.toLocaleString('pt-BR')} tokens
-              </span>
-            </div>
-          )}
-
           {/* No window at all: offering the control here is what produced "até 0k"
               and a clamp to zero, which the IPC schema then rejected (D15.2). */}
           {current !== undefined && contextWindow.status === 'too-large' && (
@@ -345,4 +317,36 @@ function ContextControl({
   )
 }
 
-export { ModelPicker, ContextControl }
+type BudgetMeterProps = {
+  /**
+   * The Composer's own gate (DS4.5/DS4.8, D13.2) — this only displays it, the
+   * refusal alert stays in the Composer, always visible.
+   */
+  budget: Budget | null
+}
+
+/** The token-usage meter, its own row element (F-1 fixup, item 4) — no
+    longer nested inside the ContextControl popover, since it is information
+    worth seeing without a click, not an admin control like the window size. */
+function BudgetMeter({ budget }: BudgetMeterProps): React.JSX.Element | null {
+  if (budget === null) return null
+  return (
+    <div className="flex flex-none items-center gap-3">
+      <meter
+        className="h-[6px] w-[100px]"
+        min={0}
+        max={1}
+        low={0.7}
+        high={0.9}
+        optimum={0}
+        value={Math.min(budget.used, 1)}
+        aria-label="Orçamento de contexto"
+      />
+      <span className="text-2xs whitespace-nowrap text-text-faint tabular-nums">
+        ~{budget.estimated.toLocaleString('pt-BR')} de {budget.limit.toLocaleString('pt-BR')} tokens
+      </span>
+    </div>
+  )
+}
+
+export { ModelPicker, ContextControl, BudgetMeter }

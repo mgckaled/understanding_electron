@@ -16,7 +16,7 @@ import { useAiAvailability } from './useAiAvailability'
 import { resolveModel } from './conversations'
 import { useStickToBottom } from './useStickToBottom'
 import MarkdownMessage from './MarkdownMessage'
-import { ModelPicker, ContextControl } from './ModelSelector'
+import { ModelPicker, ContextControl, BudgetMeter } from './ModelSelector'
 import Composer from './Composer'
 import ThinkingMark from './ThinkingMark'
 import TurnActions from './TurnActions'
@@ -301,9 +301,12 @@ function ConversationView(): React.JSX.Element {
                 // last one typed.
                 scopeKey={conversation?.id ?? 'sem-conversa'}
                 onNumCtx={(tokens) => choose({ numCtx: tokens })}
-                budget={budget}
               />
             )}
+            {/* Own row element, last (F-1 fixup, item 4) — out of the
+                ContextControl popover it used to hide inside; worth seeing
+                without a click, unlike the window-size admin beside it. */}
+            <BudgetMeter budget={budget} />
           </>
         )}
       />
