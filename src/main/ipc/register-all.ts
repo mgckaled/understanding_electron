@@ -12,6 +12,7 @@ import { pickDataset, attachDataset } from '../features/dataset/handlers'
 import { cancelJob } from '../features/job/handlers'
 import { readHashedFile } from '../features/dataset/lines'
 import { ensureAttachment } from '../attachments/storage'
+import { collectOrphanedAttachments } from '../attachments/gc'
 import {
   chat as aiChat,
   isAvailable as aiIsAvailable,
@@ -59,6 +60,12 @@ export function registerAll(): () => void {
   // `main/index.ts` reads `nativeTheme.shouldUseDarkColors` for the same reason.
   nativeTheme.themeSource = readSettings(undefined, db).theme
 
+  // Startup sweep (D16.2): closes the gap a removal event cannot reach — an
+  // attach that succeeded and was discarded before ever being sent. Fire and
+  // forget: best-effort disk cleanup, re-runnable, never worth delaying the
+  // window for.
+  collectOrphanedAttachments(db, attachmentsDir).catch(() => {})
+
   handle('app:info', () => getAppInfo(app.getVersion, is.dev))
   handle('app:memory', () => getSystemMemory(freemem, totalmem))
   handle('shell:openExternal', (args) => openExternal(args, shell.openExternal))
@@ -80,7 +87,13 @@ export function registerAll(): () => void {
   handle('conversation:messages', (args) => readMessages(args, db))
   handle('conversation:create', (args) => createConversation(args, db))
   handle('conversation:rename', (args) => renameConversation(args, db))
-  handle('conversation:remove', (args) => removeConversation(args, db))
+  handle('conversation:remove', async (args) => {
+    removeConversation(args, db)
+    // Recomputes the GLOBAL reference set AFTER the cascade delete — a hash
+    // still used by another conversation stays in it, which is what makes a
+    // shared blob survive (D16.2 aceite), with no per-conversation bookkeeping.
+    await collectOrphanedAttachments(db, attachmentsDir)
+  })
   handle('conversation:append', (args) => appendMessage(args, db))
   handle('conversation:settings', (args) => updateConversationSettings(args, db))
 
