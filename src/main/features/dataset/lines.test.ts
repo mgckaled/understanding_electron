@@ -1,7 +1,8 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readLines } from './lines'
+import { readHashedFile } from './lines'
 
 async function collect(iterable: AsyncIterable<string>): Promise<string[]> {
   const lines: string[] = []
@@ -9,7 +10,7 @@ async function collect(iterable: AsyncIterable<string>): Promise<string[]> {
   return lines
 }
 
-describe('readLines', () => {
+describe('readHashedFile', () => {
   let dir: string
 
   beforeEach(async () => {
@@ -20,22 +21,25 @@ describe('readLines', () => {
     await rm(dir, { recursive: true, force: true })
   })
 
-  it('yields each line of an existing file', async () => {
+  it('yields each line and hashes the real file bytes', async () => {
     const path = join(dir, 'sample.csv')
-    await writeFile(path, 'id,name\n1,Ana\n2,Bruno\n', 'utf-8')
+    const content = 'id,endereço\n1,início\n2,Bruno\n'
+    await writeFile(path, content, 'utf-8')
 
-    const lines = await collect(readLines(path))
+    const { lines, digest } = readHashedFile(path)
+    const collected = await collect(lines)
 
-    expect(lines).toEqual(['id,name', '1,Ana', '2,Bruno'])
+    expect(collected).toEqual(['id,endereço', '1,início', '2,Bruno'])
+    expect(digest()).toBe(createHash('sha256').update(Buffer.from(content, 'utf-8')).digest('hex'))
   })
 
   it('rejects with ENOENT for a path that does not exist', async () => {
     const path = join(dir, 'missing.csv')
 
-    await expect(collect(readLines(path))).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(collect(readHashedFile(path).lines)).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
   it('rejects with EISDIR when the path is a directory', async () => {
-    await expect(collect(readLines(dir))).rejects.toMatchObject({ code: 'EISDIR' })
+    await expect(collect(readHashedFile(dir).lines)).rejects.toMatchObject({ code: 'EISDIR' })
   })
 })

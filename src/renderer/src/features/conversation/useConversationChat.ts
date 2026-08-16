@@ -1,5 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
-import type { ChatMessage, ChatReply, ConversationSettings, JobId } from '@shared/ipc'
+import type {
+  ChatMessage,
+  ChatReply,
+  ConversationSettings,
+  DatasetPart,
+  JobId,
+  Message,
+  MessagePart
+} from '@shared/ipc'
 import { toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
@@ -37,7 +45,7 @@ export function useConversationChat(
    * and a figure from another moment is not a ratio (D15.14).
    */
   lastPrompt: { chars: number; tokens: number } | undefined
-  send: (prompt: string) => Promise<void>
+  send: (prompt: string, attachment: DatasetPart | null) => Promise<void>
   cancel: () => void
 } {
   const { activeId, create, append, updateSettings } = useConversations()
@@ -66,7 +74,7 @@ export function useConversationChat(
   }, [])
 
   const send = useCallback(
-    async (prompt: string): Promise<void> => {
+    async (prompt: string, attachment: DatasetPart | null): Promise<void> => {
       const text = prompt.trim()
       if (text === '') return
       // Nothing installed: there is no model to address the call to. The
@@ -91,13 +99,22 @@ export function useConversationChat(
       // yet, and its history is empty by definition — comparing the ids is what
       // keeps the previous conversation's turns out of a brand new one.
       const previous = conversationId === active?.id ? active.messages : []
-      const history: ChatMessage[] = [...toChatMessages(previous), { role: 'user', content: text }]
+      const parts: MessagePart[] =
+        attachment === null ? [{ kind: 'text', text }] : [attachment, { kind: 'text', text }]
+      // Routed through toChatMessages, same as `previous` below, so the
+      // attachment materializes into the payload for THIS turn too (D16.5) —
+      // id/createdAt are placeholders the translation never reads.
+      const draftMessage: Message = { id: 'draft', role: 'user', parts, createdAt: 0 }
+      const history: ChatMessage[] = [
+        ...toChatMessages(previous),
+        ...toChatMessages([draftMessage])
+      ]
       // Measured HERE, on the payload, and not recomputed from the transcript
       // afterwards: by then the transcript also holds the reply, which this call
       // did not send (D15.14).
       const sentChars = history.reduce((total, message) => total + message.content.length, 0)
 
-      append(conversationId, { role: 'user', parts: [{ kind: 'text', text }] })
+      append(conversationId, { role: 'user', parts })
       clearStreaming()
       setLastRequestId(conversationId)
 

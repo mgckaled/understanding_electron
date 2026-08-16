@@ -17,7 +17,6 @@ const api: Api = {
   },
   dataset: {
     pick: () => invoke('dataset:pick'),
-    scan: (path, jobId) => invoke('dataset:scan', { path, jobId }),
     attach: (path, jobId) => invoke('dataset:attach', { path, jobId })
   },
   job: {

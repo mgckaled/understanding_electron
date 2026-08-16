@@ -291,7 +291,6 @@ export const argsSchema = {
   'app:memory': z.void(),
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
-  'dataset:scan': z.object({ path: z.string(), jobId: z.string() }),
   'dataset:attach': z.object({ path: z.string(), jobId: z.string() }),
   'job:cancel': z.object({ jobId: z.string() }),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
@@ -360,10 +359,6 @@ export type IpcContract = {
   'dataset:pick': {
     args: z.infer<(typeof argsSchema)['dataset:pick']>
     result: Result<DatasetRef | null>
-  }
-  'dataset:scan': {
-    args: z.infer<(typeof argsSchema)['dataset:scan']>
-    result: Result<DatasetSummary>
   }
   'dataset:attach': {
     args: z.infer<(typeof argsSchema)['dataset:attach']>
@@ -443,7 +438,6 @@ export type Api = {
   shell: { openExternal(url: string): Promise<Result<void>> }
   dataset: {
     pick(): Promise<Result<DatasetRef | null>>
-    scan(path: string, jobId: JobId): Promise<Result<DatasetSummary>>
     /** Reads, hashes and stores `path` once (D16.6), returning the resulting message part. */
     attach(path: string, jobId: JobId): Promise<Result<DatasetPart>>
   }

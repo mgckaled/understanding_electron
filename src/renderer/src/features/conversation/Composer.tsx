@@ -1,9 +1,10 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowUp, Pause } from 'lucide-react'
+import type { DatasetPart } from '@shared/ipc'
 import { budgetFor, type Budget } from '@core/ai/budget'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
-import AttachButton from '../open-dataset/AttachButton'
+import AttachButton from '../attachment/AttachButton'
 
 // Fixed at the bottom of the conversation, never inside the scrolling list. The
 // draft is local client state (D13.2) and stays that way; what plano 14 may add
@@ -19,7 +20,8 @@ type ComposerProps = {
    * honour is the same defect as none.
    */
   locked: boolean
-  onSend: (text: string) => void
+  /** `attachment` is the pending dataset, cleared together with the draft right after (D16.6). */
+  onSend: (text: string, attachment: DatasetPart | null) => void
   onCancel: () => void
   /**
    * Everything already in the transcript, in characters. The budget is computed
@@ -51,6 +53,7 @@ function Composer({
   modelSelector
 }: ComposerProps): React.JSX.Element {
   const [draft, setDraft] = useState('')
+  const [attachment, setAttachment] = useState<DatasetPart | null>(null)
 
   const budget =
     limit === null
@@ -66,8 +69,9 @@ function Composer({
   const submit = (event: SyntheticEvent): void => {
     event.preventDefault()
     if (!canSend) return
-    onSend(draft)
+    onSend(draft, attachment)
     setDraft('')
+    setAttachment(null)
   }
 
   // Enter sends, Shift+Enter breaks the line. Beyond the letter of the plan,
@@ -110,7 +114,12 @@ function Composer({
             from plano 15 is collapsed away. */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-[0px] flex-wrap items-center gap-5">
-            <AttachButton />
+            <AttachButton
+              attachment={attachment}
+              onAttached={setAttachment}
+              onRemove={() => setAttachment(null)}
+              disabled={disabled}
+            />
             {modelSelector(budget)}
           </div>
           <div className="flex flex-none items-center gap-2">

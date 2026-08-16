@@ -43,7 +43,7 @@ export function createApiMock(): Api {
       memory: vi.fn().mockResolvedValue({ freeBytes: 6 * 1024 ** 3, totalBytes: 16 * 1024 ** 3 })
     },
     shell: { openExternal: vi.fn() },
-    dataset: { pick: vi.fn(), scan: vi.fn(), attach: vi.fn() },
+    dataset: { pick: vi.fn(), attach: vi.fn() },
     // onEvent defaults to a no-op unsubscribe: a component whose useEffect
     // cleanup calls the returned function would otherwise call undefined()
     // and throw, breaking every test that mounts it — not just the ones

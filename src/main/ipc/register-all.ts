@@ -8,9 +8,9 @@ import { DATABASE_FILE, openDatabase } from '../db/open'
 import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
-import { pickDataset, scanDataset, attachDataset } from '../features/dataset/handlers'
+import { pickDataset, attachDataset } from '../features/dataset/handlers'
 import { cancelJob } from '../features/job/handlers'
-import { readLines, readHashedFile } from '../features/dataset/lines'
+import { readHashedFile } from '../features/dataset/lines'
 import { ensureAttachment } from '../attachments/storage'
 import {
   chat as aiChat,
@@ -63,7 +63,6 @@ export function registerAll(): () => void {
   handle('app:memory', () => getSystemMemory(freemem, totalmem))
   handle('shell:openExternal', (args) => openExternal(args, shell.openExternal))
   handle('dataset:pick', (args) => pickDataset(args, dialog.showOpenDialog))
-  handle('dataset:scan', (args) => scanDataset(args, readLines, broadcastJobEvent))
   handle('dataset:attach', (args) =>
     attachDataset(args, readHashedFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
   )
