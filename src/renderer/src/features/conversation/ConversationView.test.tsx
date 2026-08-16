@@ -542,6 +542,48 @@ describe('ConversationView — realce de sintaxe', () => {
   })
 })
 
+// D16.4/D16.5: the card is its own element in the transcript, never inlined
+// into the bubble — and what the provider receives materializes it anyway.
+describe('ConversationView — anexo de dataset', () => {
+  it('draws the card in the transcript and materializes it in the payload', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/vendas.csv' } })
+    vi.mocked(api.dataset.attach).mockResolvedValue({
+      ok: true,
+      value: {
+        kind: 'dataset',
+        hash: 'h1',
+        fileName: 'vendas.csv',
+        delimiter: ',',
+        columns: ['id', 'valor'],
+        rowCount: 3
+      }
+    })
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'ok' } })
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+    await user.click(screen.getByRole('button', { name: 'Anexar arquivo' }))
+    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await screen.findByText('vendas.csv')
+
+    await user.type(screen.getByPlaceholderText(PROMPT), 'o que tem aqui?')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    // The card is its own element (D16.4 Passo 4) — the bubble stays literal.
+    expect(await screen.findByText('2 colunas · 3 linhas')).toBeInTheDocument()
+    expect(screen.getByText('o que tem aqui?', { selector: 'p' })).toBeInTheDocument()
+
+    // What the model actually receives materializes the card (D16.5).
+    const sent = vi.mocked(api.ai.chat).mock.calls[0]?.[0].messages[0]?.content
+    expect(sent).toContain('vendas.csv')
+    expect(sent).toContain('id, valor')
+    expect(sent).toContain('o que tem aqui?')
+  })
+})
+
 // D14.3: what arrived is kept, marked. A conversation that discards half an
 // answer lies by omission — you remember asking, and the transcript shows the
 // question with nothing under it.

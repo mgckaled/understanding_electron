@@ -6,8 +6,8 @@ import type { Components, Options } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { checkExternalUrl } from '@core/url'
-import { useCopyToClipboard } from '../../shared/hooks/useCopyToClipboard'
-import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
+import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
+import { ICON_SIZE, ICON_STROKE } from '../icon'
 import styles from './MarkdownMessage.module.css'
 
 // The model's output is untrusted input. react-markdown builds React elements,

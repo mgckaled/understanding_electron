@@ -1,4 +1,4 @@
-import type { ChatMessage, Message, MessagePart } from '@shared/ipc'
+import type { ChatMessage, DatasetPart, Message, MessagePart } from '@shared/ipc'
 import { formatDataCard } from './dataCard'
 
 // Message is a list of typed parts; a provider wants flat `{ role, content }`.
@@ -18,6 +18,11 @@ export function messageText(message: Message): string {
     .filter((part) => part.kind === 'text')
     .map((part) => part.text)
     .join('')
+}
+
+/** The dataset attached to a message, if any — the card the conversation draws (D16.4 Passo 4). */
+export function datasetPartOf(message: Message): DatasetPart | null {
+  return message.parts.find((part): part is DatasetPart => part.kind === 'dataset') ?? null
 }
 
 // What the PROVIDER receives for one part (D16.5) — the only place a non-text
