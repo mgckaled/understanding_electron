@@ -8,10 +8,10 @@ import { formatDataCard } from './dataCard'
 
 /**
  * All the text a message carries, in order. Non-text parts contribute nothing
- * — deliberately: this feeds the sidebar title, the user's own bubble, and the
- * pre-send budget estimate, and none of those may render a data card inline
- * (D16.4 Passo 4 draws it as its own element). Only {@link toChatMessages}
- * needs to see a non-text part; it does not call this.
+ * — deliberately: this feeds the sidebar title and the user's own bubble, and
+ * neither may render a data card inline (D16.4 Passo 4 draws it as its own
+ * element). The budget estimate reads {@link toChatMessages} instead (D16.5
+ * Passo 5), since it must count what a non-text part costs the provider.
  */
 export function messageText(message: Message): string {
   return message.parts

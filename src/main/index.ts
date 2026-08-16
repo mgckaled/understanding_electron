@@ -61,7 +61,7 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId(APP_ID)
 
   // Default open or close DevTools by F12 in development
@@ -71,8 +71,10 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  // Awaited: registerAll's startup sweep must finish before createWindow, or a
+  // renderer could attach a dataset fast enough to race its own cleanup.
   // Closing on the way out folds the -wal and -shm files back into crivo.db.
-  const closeDatabase = registerAll()
+  const closeDatabase = await registerAll()
   app.on('will-quit', closeDatabase)
 
   createWindow()

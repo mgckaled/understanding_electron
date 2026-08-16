@@ -50,8 +50,11 @@ function broadcastJobEvent(event: JobEvent): void {
  * because this is the composition root — the only place allowed to know the file
  * lives under app.getPath('userData'). It hands back `close` so main/index.ts
  * keeps the lifecycle; a clean close folds -wal and -shm back into crivo.db.
+ *
+ * Awaited by main/index.ts before createWindow(): the startup sweep below must
+ * finish before a renderer can exist to race it with a fresh dataset:attach.
  */
-export function registerAll(): () => void {
+export async function registerAll(): Promise<() => void> {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))
   const attachmentsDir = join(app.getPath('userData'), 'attachments')
 
@@ -59,12 +62,6 @@ export function registerAll(): () => void {
   // own `prefers-color-scheme` already follows this once set (DS4.2), and
   // `main/index.ts` reads `nativeTheme.shouldUseDarkColors` for the same reason.
   nativeTheme.themeSource = readSettings(undefined, db).theme
-
-  // Startup sweep (D16.2): closes the gap a removal event cannot reach — an
-  // attach that succeeded and was discarded before ever being sent. Fire and
-  // forget: best-effort disk cleanup, re-runnable, never worth delaying the
-  // window for.
-  collectOrphanedAttachments(db, attachmentsDir).catch(() => {})
 
   handle('app:info', () => getAppInfo(app.getVersion, is.dev))
   handle('app:memory', () => getSystemMemory(freemem, totalmem))
@@ -102,6 +99,12 @@ export function registerAll(): () => void {
     writeSettings(args, db)
     if (args.theme !== undefined) nativeTheme.themeSource = args.theme
   })
+
+  // Startup sweep (D16.2): closes the gap a removal event cannot reach — an
+  // attach that succeeded and was discarded before ever being sent. Awaited,
+  // not fire-and-forget: it must finish before a window can exist to race it
+  // with a fresh dataset:attach that has not been appended yet.
+  await collectOrphanedAttachments(db, attachmentsDir).catch(() => {})
 
   return () => db.close()
 }
