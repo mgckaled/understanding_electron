@@ -152,6 +152,22 @@ O motivo não é elegância de interface. Medido em ago/2026: dado o prompt *"de
 
 ---
 
+## Ferramentas do chat
+
+Três capacidades — busca web, documentação e raciocínio visível — chegam pelo *tool calling* do Ollama, propostas em [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md). Auxiliares da conversa, não um novo pilar do produto.
+
+| | Faz | Não faz |
+|---|---|---|
+| **Busca web** | O modelo pede uma URL; o app busca e extrai o texto principal como contexto da resposta | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
+| **Documentação (MCP)** | Um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
+| **Raciocínio visível** | Alternável por turno; o texto de raciocínio do modelo aparece separado da resposta final, recolhível | Exige modelo que declare a capacidade — hoje nenhum da frota (ver [`CLAUDE.md`](../CLAUDE.md)) |
+
+A URL que o modelo pede precisa passar pelo mesmo ponto único de validação em `src/core/url.ts` — nunca um segundo caminho até a rede. Hoje esse ponto (`checkExternalUrl`) só confere o esquema (`http:`/`https:`); busca disparada por URL escolhida pelo modelo, e não pelo usuário clicando um link, também precisa recusar *loopback* e faixas privadas, o que abrir no navegador do sistema nunca precisou fazer.
+
+Sequência e planos: [`ROADMAP § 1`](ROADMAP.md#1-a-sequência), planos 21–23.
+
+---
+
 ## Catálogo de operações
 
 Em três camadas, por ordem de implementação. A camada 1 é o que faz o app ser útil; as outras entram por demanda. É também o **alvo de validação** da proposta de passos: o que o modelo devolve é conferido contra este catálogo, não contra uma expectativa de texto.

@@ -8,6 +8,7 @@ Documentos de **consulta estável**: comparativos, medições, especificações 
 | [Sistema visual do claude.com](design-claude-com.md) | ago/2026 | Extrato de terceiro do **site de marketing** da Anthropic, com a leitura do crivo por cima: 6 de 13 pares reprovam AA, e o que transfere são cinco regras de forma, não a paleta |
 | [Brief para o Claude Design](BRIEF-claude-design.md) | ago/2026 | O prompt que leva as restrições do design system até a ferramenta externa que gera os protótipos — `@theme inline`, os tokens exatos, a D10.1 via `@utility`, e o que **não** vira utilidade. Registra também a fronteira: o que é trabalho dela e o que é deste repositório |
 | [Handoff do Claude Design](handoff-ds-ago2026/README.md) | ago/2026 | O que voltou, curado de ~50 arquivos para dois: o protótipo das cinco extensões de interface (insumo do DS-3) e uma captura. O README lista **o que foi descartado e por quê** — incluindo a cópia dos tokens, que a regra de fonte única proíbe, e duas propostas do protótipo que foram recusadas |
+| [Web Fetch, MCP e Thinking Mode](web-fetch_mcp_thinking.md) | ago/2026 | Guia de implementação, gerado fora deste repositório, propondo três capacidades de chat via *tool calling* do Ollama — busca web, MCP (Context7) e modo de raciocínio. Origem dos planos 21–23 do arco (ver [`ESCOPO`](../ESCOPO.md#ferramentas-do-chat) e [`ROADMAP § 1`](../ROADMAP.md#1-a-sequência)) |
 
 ---
 
