@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
-import type { Api, AppError, ChatReply, JobEvent, Result } from '@shared/ipc'
+import type { Api, AppError, ChatReply, DatasetPart, JobEvent, Result } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
 import Settings from '../settings/Settings'
 import ConversationsProvider from './ConversationsProvider'
@@ -581,6 +581,78 @@ describe('ConversationView — anexo de dataset', () => {
     expect(sent).toContain('vendas.csv')
     expect(sent).toContain('id, valor')
     expect(sent).toContain('o que tem aqui?')
+  })
+})
+
+function bigDatasetPart(columnCount: number): DatasetPart {
+  return {
+    kind: 'dataset',
+    hash: 'big-hash',
+    fileName: 'grande.csv',
+    delimiter: ',',
+    columns: Array.from({ length: columnCount }, (_, i) => `c${i}`),
+    rowCount: 1000
+  }
+}
+
+// D16.5's own defect, reproduced before the fix: the gate must measure what is
+// actually SENT, not the transcript's messageText. A 30-token window cannot
+// hold an 80-column card no matter how it is counted — the question is
+// whether the app notices before or after sending it.
+describe('ConversationView — o medidor mede o payload, não a transcrição (D16.5)', () => {
+  it('refuses a send once a HISTORICAL dataset card is counted, not just its text', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    const conversationId = 'c-history-leak'
+    await api.conversation.create({ id: conversationId, title: 'Vendas', createdAt: 1 })
+    await api.conversation.updateSettings(conversationId, { model: 'gemma3:4b', numCtx: 30 })
+    await api.conversation.append(conversationId, {
+      id: 'm1',
+      role: 'user',
+      parts: [bigDatasetPart(80), { kind: 'text', text: 'oi' }],
+      createdAt: 1
+    })
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'e')
+
+    // The card the model actually reads is hundreds of characters; a 30-token
+    // window cannot hold it. Reading only messageText ("oi") would report it
+    // fitting — the defect this test exists to catch.
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
+  })
+
+  it('refuses a send once a PENDING attachment is counted, before it is ever sent', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    const conversationId = 'c-pending-leak'
+    await api.conversation.create({ id: conversationId, title: 'Vendas', createdAt: 1 })
+    await api.conversation.updateSettings(conversationId, { model: 'gemma3:4b', numCtx: 30 })
+    await api.conversation.append(conversationId, {
+      id: 'm1',
+      role: 'user',
+      parts: [{ kind: 'text', text: 'oi' }],
+      createdAt: 1
+    })
+    vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/grande.csv' } })
+    vi.mocked(api.dataset.attach).mockResolvedValue({ ok: true, value: bigDatasetPart(80) })
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+    await user.click(screen.getByRole('button', { name: 'Anexar arquivo' }))
+    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await screen.findByText('grande.csv')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'e')
+
+    // Nothing was SENT yet — the attachment sits pending, like the draft
+    // (D16.6). A gate reading only draft.length sees one character and
+    // reports fitting; the card it is about to send does not fit.
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
   })
 })
 

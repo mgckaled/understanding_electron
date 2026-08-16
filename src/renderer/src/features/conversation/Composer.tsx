@@ -2,6 +2,7 @@ import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowUp, Pause } from 'lucide-react'
 import type { DatasetPart } from '@shared/ipc'
 import { budgetFor, type Budget } from '@core/ai/budget'
+import { formatDataCard } from '@core/ai/dataCard'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import AttachButton from '../attachment/AttachButton'
@@ -55,10 +56,19 @@ function Composer({
   const [draft, setDraft] = useState('')
   const [attachment, setAttachment] = useState<DatasetPart | null>(null)
 
+  // A PENDING attachment is about to be sent just as much as the draft text is
+  // — counted here with the same materializer toChatMessages uses (D16.5), so
+  // a card that will not fit is caught before the send, not after.
+  const attachmentChars = attachment === null ? 0 : formatDataCard(attachment).length
   const budget =
     limit === null
       ? null
-      : budgetFor({ historyChars, draftChars: draft.length, limit, charsPerToken })
+      : budgetFor({
+          historyChars,
+          draftChars: draft.length + attachmentChars,
+          limit,
+          charsPerToken
+        })
 
   // The gate (D15.5): nothing is truncated in silence — when the next turn will
   // not fit, the send is refused with the reason on screen, instead of the

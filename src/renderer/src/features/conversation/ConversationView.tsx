@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { AiModel, AppError, ConversationSettings, MessageStopped } from '@shared/ipc'
-import { datasetPartOf, messageText } from '@core/ai/messages'
+import { datasetPartOf, messageText, toChatMessages } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
@@ -104,9 +104,14 @@ function ConversationView(): React.JSX.Element {
   )
   const { state: availability, retry: retryAvailability } = useAiAvailability()
 
-  // What the next send would carry: the whole transcript, since the provider is
-  // stateless and every turn resends everything.
-  const historyChars = messages.reduce((total, message) => total + messageText(message).length, 0)
+  // What the next send would carry: the whole transcript, since the provider
+  // is stateless and every turn resends everything. Routed through
+  // toChatMessages, not messageText — a dataset part has no text, so summing
+  // messageText would count a card's hundreds of chars as zero (D16.5).
+  const historyChars = toChatMessages(messages).reduce(
+    (total, message) => total + message.content.length,
+    0
+  )
   // Generic ratio on the first turn, this conversation's own after (the exact
   // count exists only AFTER a call, D15.4). NOT `historyChars`: it already holds
   // the reply the measured call never sent, which cancels the formula (D15.14).
