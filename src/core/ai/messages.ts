@@ -1,12 +1,18 @@
-import type { ChatMessage, Message } from '@shared/ipc'
+import type { ChatMessage, Message, MessagePart } from '@shared/ipc'
+import { formatDataCard } from './dataCard'
 
 // Message is a list of typed parts; a provider wants flat `{ role, content }`.
 // The translation lives in core/, not the renderer, because plano 16 hangs the
 // three-level privacy boundary here — a decision two callers need belongs in
-// core/, or validation next to one becomes a bypass in the second. Today only
-// 'text' exists, so the function is short; the place is the point.
+// core/, or validation next to one becomes a bypass in the second.
 
-/** All the text a message carries, in order. Non-text parts contribute nothing. */
+/**
+ * All the text a message carries, in order. Non-text parts contribute nothing
+ * — deliberately: this feeds the sidebar title, the user's own bubble, and the
+ * pre-send budget estimate, and none of those may render a data card inline
+ * (D16.4 Passo 4 draws it as its own element). Only {@link toChatMessages}
+ * needs to see a non-text part; it does not call this.
+ */
 export function messageText(message: Message): string {
   return message.parts
     .filter((part) => part.kind === 'text')
@@ -14,7 +20,23 @@ export function messageText(message: Message): string {
     .join('')
 }
 
+// What the PROVIDER receives for one part (D16.5) — the only place a non-text
+// part materializes into content. A card is cheap (measured: 51-180 tokens at
+// 5-40 columns, plano 16 passo 0) but paid every turn, so nothing here
+// resummarizes it.
+function partForProvider(part: MessagePart): string {
+  switch (part.kind) {
+    case 'text':
+      return part.text
+    case 'dataset':
+      return formatDataCard(part)
+  }
+}
+
 /** The conversation as the provider sees it. */
 export function toChatMessages(messages: Message[]): ChatMessage[] {
-  return messages.map((message) => ({ role: message.role, content: messageText(message) }))
+  return messages.map((message) => ({
+    role: message.role,
+    content: message.parts.map(partForProvider).join('\n\n')
+  }))
 }

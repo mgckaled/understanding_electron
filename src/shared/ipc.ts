@@ -168,10 +168,32 @@ export type LoadedModel = {
 // (the provider's wire shape); a pure function translates one to the other, and
 // that function is where plano 16 hangs the three-level privacy boundary. The
 // decision encoded here is that a message is a LIST OF TYPED PARTS, not a string
-// with attachments beside it — only 'text' is written now, but fixing the SHAPE
-// later would touch every layer and the rows already on disk (D13.3 § slot).
-// The schemas were born with the channels in plano 14; the types are inferred.
-export const messagePartSchema = z.object({ kind: z.literal('text'), text: z.string() })
+// with attachments beside it — only 'text' was written until plano 16; fixing
+// the SHAPE later would have touched every layer and the rows already on disk
+// (D13.3 § slot). The schemas were born with the channels in plano 14; the
+// types are inferred.
+export const textPartSchema = z.object({ kind: z.literal('text'), text: z.string() })
+export type TextPart = z.infer<typeof textPartSchema>
+
+/**
+ * A dataset attached to a message (plano 16, D16.4) — level 1 (schema) plus
+ * row count, produced once by `dataset:attach` and stored inline: cheap enough
+ * (measured: 51-180 tokens at 5-40 columns) that re-deriving it from the hash
+ * on every read would trade a file stat for nothing. `hash` addresses
+ * `userData/attachments/<hash>` (D16.3); no `path` — the source file may move
+ * or vanish, the stored copy may not.
+ */
+export const datasetPartSchema = z.object({
+  kind: z.literal('dataset'),
+  hash: z.string().min(1),
+  fileName: z.string().min(1),
+  delimiter: z.string(),
+  columns: z.array(z.string()),
+  rowCount: z.number().int().nonnegative()
+})
+export type DatasetPart = z.infer<typeof datasetPartSchema>
+
+export const messagePartSchema = z.discriminatedUnion('kind', [textPartSchema, datasetPartSchema])
 export type MessagePart = z.infer<typeof messagePartSchema>
 
 export const messageRoleSchema = z.enum(['user', 'assistant'])
