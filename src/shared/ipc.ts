@@ -292,6 +292,7 @@ export const argsSchema = {
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
   'dataset:scan': z.object({ path: z.string(), jobId: z.string() }),
+  'dataset:attach': z.object({ path: z.string(), jobId: z.string() }),
   'job:cancel': z.object({ jobId: z.string() }),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
   // N+1 behind one channel (D15.1): /api/tags omits `vision` and the context
@@ -363,6 +364,10 @@ export type IpcContract = {
   'dataset:scan': {
     args: z.infer<(typeof argsSchema)['dataset:scan']>
     result: Result<DatasetSummary>
+  }
+  'dataset:attach': {
+    args: z.infer<(typeof argsSchema)['dataset:attach']>
+    result: Result<DatasetPart>
   }
   'job:cancel': { args: z.infer<(typeof argsSchema)['job:cancel']>; result: void }
   'ai:isAvailable': {
@@ -439,6 +444,8 @@ export type Api = {
   dataset: {
     pick(): Promise<Result<DatasetRef | null>>
     scan(path: string, jobId: JobId): Promise<Result<DatasetSummary>>
+    /** Reads, hashes and stores `path` once (D16.6), returning the resulting message part. */
+    attach(path: string, jobId: JobId): Promise<Result<DatasetPart>>
   }
   job: {
     cancel(jobId: JobId): Promise<void>
