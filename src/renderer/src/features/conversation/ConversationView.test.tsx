@@ -565,8 +565,8 @@ describe('ConversationView — anexo de dataset', () => {
 
     renderView()
     await whenReady()
-    await user.click(screen.getByRole('button', { name: 'Anexar arquivo' }))
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
     await screen.findByText('vendas.csv')
 
     await user.type(screen.getByPlaceholderText(PROMPT), 'o que tem aqui?')
@@ -643,8 +643,8 @@ describe('ConversationView — o medidor mede o payload, não a transcrição (D
 
     renderView()
     await whenReady()
-    await user.click(screen.getByRole('button', { name: 'Anexar arquivo' }))
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
     await screen.findByText('grande.csv')
     await user.type(screen.getByPlaceholderText(PROMPT), 'e')
 

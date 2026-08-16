@@ -12,7 +12,7 @@ import AttachButton from './AttachButton'
 // The loading row (Lendo arquivo…/Cancelar) and the attached chip are NOT
 // inside the popover (DS5.5) and need no such flag.
 async function open(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-  await user.click(screen.getByRole('button', { name: 'Anexar arquivo' }))
+  await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
 }
 
 const SUMMARY: DatasetPart = {
@@ -44,7 +44,7 @@ describe('AttachButton', () => {
 
     render(<ControlledAttachButton />)
     await open(user)
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
 
     expect(await screen.findByText('data.csv')).toBeInTheDocument()
   })
@@ -57,7 +57,7 @@ describe('AttachButton', () => {
 
     render(<ControlledAttachButton />)
     await open(user)
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
     await screen.findByText('data.csv')
     await open(user)
 
@@ -73,7 +73,7 @@ describe('AttachButton', () => {
 
     render(<ControlledAttachButton />)
     await open(user)
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
     await screen.findByText('data.csv')
 
     await user.click(screen.getByRole('button', { name: 'Remover anexo' }))
@@ -88,7 +88,7 @@ describe('AttachButton', () => {
 
     render(<ControlledAttachButton />)
     await open(user)
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
 
     await waitFor(() => expect(api.dataset.pick).toHaveBeenCalledTimes(1))
     expect(api.dataset.attach).not.toHaveBeenCalled()
@@ -106,7 +106,7 @@ describe('AttachButton', () => {
 
     render(<ControlledAttachButton />)
     await open(user)
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
     await open(user)
 
     expect(await screen.findByRole('alert', { hidden: true })).toHaveTextContent(
@@ -122,7 +122,7 @@ describe('AttachButton', () => {
 
     render(<ControlledAttachButton />)
     await open(user)
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
     // The row's own Cancelar, not inside the popover — visible even closed.
     await user.click(await screen.findByRole('button', { name: 'Cancelar' }))
 
@@ -140,7 +140,7 @@ describe('AttachButton', () => {
 
     const { unmount } = render(<ControlledAttachButton />)
     await open(user)
-    await user.click(screen.getByRole('button', { name: 'Escolher arquivo', hidden: true }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
     await screen.findByRole('button', { name: 'Cancelar' })
 
     unmount()

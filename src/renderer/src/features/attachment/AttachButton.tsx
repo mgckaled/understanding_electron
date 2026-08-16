@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Paperclip, X } from 'lucide-react'
+import { Plus, Table2, X } from 'lucide-react'
 import type { DatasetPart } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -16,12 +16,14 @@ type AttachButtonProps = {
   disabled?: boolean
 }
 
-// The composer's clip (DS5, item 7; D16.6 keeps it there). What it produces
-// now rides the next message instead of dying in the popover (fase 06's
-// OpenDatasetPanel, retired in this plano). `useAttachDataset` resets to idle
-// right after a successful pick — the fact "something is attached" lives ONE
-// place, the `attachment` prop, never duplicated into this component's own
-// state.
+// The composer's "+" (plano 17 passo 1 — replaces the DS-5 clip; D16.6 keeps
+// the trigger in the composer). The popover lists attachment categories in
+// the same item shape as the conversation-list kebab menu
+// (ConversationList.tsx): icon, then text, hover:bg-surface. Only "Dados
+// tabulares" has a working option so far — "Imagens"/"Documentos" join in the
+// steps that build their own extractor (D17.14 of plano 17: no menu item
+// ships ahead of the function behind it). Once a dataset is attached, the
+// popover switches to its schema view — unchanged from before this step.
 function AttachButton({
   attachment,
   onAttached,
@@ -48,11 +50,11 @@ function AttachButton({
         shape="square"
         style={{ anchorName }}
         disabled={disabled}
-        aria-label="Anexar arquivo"
-        aria-haspopup="dialog"
+        aria-label="Adicionar anexo"
+        aria-haspopup="true"
         onClick={() => setOpen((value) => !value)}
       >
-        <Paperclip size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
+        <Plus size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
       </Button>
 
       {attachment !== null && !isLoading && (
@@ -83,46 +85,58 @@ function AttachButton({
       )}
 
       <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
-        <div className="flex w-[240px] flex-col gap-3 p-1">
-          {attachment === null && !isLoading && (
-            <Button variant="primary" size="sm" type="button" onClick={handlePick}>
-              Escolher arquivo
-            </Button>
-          )}
-          {attachment === null && (
+        {attachment === null ? (
+          <div className="flex flex-col gap-3 p-1">
+            {/* Same item shape as the conversation-list kebab menu
+                (ConversationList.tsx): icon then text, hover:bg-surface — one
+                surface below the popover's own bg-surface-raised, so a hover
+                that reused bg-surface-raised here would be invisible.
+                "Imagens"/"Documentos" join this list in the steps that build
+                their own extractor (D17.14 of plano 17). */}
+            {!isLoading && (
+              <div className="flex min-w-[180px] flex-col gap-1">
+                <button
+                  type="button"
+                  className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-text hover:bg-surface"
+                  onClick={handlePick}
+                >
+                  <Table2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                  Dados tabulares
+                </button>
+              </div>
+            )}
             <StateView
               state={state}
               emptyMessage="Nenhum arquivo anexado ainda."
               render={() => null}
             />
-          )}
-          {attachment !== null && (
-            // display:contents on each pair so dt/dd sit directly in the 2-col grid.
-            <>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-xs">
-                <div className="contents">
-                  <dt className="text-text-muted">Separador</dt>
-                  <dd className="text-text [word-break:break-word]">
-                    {attachment.delimiter === '\t' ? 'tabulação' : attachment.delimiter}
-                  </dd>
-                </div>
-                <div className="contents">
-                  <dt className="text-text-muted">Colunas</dt>
-                  <dd className="text-text [word-break:break-word]">
-                    {attachment.columns.length > 0 ? attachment.columns.join(', ') : '—'}
-                  </dd>
-                </div>
-                <div className="contents">
-                  <dt className="text-text-muted">Linhas</dt>
-                  <dd className="text-text [word-break:break-word]">{attachment.rowCount}</dd>
-                </div>
-              </dl>
-              <Button variant="secondary" size="sm" type="button" onClick={handlePick}>
-                Escolher outro arquivo
-              </Button>
-            </>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex w-[240px] flex-col gap-3 p-1">
+            {/* display:contents on each pair so dt/dd sit directly in the 2-col grid. */}
+            <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-xs">
+              <div className="contents">
+                <dt className="text-text-muted">Separador</dt>
+                <dd className="text-text [word-break:break-word]">
+                  {attachment.delimiter === '\t' ? 'tabulação' : attachment.delimiter}
+                </dd>
+              </div>
+              <div className="contents">
+                <dt className="text-text-muted">Colunas</dt>
+                <dd className="text-text [word-break:break-word]">
+                  {attachment.columns.length > 0 ? attachment.columns.join(', ') : '—'}
+                </dd>
+              </div>
+              <div className="contents">
+                <dt className="text-text-muted">Linhas</dt>
+                <dd className="text-text [word-break:break-word]">{attachment.rowCount}</dd>
+              </div>
+            </dl>
+            <Button variant="secondary" size="sm" type="button" onClick={handlePick}>
+              Escolher outro arquivo
+            </Button>
+          </div>
+        )}
       </Popover>
     </>
   )
