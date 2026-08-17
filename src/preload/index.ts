@@ -23,6 +23,10 @@ const api: Api = {
     pick: () => invoke('document:pick'),
     attach: (path, jobId) => invoke('document:attach', { path, jobId })
   },
+  image: {
+    pick: () => invoke('image:pick'),
+    attach: (path, jobId) => invoke('image:attach', { path, jobId })
+  },
   job: {
     cancel: (jobId) => invoke('job:cancel', { jobId }),
     onEvent: (cb) => {

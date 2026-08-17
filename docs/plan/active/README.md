@@ -8,7 +8,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 ## Em execução
 
-[**17 — Anexo: documento e imagem**](17-anexo-documento-e-imagem.md) — passos 0-1 concluídos (popover do composer redesenhado, só "Dados tabulares" ligado); passos 2-8 pendentes (documento, refactor do `ai:chat`, imagem, rasterização, integração).
+[**17 — Anexo: documento e imagem**](17-anexo-documento-e-imagem.md) — passos 0-5 concluídos (popover, documento txt/md/pdf, refactor do `ai:chat`, mecanismo de imagem completo incluindo `ImageCard` e o protocolo `attachment://`); passos 6-8 pendentes (popover ganha "Imagens" com o gate de `vision`, rasterização de svg/webp, integração). Ver o diário de execução no próprio plano para o estado exato de onde retomar.
 
 ---
 

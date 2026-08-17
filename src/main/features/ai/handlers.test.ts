@@ -6,10 +6,17 @@ import * as jobs from '../../jobs'
 import { chat, isAvailable, loaded, models, unload } from './handlers'
 
 // The app's own shape (D17.5) — chat() materializes this into ChatMessage[]
-// via toChatMessages before it ever reaches chatFn.
+// via toChatMessagesWithImages before it ever reaches chatFn.
 const messages: Message[] = [
   { id: 'm1', role: 'user', parts: [{ kind: 'text', text: 'oi' }], createdAt: 1 }
 ]
+
+// None of the fixtures above carry an image part, so this should never be
+// called — throwing turns an accidental call into a loud test failure
+// instead of a silent wrong buffer.
+const resolveImageBytes = async (): Promise<Buffer> => {
+  throw new Error('unexpected image resolve in a fixture with no image part')
+}
 
 const gemma: AiModel = {
   provider: 'ollama',
@@ -132,7 +139,8 @@ describe('chat', () => {
     const result = await chat(
       { service: 'ollama', model: 'llama3.2', messages, jobId: 'j1' },
       chatFn,
-      (e) => events.push(e)
+      (e) => events.push(e),
+      resolveImageBytes
     )
 
     expect(result).toEqual({ ok: true, value: { content: 'Olá!' } })
@@ -146,7 +154,12 @@ describe('chat', () => {
     const finish = vi.spyOn(jobs, 'finish')
     const chatFn: ChatFn = async () => ({ content: 'ok' })
 
-    await chat({ service: 'ollama', model: 'llama3.2', messages, jobId: 'j2' }, chatFn, () => {})
+    await chat(
+      { service: 'ollama', model: 'llama3.2', messages, jobId: 'j2' },
+      chatFn,
+      () => {},
+      resolveImageBytes
+    )
 
     expect(finish).toHaveBeenCalledWith('j2')
     finish.mockRestore()
@@ -160,7 +173,8 @@ describe('chat', () => {
     const result = await chat(
       { service: 'ollama', model: 'ghost', messages, jobId: 'j3' },
       chatFn,
-      () => {}
+      () => {},
+      resolveImageBytes
     )
 
     expect(result).toEqual({
@@ -177,7 +191,8 @@ describe('chat', () => {
     const result = await chat(
       { service: 'ollama', model: 'llama3.2', messages, jobId: 'j4' },
       chatFn,
-      () => {}
+      () => {},
+      resolveImageBytes
     )
 
     expect(result.ok).toBe(false)
@@ -193,7 +208,8 @@ describe('chat', () => {
     const result = await chat(
       { service: 'ollama', model: 'llama3.2', messages, jobId: 'j5' },
       chatFn,
-      () => {}
+      () => {},
+      resolveImageBytes
     )
 
     expect(result).toEqual({ ok: false, error: { kind: 'cancelled' } })
@@ -227,7 +243,8 @@ describe('chat', () => {
     await chat(
       { service: 'ollama', model: 'llama3.2', messages: withAttachment, jobId: 'j7' },
       chatFn,
-      () => {}
+      () => {},
+      resolveImageBytes
     )
 
     expect(received).toEqual([
@@ -251,7 +268,8 @@ describe('chat', () => {
     const promise = chat(
       { service: 'ollama', model: 'llama3.2', messages, jobId: 'j6' },
       chatFn,
-      () => {}
+      () => {},
+      resolveImageBytes
     )
     await vi.advanceTimersByTimeAsync(300_000)
     const result = await promise

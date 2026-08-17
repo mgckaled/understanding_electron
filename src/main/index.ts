@@ -4,7 +4,11 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { APP_ID } from '@shared/meta'
 import { checkExternalUrl } from '@core/url'
 import { registerAll } from './ipc/register-all'
+import { registerAttachmentScheme } from './attachments/protocol'
 import icon from '../../resources/icon.png?asset'
+
+// Must run before app.whenReady() (D17.6) — the handler is wired in registerAll().
+registerAttachmentScheme()
 
 /**
  * The only way this process hands a URL to the OS — every caller goes through

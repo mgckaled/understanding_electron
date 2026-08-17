@@ -223,17 +223,34 @@ export const documentPartSchema = z.object({
 export type DocumentPart = z.infer<typeof documentPartSchema>
 
 /**
+ * An image attached to a message (plano 17, D17.2) — deliberately asymmetric
+ * with DocumentPart: no bytes here. The bytes live at
+ * `userData/attachments/<hash>` (D16.3) and are read fresh on every send
+ * (main/features/ai, D17.5), never inlined — the provider's prefix cache
+ * keys on identical request bytes, and a stored copy makes that free; a
+ * base64 copy in the SQLite row would not.
+ */
+export const imagePartSchema = z.object({
+  kind: z.literal('image'),
+  hash: z.string().min(1),
+  fileName: z.string().min(1),
+  mimeType: z.enum(['image/png', 'image/jpeg'])
+})
+export type ImagePart = z.infer<typeof imagePartSchema>
+
+/**
  * Every attachment kind a message can carry (D17.4) — the composer's pending
  * slot and the conversation view's per-message card dispatch type against
- * this, not DatasetPart by name, so a member joining later (image) touches
- * one union instead of every consumer.
+ * this, not DatasetPart by name, so a member joining later touches one union
+ * instead of every consumer.
  */
-export type AttachmentPart = DatasetPart | DocumentPart
+export type AttachmentPart = DatasetPart | DocumentPart | ImagePart
 
 export const messagePartSchema = z.discriminatedUnion('kind', [
   textPartSchema,
   datasetPartSchema,
-  documentPartSchema
+  documentPartSchema,
+  imagePartSchema
 ])
 export type MessagePart = z.infer<typeof messagePartSchema>
 
@@ -338,6 +355,8 @@ export const argsSchema = {
   // dispatch register-all.ts already gets for free by picking the function.
   'document:pick': z.void(),
   'document:attach': z.object({ path: z.string(), jobId: z.string() }),
+  'image:pick': z.void(),
+  'image:attach': z.object({ path: z.string(), jobId: z.string() }),
   'job:cancel': z.object({ jobId: z.string() }),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
   // N+1 behind one channel (D15.1): /api/tags omits `vision` and the context
@@ -422,6 +441,14 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['document:attach']>
     result: Result<DocumentPart>
   }
+  'image:pick': {
+    args: z.infer<(typeof argsSchema)['image:pick']>
+    result: Result<DatasetRef | null>
+  }
+  'image:attach': {
+    args: z.infer<(typeof argsSchema)['image:attach']>
+    result: Result<ImagePart>
+  }
   'job:cancel': { args: z.infer<(typeof argsSchema)['job:cancel']>; result: void }
   'ai:isAvailable': {
     args: z.infer<(typeof argsSchema)['ai:isAvailable']>
@@ -503,6 +530,11 @@ export type Api = {
     pick(): Promise<Result<DatasetRef | null>>
     /** Reads, extracts and stores `path` once (D17.2), returning the resulting message part. */
     attach(path: string, jobId: JobId): Promise<Result<DocumentPart>>
+  }
+  image: {
+    pick(): Promise<Result<DatasetRef | null>>
+    /** Hashes and stores `path` once (D17.2) — no extraction, the bytes ride verbatim. */
+    attach(path: string, jobId: JobId): Promise<Result<ImagePart>>
   }
   job: {
     cancel(jobId: JobId): Promise<void>

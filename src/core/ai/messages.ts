@@ -1,4 +1,4 @@
-import type { AttachmentPart, ChatMessage, Message, MessagePart } from '@shared/ipc'
+import type { AttachmentPart, ChatMessage, ImagePart, Message, MessagePart } from '@shared/ipc'
 import { formatDataCard } from './dataCard'
 import { formatDocumentCard } from './documentCard'
 
@@ -39,13 +39,53 @@ export function partForProvider(part: MessagePart): string {
       return formatDataCard(part)
     case 'document':
       return formatDocumentCard(part)
+    case 'image':
+      // Contributes nothing to `content` — an image rides on ChatMessage.images
+      // instead (D17.5), a separate field in the provider's own wire shape.
+      return ''
   }
 }
 
-/** The conversation as the provider sees it. */
+/**
+ * One message's joined content — the single place that decides how parts
+ * become text, shared by {@link toChatMessages} and
+ * {@link toChatMessagesWithImages} so the two can never drift apart (an
+ * image part contributing `''` is filtered here, not re-filtered per caller).
+ */
+function contentOf(message: Message): string {
+  return message.parts
+    .map(partForProvider)
+    .filter((text) => text !== '')
+    .join('\n\n')
+}
+
+/** The conversation as the provider sees it — text and cards only, no image bytes (those need `fs`, D17.5). */
 export function toChatMessages(messages: Message[]): ChatMessage[] {
-  return messages.map((message) => ({
-    role: message.role,
-    content: message.parts.map(partForProvider).join('\n\n')
-  }))
+  return messages.map((message) => ({ role: message.role, content: contentOf(message) }))
+}
+
+/**
+ * Same translation as {@link toChatMessages}, plus base64 image bytes
+ * (D17.5) — async and main-only: a sandboxed renderer has no `fs` to read
+ * `userData/attachments/<hash>` with. `resolveImageBytes` is injected, same
+ * DIP as `attachDataset`'s `createHashedLines`. Iterates `messages` directly,
+ * never a second array kept in step with it by index.
+ */
+export async function toChatMessagesWithImages(
+  messages: Message[],
+  resolveImageBytes: (hash: string) => Promise<Buffer>
+): Promise<ChatMessage[]> {
+  const result: ChatMessage[] = []
+  for (const message of messages) {
+    const imageParts = message.parts.filter((part): part is ImagePart => part.kind === 'image')
+    if (imageParts.length === 0) {
+      result.push({ role: message.role, content: contentOf(message) })
+      continue
+    }
+    const images = await Promise.all(
+      imageParts.map(async (part) => (await resolveImageBytes(part.hash)).toString('base64'))
+    )
+    result.push({ role: message.role, content: contentOf(message), images })
+  }
+  return result
 }

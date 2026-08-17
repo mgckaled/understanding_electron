@@ -1,0 +1,62 @@
+import { createHash } from 'node:crypto'
+import { basename } from 'node:path'
+import type { OpenDialogOptions, OpenDialogReturnValue } from 'electron'
+import type { DatasetRef, ImagePart, JobEvent, JobId, Result } from '@shared/ipc'
+import { ok, err } from '@core/result'
+import { mapFsError } from '@core/fsError'
+import { sniffImageMimeType } from '@core/image/sniff'
+import * as jobs from '../../jobs'
+
+type ShowOpenDialog = (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>
+
+export async function pickImage(
+  _args: void,
+  showOpenDialog: ShowOpenDialog
+): Promise<Result<DatasetRef | null>> {
+  const { canceled, filePaths } = await showOpenDialog({
+    properties: ['openFile'],
+    // svg/webp join this filter once the rasterizer exists (D17.7, D17.14).
+    filters: [{ name: 'Imagem', extensions: ['png', 'jpg', 'jpeg'] }]
+  })
+
+  if (canceled || filePaths.length === 0) return ok(null)
+  return ok({ path: filePaths[0] })
+}
+
+/**
+ * Reads `path` once — hash and MIME sniff off the same bytes — then stores a
+ * copy content-addressed (D16.3) and returns the resulting part. No content
+ * extraction: an image rides verbatim, read fresh from disk on every send
+ * (D17.2), never inlined into the row.
+ */
+export async function attachImage(
+  { path, jobId }: { path: string; jobId: JobId },
+  readImageFile: (path: string, signal: AbortSignal) => Promise<Buffer>,
+  attachmentsDir: string,
+  storeAttachment: (dir: string, hash: string, sourcePath: string) => Promise<void>,
+  emitProgress: (event: JobEvent) => void
+): Promise<Result<ImagePart>> {
+  const controller = jobs.create(jobId)
+  emitProgress({ jobId, type: 'progress', phase: 'reading', done: 0, total: null })
+
+  try {
+    const buffer = await readImageFile(path, controller.signal)
+    const mimeType = sniffImageMimeType(buffer)
+    if (mimeType === null) {
+      return err({
+        kind: 'blocked',
+        reason: 'Formato de imagem não reconhecido — só PNG e JPEG são aceitos aqui.'
+      })
+    }
+
+    const hash = createHash('sha256').update(buffer).digest('hex')
+    await storeAttachment(attachmentsDir, hash, path)
+
+    return ok({ kind: 'image', hash, fileName: basename(path), mimeType })
+  } catch (error) {
+    if (controller.signal.aborted) return err({ kind: 'cancelled' })
+    return err(mapFsError(error, path))
+  } finally {
+    jobs.finish(jobId)
+  }
+}

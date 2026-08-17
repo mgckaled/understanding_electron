@@ -13,7 +13,7 @@ import type {
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { runChat } from '@core/ai/chat'
-import { toChatMessages } from '@core/ai/messages'
+import { toChatMessagesWithImages } from '@core/ai/messages'
 import { ok, err } from '@core/result'
 import * as jobs from '../../jobs'
 
@@ -109,7 +109,8 @@ type ChatArgs = {
 export async function chat(
   { service, model, messages, numThread, numCtx, jobId }: ChatArgs,
   chatFn: ChatFn,
-  emit: (event: JobEvent) => void
+  emit: (event: JobEvent) => void,
+  resolveImageBytes: (hash: string) => Promise<Buffer>
 ): Promise<Result<ChatReply>> {
   const controller = jobs.create(jobId)
   // Two abort sources feed one controller; `timedOut` tells them apart in the
@@ -126,9 +127,10 @@ export async function chat(
     // into the provider's flat shape happens here, not there (D17.5) — a
     // message with an image part needs bytes the sandboxed renderer cannot
     // read from userData/attachments.
+    const chatMessages = await toChatMessagesWithImages(messages, resolveImageBytes)
     return await runChat(
       chatFn,
-      { messages: toChatMessages(messages), model, numThread, numCtx },
+      { messages: chatMessages, model, numThread, numCtx },
       { signal: controller.signal, onChunk }
     )
   } catch (error) {

@@ -162,7 +162,7 @@ function AttachButton({
                     <dd className="text-text [word-break:break-word]">{attachment.rowCount}</dd>
                   </div>
                 </>
-              ) : (
+              ) : attachment.kind === 'document' ? (
                 <>
                   <div className="contents">
                     <dt className="text-text-muted">Formato</dt>
@@ -177,6 +177,13 @@ function AttachButton({
                     </dd>
                   </div>
                 </>
+              ) : (
+                <div className="contents">
+                  <dt className="text-text-muted">Formato</dt>
+                  <dd className="text-text [word-break:break-word]">
+                    {attachment.mimeType === 'image/png' ? 'PNG' : 'JPEG'}
+                  </dd>
+                </div>
               )}
             </dl>
             <Button variant="secondary" size="sm" type="button" onClick={handlePickAgain}>

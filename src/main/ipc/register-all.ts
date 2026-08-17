@@ -10,10 +10,14 @@ import { getAppInfo, getSystemMemory } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
 import { pickDataset, attachDataset } from '../features/dataset/handlers'
 import { pickDocument, attachDocument } from '../features/document/handlers'
+import { pickImage, attachImage } from '../features/image/handlers'
 import { cancelJob } from '../features/job/handlers'
 import { readHashedFile } from '../features/dataset/lines'
 import { readDocumentFile, statDocumentSize } from '../features/document/readFile'
+import { readImageFile } from '../features/image/readFile'
 import { ensureAttachment } from '../attachments/storage'
+import { handleAttachmentProtocol } from '../attachments/protocol'
+import { resolveAttachmentBytes } from '../attachments/readBytes'
 import { collectOrphanedAttachments } from '../attachments/gc'
 import {
   chat as aiChat,
@@ -59,6 +63,10 @@ function broadcastJobEvent(event: JobEvent): void {
 export async function registerAll(): Promise<() => void> {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))
   const attachmentsDir = join(app.getPath('userData'), 'attachments')
+  // The scheme itself is registered in main/index.ts, before app.whenReady()
+  // — registerSchemesAsPrivileged only works pre-ready. Wiring the handler
+  // here, where attachmentsDir already exists, keeps main/index.ts thin (D17.6).
+  handleAttachmentProtocol(attachmentsDir)
 
   // Read once, synchronously, before any window exists to ask — the renderer's
   // own `prefers-color-scheme` already follows this once set (DS4.2), and
@@ -76,6 +84,10 @@ export async function registerAll(): Promise<() => void> {
   handle('document:attach', (args) =>
     attachDocument(args, readDocumentFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
   )
+  handle('image:pick', (args) => pickImage(args, dialog.showOpenDialog))
+  handle('image:attach', (args) =>
+    attachImage(args, readImageFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
+  )
   handle('job:cancel', (args) => cancelJob(args))
   // Single provider in step 1 — the args.service enum admits only 'ollama'.
   // Step 3 (cloud opt-in) replaces the fixed adapters with a service→provider
@@ -84,7 +96,9 @@ export async function registerAll(): Promise<() => void> {
   handle('ai:models', (args) => aiModels(args, ollamaModels))
   handle('ai:loaded', (args) => aiLoaded(args, ollamaLoaded))
   handle('ai:unload', (args) => aiUnload(args, ollamaUnload))
-  handle('ai:chat', (args) => aiChat(args, ollamaChat, broadcastJobEvent))
+  handle('ai:chat', (args) =>
+    aiChat(args, ollamaChat, broadcastJobEvent, resolveAttachmentBytes(attachmentsDir))
+  )
 
   handle('conversation:list', (args) => listConversations(args, db))
   handle('conversation:messages', (args) => readMessages(args, db))

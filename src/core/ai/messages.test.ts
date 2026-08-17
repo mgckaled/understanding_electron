@@ -1,5 +1,5 @@
-import type { DatasetPart, DocumentPart, Message } from '@shared/ipc'
-import { attachmentPartOf, messageText, toChatMessages } from './messages'
+import type { DatasetPart, DocumentPart, ImagePart, Message } from '@shared/ipc'
+import { attachmentPartOf, messageText, toChatMessages, toChatMessagesWithImages } from './messages'
 
 function message(role: Message['role'], ...texts: string[]): Message {
   return {
@@ -25,6 +25,13 @@ const documentPart: DocumentPart = {
   fileName: 'especificacao.md',
   format: 'md',
   text: 'a coluna id é a chave primária'
+}
+
+const imagePart: ImagePart = {
+  kind: 'image',
+  hash: 'ghi789',
+  fileName: 'grafico.png',
+  mimeType: 'image/png'
 }
 
 describe('messageText', () => {
@@ -65,6 +72,14 @@ describe('attachmentPartOf', () => {
       parts: [documentPart, { kind: 'text', text: 'texto' }]
     }
     expect(attachmentPartOf(withAttachment)).toEqual(documentPart)
+  })
+
+  it('finds an image part', () => {
+    const withAttachment: Message = {
+      ...message('user', 'texto'),
+      parts: [imagePart, { kind: 'text', text: 'texto' }]
+    }
+    expect(attachmentPartOf(withAttachment)).toEqual(imagePart)
   })
 })
 
@@ -108,5 +123,80 @@ describe('toChatMessages', () => {
     expect(content).toContain('especificacao.md')
     expect(content).toContain('a coluna id é a chave primária')
     expect(content).toContain('o que diz o documento?')
+  })
+
+  it('contributes nothing for an image part — it rides on ChatMessage.images instead (D17.5)', () => {
+    const withImage: Message = {
+      ...message('user', 'o que é isso?'),
+      parts: [imagePart, { kind: 'text', text: 'o que é isso?' }]
+    }
+
+    expect(toChatMessages([withImage])).toEqual([{ role: 'user', content: 'o que é isso?' }])
+  })
+
+  it('filters an empty contribution instead of leaving a dangling separator (D17.5)', () => {
+    // The real case this guards: an interrupted or genuinely empty assistant
+    // reply, appended today with no guard against an empty `content`.
+    const empty: Message = {
+      id: 'm1',
+      role: 'assistant',
+      parts: [{ kind: 'text', text: '' }],
+      createdAt: 0
+    }
+
+    expect(toChatMessages([empty])).toEqual([{ role: 'assistant', content: '' }])
+  })
+})
+
+describe('toChatMessagesWithImages', () => {
+  it('produces the same content as toChatMessages when no part is an image', async () => {
+    const conversation = [message('user', 'oi'), message('assistant', 'olá')]
+    const resolveImageBytes = vi.fn()
+
+    const result = await toChatMessagesWithImages(conversation, resolveImageBytes)
+
+    expect(result).toEqual(toChatMessages(conversation))
+    expect(resolveImageBytes).not.toHaveBeenCalled()
+  })
+
+  it('resolves an image part into base64 bytes on ChatMessage.images', async () => {
+    const withImage: Message = {
+      ...message('user', 'o que é isso?'),
+      parts: [imagePart, { kind: 'text', text: 'o que é isso?' }]
+    }
+    const resolveImageBytes = vi.fn().mockResolvedValue(Buffer.from('fake png bytes'))
+
+    const result = await toChatMessagesWithImages([withImage], resolveImageBytes)
+
+    expect(resolveImageBytes).toHaveBeenCalledWith('ghi789')
+    expect(result).toEqual([
+      {
+        role: 'user',
+        content: 'o que é isso?',
+        images: [Buffer.from('fake png bytes').toString('base64')]
+      }
+    ])
+  })
+
+  it('resolves images for the right message in a longer history, iterating messages directly', async () => {
+    const history: Message[] = [
+      message('user', 'primeiro turno, sem imagem'),
+      { ...message('assistant', 'ok'), id: 'm2' },
+      {
+        id: 'm3',
+        role: 'user',
+        parts: [imagePart, { kind: 'text', text: 'e essa imagem?' }],
+        createdAt: 2
+      }
+    ]
+    const resolveImageBytes = vi.fn().mockResolvedValue(Buffer.from('bytes'))
+
+    const result = await toChatMessagesWithImages(history, resolveImageBytes)
+
+    expect(resolveImageBytes).toHaveBeenCalledTimes(1)
+    expect(result[0]).toEqual({ role: 'user', content: 'primeiro turno, sem imagem' })
+    expect(result[1]).toEqual({ role: 'assistant', content: 'ok' })
+    expect(result[2]).toMatchObject({ role: 'user', content: 'e essa imagem?' })
+    expect(result[2]?.images).toHaveLength(1)
   })
 })
