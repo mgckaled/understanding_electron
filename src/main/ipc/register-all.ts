@@ -9,8 +9,10 @@ import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
 import { pickDataset, attachDataset } from '../features/dataset/handlers'
+import { pickDocument, attachDocument } from '../features/document/handlers'
 import { cancelJob } from '../features/job/handlers'
 import { readHashedFile } from '../features/dataset/lines'
+import { readDocumentFile, statDocumentSize } from '../features/document/readFile'
 import { ensureAttachment } from '../attachments/storage'
 import { collectOrphanedAttachments } from '../attachments/gc'
 import {
@@ -69,6 +71,10 @@ export async function registerAll(): Promise<() => void> {
   handle('dataset:pick', (args) => pickDataset(args, dialog.showOpenDialog))
   handle('dataset:attach', (args) =>
     attachDataset(args, readHashedFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
+  )
+  handle('document:pick', (args) => pickDocument(args, dialog.showOpenDialog, statDocumentSize))
+  handle('document:attach', (args) =>
+    attachDocument(args, readDocumentFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
   )
   handle('job:cancel', (args) => cancelJob(args))
   // Single provider in step 1 — the args.service enum admits only 'ollama'.

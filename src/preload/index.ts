@@ -19,6 +19,10 @@ const api: Api = {
     pick: () => invoke('dataset:pick'),
     attach: (path, jobId) => invoke('dataset:attach', { path, jobId })
   },
+  document: {
+    pick: () => invoke('document:pick'),
+    attach: (path, jobId) => invoke('document:attach', { path, jobId })
+  },
   job: {
     cancel: (jobId) => invoke('job:cancel', { jobId }),
     onEvent: (cb) => {

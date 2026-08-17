@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react'
 import type {
+  AttachmentPart,
   ChatMessage,
   ChatReply,
   ConversationSettings,
-  DatasetPart,
   JobId,
   Message,
   MessagePart
@@ -45,7 +45,7 @@ export function useConversationChat(
    * and a figure from another moment is not a ratio (D15.14).
    */
   lastPrompt: { chars: number; tokens: number } | undefined
-  send: (prompt: string, attachment: DatasetPart | null) => Promise<void>
+  send: (prompt: string, attachment: AttachmentPart | null) => Promise<void>
   cancel: () => void
 } {
   const { activeId, create, append, updateSettings } = useConversations()
@@ -74,7 +74,7 @@ export function useConversationChat(
   }, [])
 
   const send = useCallback(
-    async (prompt: string, attachment: DatasetPart | null): Promise<void> => {
+    async (prompt: string, attachment: AttachmentPart | null): Promise<void> => {
       const text = prompt.trim()
       if (text === '') return
       // Nothing installed: there is no model to address the call to. The

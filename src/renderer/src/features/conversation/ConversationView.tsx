@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { AiModel, AppError, ConversationSettings, MessageStopped } from '@shared/ipc'
-import { datasetPartOf, messageText, toChatMessages } from '@core/ai/messages'
+import { attachmentPartOf, messageText, toChatMessages } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
@@ -10,7 +10,7 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
-import DatasetCard from '../attachment/DatasetCard'
+import AttachmentCard from '../attachment/AttachmentCard'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
 import { useAiModels } from './useAiModels'
@@ -183,7 +183,7 @@ function ConversationView(): React.JSX.Element {
         {messages.length > 0 && (
           <ol className="flex flex-col gap-7">
             {messages.map((message) => {
-              const attachment = datasetPartOf(message)
+              const attachment = attachmentPartOf(message)
               return message.role === 'user' ? (
                 // User turn: a bubble on the right. Alignment and fill carry the
                 // authorship, so the "Você" label the target drops is gone.
@@ -192,7 +192,7 @@ function ConversationView(): React.JSX.Element {
                 // Passo 4), when present, is its own element above the bubble —
                 // never inlined into the text the model reads.
                 <li key={message.id} className="flex flex-col items-end gap-2">
-                  {attachment !== null && <DatasetCard part={attachment} />}
+                  {attachment !== null && <AttachmentCard part={attachment} />}
                   <p className="max-w-[80%] rounded-lg bg-surface-raised px-5 py-4 text-reading leading-normal whitespace-pre-wrap text-text select-text">
                     {messageText(message)}
                   </p>

@@ -103,13 +103,14 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 **A decisão por Arrow continua certa, por outro motivo:** o *structured clone* binário elimina a alocação de um milhão de objetos e a conversão para texto. É cópia rápida de bloco contíguo, não transferência de posse — e a diferença sobre JSON segue sendo de ordens de grandeza. O que muda é o que se pode prometer: **todo resultado grande é pago duas vezes em memória, momentaneamente**, o que dá dentes à regra do [`ESCOPO`](../../../docs/ESCOPO.md) de nenhuma etapa materializar o resultado completo em JavaScript. Ver [`HISTORY.md`](../../../docs/HISTORY.md) § `ArrayBuffer` transferível.
 
-## Os 20 canais de hoje
+## Os 22 canais de hoje
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
 | `app` | `info`, `memory` | não |
 | `shell` | `openExternal` | sim |
-| `dataset` | `pick`, `scan` | sim |
+| `dataset` | `pick`, `attach` | sim |
+| `document` | `pick`, `attach` | sim |
 | `job` | `cancel` | não |
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat` | sim |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `append`, `settings` | não |

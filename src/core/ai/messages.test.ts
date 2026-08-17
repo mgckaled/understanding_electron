@@ -1,5 +1,5 @@
-import type { DatasetPart, Message } from '@shared/ipc'
-import { messageText, toChatMessages } from './messages'
+import type { DatasetPart, DocumentPart, Message } from '@shared/ipc'
+import { attachmentPartOf, messageText, toChatMessages } from './messages'
 
 function message(role: Message['role'], ...texts: string[]): Message {
   return {
@@ -19,6 +19,14 @@ const datasetPart: DatasetPart = {
   rowCount: 10
 }
 
+const documentPart: DocumentPart = {
+  kind: 'document',
+  hash: 'def456',
+  fileName: 'especificacao.md',
+  format: 'md',
+  text: 'a coluna id é a chave primária'
+}
+
 describe('messageText', () => {
   it('joins the text parts in order', () => {
     expect(messageText(message('user', 'uma ', 'frase'))).toBe('uma frase')
@@ -35,6 +43,28 @@ describe('messageText', () => {
     }
 
     expect(messageText(withAttachment)).toBe('o que tem nesse arquivo?')
+  })
+})
+
+describe('attachmentPartOf', () => {
+  it('returns null when the message carries no attachment', () => {
+    expect(attachmentPartOf(message('user', 'oi'))).toBeNull()
+  })
+
+  it('finds a dataset part', () => {
+    const withAttachment: Message = {
+      ...message('user', 'texto'),
+      parts: [datasetPart, { kind: 'text', text: 'texto' }]
+    }
+    expect(attachmentPartOf(withAttachment)).toEqual(datasetPart)
+  })
+
+  it('finds a document part', () => {
+    const withAttachment: Message = {
+      ...message('user', 'texto'),
+      parts: [documentPart, { kind: 'text', text: 'texto' }]
+    }
+    expect(attachmentPartOf(withAttachment)).toEqual(documentPart)
   })
 })
 
@@ -65,5 +95,18 @@ describe('toChatMessages', () => {
 
     expect(content).toContain('vendas.csv')
     expect(content).toContain('o que tem nesse arquivo?')
+  })
+
+  it('materializes a document part verbatim (D17.2)', () => {
+    const withAttachment: Message = {
+      ...message('user', 'o que diz o documento?'),
+      parts: [documentPart, { kind: 'text', text: 'o que diz o documento?' }]
+    }
+
+    const [{ content }] = toChatMessages([withAttachment])
+
+    expect(content).toContain('especificacao.md')
+    expect(content).toContain('a coluna id é a chave primária')
+    expect(content).toContain('o que diz o documento?')
   })
 })

@@ -46,8 +46,17 @@ export type DatasetSummary = {
   rowCount: number
 }
 
+// Reused as the picked-but-not-yet-attached result of document:pick too
+// (plano 17): the shape is a path, nothing dataset-specific about it.
 export type DatasetRef = {
   path: string
+  /**
+   * Bytes on disk, when the caller already stat'd it cheaply (D17.10) —
+   * document:pick does, so the progress label can show a time estimate
+   * before the read starts. dataset:pick leaves it undefined: its progress
+   * is row-based, not time-based.
+   */
+  sizeBytes?: number
 }
 
 // AI layer (plano 09, fatia 1). aiServiceSchema is the single source for the
@@ -193,7 +202,36 @@ export const datasetPartSchema = z.object({
 })
 export type DatasetPart = z.infer<typeof datasetPartSchema>
 
-export const messagePartSchema = z.discriminatedUnion('kind', [textPartSchema, datasetPartSchema])
+/**
+ * A document attached to a message (plano 17, D17.2) — `text` carries the
+ * whole extraction inline, produced once by `document:attach`: the chat is
+ * stateless and resends the transcript every turn, so what must not repeat is
+ * the extraction (`unpdf` for a PDF), not the resend. `hash` addresses
+ * `userData/attachments/<hash>` (D16.3); no `path`, same reasoning as
+ * DatasetPart.
+ */
+export const documentPartSchema = z.object({
+  kind: z.literal('document'),
+  hash: z.string().min(1),
+  fileName: z.string().min(1),
+  format: z.enum(['txt', 'md', 'pdf']),
+  text: z.string()
+})
+export type DocumentPart = z.infer<typeof documentPartSchema>
+
+/**
+ * Every attachment kind a message can carry (D17.4) — the composer's pending
+ * slot and the conversation view's per-message card dispatch type against
+ * this, not DatasetPart by name, so a member joining later (image) touches
+ * one union instead of every consumer.
+ */
+export type AttachmentPart = DatasetPart | DocumentPart
+
+export const messagePartSchema = z.discriminatedUnion('kind', [
+  textPartSchema,
+  datasetPartSchema,
+  documentPartSchema
+])
 export type MessagePart = z.infer<typeof messagePartSchema>
 
 export const messageRoleSchema = z.enum(['user', 'assistant'])
@@ -292,6 +330,11 @@ export const argsSchema = {
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
   'dataset:attach': z.object({ path: z.string(), jobId: z.string() }),
+  // Its own pair (D17.1): dataset:pick's file filter (csv/tsv/txt) does not
+  // serve a document dialog, so a shared channel would need an internal
+  // dispatch register-all.ts already gets for free by picking the function.
+  'document:pick': z.void(),
+  'document:attach': z.object({ path: z.string(), jobId: z.string() }),
   'job:cancel': z.object({ jobId: z.string() }),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
   // N+1 behind one channel (D15.1): /api/tags omits `vision` and the context
@@ -363,6 +406,14 @@ export type IpcContract = {
   'dataset:attach': {
     args: z.infer<(typeof argsSchema)['dataset:attach']>
     result: Result<DatasetPart>
+  }
+  'document:pick': {
+    args: z.infer<(typeof argsSchema)['document:pick']>
+    result: Result<DatasetRef | null>
+  }
+  'document:attach': {
+    args: z.infer<(typeof argsSchema)['document:attach']>
+    result: Result<DocumentPart>
   }
   'job:cancel': { args: z.infer<(typeof argsSchema)['job:cancel']>; result: void }
   'ai:isAvailable': {
@@ -440,6 +491,11 @@ export type Api = {
     pick(): Promise<Result<DatasetRef | null>>
     /** Reads, hashes and stores `path` once (D16.6), returning the resulting message part. */
     attach(path: string, jobId: JobId): Promise<Result<DatasetPart>>
+  }
+  document: {
+    pick(): Promise<Result<DatasetRef | null>>
+    /** Reads, extracts and stores `path` once (D17.2), returning the resulting message part. */
+    attach(path: string, jobId: JobId): Promise<Result<DocumentPart>>
   }
   job: {
     cancel(jobId: JobId): Promise<void>

@@ -1,8 +1,9 @@
 import { basename } from 'node:path'
 import type { OpenDialogOptions, OpenDialogReturnValue } from 'electron'
-import type { AppError, DatasetPart, DatasetRef, JobEvent, JobId, Result } from '@shared/ipc'
+import type { DatasetPart, DatasetRef, JobEvent, JobId, Result } from '@shared/ipc'
 import { ok, err } from '@core/result'
 import { scanDelimited } from '@core/dataset/scan'
+import { mapFsError } from '@core/fsError'
 import * as jobs from '../../jobs'
 
 const PROGRESS_INTERVAL_MS = 100
@@ -20,14 +21,6 @@ export async function pickDataset(
 
   if (canceled || filePaths.length === 0) return ok(null)
   return ok({ path: filePaths[0] })
-}
-
-function mapFsError(error: unknown, path: string): AppError {
-  const code = error instanceof Error ? (error as NodeJS.ErrnoException).code : undefined
-
-  if (code === 'ENOENT') return { kind: 'not-found', path }
-  if (code === 'EACCES' || code === 'EPERM') return { kind: 'permission', path }
-  return { kind: 'unknown', message: error instanceof Error ? error.message : String(error) }
 }
 
 /**

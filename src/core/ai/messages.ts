@@ -1,5 +1,6 @@
-import type { ChatMessage, DatasetPart, Message, MessagePart } from '@shared/ipc'
+import type { AttachmentPart, ChatMessage, Message, MessagePart } from '@shared/ipc'
 import { formatDataCard } from './dataCard'
+import { formatDocumentCard } from './documentCard'
 
 // Message is a list of typed parts; a provider wants flat `{ role, content }`.
 // The translation lives in core/, not the renderer, because plano 16 hangs the
@@ -20,21 +21,24 @@ export function messageText(message: Message): string {
     .join('')
 }
 
-/** The dataset attached to a message, if any — the card the conversation draws (D16.4 Passo 4). */
-export function datasetPartOf(message: Message): DatasetPart | null {
-  return message.parts.find((part): part is DatasetPart => part.kind === 'dataset') ?? null
+/** The attachment on a message, if any — the card the conversation draws (D16.4 Passo 4, generalized D17.4). */
+export function attachmentPartOf(message: Message): AttachmentPart | null {
+  return message.parts.find((part): part is AttachmentPart => part.kind !== 'text') ?? null
 }
 
 // What the PROVIDER receives for one part (D16.5) — the only place a non-text
 // part materializes into content. A card is cheap (measured: 51-180 tokens at
 // 5-40 columns, plano 16 passo 0) but paid every turn, so nothing here
-// resummarizes it.
-function partForProvider(part: MessagePart): string {
+// resummarizes it. Exported (D17.4): Composer counts a pending attachment's
+// chars with this same function, instead of calling formatDataCard directly.
+export function partForProvider(part: MessagePart): string {
   switch (part.kind) {
     case 'text':
       return part.text
     case 'dataset':
       return formatDataCard(part)
+    case 'document':
+      return formatDocumentCard(part)
   }
 }
 

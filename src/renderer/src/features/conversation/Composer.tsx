@@ -1,8 +1,8 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowUp, Pause } from 'lucide-react'
-import type { DatasetPart } from '@shared/ipc'
+import type { AttachmentPart } from '@shared/ipc'
 import { budgetFor, type Budget } from '@core/ai/budget'
-import { formatDataCard } from '@core/ai/dataCard'
+import { partForProvider } from '@core/ai/messages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import AttachButton from '../attachment/AttachButton'
@@ -21,8 +21,8 @@ type ComposerProps = {
    * honour is the same defect as none.
    */
   locked: boolean
-  /** `attachment` is the pending dataset, cleared together with the draft right after (D16.6). */
-  onSend: (text: string, attachment: DatasetPart | null) => void
+  /** `attachment` is the pending attachment, cleared together with the draft right after (D16.6, generalized D17.4). */
+  onSend: (text: string, attachment: AttachmentPart | null) => void
   onCancel: () => void
   /**
    * Everything already in the transcript, in characters. The budget is computed
@@ -54,12 +54,12 @@ function Composer({
   modelSelector
 }: ComposerProps): React.JSX.Element {
   const [draft, setDraft] = useState('')
-  const [attachment, setAttachment] = useState<DatasetPart | null>(null)
+  const [attachment, setAttachment] = useState<AttachmentPart | null>(null)
 
   // A PENDING attachment is about to be sent just as much as the draft text is
   // — counted here with the same materializer toChatMessages uses (D16.5), so
   // a card that will not fit is caught before the send, not after.
-  const attachmentChars = attachment === null ? 0 : formatDataCard(attachment).length
+  const attachmentChars = attachment === null ? 0 : partForProvider(attachment).length
   const budget =
     limit === null
       ? null

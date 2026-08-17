@@ -44,6 +44,7 @@ export function createApiMock(): Api {
     },
     shell: { openExternal: vi.fn() },
     dataset: { pick: vi.fn(), attach: vi.fn() },
+    document: { pick: vi.fn(), attach: vi.fn() },
     // onEvent defaults to a no-op unsubscribe: a component whose useEffect
     // cleanup calls the returned function would otherwise call undefined()
     // and throw, breaking every test that mounts it — not just the ones

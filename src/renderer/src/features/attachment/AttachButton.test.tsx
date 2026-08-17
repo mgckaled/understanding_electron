@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
-import type { DatasetPart, Result } from '@shared/ipc'
+import type { AttachmentPart, DatasetPart, DocumentPart, Result } from '@shared/ipc'
 import AttachButton from './AttachButton'
 
 // jsdom's own default stylesheet forces `[popover]:not(:popover-open)` to
@@ -24,8 +24,16 @@ const SUMMARY: DatasetPart = {
   rowCount: 42
 }
 
+const DOCUMENT: DocumentPart = {
+  kind: 'document',
+  hash: 'h2',
+  fileName: 'especificacao.md',
+  format: 'md',
+  text: '# título\ncorpo do documento'
+}
+
 function ControlledAttachButton(): React.JSX.Element {
-  const [attachment, setAttachment] = useState<DatasetPart | null>(null)
+  const [attachment, setAttachment] = useState<AttachmentPart | null>(null)
   return (
     <AttachButton
       attachment={attachment}
@@ -36,7 +44,7 @@ function ControlledAttachButton(): React.JSX.Element {
 }
 
 describe('AttachButton', () => {
-  it('lifts the attached part to the caller and shows it as a chip', async () => {
+  it('lifts the attached dataset part to the caller and shows it as a chip', async () => {
     const api = installApiMock()
     vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/data.csv' } })
     vi.mocked(api.dataset.attach).mockResolvedValue({ ok: true, value: SUMMARY })
@@ -49,7 +57,7 @@ describe('AttachButton', () => {
     expect(await screen.findByText('data.csv')).toBeInTheDocument()
   })
 
-  it('shows the schema summary when reopened after attaching', async () => {
+  it('shows the schema summary when reopened after attaching a dataset', async () => {
     const api = installApiMock()
     vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/data.csv' } })
     vi.mocked(api.dataset.attach).mockResolvedValue({ ok: true, value: SUMMARY })
@@ -63,6 +71,53 @@ describe('AttachButton', () => {
 
     expect(screen.getByText('id, name')).toBeInTheDocument()
     expect(screen.getByText('42')).toBeInTheDocument()
+  })
+
+  it('lifts the attached document part to the caller and shows it as a chip', async () => {
+    const api = installApiMock()
+    vi.mocked(api.document.pick).mockResolvedValue({ ok: true, value: { path: '/leia.md' } })
+    vi.mocked(api.document.attach).mockResolvedValue({ ok: true, value: DOCUMENT })
+    const user = userEvent.setup()
+
+    render(<ControlledAttachButton />)
+    await open(user)
+    await user.click(screen.getByRole('button', { name: 'Documentos', hidden: true }))
+
+    expect(await screen.findByText('especificacao.md')).toBeInTheDocument()
+  })
+
+  it('shows format and size when reopened after attaching a document', async () => {
+    const api = installApiMock()
+    vi.mocked(api.document.pick).mockResolvedValue({ ok: true, value: { path: '/leia.md' } })
+    vi.mocked(api.document.attach).mockResolvedValue({ ok: true, value: DOCUMENT })
+    const user = userEvent.setup()
+
+    render(<ControlledAttachButton />)
+    await open(user)
+    await user.click(screen.getByRole('button', { name: 'Documentos', hidden: true }))
+    await screen.findByText('especificacao.md')
+    await open(user)
+
+    expect(screen.getByText('MD')).toBeInTheDocument()
+    expect(
+      screen.getByText(`${DOCUMENT.text.length.toLocaleString('pt-BR')} caracteres`)
+    ).toBeInTheDocument()
+  })
+
+  it("shows a time estimate in the progress label once the picked file is stat'd", async () => {
+    const api = installApiMock()
+    vi.mocked(api.document.pick).mockResolvedValue({
+      ok: true,
+      value: { path: '/grande.md', sizeBytes: 30_000 }
+    })
+    vi.mocked(api.document.attach).mockReturnValue(new Promise<Result<DocumentPart>>(() => {}))
+    const user = userEvent.setup()
+
+    render(<ControlledAttachButton />)
+    await open(user)
+    await user.click(screen.getByRole('button', { name: 'Documentos', hidden: true }))
+
+    expect(await screen.findByText(/Lendo documento… ~\d+s/)).toBeInTheDocument()
   })
 
   it('removing the chip clears the attachment', async () => {
