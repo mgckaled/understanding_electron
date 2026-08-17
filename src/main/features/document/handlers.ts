@@ -5,6 +5,7 @@ import type { DatasetRef, DocumentPart, JobEvent, JobId, Result } from '@shared/
 import { ok, err } from '@core/result'
 import { mapFsError } from '@core/fsError'
 import { decodeText } from '@core/document/extractText'
+import { extractPdfText } from '@core/document/extractPdf'
 import * as jobs from '../../jobs'
 
 type ShowOpenDialog = (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>
@@ -23,8 +24,7 @@ export async function pickDocument(
 ): Promise<Result<DatasetRef | null>> {
   const { canceled, filePaths } = await showOpenDialog({
     properties: ['openFile'],
-    // pdf joins this filter in the step that builds its extractor (D17.14).
-    filters: [{ name: 'Documento', extensions: ['txt', 'md'] }]
+    filters: [{ name: 'Documento', extensions: ['txt', 'md', 'pdf'] }]
   })
 
   if (canceled || filePaths.length === 0) return ok(null)
@@ -33,15 +33,27 @@ export async function pickDocument(
   return ok({ path, sizeBytes })
 }
 
-function formatOf(path: string): 'txt' | 'md' {
-  return extname(path).toLowerCase() === '.md' ? 'md' : 'txt'
+function formatOf(path: string): 'txt' | 'md' | 'pdf' {
+  const ext = extname(path).toLowerCase()
+  if (ext === '.md') return 'md'
+  if (ext === '.pdf') return 'pdf'
+  return 'txt'
+}
+
+/** Extracts `format`'s text — `.pdf` may refuse with `blocked` (D17.3); `.txt`/`.md` never fail (D17.13's fallback always decodes something). */
+async function extractByFormat(
+  buffer: Buffer,
+  format: 'txt' | 'md' | 'pdf'
+): Promise<Result<string>> {
+  if (format === 'pdf') return extractPdfText(buffer)
+  return ok(decodeText(buffer))
 }
 
 /**
  * Reads `path` once — the bytes double as extraction input and hash source
  * (D17.2) — then stores a copy content-addressed under `attachmentsDir`
- * (D16.3) and returns the resulting part. `.pdf` joins `formatOf` and this
- * function's branching in the step that builds its own extractor (D17.14).
+ * (D16.3) and returns the resulting part. A scanned PDF's `blocked` refusal
+ * (D17.3) skips the store: nothing worth keeping came out of the read.
  */
 export async function attachDocument(
   { path, jobId }: { path: string; jobId: JobId },
@@ -56,11 +68,13 @@ export async function attachDocument(
   try {
     const buffer = await readDocumentFile(path, controller.signal)
     const format = formatOf(path)
-    const text = decodeText(buffer)
+    const extracted = await extractByFormat(buffer, format)
+    if (!extracted.ok) return extracted
+
     const hash = createHash('sha256').update(buffer).digest('hex')
     await storeAttachment(attachmentsDir, hash, path)
 
-    return ok({ kind: 'document', hash, fileName: basename(path), format, text })
+    return ok({ kind: 'document', hash, fileName: basename(path), format, text: extracted.value })
   } catch (error) {
     if (controller.signal.aborted) return err({ kind: 'cancelled' })
     return err(mapFsError(error, path))

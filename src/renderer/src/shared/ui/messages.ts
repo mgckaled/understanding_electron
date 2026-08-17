@@ -19,6 +19,10 @@ const MESSAGES: Record<ErrorKind, string> = {
   unknown: FALLBACK_MESSAGE
 }
 
+// blocked carries its own reason (e.g. "PDF sem texto selecionável", D17.8) —
+// the generic MESSAGES entry stays as the label for a bare AppError['kind'],
+// but a real blocked error is strictly more informative than that fallback.
 export function errorMessage(error: AppError): string {
+  if (error.kind === 'blocked') return error.reason
   return MESSAGES[error.kind] ?? FALLBACK_MESSAGE
 }

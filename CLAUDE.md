@@ -78,7 +78,8 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 
 - `@duckdb/node-api` — DuckDB via N-API, roda em `utilityProcess`, **nunca** no renderer
 - `apache-arrow` — transporte de resultados main → renderer sem serializar para JSON
-- `unpdf` — extração da camada de texto de PDF, no plano 17. **Zero dependências**, 2 MB, sem módulo nativo. O `peerDependency` `@napi-rs/canvas` serve só para **renderizar** página como imagem, é módulo nativo e **não entra** — o que mantém fechado o gatilho do `shamefullyHoist` até o DuckDB
+
+`unpdf` já foi instalado, no plano 17 passo 3 — extração da camada de texto de PDF. **Zero dependências** extra (confirmado pelo `pnpm add`), sem módulo nativo. O `peerDependency` `@napi-rs/canvas` serve só para **renderizar** página como imagem e **não entra** — o que mantém fechado o gatilho do `shamefullyHoist` até o DuckDB.
 
 ---
 
