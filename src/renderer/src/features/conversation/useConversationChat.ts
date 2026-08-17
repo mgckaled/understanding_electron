@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type {
   AttachmentPart,
-  ChatMessage,
   ChatReply,
   ConversationSettings,
   JobId,
@@ -101,18 +100,20 @@ export function useConversationChat(
       const previous = conversationId === active?.id ? active.messages : []
       const parts: MessagePart[] =
         attachment === null ? [{ kind: 'text', text }] : [attachment, { kind: 'text', text }]
-      // Routed through toChatMessages, same as `previous` below, so the
-      // attachment materializes into the payload for THIS turn too (D16.5) —
-      // id/createdAt are placeholders the translation never reads.
+      // id/createdAt are placeholders toChatMessages never reads.
       const draftMessage: Message = { id: 'draft', role: 'user', parts, createdAt: 0 }
-      const history: ChatMessage[] = [
-        ...toChatMessages(previous),
-        ...toChatMessages([draftMessage])
-      ]
+      // ai:chat now carries Message[] (D17.5) — main materializes it, since a
+      // future image part needs bytes this sandboxed renderer cannot read.
+      // toChatMessages stays useful here regardless: it is still how sentChars
+      // is measured, on the exact payload this call is about to send.
+      const history: Message[] = [...previous, draftMessage]
       // Measured HERE, on the payload, and not recomputed from the transcript
       // afterwards: by then the transcript also holds the reply, which this call
       // did not send (D15.14).
-      const sentChars = history.reduce((total, message) => total + message.content.length, 0)
+      const sentChars = toChatMessages(history).reduce(
+        (total, message) => total + message.content.length,
+        0
+      )
 
       append(conversationId, { role: 'user', parts })
       clearStreaming()

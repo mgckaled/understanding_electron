@@ -67,7 +67,9 @@ export type AiService = z.infer<typeof aiServiceSchema>
 
 export const chatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant']),
-  content: z.string()
+  content: z.string(),
+  /** Base64-encoded image bytes (plano 17, D17.5) — populated by the main-side materializer only; no consumer yet. */
+  images: z.array(z.string()).optional()
 })
 export type ChatRole = ChatMessage['role']
 export type ChatMessage = z.infer<typeof chatMessageSchema>
@@ -75,7 +77,8 @@ export type ChatMessage = z.infer<typeof chatMessageSchema>
 export type ChatRequest = {
   service: AiService
   model: string
-  messages: ChatMessage[]
+  /** The conversation as the app models it — main materializes provider content from `parts` (D17.5), the renderer never does that for a part it cannot resolve bytes for (image). */
+  messages: Message[]
   /** Cap on CPU threads for this call's inference — options.num_thread. Undefined lets Ollama decide. */
   numThread?: number
   /**
@@ -347,10 +350,14 @@ export const argsSchema = {
   // cached query carry a side effect.
   'ai:loaded': z.object({ service: aiServiceSchema }),
   'ai:unload': z.object({ service: aiServiceSchema, model: z.string().min(1) }),
+  // D17.5: the renderer sends what it models the conversation as, not the
+  // provider's wire shape — main materializes messageSchema[] into
+  // chatMessageSchema[] itself, since a message with an image part needs
+  // bytes the sandboxed renderer cannot read.
   'ai:chat': z.object({
     service: aiServiceSchema,
     model: z.string().min(1),
-    messages: z.array(chatMessageSchema).min(1),
+    messages: z.array(messageSchema).min(1),
     numThread: z.number().int().positive().optional(),
     numCtx: z.number().int().positive().optional(),
     jobId: z.string()

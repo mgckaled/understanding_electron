@@ -3,16 +3,17 @@ import type {
   AiModel,
   AiService,
   AppError,
-  ChatMessage,
   ChatReply,
   JobEvent,
   JobId,
   LoadedModel,
+  Message,
   Result
 } from '@shared/ipc'
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { runChat } from '@core/ai/chat'
+import { toChatMessages } from '@core/ai/messages'
 import { ok, err } from '@core/result'
 import * as jobs from '../../jobs'
 
@@ -99,7 +100,7 @@ export async function unload(
 type ChatArgs = {
   service: AiService
   model: string
-  messages: ChatMessage[]
+  messages: Message[]
   numThread?: number
   numCtx?: number
   jobId: JobId
@@ -121,9 +122,13 @@ export async function chat(
 
   try {
     const onChunk = (text: string): void => emit({ jobId, type: 'chunk', text })
+    // The renderer sends what it models the conversation as; materializing
+    // into the provider's flat shape happens here, not there (D17.5) — a
+    // message with an image part needs bytes the sandboxed renderer cannot
+    // read from userData/attachments.
     return await runChat(
       chatFn,
-      { messages, model, numThread, numCtx },
+      { messages: toChatMessages(messages), model, numThread, numCtx },
       { signal: controller.signal, onChunk }
     )
   } catch (error) {

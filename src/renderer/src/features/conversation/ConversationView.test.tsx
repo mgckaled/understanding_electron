@@ -158,7 +158,12 @@ describe('ConversationView', () => {
       {
         service: 'ollama',
         model: 'gemma3:4b',
-        messages: [{ role: 'user', content: 'oi' }],
+        // ai:chat carries Message[] now (D17.5) — main materializes the
+        // provider's flat shape; that claim moved to a level-3 test of the
+        // handler (main/features/ai/handlers.test.ts).
+        messages: [
+          { id: 'draft', role: 'user', parts: [{ kind: 'text', text: 'oi' }], createdAt: 0 }
+        ],
         numThread: 4,
         // Sent explicitly since plano 15. Leaving it out is what left Ollama's
         // own default of 4096 in charge — a number nobody chose, and one a
@@ -203,11 +208,24 @@ describe('ConversationView', () => {
     await screen.findByText('r2')
 
     // The turns come from the store now, so this is the assertion that the
-    // store round-trip did not lose the conversation.
+    // store round-trip did not lose the conversation. ai:chat carries
+    // Message[] (D17.5) — stored turns have a real id/createdAt, the draft
+    // has the placeholder ones useConversationChat always uses.
     expect(vi.mocked(api.ai.chat).mock.calls[1]?.[0].messages).toEqual([
-      { role: 'user', content: 'p1' },
-      { role: 'assistant', content: 'r1' },
-      { role: 'user', content: 'p2' }
+      {
+        id: expect.any(String),
+        role: 'user',
+        parts: [{ kind: 'text', text: 'p1' }],
+        createdAt: expect.any(Number)
+      },
+      {
+        id: expect.any(String),
+        role: 'assistant',
+        parts: [{ kind: 'text', text: 'r1' }],
+        createdAt: expect.any(Number),
+        model: 'gemma3:4b'
+      },
+      { id: 'draft', role: 'user', parts: [{ kind: 'text', text: 'p2' }], createdAt: 0 }
     ])
   })
 })
@@ -545,7 +563,7 @@ describe('ConversationView — realce de sintaxe', () => {
 // D16.4/D16.5: the card is its own element in the transcript, never inlined
 // into the bubble — and what the provider receives materializes it anyway.
 describe('ConversationView — anexo de dataset', () => {
-  it('draws the card in the transcript and materializes it in the payload', async () => {
+  it('draws the card in the transcript and sends the dataset part on the payload', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
     vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/vendas.csv' } })
@@ -576,11 +594,21 @@ describe('ConversationView — anexo de dataset', () => {
     expect(await screen.findByText('2 colunas · 3 linhas')).toBeInTheDocument()
     expect(screen.getByText('o que tem aqui?', { selector: 'p' })).toBeInTheDocument()
 
-    // What the model actually receives materializes the card (D16.5).
-    const sent = vi.mocked(api.ai.chat).mock.calls[0]?.[0].messages[0]?.content
-    expect(sent).toContain('vendas.csv')
-    expect(sent).toContain('id, valor')
-    expect(sent).toContain('o que tem aqui?')
+    // ai:chat carries Message[] now (D17.5) — the composer's job is to attach
+    // the right PART, not to materialize it into text; that claim moved to a
+    // level-3 test of the handler (main/features/ai/handlers.test.ts).
+    const sentParts = vi.mocked(api.ai.chat).mock.calls[0]?.[0].messages[0]?.parts
+    expect(sentParts).toEqual([
+      {
+        kind: 'dataset',
+        hash: 'h1',
+        fileName: 'vendas.csv',
+        delimiter: ',',
+        columns: ['id', 'valor'],
+        rowCount: 3
+      },
+      { kind: 'text', text: 'o que tem aqui?' }
+    ])
   })
 })
 

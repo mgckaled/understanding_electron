@@ -1,6 +1,12 @@
 import { argsSchema } from './ipc'
 
 describe('argsSchema', () => {
+  // ai:chat carries Message[] (D17.5), the app's own shape — not the
+  // provider's flat ChatMessage[]. Main materializes one into the other.
+  const chatMessages = [
+    { id: 'm1', role: 'user', parts: [{ kind: 'text', text: 'oi' }], createdAt: 1 }
+  ]
+
   it('accepts void args for app:info', () => {
     expect(argsSchema['app:info'].safeParse(undefined).success).toBe(true)
   })
@@ -19,7 +25,7 @@ describe('argsSchema', () => {
     const result = argsSchema['ai:chat'].safeParse({
       service: 'ollama',
       model: 'llama3.2',
-      messages: [{ role: 'user', content: 'oi' }],
+      messages: chatMessages,
       jobId: 'j1'
     })
     expect(result.success).toBe(true)
@@ -29,7 +35,7 @@ describe('argsSchema', () => {
     const result = argsSchema['ai:chat'].safeParse({
       service: 'ollama',
       model: '',
-      messages: [{ role: 'user', content: 'oi' }],
+      messages: chatMessages,
       jobId: 'j1'
     })
     expect(result.success).toBe(false)
@@ -54,7 +60,7 @@ describe('argsSchema', () => {
     const result = argsSchema['ai:chat'].safeParse({
       service: 'ollama',
       model: 'gemma3:4b',
-      messages: [{ role: 'user', content: 'oi' }],
+      messages: chatMessages,
       numThread: 4,
       jobId: 'j1'
     })
@@ -65,7 +71,7 @@ describe('argsSchema', () => {
     const result = argsSchema['ai:chat'].safeParse({
       service: 'ollama',
       model: 'gemma3:4b',
-      messages: [{ role: 'user', content: 'oi' }],
+      messages: chatMessages,
       numThread: 0,
       jobId: 'j1'
     })

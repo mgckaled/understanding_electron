@@ -1,11 +1,15 @@
 import { vi } from 'vitest'
-import type { AiModel, ChatMessage, JobEvent } from '@shared/ipc'
+import type { AiModel, ChatMessage, JobEvent, Message } from '@shared/ipc'
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import * as jobs from '../../jobs'
 import { chat, isAvailable, loaded, models, unload } from './handlers'
 
-const messages: ChatMessage[] = [{ role: 'user', content: 'oi' }]
+// The app's own shape (D17.5) — chat() materializes this into ChatMessage[]
+// via toChatMessages before it ever reaches chatFn.
+const messages: Message[] = [
+  { id: 'm1', role: 'user', parts: [{ kind: 'text', text: 'oi' }], createdAt: 1 }
+]
 
 const gemma: AiModel = {
   provider: 'ollama',
@@ -193,6 +197,46 @@ describe('chat', () => {
     )
 
     expect(result).toEqual({ ok: false, error: { kind: 'cancelled' } })
+  })
+
+  it('materializes Message[] into ChatMessage[] before calling chatFn (D17.5)', async () => {
+    let received: ChatMessage[] | undefined
+    const chatFn: ChatFn = async (sentMessages) => {
+      received = sentMessages
+      return { content: 'ok' }
+    }
+    const withAttachment: Message[] = [
+      {
+        id: 'm1',
+        role: 'user',
+        parts: [
+          {
+            kind: 'dataset',
+            hash: 'h',
+            fileName: 'vendas.csv',
+            delimiter: ',',
+            columns: ['id', 'valor'],
+            rowCount: 10
+          },
+          { kind: 'text', text: 'o que tem aqui?' }
+        ],
+        createdAt: 1
+      }
+    ]
+
+    await chat(
+      { service: 'ollama', model: 'llama3.2', messages: withAttachment, jobId: 'j7' },
+      chatFn,
+      () => {}
+    )
+
+    expect(received).toEqual([
+      {
+        role: 'user',
+        content: expect.stringContaining('vendas.csv')
+      }
+    ])
+    expect(received?.[0]?.content).toContain('o que tem aqui?')
   })
 
   it('reports timeout when the deadline fires before the reply', async () => {
