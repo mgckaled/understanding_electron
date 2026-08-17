@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { installApiMock } from '@test/api-mock'
-import type { AttachmentPart, DatasetPart, DocumentPart, Result } from '@shared/ipc'
+import { installApiMock, TEST_MODEL } from '@test/api-mock'
+import type {
+  AiModel,
+  AttachmentPart,
+  DatasetPart,
+  DocumentPart,
+  ImagePart,
+  Result
+} from '@shared/ipc'
 import AttachButton from './AttachButton'
 
 // jsdom's own default stylesheet forces `[popover]:not(:popover-open)` to
@@ -32,13 +39,24 @@ const DOCUMENT: DocumentPart = {
   text: '# título\ncorpo do documento'
 }
 
-function ControlledAttachButton(): React.JSX.Element {
+const IMAGE: ImagePart = {
+  kind: 'image',
+  hash: 'h3',
+  fileName: 'grafico.png',
+  mimeType: 'image/png'
+}
+
+/** No `vision` capability — the shape a caller passes for the disabled case. */
+const NO_VISION: AiModel = { ...TEST_MODEL, capabilities: ['completion'] }
+
+function ControlledAttachButton({ model = null }: { model?: AiModel | null }): React.JSX.Element {
   const [attachment, setAttachment] = useState<AttachmentPart | null>(null)
   return (
     <AttachButton
       attachment={attachment}
       onAttached={setAttachment}
       onRemove={() => setAttachment(null)}
+      model={model}
     />
   )
 }
@@ -201,5 +219,52 @@ describe('AttachButton', () => {
     unmount()
 
     expect(unsubscribe).toHaveBeenCalled()
+  })
+
+  // D17.11 — the compose-side half of the vision gate. The other half lives
+  // in Composer's canSend.
+  describe('the vision gate', () => {
+    it('disables Imagens with a hint when no model is given', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton />)
+      await open(user)
+
+      const item = screen.getByRole('button', { name: 'Imagens', hidden: true })
+      expect(item).toBeDisabled()
+      // A `title` on a disabled control is not a reliable surface (Chromium's
+      // tooltip machinery may not fire on it) — the hint is this visible line.
+      expect(
+        screen.getByText('O modelo atual não processa imagens.', { selector: 'p' })
+      ).toBeInTheDocument()
+    })
+
+    it('disables Imagens when the model has no vision capability', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton model={NO_VISION} />)
+      await open(user)
+
+      expect(screen.getByRole('button', { name: 'Imagens', hidden: true })).toBeDisabled()
+      expect(screen.getByText('O modelo atual não processa imagens.')).toBeInTheDocument()
+    })
+
+    it('enables Imagens and attaches when the model declares vision', async () => {
+      const api = installApiMock()
+      vi.mocked(api.image.pick).mockResolvedValue({ ok: true, value: { path: '/grafico.png' } })
+      vi.mocked(api.image.attach).mockResolvedValue({ ok: true, value: IMAGE })
+      const user = userEvent.setup()
+
+      render(<ControlledAttachButton model={TEST_MODEL} />)
+      await open(user)
+      const item = screen.getByRole('button', { name: 'Imagens', hidden: true })
+      expect(item).toBeEnabled()
+      expect(screen.queryByText('O modelo atual não processa imagens.')).not.toBeInTheDocument()
+      await user.click(item)
+
+      expect(await screen.findByText('grafico.png')).toBeInTheDocument()
+    })
   })
 })

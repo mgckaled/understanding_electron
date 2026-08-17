@@ -26,6 +26,14 @@ export function attachmentPartOf(message: Message): AttachmentPart | null {
   return message.parts.find((part): part is AttachmentPart => part.kind !== 'text') ?? null
 }
 
+/** How many image parts a turn carries — the flat token cost the budget adds is this times `IMAGE_TOKEN_ESTIMATE` (D17.12). */
+export function imageCountOf(messages: Message[]): number {
+  return messages.reduce(
+    (total, message) => total + message.parts.filter((part) => part.kind === 'image').length,
+    0
+  )
+}
+
 // What the PROVIDER receives for one part (D16.5) — the only place a non-text
 // part materializes into content. A card is cheap (measured: 51-180 tokens at
 // 5-40 columns, plano 16 passo 0) but paid every turn, so nothing here

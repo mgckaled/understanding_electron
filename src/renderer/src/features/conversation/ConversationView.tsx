@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { AiModel, AppError, ConversationSettings, MessageStopped } from '@shared/ipc'
-import { attachmentPartOf, messageText, toChatMessages } from '@core/ai/messages'
+import { attachmentPartOf, imageCountOf, messageText, toChatMessages } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
@@ -257,6 +257,8 @@ function ConversationView(): React.JSX.Element {
         historyChars={historyChars}
         limit={numCtx}
         charsPerToken={charsPerToken}
+        historyImageCount={imageCountOf(messages)}
+        model={current ?? null}
         // A render-prop, not a plain element (DS4.8): `budget` only exists inside
         // Composer (the draft lives there, D13.2), so this function is defined
         // here and only ever CALLED by Composer, at the point `budget` exists.

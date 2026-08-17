@@ -7,7 +7,7 @@ import type {
   Message,
   MessagePart
 } from '@shared/ipc'
-import { toChatMessages } from '@core/ai/messages'
+import { imageCountOf, toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
 import type { ViewState } from '../../shared/ui/state'
@@ -134,8 +134,10 @@ export function useConversationChat(
       if (result.ok) {
         // What the meter calibrates on: chars out, and the count the provider
         // returned for them. `sentChars` misses the template's markers, so the
-        // ratio comes out low and the estimate high — the safe direction.
-        if (result.value.promptTokens !== undefined) {
+        // ratio comes out low and the estimate high — the safe direction. A
+        // turn carrying an image is skipped entirely (D17.12): its flat token
+        // cost would poison the ratio for every turn after, char-based or not.
+        if (result.value.promptTokens !== undefined && imageCountOf(history) === 0) {
           setLastPrompt({ chars: sentChars, tokens: result.value.promptTokens })
         }
         // Addressed to the conversation captured at send time, never whichever is

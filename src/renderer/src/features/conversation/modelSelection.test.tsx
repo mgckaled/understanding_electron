@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock, TEST_MODEL } from '@test/api-mock'
-import type { AiModel, Api } from '@shared/ipc'
+import type { AiModel, Api, ImagePart } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
 import ConversationsProvider from './ConversationsProvider'
 import ConversationList from './ConversationList'
@@ -427,5 +427,57 @@ describe('a model that does not fit', () => {
 
     expect(screen.getByPlaceholderText(PROMPT)).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
+  })
+})
+
+/*
+ * D17.11's second checkpoint: the popover already keeps a vision-less model
+ * from attaching an image, but the model can still change AFTER the attach.
+ * canSend folds that case into the same generic disabled Enviar — no alert of
+ * its own, unlike the overflow gate (D15.5).
+ */
+describe('the vision gate on send', () => {
+  const IMAGE: ImagePart = {
+    kind: 'image',
+    hash: 'img1',
+    fileName: 'grafico.png',
+    mimeType: 'image/png'
+  }
+
+  it('shows the miniature in the transcript once an attached image is sent', async () => {
+    // The aceite table's "mostra miniatura" clause — the card is
+    // AttachmentCard → ImageCard, an <img src="attachment://<hash>">
+    // rendered above the user's own bubble (ConversationView.tsx).
+    const user = userEvent.setup()
+    const api = mount()
+    vi.mocked(api.image.pick).mockResolvedValue({ ok: true, value: { path: '/grafico.png' } })
+    vi.mocked(api.image.attach).mockResolvedValue({ ok: true, value: IMAGE })
+
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    await user.click(screen.getByRole('button', { name: 'Imagens', hidden: true }))
+    await screen.findByText('grafico.png')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'o que é isso?')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    const miniature = await screen.findByRole('img', { name: 'grafico.png' })
+    expect(miniature).toHaveAttribute('src', 'attachment://img1')
+  })
+
+  it('disables Enviar without a new alert when the model loses vision after attaching', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    vi.mocked(api.image.pick).mockResolvedValue({ ok: true, value: { path: '/grafico.png' } })
+    vi.mocked(api.image.attach).mockResolvedValue({ ok: true, value: IMAGE })
+
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    await user.click(screen.getByRole('button', { name: 'Imagens', hidden: true }))
+    await screen.findByText('grafico.png')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'o que é isso?')
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled()
+
+    await chooseModel(user, /qwen2\.5-coder:3b/)
+
+    expect(await screen.findByRole('button', { name: 'Enviar' })).toBeDisabled()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })

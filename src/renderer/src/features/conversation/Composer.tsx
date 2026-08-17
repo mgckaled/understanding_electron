@@ -1,7 +1,8 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowUp, Pause } from 'lucide-react'
-import type { AttachmentPart } from '@shared/ipc'
-import { budgetFor, type Budget } from '@core/ai/budget'
+import type { AiModel, AttachmentPart } from '@shared/ipc'
+import { budgetFor, IMAGE_TOKEN_ESTIMATE, type Budget } from '@core/ai/budget'
+import { hasCapability } from '@core/ai/models'
 import { partForProvider } from '@core/ai/messages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -33,6 +34,10 @@ type ComposerProps = {
   /** The reserved window, or null when it cannot be known yet. */
   limit: number | null
   charsPerToken: number
+  /** How many image parts the transcript already carries — folded into the flat image cost (D17.12) and the vision gate below (D17.11). */
+  historyImageCount: number
+  /** The conversation's resolved model, or null — the send-side half of the vision gate (D17.11); the compose-side half lives in AttachButton. */
+  model: AiModel | null
   /**
    * The model selector, moved out of the removed top toolbar and into the
    * composer's controls row (DS-3 passo 7). A render-prop, not a plain node
@@ -51,6 +56,8 @@ function Composer({
   historyChars,
   limit,
   charsPerToken,
+  historyImageCount,
+  model,
   modelSelector
 }: ComposerProps): React.JSX.Element {
   const [draft, setDraft] = useState('')
@@ -60,6 +67,9 @@ function Composer({
   // — counted here with the same materializer toChatMessages uses (D16.5), so
   // a card that will not fit is caught before the send, not after.
   const attachmentChars = attachment === null ? 0 : partForProvider(attachment).length
+  // Images contribute no chars (D17.5) but a fixed token cost each (D17.12) —
+  // history's already-sent images plus the one about to be attached, if any.
+  const imageCount = historyImageCount + (attachment?.kind === 'image' ? 1 : 0)
   const budget =
     limit === null
       ? null
@@ -67,14 +77,21 @@ function Composer({
           historyChars,
           draftChars: draft.length + attachmentChars,
           limit,
-          charsPerToken
+          charsPerToken,
+          flatTokens: imageCount * IMAGE_TOKEN_ESTIMATE
         })
 
   // The gate (D15.5): nothing is truncated in silence — when the next turn will
   // not fit, the send is refused with the reason on screen, instead of the
   // provider dropping the beginning and answering confidently about the rest.
   const overflows = budget !== null && !budget.fits
-  const canSend = !disabled && !loading && draft.trim() !== '' && !overflows
+  // The send-side half of the vision gate (D17.11) — a silent guard folded
+  // into canSend, same as the overflow gate: no alert of its own, because the
+  // popover already stopped the normal path, and switching the model after
+  // attaching is the only edge case that reaches here.
+  const hasVision = model !== null && hasCapability(model, 'vision')
+  const visionBlocked = imageCount > 0 && !hasVision
+  const canSend = !disabled && !loading && draft.trim() !== '' && !overflows && !visionBlocked
 
   const submit = (event: SyntheticEvent): void => {
     event.preventDefault()
@@ -129,6 +146,7 @@ function Composer({
               onAttached={setAttachment}
               onRemove={() => setAttachment(null)}
               disabled={disabled}
+              model={model}
             />
             {modelSelector(budget)}
           </div>

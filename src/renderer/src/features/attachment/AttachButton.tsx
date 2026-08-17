@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
-import { FileText, Plus, Table2, X } from 'lucide-react'
-import type { AttachmentPart } from '@shared/ipc'
+import { FileText, Image, Plus, Table2, X } from 'lucide-react'
+import type { AiModel, AttachmentPart } from '@shared/ipc'
+import { hasCapability } from '@core/ai/models'
 import { estimateReadSeconds } from '@core/document/estimate'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -15,6 +16,8 @@ type AttachButtonProps = {
   onAttached: (part: AttachmentPart) => void
   onRemove: () => void
   disabled?: boolean
+  /** The conversation's resolved model, for the vision gate (D17.11) — null disables "Imagens". */
+  model?: AiModel | null
 }
 
 const DEFAULT_LABEL = 'Lendo arquivo…'
@@ -22,22 +25,25 @@ const DEFAULT_LABEL = 'Lendo arquivo…'
 // The composer's "+" (plano 17 passo 1 — replaces the DS-5 clip; D16.6 keeps
 // the trigger in the composer). The popover lists attachment categories in
 // the same item shape as the conversation-list kebab menu
-// (ConversationList.tsx): icon, then text, hover:bg-surface. "Imagens" joins
-// once its extractor exists (D17.14: no menu item ships ahead of the
-// function behind it). One useAttachFile instance drives both categories
-// (D17.4): `api` is chosen per click, not baked into the hook, so the
-// composer's single pending slot has a single state machine.
+// (ConversationList.tsx): icon, then text, hover:bg-surface. One
+// useAttachFile instance drives all three categories (D17.4): `api` is
+// chosen per click, not baked into the hook, so the composer's single
+// pending slot has a single state machine.
 function AttachButton({
   attachment,
   onAttached,
   onRemove,
-  disabled = false
+  disabled = false,
+  model = null
 }: AttachButtonProps): React.JSX.Element {
   const { state, pick, cancel } = useAttachFile<AttachmentPart>(onAttached)
   const [open, setOpen] = useState(false)
   const [label, setLabel] = useState(DEFAULT_LABEL)
   const anchorName = toAnchorName(useId())
   const isLoading = state.status === 'loading'
+  // The gate's compose-side check (D17.11) — the other lives in Composer's
+  // canSend, both calling the same hasCapability the docstring promises.
+  const hasVision = model !== null && hasCapability(model, 'vision')
 
   const handlePickDataset = (): void => {
     setOpen(false)
@@ -58,7 +64,20 @@ function AttachButton({
     })
   }
 
-  const handlePickAgain = attachment?.kind === 'document' ? handlePickDocument : handlePickDataset
+  // Fixed "~80s" (D17.10) — unlike document, the cost does not depend on file
+  // size, so there is nothing to estimate from before the job opens.
+  const handlePickImage = (): void => {
+    setOpen(false)
+    setLabel('Lendo imagem… ~80s')
+    void pick(window.api.image)
+  }
+
+  const handlePickAgain =
+    attachment?.kind === 'image'
+      ? handlePickImage
+      : attachment?.kind === 'document'
+        ? handlePickDocument
+        : handlePickDataset
 
   return (
     <>
@@ -111,8 +130,10 @@ function AttachButton({
                 (ConversationList.tsx): icon then text, hover:bg-surface — one
                 surface below the popover's own bg-surface-raised, so a hover
                 that reused bg-surface-raised here would be invisible.
-                "Imagens" joins this list in the step that builds its own
-                extractor (D17.14 of plano 17). */}
+                "Imagens" is fully wired (channel, extractor, protocol, card)
+                and only turns grey by real state — a disabled, implemented
+                control, not a stub (D17.11, distinct from the ban on
+                shipping a menu item with no function behind it). */}
             {!isLoading && (
               <div className="flex min-w-[180px] flex-col gap-1">
                 <button
@@ -131,6 +152,24 @@ function AttachButton({
                   <FileText size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
                   Documentos
                 </button>
+                <button
+                  type="button"
+                  className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-text hover:bg-surface disabled:cursor-not-allowed disabled:text-text-faint disabled:hover:bg-transparent"
+                  onClick={handlePickImage}
+                  disabled={!hasVision}
+                >
+                  <Image size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                  Imagens
+                </button>
+                {/* A `title` on a disabled control is not a reliable surface —
+                    Chromium's own tooltip machinery may not fire on it, and it
+                    is invisible to a test. This line is the actual hint
+                    (D17.11 — the plan's one required explanation). */}
+                {!hasVision && (
+                  <p className="px-4 text-2xs text-text-muted">
+                    O modelo atual não processa imagens.
+                  </p>
+                )}
               </div>
             )}
             <StateView

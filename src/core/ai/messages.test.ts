@@ -1,5 +1,11 @@
 import type { DatasetPart, DocumentPart, ImagePart, Message } from '@shared/ipc'
-import { attachmentPartOf, messageText, toChatMessages, toChatMessagesWithImages } from './messages'
+import {
+  attachmentPartOf,
+  imageCountOf,
+  messageText,
+  toChatMessages,
+  toChatMessagesWithImages
+} from './messages'
 
 function message(role: Message['role'], ...texts: string[]): Message {
   return {
@@ -80,6 +86,36 @@ describe('attachmentPartOf', () => {
       parts: [imagePart, { kind: 'text', text: 'texto' }]
     }
     expect(attachmentPartOf(withAttachment)).toEqual(imagePart)
+  })
+})
+
+describe('imageCountOf', () => {
+  it('returns zero for a history with no image', () => {
+    expect(imageCountOf([message('user', 'oi'), message('assistant', 'olá')])).toBe(0)
+  })
+
+  it('counts one image part', () => {
+    const withImage: Message = {
+      ...message('user', 'o que é isso?'),
+      parts: [imagePart, { kind: 'text', text: 'o que é isso?' }]
+    }
+
+    expect(imageCountOf([withImage])).toBe(1)
+  })
+
+  it('sums image parts across several turns', () => {
+    const first: Message = {
+      ...message('user', 'primeira'),
+      parts: [imagePart, { kind: 'text', text: 'primeira' }]
+    }
+    const second: Message = {
+      id: 'm2',
+      role: 'user',
+      parts: [imagePart, { kind: 'text', text: 'segunda' }],
+      createdAt: 1
+    }
+
+    expect(imageCountOf([first, message('assistant', 'ok'), second])).toBe(2)
   })
 })
 

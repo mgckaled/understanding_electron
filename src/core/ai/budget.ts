@@ -12,6 +12,14 @@
 export const DEFAULT_CHARS_PER_TOKEN = 3.8
 
 /**
+ * Fixed token cost of one image, measured on gemma3:4b — the only model with
+ * `vision` in the fleet today (D17.12). Not proportional to anything the app
+ * sends, so it adds to the estimate as a flat term instead of folding into
+ * the char ratio.
+ */
+export const IMAGE_TOKEN_ESTIMATE = 270
+
+/**
  * The characters-per-token ratio this conversation actually exhibits.
  *
  * No tokenizer runs before sending, so each pre-call estimate is a guess; every
@@ -154,9 +162,11 @@ export function budgetFor(input: {
   draftChars: number
   limit: number
   charsPerToken: number
+  /** Flat tokens added on top of the char-based estimate — image cost (D17.12), not proportional to chars. */
+  flatTokens?: number
 }): Budget {
-  const { historyChars, draftChars, limit, charsPerToken } = input
-  const estimated = estimateTokens(historyChars + draftChars, charsPerToken)
+  const { historyChars, draftChars, limit, charsPerToken, flatTokens = 0 } = input
+  const estimated = estimateTokens(historyChars + draftChars, charsPerToken) + flatTokens
   const draftAlone = estimateTokens(draftChars, charsPerToken)
   const allowed = Math.floor(limit * GATE_MARGIN)
 

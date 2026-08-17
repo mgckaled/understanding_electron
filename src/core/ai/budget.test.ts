@@ -7,6 +7,7 @@ import {
   effectiveNumCtx,
   estimateTokens,
   fitsInMemory,
+  IMAGE_TOKEN_ESTIMATE,
   MIN_NUM_CTX
 } from './budget'
 
@@ -112,6 +113,37 @@ describe('budgetFor', () => {
 
   it('reports above 1 when the send overflows, so a meter can show it', () => {
     expect(budgetFor({ ...base, historyChars: 40_000, draftChars: 0 }).used).toBeGreaterThan(1)
+  })
+
+  it('adds flatTokens on top of the char-based estimate, unproportional to chars (D17.12)', () => {
+    const withoutImage = budgetFor({ ...base, historyChars: 4000, draftChars: 0 })
+    const withImage = budgetFor({
+      ...base,
+      historyChars: 4000,
+      draftChars: 0,
+      flatTokens: IMAGE_TOKEN_ESTIMATE
+    })
+
+    expect(withImage.estimated).toBe(withoutImage.estimated + IMAGE_TOKEN_ESTIMATE)
+  })
+
+  it('defaults flatTokens to zero, so a send with no image is unaffected', () => {
+    expect(budgetFor({ ...base, historyChars: 4000, draftChars: 0 })).toEqual(
+      budgetFor({ ...base, historyChars: 4000, draftChars: 0, flatTokens: 0 })
+    )
+  })
+
+  it('can push a send over the gate by itself, once enough images pile up', () => {
+    // 4096 window, ~90% margin: a history that fits comfortably in chars can
+    // still be refused once several images add their flat cost on top.
+    const budget = budgetFor({
+      ...base,
+      historyChars: 100,
+      draftChars: 0,
+      flatTokens: 15 * IMAGE_TOKEN_ESTIMATE
+    })
+
+    expect(budget.fits).toBe(false)
   })
 })
 
