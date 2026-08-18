@@ -24,4 +24,31 @@ describe('Sidebar', () => {
 
     expect(screen.getByText('lista')).toBeInTheDocument()
   })
+
+  it('renders collapsedRail while collapsed, and its expand callback reopens the sidebar', async () => {
+    const user = userEvent.setup()
+    render(
+      <Sidebar
+        nav={<span>nav</span>}
+        content={<span>lista</span>}
+        footer={<span>versões</span>}
+        collapsedRail={(expand) => (
+          <button type="button" onClick={expand}>
+            abrir
+          </button>
+        )}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: 'abrir' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Recolher a barra lateral' }))
+
+    expect(screen.getByRole('button', { name: 'abrir' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'abrir' }))
+
+    expect(screen.getByText('lista')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'abrir' })).not.toBeInTheDocument()
+  })
 })

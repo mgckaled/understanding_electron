@@ -13,6 +13,15 @@ type SidebarProps = {
   nav?: ReactNode
   content?: ReactNode
   footer?: ReactNode
+  /**
+   * The collapsed rail's buttons — a render-prop, not a plain node, because
+   * only Sidebar owns `collapsed`/`setCollapsed` and `nav`/`content`/`footer`
+   * are feature components with no notion of expanding the shell around them
+   * (same shape as Composer's `modelSelector`, DS4.8). `app/` still never
+   * imports `features/`: App.tsx decides what the rail's buttons DO, this
+   * file only decides where they sit and how to reopen itself.
+   */
+  collapsedRail?: (expand: () => void) => ReactNode
 }
 
 // The content track is minmax(0, 1fr), never a plain 1fr: 1fr floors at
@@ -24,7 +33,7 @@ const SIDEBAR_BASE =
   'grid h-full grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden border-r border-border ' +
   'bg-surface transition-[width] duration-(--duration-base) ease-initial'
 
-function Sidebar({ nav, content, footer }: SidebarProps): React.JSX.Element {
+function Sidebar({ nav, content, footer, collapsedRail }: SidebarProps): React.JSX.Element {
   const [collapsed, setCollapsed] = useState(false)
   const width = collapsed ? 'w-(--sidebar-width-collapsed)' : 'w-(--sidebar-width)'
 
@@ -75,6 +84,17 @@ function Sidebar({ nav, content, footer }: SidebarProps): React.JSX.Element {
             </div>
           )}
         </>
+      )}
+
+      {/* The rail: what used to be a dead 44px column with only the reopen
+          toggle. Spans rows 2-4 (nav/content/footer's rows), one column of
+          icon buttons — no scrolling region of its own, unlike the expanded
+          form, since 4 buttons never overflow 44px of width times a full
+          window's height. */}
+      {collapsed && collapsedRail && (
+        <nav className="row-span-3 row-start-2 flex flex-col items-center gap-2 px-1 pb-4">
+          {collapsedRail(() => setCollapsed(false))}
+        </nav>
       )}
     </aside>
   )

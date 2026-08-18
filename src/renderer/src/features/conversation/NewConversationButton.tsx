@@ -3,10 +3,30 @@ import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useConversations } from './conversationsContext'
 
+type NewConversationButtonProps = {
+  /** Icon-only, for the sidebar's collapsed rail (F2.4) — same `create()`,
+   *  no room for a label at 44px wide. */
+  compact?: boolean
+}
+
 // Lives in the sidebar's nav region, above the list — the shape both reference
 // apps use.
-function NewConversationButton(): React.JSX.Element {
+function NewConversationButton({ compact = false }: NewConversationButtonProps): React.JSX.Element {
   const { create } = useConversations()
+
+  if (compact) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        shape="square"
+        onClick={() => create()}
+        aria-label="Nova conversa"
+      >
+        <Plus size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+      </Button>
+    )
+  }
 
   return (
     <Button variant="outline" className="w-full" onClick={() => create()}>

@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
+import { MessageSquare, Search } from 'lucide-react'
 import AppShell from './app/AppShell'
 import Sidebar from './app/Sidebar'
 import OllamaStatus from './components/OllamaStatus'
@@ -8,6 +9,8 @@ import ConversationsProvider from './features/conversation/ConversationsProvider
 import NewConversationButton from './features/conversation/NewConversationButton'
 import Settings from './features/settings/Settings'
 import { createQueryClient } from './shared/queryClient'
+import Button from './shared/ui/Button/Button'
+import { ICON_SIZE, ICON_STROKE } from './shared/ui/icon'
 
 // Module level, so it is created once for the life of the window rather than on
 // every render. It never appears inside a component beyond this line — reading
@@ -36,6 +39,35 @@ function App(): React.JSX.Element {
                   <Settings />
                 </div>
               }
+              // The rail: direct action where one exists ("+" creates now,
+              // Configurações opens now — a second `Settings` instance, fully
+              // self-contained, so no state is lifted); Busca/Conversas only
+              // expand, since 44px has no room to show what they would open
+              // (F2.4).
+              collapsedRail={(expand) => (
+                <>
+                  <NewConversationButton compact />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    shape="square"
+                    onClick={expand}
+                    aria-label="Buscar conversas"
+                  >
+                    <Search size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    shape="square"
+                    onClick={expand}
+                    aria-label="Ver conversas"
+                  >
+                    <MessageSquare size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                  </Button>
+                  <Settings />
+                </>
+              )}
             />
           }
           main={<ConversationView />}
