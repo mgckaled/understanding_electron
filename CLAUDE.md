@@ -15,6 +15,8 @@ Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**
 
 **Escalonamento — a regra que faz o sistema funcionar:** observação do diário que valha **além daquele plano** sobe para o `HISTORY.md` **na mesma sessão**. O teste é *"isto vai custar tempo de novo?"* — armadilha diagnosticada, alternativa tentada e descartada, número medido: sobe. "Terminei o passo 3": morre com o plano.
 
+**Auto-conservação — o mesmo cuidado, voltado para fora do plano.** Ao encerrar um plano ou uma tarefa pontual, dois tipos de deriva, tratados diferente porque um se previne e o outro só se corrige: **(a) nome ou caminho que mudou** — ao renomear/mover algo, `grep` o nome antigo em `.claude/skills/` e `docs/` **antes** de commitar; se aparecer, é referência a atualizar junto, não depois. **(b) contagem que envelheceu** (canais IPC, número de teste, linhas de skill) — não é greppável por natureza, então remedir é o próprio ato de conservar: nunca copiar um número de um documento para outro sem reconferir a fonte (código, `pnpm test`) na hora. Se a mudança tocou um fato citável em mais de um lugar e nenhuma das duas se aplicou, o próximo a ler paga sem saber que está pagando. É o motivo declarado da trilha R-2 (ver `HISTORY.md`), e o objetivo é não precisar de uma R-3.
+
 Regra completa e formato em [`docs/README.md`](docs/README.md#os-dois-registros-e-por-que-são-dois).
 
 ---
