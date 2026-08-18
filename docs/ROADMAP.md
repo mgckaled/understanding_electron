@@ -131,6 +131,9 @@ Só faz sentido com distribuição. Registrado para não ser confundido com esqu
 ### `dist/win-unpacked` travado por um handle do sistema
 Durante a auditoria de ago/2026, `electron-builder` passou a falhar com `EBUSY: resource busy or locked` ao substituir `dist/win-unpacked/resources/app.asar`, e `rm -rf` falha no mesmo arquivo. Nenhum processo `node`, `pnpm` ou `crivo` estava em execução — o handle é do sistema, e o suspeito é a proteção em tempo real do Defender (`Get-MpComputerStatus` confirma ativa; conferir as exclusões exige terminal como administrador, que não foi usado). Contorno que funcionou: empacotar noutro destino com `electron-builder --dir -c.directories.output=<dir>`. Reiniciar a máquina libera o handle. **Se voltar a acontecer, reconferir as exclusões do Defender do [`CLAUDE.md`](../CLAUDE.md) — elas não viajam com o repositório e podem ter se perdido.**
 
+### O pilar "Código" não tem plano numerado
+O `CLAUDE.md` já lista código ao lado de documento, imagem, busca web, MCP e raciocínio como pilar próprio — mas, diferente de Web Search/Thinking/MCP (planos 21-23 já reservados), código não tem lugar na sequência ainda. O [F-2](plan/active/F-2-composer-modelo-sidebar.md) deu a ele o primeiro item visível na tela — desabilitado, no menu de anexo — e conferiu que o mecanismo **não** está pronto por baixo, ao contrário do que a tabela de formatos do [`ESCOPO.md`](ESCOPO.md) sugere à primeira leitura: o extrator de `.txt` já sabe ler código-fonte, mas o diálogo do canal `document:pick` filtra só `txt/md/pdf`, então nenhum arquivo de código chega lá hoje. Registrado para o item desabilitado não ficar mudo — quando este pilar ganhar prioridade, decide-se então se é só abrir o filtro do diálogo ou se pede ficha própria (com realce de sintaxe, já que o plano 12 entrega a paleta).
+
 ---
 
 ## 5. Fora de escopo
