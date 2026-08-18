@@ -58,7 +58,7 @@ src/
 ```
 app/AppShell.tsx        grid de regiões — recebe sidebar e main por slot
 app/Sidebar.tsx         chrome: recolher, nav · conteúdo · rodapé
-features/<assunto>/     conversation, open-dataset, settings
+features/<assunto>/     conversation, attachment, settings
 App.tsx                 só composição — quem entra em qual slot
 ```
 
@@ -82,16 +82,9 @@ App.tsx                 só composição — quem entra em qual slot
 | ISP       | **adotado** — é o argumento contra expor `invoke(canal, args)` genérico no preload                    |
 | DIP       | **adotado**, na forma nativa da linguagem: parâmetro de função tipado. Sem container de DI            |
 
-## Erro é dado, não exceção
+## Erro é dado, não exceção — dono é a skill `ipc`
 
-Se um handler do main lança, o `ipcRenderer.invoke` rejeita com um `Error` genérico prefixado com `Error invoking remote method` — classe, propriedades customizadas e stack original se perdem no _structured clone_. Um `QuerySyntaxError { line, column }` chegaria ao React como texto inútil.
-
-| Situação                                                        | Convenção                                                         |
-| --------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Arquivo não existe · SQL com erro de sintaxe · usuário cancelou | **`Result`** — dado de domínio, a UI precisa reagir               |
-| Payload fora do schema · bug no handler                         | **Exceção** — defeito de programação, deve doer no console em dev |
-
-`Result<T, E = AppError>` é `{ ok: true; value: T } | { ok: false; error: E }`, com `AppError` uma união discriminada por `kind` (`not-found`, `permission`, `blocked`, `cancelled`, `timeout`, `unavailable`, `upstream`, `unknown`). Canal que não tem como falhar (`app:info`) não retorna `Result` — embrulhar tudo treina a equipe a ignorar o `ok`.
+A régua completa (quando é `Result`, quando é exceção, a forma de `AppError`) mora na skill [`ipc`](../ipc/SKILL.md) § *`Result` ou exceção*. Aqui fica só o porquê estrutural: se um handler do main lança, o `ipcRenderer.invoke` rejeita com um `Error` genérico prefixado com `Error invoking remote method` — classe, propriedades customizadas e stack original se perdem no _structured clone_. É esse limite de processo que torna erro esperado dado, não exceção, na fronteira do IPC.
 
 ## Contrato IPC: dono é a skill `ipc`
 
@@ -99,7 +92,7 @@ O contrato (`src/shared/ipc.ts`), a superfície `window.api`, a régua de `Resul
 
 O que fica nesta skill, porque é de camada e não de contrato:
 
-⚠️ **Tipo em `shared/ipc.ts` não implica canal.** `Conversation`/`Message`/`MessagePart` entraram na fase 13 **sem schema zod e sem canal**, de propósito: schema existe para validar payload de IPC, e não havia IPC. O que se decide cedo é a **forma do dado** que atravessa camadas; o canal nasce quando alguém o chama. Ver [`docs/HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
+⚠️ **Tipo em `shared/ipc.ts` não implica canal.** `Conversation`/`Message`/`MessagePart` entraram na fase 13 **sem schema zod e sem canal**, de propósito: schema existe para validar payload de IPC, e não havia IPC ainda. O que se decide cedo é a **forma do dado** que atravessa camadas; o canal nasce quando alguém o chama — e chamou: `MessagePart` ganhou schema zod completo e canal próprio por variante (`dataset:attach`, `document:attach`, `image:attach`) nos planos 16 e 17. O princípio segue valendo para o próximo tipo que entrar assim. Ver [`docs/HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
 
 ## Jobs: o registro cancelável
 
