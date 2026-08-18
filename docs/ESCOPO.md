@@ -12,21 +12,31 @@ O que o aplicativo faz, o que ele não faz, e as consequências arquiteturais de
 
 ## Em uma frase
 
-**Uma bancada de dados local, operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre ele em português, e sair com uma resposta ou com o arquivo tratado. E, na mesma conversa, trazer o documento que explica aquele dado: o `.md` da especificação, o PDF do contrato, a captura de tela da planilha que alguém mandou.
+**Uma bancada de dados local, operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre ele em português, e sair com uma resposta ou com o arquivo tratado. É o pilar mais maduro do aplicativo, e o que organiza os demais.
 
-Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa, para você entender um resultado que já está na tela; painel, relatório e atualização automática continuam fora.
+Mas não é só isso, e fingir que é enfraquece o que o app já entrega: na mesma conversa entra o documento que explica o dado (`.md` da especificação, PDF do contrato, captura de tela da planilha), o trecho de código para revisar ou entender, a busca na web, a consulta a documentação de biblioteca, e o raciocínio do modelo em voz alta. **O crivo é uma ferramenta local multiuso, operada por conversa** — e dados é o pilar mais forte e mais antigo dos que ela sustenta, não o único.
 
-E não é um chat genérico com um leitor de arquivo pregado ao lado — mas essa distinção deixou de ser óbvia quando documento e imagem entraram, então ela virou seção própria logo abaixo. O resumo: **há um motor, e o documento não passa por ele.** O trabalho continua sendo deixar o dado utilizável — o que hoje se faz em planilha na mão ou em script Python descartável —, e a conversa é a interface que substitui a bancada de painéis.
+Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa, para você entender um resultado que já está na tela; painel, relatório e atualização automática continuam fora — pelo mesmo teste que decide toda fronteira nova, descrito a seguir.
+
+---
+
+## O teste que separa pilar de produto novo
+
+Um chat multiuso corre um risco que uma bancada de dados sozinha não corre: toda ideia parece caber, porque "está dentro da mesma conversa" é critério fraco demais para recusar coisa nenhuma. A régua que substitui "não é um chat genérico" precisa ser mecânica, não de gosto — é a mesma que já decidia a fronteira do gráfico, generalizada para toda capacidade:
+
+> **Uma capacidade é pilar do crivo enquanto viver dentro da conversa** — como ação executada, contexto consumido, ou um dos artefatos que o app já sabe persistir (mensagem, receita, dado tratado e exportado). **No instante em que ela precisar de estado próprio, gerido fora da conversa** — layout salvo, arquivo reexportado, projeto paralelo com vida própria — **ela virou outro produto.**
+
+É o teste que já respondia "salvar o PDF anotado" e "painel com filtros cruzados": os dois pedem um artefato que sobrevive fora da conversa e uma tela própria para gerenciá-lo. Continua respondendo à mesma pergunta agora que o motivo deixou de ser "isso não é chat" — o motivo é "isso não vive dentro de uma conversa".
 
 ---
 
 ## Duas classes de arquivo, e a linha entre elas
 
-O aplicativo abre duas coisas muito diferentes. Confundi-las é o que transformaria a bancada no tal chat genérico.
+O aplicativo abre duas coisas muito diferentes, e confundi-las corrompe os dois verbos abaixo — que só valem para dado tabular, nunca para documento.
 
 | | **Dado tabular** | **Documento** |
 |---|---|---|
-| Formatos | CSV, Parquet, JSON/NDJSON, Excel | `.txt`, `.md`, `.pdf` com texto · `.png`, `.jpeg`, `.svg`, `.webp` |
+| Formatos | CSV, Parquet, JSON/NDJSON, Excel | `.txt`, `.md`, `.pdf` com texto, código-fonte · `.png`, `.jpeg`, `.svg`, `.webp` |
 | Relação | *perguntar* e *tratar* — os dois verbos abaixo | **ler como contexto**, e nada mais |
 | Motor | DuckDB | nenhum: vai direto ao modelo |
 | Produz | consulta, passos, receita, resultado, gráfico | texto no contexto da conversa |
@@ -37,7 +47,7 @@ Ninguém deduplica um PNG por CPF. **Os dois verbos valem para dado tabular**; d
 
 **Por que está no escopo:** são os arquivos com que se trabalha diariamente, e a pergunta real quase nunca é só sobre o CSV — é sobre o CSV **e** a especificação que diz o que cada coluna deveria conter. Manter as duas coisas em duas ferramentas é exatamente o atrito que este aplicativo existe para remover.
 
-**O que isto não autoriza:** editar, anotar, converter ou exportar documento. Um `.pdf` entra e não sai; um `.png` entra e não sai. No dia em que "salvar o PDF anotado" for pedido, a resposta é que isso é outro produto — a mesma resposta que o painel de BI já recebe.
+**O que isto não autoriza:** editar, anotar, converter ou exportar documento. Um `.pdf` entra e não sai; um `.png` entra e não sai. No dia em que "salvar o PDF anotado" for pedido, a resposta é que isso é outro produto — pelo [teste que separa pilar de produto novo](#o-teste-que-separa-pilar-de-produto-novo), o mesmo que já recusa o painel de BI.
 
 ---
 
@@ -154,13 +164,15 @@ O motivo não é elegância de interface. Medido em ago/2026: dado o prompt *"de
 
 ## Ferramentas do chat
 
-Três capacidades — busca web, documentação e raciocínio visível — chegam pelo *tool calling* do Ollama, propostas em [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md). Auxiliares da conversa, não um novo pilar do produto.
+Três capacidades — busca web, documentação e raciocínio visível — chegam pelo *tool calling* do Ollama, propostas em [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md). Cada uma é pilar próprio pelo [teste acima](#o-teste-que-separa-pilar-de-produto-novo) — vive inteira dentro da conversa, sem estado que sobreviva a ela.
 
 | | Faz | Não faz |
 |---|---|---|
 | **Busca web** | O modelo pede uma URL; o app busca e extrai o texto principal como contexto da resposta | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
 | **Documentação (MCP)** | Um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
 | **Raciocínio visível** | Alternável por turno; o texto de raciocínio do modelo aparece separado da resposta final, recolhível | Exige modelo que declare a capacidade — hoje nenhum da frota (ver [`CLAUDE.md`](../CLAUDE.md)) |
+
+⚠️ **Busca web, MCP e raciocínio pedem `tools`; anexo de imagem pede `vision`. Nenhum modelo desta máquina declara os dois** (ver [`CLAUDE.md`](../CLAUDE.md)) — então, hoje, usar estas ferramentas e anexar imagem são caminhos mutuamente exclusivos na mesma conversa. Trocar de modelo no meio dela resolve, ao custo do descarregamento já registrado acima.
 
 A URL que o modelo pede precisa passar pelo mesmo ponto único de validação em `src/core/url.ts` — nunca um segundo caminho até a rede. Hoje esse ponto (`checkExternalUrl`) só confere o esquema (`http:`/`https:`); busca disparada por URL escolhida pelo modelo, e não pelo usuário clicando um link, também precisa recusar *loopback* e faixas privadas, o que abrir no navegador do sistema nunca precisou fazer.
 
@@ -221,11 +233,16 @@ A coluna "Escrita" não está vazia por adiamento: documento **nunca** é saída
 | Formato | Leitura | Escrita | Observação |
 |---|---|---|---|
 | **`.txt`, `.md`** | direta | — | detecção de encoding como no CSV; cp1252 é comum no Windows brasileiro |
+| **código-fonte** (`.js`, `.ts`, `.py`, `.go`, `.rs`, `.java`, `.c`/`.cpp`, `.rb`, `.php`, `.sql`, `.sh`, `.css`, `.html`, `.yaml`, `.toml`, entre outras — texto puro) | direta, mesmo extrator de `.txt` | — | extensão compilada/binária (`.class`, `.pyc`, `.o`, ...) fica fora; o modelo identifica a linguagem pelo próprio conteúdo, sem tag exigida |
 | **`.pdf` com camada de texto** | `unpdf` | — | zero dependências, sem módulo nativo |
 | **`.pdf` escaneado** | **recusado** | — | sem texto selecionável — ver [Fora do escopo](#fora-do-escopo) |
 | **`.png`, `.jpeg`** | direta ao modelo | — | exige modelo que declare `vision` |
 | **`.svg`** | rasterizado para PNG | — | o `nativeImage` do Electron **não** decodifica SVG; o Chromium sim |
 | **`.webp`** | convertido para PNG | — | o Ollama rejeita o container VP8X, que é o que o Chromium produz |
+
+**Documento também nasce colado, sem arquivo em disco.** Um modal simples — linhas numeradas, indentação preservada, sem realce de sintaxe obrigatório — deixa colar um trecho (mais comumente código) e anexá-lo como o mesmo `MessagePart` de documento. É uma segunda origem, não um mecanismo novo: mesma regra de nível 3, mesmo "nunca vira arquivo de saída". Identificar a linguagem para realce é opcional e não bloqueia o envio — o modelo lê o conteúdo cru e infere a linguagem como um humano faria; falta de destaque visual é custo de interface, não de compreensão. Escolher o modelo continua manual, como hoje — colar código não troca de modelo sozinho.
+
+⚠️ **Código tende a ser mais denso em tokens que prosa** — indentação e símbolos repetidos custam tokens que os `~3,7 caracteres/token` do português (medidos abaixo) não medem. O teto de ~8k tokens por documento vale para prosa; para código, medir separadamente quando o mecanismo de anexo colado ganhar plano — não presumir igual.
 
 > **Tudo que não é PNG ou JPEG é normalizado para PNG num ponto só, antes de sair do aplicativo.** SVG rasterizado, WebP convertido, e a decisão de qual caminho tomar mora em `core/`. Espalhar essa conversão pelos chamadores repetiria a falha já registrada em [`HISTORY.md`](HISTORY.md) para a lista branca de esquemas: **validação que mora junto de um chamador vira bypass no segundo**.
 
@@ -318,7 +335,7 @@ Registrado explicitamente para não ser confundido com "ainda não":
 - **Versionamento de dados** — sem histórico de versões do dataset.
 - **PDF escaneado e OCR** — PDF sem camada de texto é recusado, com o motivo dito na tela ("este PDF não tem texto selecionável"). Rasterizar e passar por visão custaria ~80 s **por página** e traria um módulo nativo (`@napi-rs/canvas`) para dentro do projeto. Recusar é mais honesto que entregar um anexo vazio, que cai direto na falha silenciosa descrita acima.
 - **`.docx`, `.pptx` e o resto do escritório** — cada um é um parser e um mundo de casos próprios, como o Excel já demonstra na seção de formatos.
-- **Editar, anotar ou exportar documento** — decorre de [Duas classes de arquivo](#duas-classes-de-arquivo-e-a-linha-entre-elas): documento entra como contexto e não sai como arquivo.
+- **Editar, anotar ou exportar documento — inclusive código colado ou anexado** — decorre do [teste que separa pilar de produto novo](#o-teste-que-separa-pilar-de-produto-novo): documento entra como contexto e não sai como arquivo. **Criar ou reescrever arquivo de código é a mesma pergunta, com um agravante:** o caminho de saída seria escolhido pelo modelo, não pelo usuário num diálogo de salvar — decisão de segurança própria, gatilho em [`ROADMAP § 2`](ROADMAP.md).
 - **Índice vetorial de imagens** — busca por semelhança visual não é pergunta que este aplicativo tenha. O que serve é buscar pela **descrição** que o modelo de visão já produziu no anexo, e isso é texto, indexado pelo embedder que já existe. Ver [`HISTORY.md`](HISTORY.md) para o que foi medido.
 
 ### Onde passa a linha do gráfico
@@ -329,7 +346,7 @@ Registrado explicitamente para não ser confundido com "ainda não":
 | Artefato de mensagem, recolhível como os outros | Layout salvo, atualização automática |
 | Rederivável — persiste a referência, não os pontos | Filtros interativos cruzados, relatório |
 
-**O teste que mantém a fronteira honesta:** se o gráfico precisar de estado próprio que sobreviva à conversa, ele virou painel — e painel está fora. É uma regra que o código consegue obedecer, ao contrário de "não exagerar".
+**O teste que mantém a fronteira honesta:** se o gráfico precisar de estado próprio que sobreviva à conversa, ele virou painel — e painel está fora. É uma regra que o código consegue obedecer, ao contrário de "não exagerar" — e é o caso concreto que inspirou o [teste que separa pilar de produto novo](#o-teste-que-separa-pilar-de-produto-novo), generalizado para toda capacidade nova, não só gráfico.
 
 ---
 

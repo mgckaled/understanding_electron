@@ -1,6 +1,6 @@
 # crivo
 
-Aplicação **Electron**: uma bancada local de dados **operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado. O motor é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
+Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**, com análise de dados como o pilar mais maduro — abrir CSV, Parquet, Excel ou JSON, perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado; documento, imagem, código, busca web, documentação (MCP) e raciocínio visível entram pela mesma conversa, cada um como pilar próprio (critério em [`ESCOPO.md`](docs/ESCOPO.md)). O motor de dados é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
 
 ---
 
