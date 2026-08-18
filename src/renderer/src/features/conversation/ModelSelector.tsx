@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Cloud, HardDrive } from 'lucide-react'
 import type { AiModel } from '@shared/ipc'
 import { fitsInMemory, type Budget } from '@core/ai/budget'
 import Field from '../../shared/ui/Field/Field'
@@ -18,15 +18,12 @@ import { formatContext, formatSize } from './modelFormat'
 // the SAME render-prop Composer already calls (DS4.8) — the prop's type
 // never changes.
 
-// Marked, not disabled: free RAM is a snapshot of a machine the user is also
-// using, and closing a browser changes the answer (D15.2).
-function optionLabel(model: AiModel, ceiling: number | null): string {
-  const context = formatContext(model.contextLength)
-  const fits = fitsInMemory(ceiling)
-  return [model.name, formatSize(model.sizeBytes), context, fits ? '' : 'não cabe']
-    .filter(Boolean)
-    .join(' · ')
-}
+// Blocked placeholders for a future cloud pillar (plano 09 fatia 3) — no
+// onClick, same disabled shape as AttachButton's "Código" item.
+const CLOUD_MODELS = ['Gemini', 'GLM']
+
+const GROUP_LABEL =
+  'flex items-center gap-2 px-4 text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase'
 
 type ModelPickerProps = {
   state: ViewState<AiModel[]>
@@ -129,7 +126,11 @@ function ModelPicker({
         {/* The layout class lives on THIS inner div, never on Popover's own root
             (its `display` would beat the UA stylesheet's `[popover]:not(:popover-open)`
             hide rule — see Popover.tsx). */}
-        <div className="flex w-[280px] flex-col gap-1">
+        <div className="flex w-[300px] flex-col gap-1">
+          <p className={GROUP_LABEL}>
+            <HardDrive size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            Locais
+          </p>
           <div
             ref={listboxRef}
             role="listbox"
@@ -142,35 +143,60 @@ function ModelPicker({
             }
             className="flex flex-col gap-1 focus-visible:outline-none"
           >
-            {models.map((model, index) => (
-              <div
-                key={model.name}
-                id={`${listboxId}-option-${index}`}
-                role="option"
-                aria-selected={model.name === selected}
-                onClick={() => {
-                  onSelect(model.name)
-                  setOpen(false)
-                }}
-                onMouseEnter={() => setHighlighted(index)}
-                className={`cursor-pointer rounded-md px-4 py-2 font-ui text-md text-text ${
-                  index === highlighted ? 'bg-surface-raised' : ''
-                }`}
-              >
-                {optionLabel(model, ceilingOf(model))}
-              </div>
-            ))}
+            {/* Two lines (F2.2): name alone on top; size, the machine's real
+                ceiling ("memória" — the practical limit, not a per-token
+                cost) and capability chips below. Every row, not just the
+                selected one — a scope change from the old single-line
+                `optionLabel` + capabilities shown only for `current`. */}
+            {models.map((model, index) => {
+              const ceiling = ceilingOf(model)
+              const chips = capabilityChips(model)
+              return (
+                <div
+                  key={model.name}
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  aria-selected={model.name === selected}
+                  onClick={() => {
+                    onSelect(model.name)
+                    setOpen(false)
+                  }}
+                  onMouseEnter={() => setHighlighted(index)}
+                  className={`flex cursor-pointer flex-col gap-1 rounded-md px-4 py-2 ${
+                    index === highlighted ? 'bg-surface-raised' : ''
+                  }`}
+                >
+                  <span className="font-ui text-md text-text">{model.name}</span>
+                  <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted">
+                    <span>{formatSize(model.sizeBytes)}</span>
+                    {ceiling !== null && <span>até {formatContext(ceiling)}</span>}
+                    {!fitsInMemory(ceiling) && <span className="text-warn-text">não cabe</span>}
+                    {chips.map((chip) => (
+                      <CapabilityChip key={chip.capability} {...chip} />
+                    ))}
+                  </span>
+                </div>
+              )
+            })}
           </div>
 
-          {current !== undefined && capabilityChips(current).length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-2 px-2">
-              {capabilityChips(current).map((chip) => (
-                <li key={chip.capability}>
-                  <CapabilityChip {...chip} />
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="my-1 border-t border-border" />
+          <p className={GROUP_LABEL}>
+            <Cloud size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            Nuvem (Opt-in)
+          </p>
+          {/* Locked placeholders, same shape as AttachButton's "Código" item
+              — no plano wires them yet (plano 09 fatia 3, nuvem opt-in). */}
+          {CLOUD_MODELS.map((name) => (
+            <button
+              key={name}
+              type="button"
+              disabled
+              className="flex cursor-not-allowed items-center rounded-md px-4 py-2 text-left font-ui text-md text-text-faint"
+            >
+              {name}
+            </button>
+          ))}
         </div>
       </Popover>
     </>

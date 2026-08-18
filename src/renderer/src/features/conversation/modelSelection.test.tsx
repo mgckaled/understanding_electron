@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock, TEST_MODEL } from '@test/api-mock'
 import type { AiModel, Api, ImagePart } from '@shared/ipc'
@@ -97,30 +97,39 @@ describe('ModelSelector', () => {
     expect(await modelTrigger()).toHaveTextContent('gemma3:4b')
   })
 
-  it('shows the vision sigla+icon on the model that has it, and nothing else', async () => {
+  it("shows a model's own capability chips on its row, not another model's", async () => {
     // The sigla scheme itself (F2.1: which capability maps to which sigla,
     // the tools/thinking "T" collision, the fallback for an unmapped
-    // capability) is unit-tested in CapabilityChips.test.tsx — this level
-    // only checks the popover shows the right chip for the right model.
+    // capability) is unit-tested in capabilities.test.tsx — this level only
+    // checks each row carries its own model's chips (F2.2 widened this from
+    // "only the selected model" to every row in the list).
     const user = userEvent.setup()
     mount()
     await user.click(await modelTrigger())
 
-    const chip = await screen.findByTitle('Imagem — entende imagens anexadas')
-    expect(chip).toHaveTextContent('IM')
-    expect(screen.queryByTitle('Ferramentas — function calling')).not.toBeInTheDocument()
+    const gemma = await waitFor(() => modelOption(/gemma3:4b/))
+    expect(within(gemma).getByTitle('Imagem — entende imagens anexadas')).toHaveTextContent('IM')
+    expect(within(gemma).queryByTitle('Ferramentas — function calling')).not.toBeInTheDocument()
+
+    const coder = modelOption(/qwen2\.5-coder:3b/)
+    expect(within(coder).getByTitle('Ferramentas — function calling')).toHaveTextContent('TO')
+    expect(
+      within(coder).getByTitle('Inserção — fill-in-middle, autocomplete com sufixo')
+    ).toHaveTextContent('IN')
+    expect(within(coder).queryByTitle('Imagem — entende imagens anexadas')).not.toBeInTheDocument()
   })
 
-  it('shows tools and insert siglas for a model that declares both', async () => {
+  it('shows Gemini and GLM as locked placeholders under Nuvem (Opt-in)', async () => {
     const user = userEvent.setup()
     mount()
+    await user.click(await modelTrigger())
 
-    await chooseModel(user, /qwen2\.5-coder:3b/)
-
-    expect(await screen.findByTitle('Ferramentas — function calling')).toHaveTextContent('TO')
-    expect(
-      screen.getByTitle('Inserção — fill-in-middle, autocomplete com sufixo')
-    ).toHaveTextContent('IN')
+    for (const name of ['Gemini', 'GLM']) {
+      const item = await screen.findByRole('button', { name, hidden: true })
+      expect(item).toBeDisabled()
+      // Not selectable options: the arrow-key listbox never lands on either.
+      expect(screen.queryByRole('option', { name, hidden: true })).not.toBeInTheDocument()
+    }
   })
 
   it('sends the chosen model, not the default one', async () => {
