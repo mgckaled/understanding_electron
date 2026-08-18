@@ -43,7 +43,9 @@ function App(): React.JSX.Element {
               // Configurações opens now — a second `Settings` instance, fully
               // self-contained, so no state is lifted); Busca/Conversas only
               // expand, since 44px has no room to show what they would open
-              // (F2.4).
+              // (F2.4). Configurações sits at the bottom (`mt-auto`), mirroring
+              // its footer position in the expanded sidebar — the other three
+              // are top actions, not siblings of a settings gear.
               collapsedRail={(expand) => (
                 <>
                   <NewConversationButton compact />
@@ -65,7 +67,9 @@ function App(): React.JSX.Element {
                   >
                     <MessageSquare size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
                   </Button>
-                  <Settings />
+                  <div className="mt-auto">
+                    <Settings />
+                  </div>
                 </>
               )}
             />
