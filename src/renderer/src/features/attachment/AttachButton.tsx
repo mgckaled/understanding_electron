@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { FileText, Image, Plus, Table2, X } from 'lucide-react'
+import { BookOpen, Code2, FileText, Globe, Image, Lightbulb, Plus, Table2, X } from 'lucide-react'
 import type { AiModel, AttachmentPart } from '@shared/ipc'
 import { hasCapability } from '@core/ai/models'
 import { estimateReadSeconds } from '@core/document/estimate'
@@ -8,7 +8,22 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import StateView from '../../shared/ui/StateView'
+import Switch from '../../shared/ui/Switch/Switch'
 import { useAttachFile } from './useAttachFile'
+
+// The three switches mirror ESCOPO.md § Ferramentas do chat (planos 21-23,
+// dentro do arco) — same Portuguese names as the product's single source, not
+// the rascunho's placeholder English ones. Off and disabled here on purpose:
+// no tool-calling logic exists yet: each future plan only flips `disabled` and
+// wires a real `onChange`, never redesigns the row (F2.6).
+const TOOLS = [
+  { label: 'Busca web', Icon: Globe },
+  { label: 'Raciocínio visível', Icon: Lightbulb },
+  { label: 'Documentação (MCP)', Icon: BookOpen }
+] as const
+
+// A group label, same shape as the date headings in ConversationList.
+const GROUP_LABEL = 'px-4 text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase'
 
 type AttachButtonProps = {
   /** The pending attachment, or null. Controlled — Composer holds it next to `draft` (D13.2, D16.6, generalized D17.4). */
@@ -135,7 +150,8 @@ function AttachButton({
                 control, not a stub (D17.11, distinct from the ban on
                 shipping a menu item with no function behind it). */}
             {!isLoading && (
-              <div className="flex min-w-[180px] flex-col gap-1">
+              <div className="flex min-w-[220px] flex-col gap-1">
+                <p className={GROUP_LABEL}>Arquivos</p>
                 <button
                   type="button"
                   className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-text hover:bg-surface"
@@ -161,6 +177,19 @@ function AttachButton({
                   <Image size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
                   Imagens
                 </button>
+                {/* Unconditionally disabled — unlike Imagens, no capability
+                    gates it. The extractor exists for prose (ESCOPO.md linha
+                    236) but document:pick's OS dialog filters only
+                    txt/md/pdf, so no source file reaches it yet — a future
+                    plano, not a stub with nothing behind it (F2.8). */}
+                <button
+                  type="button"
+                  className="flex cursor-not-allowed items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-text-faint"
+                  disabled
+                >
+                  <Code2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                  Código
+                </button>
                 {/* A `title` on a disabled control is not a reliable surface —
                     Chromium's own tooltip machinery may not fire on it, and it
                     is invisible to a test. This line is the actual hint
@@ -170,6 +199,19 @@ function AttachButton({
                     O modelo atual não processa imagens.
                   </p>
                 )}
+                <div className="my-1 border-t border-border" />
+                <p className={GROUP_LABEL}>Ferramentas</p>
+                {TOOLS.map(({ label, Icon }) => (
+                  <div key={label} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <span className="flex items-center gap-3 text-xs text-text-faint">
+                      <Icon size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                      {label}
+                    </span>
+                    {/* Off and disabled (F2.6): planos 21-23 wire the real
+                        onChange, never redesign this row. */}
+                    <Switch checked={false} onChange={() => {}} disabled aria-label={label} />
+                  </div>
+                ))}
               </div>
             )}
             <StateView

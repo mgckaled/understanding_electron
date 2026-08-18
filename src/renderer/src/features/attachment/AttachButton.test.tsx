@@ -267,4 +267,33 @@ describe('AttachButton', () => {
       expect(await screen.findByText('grafico.png')).toBeInTheDocument()
     })
   })
+
+  // F2.7/F2.8 — the popover's second group. Web Search/Raciocínio
+  // visível/Documentação (MCP) belong to planos 21-23; Código has no plano
+  // yet (F2.8). All four render disabled regardless of model/state.
+  describe('the Código item and the Ferramentas group', () => {
+    it('always disables Código, independent of the model', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton model={TEST_MODEL} />)
+      await open(user)
+
+      expect(screen.getByRole('button', { name: 'Código', hidden: true })).toBeDisabled()
+    })
+
+    it('renders the three tool switches off and disabled', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton />)
+      await open(user)
+
+      for (const label of ['Busca web', 'Raciocínio visível', 'Documentação (MCP)']) {
+        const toggle = screen.getByRole('switch', { name: label, hidden: true })
+        expect(toggle).toBeDisabled()
+        expect(toggle).toHaveAttribute('aria-checked', 'false')
+      }
+    })
+  })
 })
