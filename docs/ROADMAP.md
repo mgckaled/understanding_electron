@@ -25,6 +25,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    DS-3 a interface chega ao alvo     plan/implemented/DS-3-...        concluída (ago/2026)
    ── trilha R (refatoração), transversal ─────────────────────────────────────────
    R-1 comentários e TSDoc            plan/implemented/R-1-...         concluída (ago/2026)
+▶  R-2 documentação técnica/histórica plan/active/R-2-...              em execução (ago/2026)
    ── segunda rodada de handoff, transversal ──────────────────────────────────────
    DS-4 popover, tema e acabamento final  plan/implemented/DS-4-...        concluída (ago/2026)
    ── terceira rodada de handoff, transversal ─────────────────────────────────────
