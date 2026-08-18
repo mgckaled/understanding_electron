@@ -162,8 +162,8 @@ function ModelPicker({
                     setOpen(false)
                   }}
                   onMouseEnter={() => setHighlighted(index)}
-                  className={`flex cursor-pointer flex-col gap-1 rounded-md px-4 py-2 ${
-                    index === highlighted ? 'bg-surface-raised' : ''
+                  className={`flex cursor-pointer flex-col gap-1 rounded-md border px-4 py-2 ${
+                    index === highlighted ? 'border-border-strong bg-surface' : 'border-border'
                   }`}
                 >
                   <span className="font-ui text-md text-text">{model.name}</span>
@@ -180,7 +180,7 @@ function ModelPicker({
             })}
           </div>
 
-          <div className="my-1 border-t border-border" />
+          <div className="my-2 border-t border-border-strong" />
           <p className={GROUP_LABEL}>
             <Cloud size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
             Nuvem (Opt-in)
