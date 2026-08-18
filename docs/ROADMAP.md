@@ -25,7 +25,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    DS-3 a interface chega ao alvo     plan/implemented/DS-3-...        concluída (ago/2026)
    ── trilha R (refatoração), transversal ─────────────────────────────────────────
    R-1 comentários e TSDoc            plan/implemented/R-1-...         concluída (ago/2026)
-▶  R-2 documentação técnica/histórica plan/active/R-2-...              em execução (ago/2026)
+   R-2 documentação técnica/histórica plan/implemented/R-2-...         concluída (ago/2026)
    ── segunda rodada de handoff, transversal ──────────────────────────────────────
    DS-4 popover, tema e acabamento final  plan/implemented/DS-4-...        concluída (ago/2026)
    ── terceira rodada de handoff, transversal ─────────────────────────────────────
@@ -51,7 +51,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
 
 **A trilha DS entrou em ago/2026 e rodou antes do 16**, com numeração própria em vez de inserida no arco — o porquê, e o custo medido de renumerar um plano já escrito, são de [`plan/active/README.md`](plan/active/README.md#a-trilha-de-design-system-ds-n). Executou primeiro por um motivo de custo: cada tela nova encarece a migração, e o 16 trouxe a pré-visualização de anexo e o cartão de dados. **O clipe em si, a DS-5 já tinha posto** — para abrir um dataset; o 16 trocou o que ele abre, sem duplicar o ícone ([`HISTORY.md`](HISTORY.md) § Plano 16).
 
-**A trilha R (refatoração) entrou em ago/2026**, também com numeração própria e transversal ao arco: aplica um padrão já decidido ao código que o precede, sem tocar comportamento. O [`R-1`](plan/active/R-1-comentarios-e-tsdoc.md) leva a skill [`comments`](../.claude/skills/comments/SKILL.md) ao `src/` inteiro e fecha, com um guard, o pior sintoma de reincidência.
+**A trilha R (refatoração) entrou em ago/2026**, também com numeração própria e transversal ao arco: aplica um padrão já decidido ao que a precede, sem tocar comportamento — código no caso do [`R-1`](plan/implemented/R-1-comentarios-e-tsdoc.md), que leva a skill [`comments`](../.claude/skills/comments/SKILL.md) ao `src/` inteiro e fecha, com um guard, o pior sintoma de reincidência; documentação no caso do [`R-2`](plan/implemented/R-2-documentacao-tecnica-e-historica.md), que sincroniza `README.md`/`docs/README.md`/quatro skills com o estado real do projeto e comprime+arquiva `HISTORY.md` por trilha fechada.
 
 **A trilha F (features avulsas) entrou em ago/2026**, também com numeração própria e transversal ao arco — mas por um motivo diferente de DS e R: nem envelope (DS nunca constrói feature) nem refatoração (R garante zero mudança de comportamento) cobrem uma feature nova, pequena, local, que não pertence à sequência de dados/IA. O [`F-1`](plan/implemented/F-1-marca-pensando.md) — o monograma do crivo animando enquanto o modelo responde — é o primeiro; nasceu de um guia de ferramenta externa, fora do arco por natureza, não por adiamento.
 
