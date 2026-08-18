@@ -1,18 +1,28 @@
-import { useId, type InputHTMLAttributes } from 'react'
+import type { InputHTMLAttributes } from 'react'
 
 export type SliderTick = { value: number; label: string }
 
 type SliderProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  'type' | 'min' | 'max' | 'step' | 'value' | 'onChange' | 'list'
+  'type' | 'min' | 'max' | 'step' | 'value' | 'onChange'
 > & {
   min: number
   max: number
   step: number
   value: number
+  /** Fires on every step while dragging/pressing a key — React's onChange for
+   *  a range input maps to the native `input` event, not `change`. Drive the
+   *  visible thumb/label from this. */
   onChange: (value: number) => void
-  /** Rendered as the native `<datalist>` (tick dashes on the track, Chromium-only
-   *  — fine, the app only ever runs on the embedded Chromium) and as labels below. */
+  /** Fires once the value settles (mouse/touch release, key release, blur) —
+   *  the native `change` event React does not expose directly. Optional:
+   *  callers that do not care about mid-drag frequency (no side effect behind
+   *  `onChange`) can omit it and read every step from `onChange` alone. */
+  onChangeCommitted?: (value: number) => void
+  /** Rendered as labels below the track, each positioned at its true share of
+   *  `min..max` — never flex-distributed evenly, which would misplace every
+   *  mark but the first/last for a non-linear sequence like context-window
+   *  doublings (1k, 2k, 4k, 8k…). */
   ticks: SliderTick[]
 }
 
@@ -36,15 +46,18 @@ function Slider({
   step,
   value,
   onChange,
+  onChangeCommitted,
   ticks,
   disabled,
   className,
   ...props
 }: SliderProps): React.JSX.Element {
-  const listId = useId()
+  const commit = (event: React.SyntheticEvent<HTMLInputElement>): void =>
+    onChangeCommitted?.(Number(event.currentTarget.value))
+  const percent = (tick: number): number => (min === max ? 0 : ((tick - min) / (max - min)) * 100)
 
   return (
-    <div className={['flex w-full flex-col gap-2', className].filter(Boolean).join(' ')}>
+    <div className={['flex w-full flex-col gap-3', className].filter(Boolean).join(' ')}>
       <input
         type="range"
         className={TRACK}
@@ -53,18 +66,22 @@ function Slider({
         step={step}
         value={value}
         disabled={disabled}
-        list={listId}
         onChange={(event) => onChange(Number(event.target.value))}
+        onMouseUp={commit}
+        onTouchEnd={commit}
+        onKeyUp={commit}
+        onBlur={commit}
         {...props}
       />
-      <datalist id={listId}>
+      <div className="relative h-[14px]">
         {ticks.map((tick) => (
-          <option key={tick.value} value={tick.value} label={tick.label} />
-        ))}
-      </datalist>
-      <div className="flex justify-between font-mono text-2xs text-text-faint">
-        {ticks.map((tick) => (
-          <span key={tick.value}>{tick.label}</span>
+          <span
+            key={tick.value}
+            className="absolute -translate-x-1/2 font-mono text-2xs whitespace-nowrap text-text-faint"
+            style={{ left: `${percent(tick.value)}%` }}
+          >
+            {tick.label}
+          </span>
         ))}
       </div>
     </div>

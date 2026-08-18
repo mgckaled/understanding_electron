@@ -33,6 +33,29 @@ describe('Slider', () => {
     expect(onChange).toHaveBeenCalledWith(8192)
   })
 
+  it('calls onChangeCommitted on release (mouseup), not on every onChange step', () => {
+    const onChange = vi.fn()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider
+        min={1024}
+        max={32768}
+        step={1024}
+        value={4096}
+        onChange={onChange}
+        onChangeCommitted={onChangeCommitted}
+        ticks={TICKS}
+      />
+    )
+    const input = screen.getByRole('slider')
+
+    fireEvent.change(input, { target: { value: '8192' } })
+    expect(onChangeCommitted).not.toHaveBeenCalled()
+
+    fireEvent.mouseUp(input, { target: { value: '8192' } })
+    expect(onChangeCommitted).toHaveBeenCalledWith(8192)
+  })
+
   it('disables the input', () => {
     render(
       <Slider

@@ -1,21 +1,20 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { AiModel } from '@shared/ipc'
-import { fitsInMemory, MIN_NUM_CTX, type Budget, type ConversationWindow } from '@core/ai/budget'
+import { fitsInMemory, type Budget } from '@core/ai/budget'
 import Field from '../../shared/ui/Field/Field'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
+import { formatContext, formatSize } from './modelFormat'
 
-// Two pills, not one (DS5.6, item 9): `ModelPicker` (this file) and
-// `ContextControl` (below) replaced a single popover that mixed model choice
-// with context-window admin. Split by CONCERN, not by file — both read the
-// same `models`/`ceilingOf`, so keeping them in one module avoids threading
-// that state through a barrel export. ConversationView composes the two (plus
-// the reload icon) inside the SAME render-prop Composer already calls
-// (DS4.8) — the prop's type never changes.
+// ModelPicker (this file) and ContextControl (own file, F2.7) replaced a
+// single popover that mixed model choice with context-window admin (DS5.6,
+// item 9). ConversationView composes the two (plus the reload icon) inside
+// the SAME render-prop Composer already calls (DS4.8) — the prop's type
+// never changes.
 
 // Capabilities the app has a word for; everything else renders under its raw
 // name, keeping the `string[]` promise alive on screen (`insert` arrived
@@ -30,18 +29,6 @@ function badges(model: AiModel): string[] {
   return model.capabilities
     .filter((capability) => capability !== 'completion')
     .map((capability) => CAPABILITY_LABEL[capability] ?? capability)
-}
-
-function formatSize(bytes: number): string {
-  return `${(bytes / 1024 ** 3).toFixed(1).replace('.', ',')} GB`
-}
-
-/**
- * 131072 → "128k", 32768 → "32k". Binary thousands — what the number is and how
- * model cards write it; the order of magnitude is the decision, not the digits.
- */
-function formatContext(tokens: number | null): string | null {
-  return tokens === null ? null : `${Math.round(tokens / 1024)}k`
 }
 
 // Marked, not disabled: free RAM is a snapshot of a machine the user is also
@@ -208,115 +195,6 @@ function ModelPicker({
   )
 }
 
-// Replaces the pill label when no window fits at all.
-const TOO_BIG = 'max-w-[320px] self-end text-2xs text-warn-text'
-
-type ContextControlProps = {
-  contextWindow: ConversationWindow
-  /** The conversation's resolved model, or undefined if none is installed/chosen. */
-  current: AiModel | undefined
-  /** `ceilingOf(current)` — computed once by the caller, which already has both. */
-  ceiling: number | null
-  disabled: boolean
-  /** The pair closed on this conversation's first send (D15.13). */
-  locked: boolean
-  /** Identity of the conversation, so the window control re-reads on switch. */
-  scopeKey: string
-  onNumCtx: (tokens: number) => void
-}
-
-/** The context-window pill: ceiling/reservation and the refusal states. */
-function ContextControl({
-  contextWindow,
-  current,
-  ceiling,
-  disabled,
-  locked,
-  scopeKey,
-  onNumCtx
-}: ContextControlProps): React.JSX.Element {
-  const fits = fitsInMemory(ceiling)
-  const [open, setOpen] = useState(false)
-  const anchorName = toAnchorName(useId())
-
-  const label =
-    contextWindow.status === 'too-large' ? '—' : (formatContext(contextWindow.numCtx) ?? '—')
-
-  return (
-    <>
-      <Field label="Janela de contexto" inline>
-        <button
-          type="button"
-          className="flex h-(--control-height-md) max-w-[120px] cursor-pointer items-center gap-2 rounded-md border border-border bg-surface-sunken px-5 font-ui text-sm text-text disabled:cursor-not-allowed disabled:text-text-faint"
-          style={{ anchorName }}
-          disabled={disabled}
-          aria-haspopup="dialog"
-          onClick={() => setOpen((value) => !value)}
-        >
-          <span>{label}</span>
-          <ChevronDown size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
-        </button>
-      </Field>
-      <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
-        <div className="flex w-[240px] flex-col gap-1">
-          {/* No window at all: offering the control here is what produced "até 0k"
-              and a clamp to zero, which the IPC schema then rejected (D15.2). */}
-          {current !== undefined && contextWindow.status === 'too-large' && (
-            <p className={`mt-2 px-2 ${TOO_BIG}`} role="alert">
-              Não cabe na memória livre: {formatSize(current.sizeBytes)} de pesos, mais o cache.
-              Feche aplicativos e recarregue
-              {locked ? ', ou comece uma conversa nova.' : ', ou escolha um modelo menor.'}
-            </p>
-          )}
-
-          {/* The lock's asymmetric second failure mode: the reservation is remade on
-              every load and free RAM varies by 3 GB here, so refusing is the point —
-              shrinking in silence would undo the lock's guarantee (D15.13). */}
-          {contextWindow.status === 'unaffordable' && (
-            <p className={`mt-2 px-2 ${TOO_BIG}`} role="alert">
-              Esta conversa reservou {contextWindow.numCtx.toLocaleString('pt-BR')} tokens, e a
-              memória livre agora não comporta. Feche aplicativos e recarregue.
-            </p>
-          )}
-
-          {contextWindow.status === 'locked' && (
-            // A stated number, not a control (D15.13).
-            <p className="mt-2 px-2 text-xs whitespace-nowrap text-text-muted">
-              Contexto: {contextWindow.numCtx.toLocaleString('pt-BR')} tokens · travado
-            </p>
-          )}
-
-          {contextWindow.status === 'open' && fits && ceiling !== null && (
-            <div className="mt-2 px-2">
-              <Field label="Contexto" hint={`até ${formatContext(ceiling)}`}>
-                {/* Uncontrolled and re-keyed: useState(stored) would copy the value on
-                    the first render, before the conversation read returns (fase 14). */}
-                <input
-                  key={`${scopeKey}:${contextWindow.numCtx}`}
-                  className="w-[88px] rounded-md border border-border bg-surface-sunken px-4 py-2 font-ui text-xs text-text focus-visible:border-accent-text focus-visible:outline-none"
-                  type="number"
-                  min={MIN_NUM_CTX}
-                  max={ceiling}
-                  step={MIN_NUM_CTX}
-                  defaultValue={contextWindow.numCtx}
-                  disabled={disabled}
-                  // On blur, not per keystroke — clamping while typing turns a cleared
-                  // field into the floor. The floor also keeps 0 off the IPC boundary.
-                  onBlur={(event) => {
-                    const parsed = Number(event.target.value)
-                    if (!Number.isFinite(parsed) || parsed <= 0) return
-                    onNumCtx(Math.min(Math.max(Math.round(parsed), MIN_NUM_CTX), ceiling))
-                  }}
-                />
-              </Field>
-            </div>
-          )}
-        </div>
-      </Popover>
-    </>
-  )
-}
-
 type BudgetMeterProps = {
   /**
    * The Composer's own gate (DS4.5/DS4.8, D13.2) — this only displays it, the
@@ -349,4 +227,4 @@ function BudgetMeter({ budget }: BudgetMeterProps): React.JSX.Element | null {
   )
 }
 
-export { ModelPicker, ContextControl, BudgetMeter }
+export { ModelPicker, BudgetMeter }
