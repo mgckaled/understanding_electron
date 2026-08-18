@@ -5,7 +5,7 @@ description: O contrato IPC do crivo — src/shared/ipc.ts como declaração ún
 
 # IPC — crivo
 
-> Nascida na fase [02](../../../docs/plan/implemented/02-contrato-ipc.md), crescida nas fases [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) e nos planos 14–15. **Separada da skill `architecture` em ago/2026**, quando o vigésimo canal disparou o gatilho que o [`ROADMAP § 2`](../../../docs/ROADMAP.md) tinha declarado. A `architecture` continua dona das camadas, da regra de importação e do sandbox, e aponta para cá.
+> Nascida na fase [02](../../../docs/plan/implemented/02-contrato-ipc.md), crescida nas fases [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) e nos planos 14–15. **Separada da skill `architecture` em ago/2026**, quando o vigésimo canal disparou o gatilho que o [`ROADMAP § 2`](../../../docs/ROADMAP.md) tinha declarado; os planos 16 e 17 mudaram o contrato de novo — domínios `document` e `image` novos, `ai:chat` trocou `ChatMessage[]` por `Message[]`. A `architecture` continua dona das camadas, da regra de importação e do sandbox, e aponta para cá.
 
 ## O contrato é um mapa, e ele tem dois consumidores
 
@@ -103,7 +103,9 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 **A decisão por Arrow continua certa, por outro motivo:** o *structured clone* binário elimina a alocação de um milhão de objetos e a conversão para texto. É cópia rápida de bloco contíguo, não transferência de posse — e a diferença sobre JSON segue sendo de ordens de grandeza. O que muda é o que se pode prometer: **todo resultado grande é pago duas vezes em memória, momentaneamente**, o que dá dentes à regra do [`ESCOPO`](../../../docs/ESCOPO.md) de nenhuma etapa materializar o resultado completo em JavaScript. Ver [`HISTORY.md`](../../../docs/HISTORY.md) § `ArrayBuffer` transferível.
 
-## Os 22 canais de hoje
+**A pergunta já tem resposta prática, e não é um canal:** bytes de imagem viajam do disco ao `<img>` do renderer pelo protocolo customizado `attachment://` (`src/main/attachments/protocol.ts`, `protocol.handle` + `registerSchemesAsPrivileged`, D17.6, plano 17) — nunca por `invoke`/JSON. É o caminho a seguir para qualquer payload binário futuro que precise chegar ao DOM.
+
+## Os 24 canais de hoje
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -111,6 +113,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `shell` | `openExternal` | sim |
 | `dataset` | `pick`, `attach` | sim |
 | `document` | `pick`, `attach` | sim |
+| `image` | `pick`, `attach` | sim |
 | `job` | `cancel` | não |
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat` | sim |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `append`, `settings` | não |
@@ -118,4 +121,4 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 Fora do mapa, por não passarem por `handle()`: `job:event`, declarado em `src/shared/channels.ts`.
 
-**Conte antes de afirmar que são muitos.** O gatilho do vigésimo canal existia para provocar esta separação e a provocou; o próximo limiar não está declarado, e declará-lo por reflexo repetiria o erro de escolher um número sem consequência medida. O que de fato reabre o desenho é **payload binário** (plano 16, anexo) — o primeiro canal cujo custo não é de latência.
+**Conte antes de afirmar que são muitos.** O gatilho do vigésimo canal existia para provocar esta separação e a provocou; o próximo limiar não está declarado, e declará-lo por reflexo repetiria o erro de escolher um número sem consequência medida.
