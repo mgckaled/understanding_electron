@@ -3,7 +3,16 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
-import type { Api, AppError, ChatReply, DatasetPart, JobEvent, Result } from '@shared/ipc'
+import type {
+  Api,
+  AppError,
+  ChatReply,
+  DatasetPart,
+  DocumentPart,
+  ImagePart,
+  JobEvent,
+  Result
+} from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
 import Settings from '../settings/Settings'
 import ConversationsProvider from './ConversationsProvider'
@@ -729,5 +738,94 @@ describe('ConversationView — resposta interrompida', () => {
 
     expect(api.conversation.append).toHaveBeenCalledTimes(1)
     expect(screen.queryByText(/interrompida/)).toBeNull()
+  })
+})
+
+/*
+ * Plano 17, passo 8 — the three attachment kinds coexisting, each in its own
+ * message (D17.3: one pending slot, never a mix in a single turn). Every kind
+ * has its own dedicated coverage elsewhere (AttachButton.test.tsx for the
+ * pick/attach flow, modelSelection.test.tsx for the image gate); what this
+ * test alone proves is that sending one kind after another in the SAME
+ * conversation does not leak state between turns — each card renders from
+ * its OWN message's part, not a stale one left over from the last send.
+ */
+describe('ConversationView — os três tipos de anexo numa conversa', () => {
+  const DATASET: DatasetPart = {
+    kind: 'dataset',
+    hash: 'h-dataset',
+    fileName: 'vendas.csv',
+    delimiter: ',',
+    columns: ['id', 'valor'],
+    rowCount: 10
+  }
+  const DOCUMENT: DocumentPart = {
+    kind: 'document',
+    hash: 'h-document',
+    fileName: 'especificacao.md',
+    format: 'md',
+    text: 'a coluna id é a chave primária'
+  }
+  const IMAGE: ImagePart = {
+    kind: 'image',
+    hash: 'h-image',
+    fileName: 'grafico.png',
+    mimeType: 'image/png'
+  }
+
+  it('sends a dataset, a document, and an image as three separate messages', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'ok' } })
+    vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/vendas.csv' } })
+    vi.mocked(api.dataset.attach).mockResolvedValue({ ok: true, value: DATASET })
+    vi.mocked(api.document.pick).mockResolvedValue({ ok: true, value: { path: '/spec.md' } })
+    vi.mocked(api.document.attach).mockResolvedValue({ ok: true, value: DOCUMENT })
+    vi.mocked(api.image.pick).mockResolvedValue({ ok: true, value: { path: '/grafico.png' } })
+    vi.mocked(api.image.attach).mockResolvedValue({ ok: true, value: IMAGE })
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
+    await screen.findByText('vendas.csv')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'o que tem nesse arquivo?')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('ok')
+
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    await user.click(screen.getByRole('button', { name: 'Documentos', hidden: true }))
+    await screen.findByText('especificacao.md')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'o que diz a especificação?')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    await user.click(screen.getByRole('button', { name: 'Imagens', hidden: true }))
+    await screen.findByText('grafico.png')
+    await user.type(screen.getByPlaceholderText(PROMPT), 'o que é esse gráfico?')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    // All three cards on screen at once, each still carrying its OWN part —
+    // the failure mode this guards is a card rendering the PREVIOUS turn's
+    // attachment because state leaked across sends.
+    expect(await screen.findByText('vendas.csv')).toBeInTheDocument()
+    expect(screen.getByText('2 colunas · 10 linhas')).toBeInTheDocument()
+    expect(screen.getByText('especificacao.md')).toBeInTheDocument()
+    expect(screen.getByText('MD')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'grafico.png' })).toHaveAttribute(
+      'src',
+      'attachment://h-image'
+    )
+
+    // Three user turns, three assistant replies — none merged or dropped.
+    // Scoped to the message list: the header <h1> echoes the first message's
+    // text as the conversation's title (D13.9), which would double-count it.
+    const thread = within(screen.getByRole('list'))
+    expect(thread.getAllByText('o que tem nesse arquivo?')).toHaveLength(1)
+    expect(thread.getAllByText('o que diz a especificação?')).toHaveLength(1)
+    expect(thread.getAllByText('o que é esse gráfico?')).toHaveLength(1)
+    expect(thread.getAllByText('ok')).toHaveLength(3)
   })
 })

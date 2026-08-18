@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
+import type { MessagePart } from '@shared/ipc'
 import { openDatabase } from '../db/open'
 import {
   appendMessage,
@@ -15,11 +16,26 @@ import { collectOrphanedAttachments, referencedHashes } from './gc'
 // id reused in a later test against a different, empty database.
 const seededConversations = new WeakMap<DatabaseSync, Set<string>>()
 
+type AttachmentKind = 'dataset' | 'document' | 'image'
+
+/** One part per kind (plano 17 passo 8) — the shape gc.ts reads is `parts[].hash`, whichever kind it comes from. */
+function attachmentPart(kind: AttachmentKind, hash: string): MessagePart {
+  switch (kind) {
+    case 'dataset':
+      return { kind, hash, fileName: 'a.csv', delimiter: ',', columns: ['id'], rowCount: 1 }
+    case 'document':
+      return { kind, hash, fileName: 'a.md', format: 'md', text: 'conteúdo' }
+    case 'image':
+      return { kind, hash, fileName: 'a.png', mimeType: 'image/png' }
+  }
+}
+
 function withMessage(
   db: DatabaseSync,
   conversationId: string,
   messageId: string,
-  hash: string | null
+  hash: string | null,
+  kind: AttachmentKind = 'dataset'
 ): void {
   const seeded = seededConversations.get(db) ?? new Set<string>()
   seededConversations.set(db, seeded)
@@ -33,19 +49,7 @@ function withMessage(
       message: {
         id: messageId,
         role: 'user',
-        parts:
-          hash === null
-            ? [{ kind: 'text', text: 'oi' }]
-            : [
-                {
-                  kind: 'dataset',
-                  hash,
-                  fileName: 'a.csv',
-                  delimiter: ',',
-                  columns: ['id'],
-                  rowCount: 1
-                }
-              ],
+        parts: hash === null ? [{ kind: 'text', text: 'oi' }] : [attachmentPart(kind, hash)],
         createdAt: 1
       }
     },
@@ -69,6 +73,18 @@ describe('referencedHashes', () => {
     withMessage(db, 'c1', 'm1', null)
 
     expect(referencedHashes(db)).toEqual(new Set())
+    db.close()
+  })
+
+  it('collects hashes across all three attachment kinds (plano 17 passo 8)', () => {
+    // No change to gc.ts to make this pass — referencedHashes already reads
+    // `parts[].hash` off any element of the array, whichever kind it is.
+    const db = openDatabase(':memory:')
+    withMessage(db, 'c1', 'm1', 'h-dataset', 'dataset')
+    withMessage(db, 'c1', 'm2', 'h-document', 'document')
+    withMessage(db, 'c1', 'm3', 'h-image', 'image')
+
+    expect(referencedHashes(db)).toEqual(new Set(['h-dataset', 'h-document', 'h-image']))
     db.close()
   })
 })
@@ -118,6 +134,29 @@ describe('collectOrphanedAttachments', () => {
     await collectOrphanedAttachments(db, dir)
 
     expect(existsSync(join(dir, 'solo'))).toBe(false)
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('sweeps the three kinds correctly in one pass: keeps referenced, deletes orphaned (plano 17 passo 8)', async () => {
+    const db = openDatabase(':memory:')
+    withMessage(db, 'c1', 'm1', 'kept-dataset', 'dataset')
+    withMessage(db, 'c1', 'm2', 'kept-document', 'document')
+    withMessage(db, 'c1', 'm3', 'kept-image', 'image')
+    const dir = tempDir()
+    writeFileSync(join(dir, 'kept-dataset'), 'a')
+    writeFileSync(join(dir, 'kept-document'), 'b')
+    writeFileSync(join(dir, 'kept-image'), 'c')
+    writeFileSync(join(dir, 'orphan-document'), 'd') // never referenced by any message
+    writeFileSync(join(dir, 'orphan-image'), 'e')
+
+    await collectOrphanedAttachments(db, dir)
+
+    expect(existsSync(join(dir, 'kept-dataset'))).toBe(true)
+    expect(existsSync(join(dir, 'kept-document'))).toBe(true)
+    expect(existsSync(join(dir, 'kept-image'))).toBe(true)
+    expect(existsSync(join(dir, 'orphan-document'))).toBe(false)
+    expect(existsSync(join(dir, 'orphan-image'))).toBe(false)
     db.close()
     rmSync(dir, { recursive: true, force: true })
   })
