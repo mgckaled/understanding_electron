@@ -446,8 +446,9 @@ describe('the vision gate on send', () => {
 
   it('shows the miniature in the transcript once an attached image is sent', async () => {
     // The aceite table's "mostra miniatura" clause — the card is
-    // AttachmentCard → ImageCard, an <img src="attachment://<hash>">
-    // rendered above the user's own bubble (ConversationView.tsx).
+    // AttachmentCard → ImageCard, collapsed behind a filename header until
+    // clicked, then an <img src="attachment://<hash>"> above the user's own
+    // bubble (ConversationView.tsx).
     const user = userEvent.setup()
     const api = mount()
     vi.mocked(api.image.pick).mockResolvedValue({ ok: true, value: { path: '/grafico.png' } })
@@ -459,6 +460,7 @@ describe('the vision gate on send', () => {
     await user.type(screen.getByPlaceholderText(PROMPT), 'o que é isso?')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
+    await user.click(await screen.findByRole('button', { name: /grafico\.png/ }))
     const miniature = await screen.findByRole('img', { name: 'grafico.png' })
     expect(miniature).toHaveAttribute('src', 'attachment://img1')
   })

@@ -814,10 +814,10 @@ describe('ConversationView — os três tipos de anexo numa conversa', () => {
     expect(screen.getByText('2 colunas · 10 linhas')).toBeInTheDocument()
     expect(screen.getByText('especificacao.md')).toBeInTheDocument()
     expect(screen.getByText('MD')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'grafico.png' })).toHaveAttribute(
-      'src',
-      'attachment://h-image'
-    )
+    // ImageCard is collapsed by default (mirrors DocumentCard) — the miniature
+    // itself, revealed on click, is proven separately in modelSelection.test.tsx.
+    expect(screen.getByText('grafico.png')).toBeInTheDocument()
+    expect(screen.getByText('PNG')).toBeInTheDocument()
 
     // Three user turns, three assistant replies — none merged or dropped.
     // Scoped to the message list: the header <h1> echoes the first message's
