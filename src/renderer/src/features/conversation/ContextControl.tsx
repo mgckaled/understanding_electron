@@ -42,11 +42,33 @@ type ContextSliderProps = {
 }
 
 /**
+ * The nearest tick's index — `initial` is not always one of the doublings
+ * (a conversation created before this control existed can hold any
+ * 1024-multiple).
+ */
+function nearestTickIndex(ticks: SliderTick[], tokens: number): number {
+  let best = 0
+  for (let index = 1; index < ticks.length; index++) {
+    if (Math.abs(ticks[index]!.value - tokens) < Math.abs(ticks[best]!.value - tokens)) best = index
+  }
+  return best
+}
+
+/**
  * The live thumb position lives here, separate from `onCommit` (F2.5): a drag
  * crosses many `step` boundaries, and firing `onCommit` — which persists via
  * IPC (D14.x) — on every one would spam the write the old `onBlur` input
  * avoided for the same reason. `onChangeCommitted` (mouseup/keyup/blur) is the
  * one call that reaches it.
+ *
+ * The slider moves over the TICK INDEX, not the raw token count — verified
+ * live (passo 8): doublings are not evenly spaced on a linear token axis
+ * (1024→2048 is 3% of a 32768 ceiling; 16384→32768 is 50%), so labels
+ * positioned at their true percentage collided at the low end. Indexing
+ * makes every step evenly spaced by construction, the same reading the
+ * Ollama reference gives at a glance — the tradeoff is picking only among
+ * the doublings, not any 1024-multiple in between, which this control never
+ * promised keyboard-adjacent granularity for anyway.
  */
 function ContextSlider({
   id,
@@ -56,19 +78,21 @@ function ContextSlider({
   disabled,
   onCommit
 }: ContextSliderProps): React.JSX.Element {
-  const [value, setValue] = useState(initial)
+  const ticks = contextTicks(ceiling)
+  const indexTicks = ticks.map((tick, index) => ({ value: index, label: tick.label }))
+  const [index, setIndex] = useState(() => nearestTickIndex(ticks, initial))
 
   return (
     <Slider
       id={id}
       aria-describedby={describedBy}
-      min={MIN_NUM_CTX}
-      max={ceiling}
-      step={MIN_NUM_CTX}
-      value={value}
-      onChange={setValue}
-      onChangeCommitted={onCommit}
-      ticks={contextTicks(ceiling)}
+      min={0}
+      max={ticks.length - 1}
+      step={1}
+      value={index}
+      onChange={setIndex}
+      onChangeCommitted={(committedIndex) => onCommit(ticks[committedIndex]!.value)}
+      ticks={indexTicks}
       disabled={disabled}
     />
   )

@@ -73,16 +73,30 @@ function Slider({
         onBlur={commit}
         {...props}
       />
-      <div className="relative h-[14px]">
-        {ticks.map((tick) => (
-          <span
-            key={tick.value}
-            className="absolute -translate-x-1/2 font-mono text-2xs whitespace-nowrap text-text-faint"
-            style={{ left: `${percent(tick.value)}%` }}
-          >
-            {tick.label}
-          </span>
-        ))}
+      {/* overflow-x-hidden: the first/last label's OWN centring would
+          otherwise poke a few px past the container at 0%/100% (verified
+          live, F2.5) — clamped per-label below instead of cut off here, this
+          is only the second line of defence. */}
+      <div className="relative h-[14px] overflow-x-hidden">
+        {ticks.map((tick, index) => {
+          // Centred on its mark, except the two ends: centring there would
+          // push half the label's own width past the track's edge.
+          const edge =
+            index === 0
+              ? 'translate-x-0'
+              : index === ticks.length - 1
+                ? '-translate-x-full'
+                : '-translate-x-1/2'
+          return (
+            <span
+              key={tick.value}
+              className={`absolute font-mono text-2xs whitespace-nowrap text-text-faint ${edge}`}
+              style={{ left: `${percent(tick.value)}%` }}
+            >
+              {tick.label}
+            </span>
+          )
+        })}
       </div>
     </div>
   )

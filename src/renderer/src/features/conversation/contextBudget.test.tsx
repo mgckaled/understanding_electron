@@ -48,16 +48,19 @@ async function paste(user: ReturnType<typeof userEvent.setup>, text: string): Pr
 }
 
 /**
- * Narrows the window so a modest draft can overflow it inside a test. The
- * control is a range slider (F2.5), not a text field — `user.clear`/`type`
- * do not apply; `fireEvent` mirrors a completed drag: `change` moves the
- * value, `mouseUp` is what Slider listens for to call `onChangeCommitted`.
+ * Narrows the window to its smallest step (1024 tokens — MIN_NUM_CTX, always
+ * index 0) so a modest draft can overflow it inside a test. The control is a
+ * range slider over TICK INDEX, not raw tokens — verified live (F2.5):
+ * doublings are not evenly spaced on a linear token axis, so the slider
+ * moves over the index and ContextSlider converts index→tokens on commit.
+ * `fireEvent` mirrors a completed drag: `change` moves the value, `mouseUp`
+ * is what Slider listens for to call `onChangeCommitted`.
  */
-async function setWindow(tokens: number): Promise<void> {
+async function narrowWindow(): Promise<void> {
   const field = await screen.findByLabelText('Contexto')
-  fireEvent.change(field, { target: { value: String(tokens) } })
+  fireEvent.change(field, { target: { value: '0' } })
   fireEvent.mouseUp(field)
-  await waitFor(() => expect((field as HTMLInputElement).value).toBe(String(tokens)))
+  await waitFor(() => expect((field as HTMLInputElement).value).toBe('0'))
 }
 
 describe('context budget', () => {
@@ -111,7 +114,7 @@ describe('context budget', () => {
     const user = userEvent.setup()
     const api = mount()
     await screen.findByText(/32.768 tokens/)
-    await setWindow(1024)
+    await narrowWindow()
 
     // ~1050 estimated tokens against a 1024 window — over the 90% the gate
     // allows, because the character estimate can undercount by a third.
@@ -129,7 +132,7 @@ describe('context budget', () => {
     const user = userEvent.setup()
     mount()
     await screen.findByText(/32.768 tokens/)
-    await setWindow(1024)
+    await narrowWindow()
 
     await paste(user, 'x'.repeat(4000))
 
@@ -140,7 +143,7 @@ describe('context budget', () => {
     const user = userEvent.setup()
     mount()
     await screen.findByText(/32.768 tokens/)
-    await setWindow(1024)
+    await narrowWindow()
 
     // 3.700 characters is ~974 tokens: UNDER the 1024 window. A gate placed at
     // the nominal ceiling would let this through, and the estimate is optimistic
