@@ -41,8 +41,12 @@ async function main(): Promise<void> {
     `duckdb ${duckdb.version()} configured\n${outsideRead}\n${postLockSet}`
   )
 
-  process.parentPort.on('message', (e) => {
-    process.parentPort.postMessage(`${e.data} (duckdb ${duckdb.version()})`)
+  // Passo 5: a real query through the configured connection — duckdb.version()
+  // never touches the instance or the restricted config, so it cannot stand
+  // in for this proof (D18A.3 Passo 5 acceptance).
+  process.parentPort.on('message', async (e) => {
+    const reader = await connection.runAndReadAll(String(e.data))
+    process.parentPort.postMessage(JSON.stringify(reader.getRowObjects()))
   })
 }
 

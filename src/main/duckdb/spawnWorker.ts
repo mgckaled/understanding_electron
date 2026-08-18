@@ -22,16 +22,15 @@ export function spawnDuckdbWorker(userDataPath: string): UtilityProcess {
 }
 
 /**
- * Round-trips a message through the configured worker and logs every reply —
- * live proof that the restricted config actually holds (D18A.3) and that main
- * and the DuckDB utilityProcess talk across the process boundary (D18A.5).
- * Passo 5 replaces the echo with a real query; nothing here is meant to
- * survive into 18-B.
+ * Runs `SELECT 42` through the configured worker and logs every reply — live
+ * proof that a real query crosses main → worker → DuckDBInstance → back
+ * (D18A.5), with the restricted config from Passo 4 already applied. No
+ * channel, no window.api yet; nothing here is meant to survive into 18-B.
  */
 export function probeDuckdbWorker(userDataPath: string): void {
   const worker = spawnDuckdbWorker(userDataPath)
   worker.on('message', (data) => {
     console.log('[duckdb worker]', data)
   })
-  worker.postMessage('duckdb worker handshake')
+  worker.postMessage('SELECT 42')
 }
