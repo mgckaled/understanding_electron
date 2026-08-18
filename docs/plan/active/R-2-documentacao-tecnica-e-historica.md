@@ -105,6 +105,60 @@ Diário preenchido (inclusive se o checklist do Passo 1 pegou algo de verdade no
 
 ---
 
+## Anexo — achados brutos dos agentes de auditoria (skills), para os Passos 11-14
+
+Transcrito verbatim dos 3 agentes Explore desta sessão, antes de qualquer compressão do Passo 8 consumir contexto. Os Passos 11-14 acima já resumem a ação a tomar; este anexo é a fonte de detalhe (linha, contagem exata, trecho) caso a memória da conversa não sobreviva a uma compactação. **Pode ser apagado no Passo 15**, junto do resto do plano.
+
+### Skill `architecture` (Passo 12)
+
+**Desatualização concreta**
+- Linha 61: o mapa da árvore do renderer lista `features/<assunto>/ conversation, open-dataset, settings`. `open-dataset` não existe mais — o plano 16 renomeou a pasta para `features/attachment/` (confirmado em `src/renderer/src/features/`: hoje é `attachment`, `conversation`, `settings`; HISTORY.md registra "`features/open-dataset/` vira `features/attachment/`"). Referência de caminho quebrada.
+- Linhas 100–102: o exemplo que sustenta "tipo em `shared/ipc.ts` não implica canal" (`Conversation`/`Message`/`MessagePart` "sem schema zod e sem canal") descreve o estado da fase 13. Hoje `MessagePart` tem schema zod completo (`dataset`/`document`/`image`) e canal correspondente (`dataset:attach`, `document:attach`, `image:attach`) desde os planos 16/17. O princípio segue válido, mas o exemplo específico já não ilustra o estado atual — trocar por outro caso ou marcar como histórico explícito.
+
+**Redundância — o achado mais concreto**
+- Linhas 85–94 ("Erro é dado, não exceção") reproduzem quase palavra por palavra a mesma tabela, a mesma definição de `Result<T, E=AppError>` e o mesmo parágrafo sobre `ipcRenderer.invoke` rejeitando com `Error invoking remote method` que aparecem em `ipc/SKILL.md` linhas 42–55. Especialmente grave porque duas seções depois (linhas 96–98) a própria skill declara: "a régua de `Result` vs exceção... saíram daqui em ago/2026 para a skill `ipc`... Não há resumo aqui: fato duplicado é o que a regra de fonte única existe para evitar" — mas o resumo continua presente, acima dessa mesma frase. A seção 85–94 deveria virar um ponteiro para `ipc/SKILL.md`, igual ao que já acontece corretamente nas linhas 108 e 118.
+
+**Conteúdo mal localizado (menor)**
+- Linhas 124–126 ("Convenção de idioma") tratam de convenção de código genérica, mais afim ao `CLAUDE.md` ou à skill `comments` do que a decisão estrutural — **mas o `CLAUDE.md` já delega explicitamente a esta skill** ("Detalhe e armadilha diagnosticada: skill architecture"), então a decisão tomada no plano foi manter, não mover.
+
+### Skill `ipc` (Passo 11)
+
+**Desatualização concreta — a mais séria do conjunto**
+- Linhas 106–119, tabela "Os 22 canais de hoje": contagem real hoje é **24** (`grep -c "handle(" src/main/ipc/register-all.ts` = 24; `argsSchema` em `src/shared/ipc.ts` também lista 24 entradas). A tabela **omite inteiramente o domínio `image`** (`image:pick`, `image:attach`), implementado desde o plano 17 com handlers próprios em `src/main/features/image/handlers.ts` e canal com `Result`, igual a `dataset`/`document`. O cabeçalho (linha 8: "nos planos 14–15") também não reflete que os planos 16 e 17 alteraram o contrato (novo domínio `document`, novo domínio `image`, `ai:chat` mudou de `ChatMessage[]` para `Message[]`).
+- Linha 121: "O que de fato reabre o desenho é payload binário (plano 16, anexo)" trata o plano 16 como gatilho futuro/pendente — mas os planos 16 **e** 17 já estão em `plan/implemented/`. Mais grave: quando a questão de payload binário foi de fato resolvida, a solução não foi um canal IPC — foi um protocolo customizado `attachment://` (`src/main/attachments/protocol.ts`, `protocol.handle` + `registerSchemesAsPrivileged`, D17.6) que serve bytes ao `<img>` sem passar por `invoke`/JSON. Esse mecanismo — a resposta real à pergunta que a seção "Payload binário" (linhas 94–104) deixa em aberto — não é mencionado em lugar nenhum da skill.
+
+**Verbosidade/ruído**: nada de peso — a skill é enxuta e aponta corretamente para fora em vez de duplicar (linha 23 cita ISP "registrada na skill `architecture`" em vez de reexplicar).
+
+### Skill `design-system` (Passo 13)
+
+**Desatualização concreta**
+- Linhas 3 (frontmatter) e 101–103: afirma "os seis primitivos (Button, Field, Panel, Toolbar, Dialog, Popover)... em CSS Modules". Falso desde a trilha DS-1..DS-5: verificado por Glob + leitura de código, só `Dialog/Dialog.module.css`, `Popover/Popover.module.css` e `MarkdownMessage/MarkdownMessage.module.css` existem; `Button.tsx`, `Field.tsx`, `Panel.tsx`, `Toolbar.tsx` são 100% classes utilitárias Tailwind.
+- Linha 49: "grep por `#` seguido de hex em `*.module.css` fora desse arquivo é o teste" descreve só metade do mecanismo atual. `guard.mjs` hoje também inspeciona `.tsx` (`isRendererTsx`) para valores arbitrários Tailwind (`bg-[#hex]`) — a skill não menciona essa segunda metade.
+- A skill nunca cita a palavra "Tailwind" nem `@theme inline`/`@utility`/`tailwind.css`, apesar de cinco planos inteiros (DS-1 a DS-5) terem reconstruído a camada de estilo dos componentes sobre `tokens.css`. O cabeçalho (linha 8) só cita a fase 05, nunca a trilha DS.
+
+**Redundância**: linhas 91–95 ("Controle que COPIA um valor...") reexplicam em prosa duas armadilhas (fase 13 e 14) antes de apontar para `HISTORY.md`, quando um resumo de 1 linha + citação bastaria.
+
+**Conteúdo mal localizado**: linhas 111–113 ("Ref é prop comum desde o React 19") é convenção geral de React/TS, sem relação com token/primitivo — sem dono natural no projeto; decisão tomada no plano foi remover, não mover.
+
+**Omissão notável**: `MarkdownMessage` existe em `shared/ui/` com `.module.css` por "limite físico" (mesmo motivo do `Dialog`), mas a skill não o menciona nem como sétimo componente nem como exceção à regra CSS Modules/Tailwind.
+
+### Skill `testing` (Passo 14)
+
+**Desatualização concreta**: linhas 100–102 citam "207 testes, 28 arquivos" e "15–19s... ao fim da fase 14" como se fosse o estado de referência do projeto. Planos posteriores já reportam 452 testes/49 arquivos (plano 17) — **remedir com `pnpm test` no momento de executar o passo, não copiar nenhum destes dois números**.
+
+**Redundância (achado principal)**: as cinco descobertas de "o jsdom não é um navegador" (linhas 44–53) duplicam quase textualmente cinco entradas dedicadas em `HISTORY.md`, cada uma já citável por título/âncora:
+- scroll assíncrono (skill linha 44) ≈ HISTORY "O evento `scroll` é assíncrono...";
+- `<dialog>` no jsdom (skill linha 46) ≈ HISTORY "O jsdom não implementa `<dialog>`..." — frase "seria testar o shim" repetida quase idêntica nos dois lugares, mesmo arquivo (`HTMLDialogElement-impl.js`), mesma versão (30.0.1);
+- animação (skill linha 52) ≈ HISTORY "`animationiteration` borbulha..." — mesmo `typeof window.AnimationEvent === 'undefined'`;
+- `prefers-color-scheme` do Playwright (skill linha 50) ≈ HISTORY "O Playwright emula `prefers-color-scheme: light`...".
+Mesmo padrão nas "Armadilhas" da skill (linhas 64–66 vazamento do asar ≈ HISTORY "`app.asar` empacotava..."; linhas 68–72 import de `electron` ≈ HISTORY "Import de `electron`..."; linhas 74–76 glob de `coverage.include` ≈ HISTORY "Glob de `coverage.include`...") — mesmos números, mesmos caminhos de arquivo, mesma narrativa, sem citação por id.
+
+**Ruído**: o gap "jsdom não implementa X" é dito três vezes em detalhe crescente (frontmatter, título da seção, cada item).
+
+**Ação**: comprimir a seção inteira (linhas 40–54) a 5 regras de uma linha ("comportamento X só se prova ao vivo, ver HISTORY §Y"), e as 3 armadilhas (asar/electron/coverage) a citação de uma linha cada — os alvos no `HISTORY.md` já foram mantidos vivos de propósito para isso (nenhum dos 6 está na lista de armadilhas migradas para o archive no Passo 7).
+
+---
+
 ## Diário de execução
 
 | Data | Sessão | O que foi feito | Onde parei |
