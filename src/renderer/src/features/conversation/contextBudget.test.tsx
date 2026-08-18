@@ -48,19 +48,19 @@ async function paste(user: ReturnType<typeof userEvent.setup>, text: string): Pr
 }
 
 /**
- * Narrows the window to its smallest step (1024 tokens — MIN_NUM_CTX, always
- * index 0) so a modest draft can overflow it inside a test. The control is a
- * range slider over TICK INDEX, not raw tokens — verified live (F2.5):
- * doublings are not evenly spaced on a linear token axis, so the slider
- * moves over the index and ContextSlider converts index→tokens on commit.
+ * Narrows the window to its smallest step (1024 tokens — MIN_NUM_CTX) so a
+ * modest draft can overflow it inside a test. The control is a range slider
+ * over the raw token count, same domain as the `<input type="number">` it
+ * replaced — an earlier index-based version was reverted after advisor
+ * review found it could round a pre-existing value on a stray blur (F2.5).
  * `fireEvent` mirrors a completed drag: `change` moves the value, `mouseUp`
  * is what Slider listens for to call `onChangeCommitted`.
  */
 async function narrowWindow(): Promise<void> {
   const field = await screen.findByLabelText('Contexto')
-  fireEvent.change(field, { target: { value: '0' } })
+  fireEvent.change(field, { target: { value: '1024' } })
   fireEvent.mouseUp(field)
-  await waitFor(() => expect((field as HTMLInputElement).value).toBe('0'))
+  await waitFor(() => expect((field as HTMLInputElement).value).toBe('1024'))
 }
 
 describe('context budget', () => {

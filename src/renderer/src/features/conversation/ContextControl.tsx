@@ -32,6 +32,39 @@ function contextTicks(ceiling: number): SliderTick[] {
   return values.map((value) => ({ value, label: formatContext(value) ?? String(value) }))
 }
 
+/**
+ * A thinned subset for the LABELS only — the slider's reachable values never
+ * change. Doublings are not evenly spaced on a linear token axis (1024→2048
+ * is 3% of a 32768 ceiling; 16384→32768 is 50%), so the low end collides at
+ * any width a popover can reasonably take (verified live: even 500px+ cannot
+ * fit three labels inside a 9% span). Keeps first/last always; a mark in
+ * between survives only once it clears `minGapPercent` from both.
+ */
+function thinLabels(
+  ticks: SliderTick[],
+  min: number,
+  max: number,
+  minGapPercent = 10
+): SliderTick[] {
+  if (ticks.length <= 2) return ticks
+  const percent = (value: number): number => (max === min ? 0 : ((value - min) / (max - min)) * 100)
+  const first = ticks[0]!
+  const last = ticks[ticks.length - 1]!
+  const lastPercent = percent(last.value)
+  const kept: SliderTick[] = [first]
+  let previousPercent = percent(first.value)
+  for (let index = 1; index < ticks.length - 1; index++) {
+    const tick = ticks[index]!
+    const p = percent(tick.value)
+    if (p - previousPercent >= minGapPercent && lastPercent - p >= minGapPercent) {
+      kept.push(tick)
+      previousPercent = p
+    }
+  }
+  kept.push(last)
+  return kept
+}
+
 type ContextSliderProps = {
   id?: string
   'aria-describedby'?: string
@@ -42,33 +75,21 @@ type ContextSliderProps = {
 }
 
 /**
- * The nearest tick's index — `initial` is not always one of the doublings
- * (a conversation created before this control existed can hold any
- * 1024-multiple).
- */
-function nearestTickIndex(ticks: SliderTick[], tokens: number): number {
-  let best = 0
-  for (let index = 1; index < ticks.length; index++) {
-    if (Math.abs(ticks[index]!.value - tokens) < Math.abs(ticks[best]!.value - tokens)) best = index
-  }
-  return best
-}
-
-/**
  * The live thumb position lives here, separate from `onCommit` (F2.5): a drag
  * crosses many `step` boundaries, and firing `onCommit` — which persists via
  * IPC (D14.x) — on every one would spam the write the old `onBlur` input
  * avoided for the same reason. `onChangeCommitted` (mouseup/keyup/blur) is the
  * one call that reaches it.
  *
- * The slider moves over the TICK INDEX, not the raw token count — verified
- * live (passo 8): doublings are not evenly spaced on a linear token axis
- * (1024→2048 is 3% of a 32768 ceiling; 16384→32768 is 50%), so labels
- * positioned at their true percentage collided at the low end. Indexing
- * makes every step evenly spaced by construction, the same reading the
- * Ollama reference gives at a glance — the tradeoff is picking only among
- * the doublings, not any 1024-multiple in between, which this control never
- * promised keyboard-adjacent granularity for anyway.
+ * The domain stays the raw token count, exactly like the `<input type="number">`
+ * it replaces — never an index into the doublings. A conversation from before
+ * this control existed can hold any 1024-multiple (e.g. 12288), and an index
+ * domain would seat the thumb at the nearest doubling while the pill still
+ * read the true value, then commit that rounded value on a stray blur with no
+ * drag at all — the exact defect `ThreadsField` (Settings.tsx) already warns
+ * against for a value that predates a control. Advisor review caught this
+ * before ship; the crowding it was chasing is a label problem (`thinLabels`),
+ * not a granularity one.
  */
 function ContextSlider({
   id,
@@ -79,20 +100,20 @@ function ContextSlider({
   onCommit
 }: ContextSliderProps): React.JSX.Element {
   const ticks = contextTicks(ceiling)
-  const indexTicks = ticks.map((tick, index) => ({ value: index, label: tick.label }))
-  const [index, setIndex] = useState(() => nearestTickIndex(ticks, initial))
+  const labels = thinLabels(ticks, MIN_NUM_CTX, ceiling)
+  const [tokens, setTokens] = useState(initial)
 
   return (
     <Slider
       id={id}
       aria-describedby={describedBy}
-      min={0}
-      max={ticks.length - 1}
-      step={1}
-      value={index}
-      onChange={setIndex}
-      onChangeCommitted={(committedIndex) => onCommit(ticks[committedIndex]!.value)}
-      ticks={indexTicks}
+      min={MIN_NUM_CTX}
+      max={ceiling}
+      step={MIN_NUM_CTX}
+      value={tokens}
+      onChange={setTokens}
+      onChangeCommitted={onCommit}
+      ticks={labels}
       disabled={disabled}
     />
   )
@@ -147,8 +168,10 @@ function ContextControl({
       <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
         {/* Wider than the other three branches need (240px) — the slider's tick
             labels (F2.5) are what asks for it; the rascunho itself flagged that
-            the Ollama reference would need resizing to fit here. */}
-        <div className="flex w-[300px] flex-col gap-1">
+            the Ollama reference would need resizing to fit here. Widened again
+            past the first pass (300px) on user direction after live QA: more
+            room lets `thinLabels` keep more marks instead of dropping them. */}
+        <div className="flex w-[360px] flex-col gap-1">
           {/* No window at all: offering the control here is what produced "até 0k"
               and a clamp to zero, which the IPC schema then rejected (D15.2). */}
           {current !== undefined && contextWindow.status === 'too-large' && (
