@@ -2,4 +2,4 @@ allowBuilds:
   electron: true
   electron-winstaller: false
   esbuild: true
-shamefullyHoist: true
+shamefullyHoist: false
