@@ -13,6 +13,7 @@ docs/
 ├── README.md        # este arquivo — mapa, ciclo de vida e convenção de fonte única
 ├── ESCOPO.md        # o que o app faz e não faz — definição de produto
 ├── HISTORY.md       # changelog de decisões e entregas (cronológico inverso)
+├── HISTORY-archive.md  # trilhas encerradas (fundação, DS, R, F), comprimidas — só leitura
 ├── ROADMAP.md       # o que ainda falta — pendências e gatilhos de revisão
 ├── study/           # cadernos didáticos: Electron, stack, anatomia, diário de bordo
 ├── reference/       # referência técnica: nem plano, nem história, nem tutorial
@@ -84,6 +85,7 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Stack fixada, versões, regras invioláveis | [`CLAUDE.md`](../CLAUDE.md) | apontam |
 | Armadilhas diagnosticadas | [`HISTORY.md`](HISTORY.md) + `study/04-diario-de-bordo.md` | apontam |
 | Histórico, decisões, alternativas descartadas | [`HISTORY.md`](HISTORY.md) | apontam |
+| Trilhas encerradas (fundação, DS, R, F), comprimidas | [`HISTORY-archive.md`](HISTORY-archive.md) | apontam — nunca se conserta link interno lá dentro |
 | Pendências e gatilhos de revisão | [`ROADMAP.md`](ROADMAP.md) | apontam |
 | Fundamentos do Electron, anatomia, medições | [`study/`](study/README.md) | apontam |
 
