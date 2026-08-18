@@ -177,6 +177,18 @@ function AttachButton({
                   <Image size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
                   Imagens
                 </button>
+                {/* A `title` on a disabled control is not a reliable surface —
+                    Chromium's own tooltip machinery may not fire on it, and it
+                    is invisible to a test. This line is the actual hint
+                    (D17.11 — the plan's one required explanation). Sits right
+                    under Imagens, not after Código (advisor review: the two
+                    disabled items back to back read the hint as Código's,
+                    not Imagens'). */}
+                {!hasVision && (
+                  <p className="px-4 text-2xs text-text-muted">
+                    O modelo atual não processa imagens.
+                  </p>
+                )}
                 {/* Unconditionally disabled — unlike Imagens, no capability
                     gates it. The extractor exists for prose (ESCOPO.md linha
                     236) but document:pick's OS dialog filters only
@@ -190,15 +202,6 @@ function AttachButton({
                   <Code2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
                   Código
                 </button>
-                {/* A `title` on a disabled control is not a reliable surface —
-                    Chromium's own tooltip machinery may not fire on it, and it
-                    is invisible to a test. This line is the actual hint
-                    (D17.11 — the plan's one required explanation). */}
-                {!hasVision && (
-                  <p className="px-4 text-2xs text-text-muted">
-                    O modelo atual não processa imagens.
-                  </p>
-                )}
                 <div className="my-1 border-t border-border" />
                 <p className={GROUP_LABEL}>Ferramentas</p>
                 {TOOLS.map(({ label, Icon }) => (
