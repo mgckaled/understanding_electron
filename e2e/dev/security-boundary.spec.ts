@@ -43,6 +43,8 @@ test('exposes window.api and nothing beyond it', async () => {
     'app',
     'conversation',
     'dataset',
+    'document',
+    'image',
     'job',
     'settings',
     'shell'

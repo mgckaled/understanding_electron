@@ -24,21 +24,22 @@ test('attaches a file, shows it pending, then discards it via the chip', async (
     [fixturePath]
   )
 
-  // The trigger stays the composer's clip (DS5, item 7) — what it produces
-  // now rides the message instead of dying in the popover (plano 16). The
-  // popover closes itself before the native dialog opens (DS5.5).
-  await page.getByRole('button', { name: 'Anexar arquivo' }).click()
-  await page.getByRole('button', { name: 'Escolher arquivo' }).click()
+  // The trigger became a categories popover in plano 17 (Dados tabulares /
+  // Documentos / Imagens / Código) — picking a category closes the popover
+  // and opens the native dialog itself (DS5.5), no separate confirm click.
+  await page.getByRole('button', { name: 'Adicionar anexo' }).click()
+  await page.getByRole('button', { name: 'Dados tabulares' }).click()
 
   // The chip lives OUTSIDE the popover, visible without reopening it —
   // D16.6: "fica pendente no composer, como o rascunho".
   await expect(page.getByText('sample.csv')).toBeVisible()
 
-  // Reopening the clip shows the schema that was scanned alongside the hash.
-  await page.getByRole('button', { name: 'Anexar arquivo' }).click()
+  // Reopening the trigger with a pending attachment shows the scanned schema
+  // instead of the categories list (AttachButton's other popover branch).
+  await page.getByRole('button', { name: 'Adicionar anexo' }).click()
   await expect(page.getByText('id, name, city')).toBeVisible()
   await expect(page.getByText('2', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Anexar arquivo' }).click() // close again
+  await page.getByRole('button', { name: 'Adicionar anexo' }).click() // close again
 
   // The chip's own × discards the pending attachment without opening anything.
   await page.getByRole('button', { name: 'Remover anexo' }).click()
