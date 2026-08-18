@@ -45,6 +45,7 @@ import {
   updateConversationSettings
 } from '../features/conversation/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
+import { probeDuckdbWorker } from '../duckdb/spawnWorker'
 
 function broadcastJobEvent(event: JobEvent): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -134,6 +135,9 @@ export async function registerAll(): Promise<() => void> {
   // not fire-and-forget: it must finish before a window can exist to race it
   // with a fresh dataset:attach that has not been appended yet.
   await collectOrphanedAttachments(db, attachmentsDir).catch(() => {})
+
+  // Plan 18-A live check (Passo 3/5) — no channel, no window.api (D18A.5).
+  probeDuckdbWorker()
 
   return () => db.close()
 }
