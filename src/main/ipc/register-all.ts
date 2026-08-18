@@ -15,7 +15,8 @@ import { cancelJob } from '../features/job/handlers'
 import { readHashedFile } from '../features/dataset/lines'
 import { readDocumentFile, statDocumentSize } from '../features/document/readFile'
 import { readImageFile } from '../features/image/readFile'
-import { ensureAttachment } from '../attachments/storage'
+import { rasterizeToPng } from '../image/rasterize'
+import { ensureAttachment, ensureAttachmentBytes } from '../attachments/storage'
 import { handleAttachmentProtocol } from '../attachments/protocol'
 import { resolveAttachmentBytes } from '../attachments/readBytes'
 import { collectOrphanedAttachments } from '../attachments/gc'
@@ -86,7 +87,15 @@ export async function registerAll(): Promise<() => void> {
   )
   handle('image:pick', (args) => pickImage(args, dialog.showOpenDialog))
   handle('image:attach', (args) =>
-    attachImage(args, readImageFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
+    attachImage(
+      args,
+      readImageFile,
+      attachmentsDir,
+      ensureAttachment,
+      broadcastJobEvent,
+      rasterizeToPng,
+      ensureAttachmentBytes
+    )
   )
   handle('job:cancel', (args) => cancelJob(args))
   // Single provider in step 1 — the args.service enum admits only 'ollama'.

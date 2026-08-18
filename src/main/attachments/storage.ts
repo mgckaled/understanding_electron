@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, stat, unlink } from 'node:fs/promises'
+import { copyFile, mkdir, readdir, stat, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 // Content-addressed blob store (D16.3): userData/attachments/<hash>, no
@@ -25,6 +25,23 @@ export async function ensureAttachment(
   const target = join(dir, hash)
   if (await exists(target)) return
   await copyFile(sourcePath, target)
+}
+
+/**
+ * Writes `bytes` to `<dir>/<hash>` unless it is already there — the bytes-in-
+ * memory counterpart to {@link ensureAttachment}'s copy-from-path, for
+ * content that has no source file on disk to copy: a rasterized SVG/WebP
+ * (D17.7) exists only as a `Buffer` by the time it is hashed.
+ */
+export async function ensureAttachmentBytes(
+  dir: string,
+  hash: string,
+  bytes: Buffer
+): Promise<void> {
+  await mkdir(dir, { recursive: true })
+  const target = join(dir, hash)
+  if (await exists(target)) return
+  await writeFile(target, bytes)
 }
 
 /** Every hash currently stored under `dir` — the disk side of the D16.2 sweep. */

@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ensureAttachment, storedHashes, sweepUnreferenced } from './storage'
+import { ensureAttachment, ensureAttachmentBytes, storedHashes, sweepUnreferenced } from './storage'
 
 function tempDir(): string {
   return mkdtempSync(join(tmpdir(), 'crivo-attachments-'))
@@ -35,6 +35,27 @@ describe('ensureAttachment', () => {
 
     expect(readFileSync(join(dir, 'abc123'), 'utf8')).toBe('first write')
     rmSync(source, { recursive: true, force: true })
+    rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('ensureAttachmentBytes', () => {
+  it('writes bytes to dir/hash — the counterpart for content with no source file (D17.7)', async () => {
+    const dir = join(tempDir(), 'attachments')
+
+    await ensureAttachmentBytes(dir, 'png1', Buffer.from('rasterized png bytes'))
+
+    expect(readFileSync(join(dir, 'png1'), 'utf8')).toBe('rasterized png bytes')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('does not overwrite an already-stored hash', async () => {
+    const dir = join(tempDir(), 'attachments')
+    await ensureAttachmentBytes(dir, 'png1', Buffer.from('first'))
+
+    await ensureAttachmentBytes(dir, 'png1', Buffer.from('second, never written'))
+
+    expect(readFileSync(join(dir, 'png1'), 'utf8')).toBe('first')
     rmSync(dir, { recursive: true, force: true })
   })
 })
