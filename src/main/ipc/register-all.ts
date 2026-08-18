@@ -136,8 +136,8 @@ export async function registerAll(): Promise<() => void> {
   // with a fresh dataset:attach that has not been appended yet.
   await collectOrphanedAttachments(db, attachmentsDir).catch(() => {})
 
-  // Plan 18-A live check (Passo 3/5) — no channel, no window.api (D18A.5).
-  probeDuckdbWorker()
+  // Plan 18-A live check (Passo 3-5) — no channel, no window.api (D18A.5).
+  probeDuckdbWorker(app.getPath('userData'))
 
   return () => db.close()
 }
