@@ -66,3 +66,48 @@ Origem: primeira fase executável do plano de fundação. Entrega: seis pastas e
 
 ### Escopo e plano de fundação definidos (ago/2026)
 Origem: quatro commits no repositório, três de documentação e um o scaffold intocado — a posição mais barata para decisões estruturais. Entrega: `ESCOPO.md` fecha o produto inicial (bancada local de limpeza/transformação por pipeline de passos compilando para SQL do DuckDB); plano de fundação com oito fases, 33 passos, cada um com critério de aceite; a camada de IA registrada para não exigir replanejamento depois. Critério que ordenou tudo: **se eu adiar isto, quantos arquivos vou tocar quando finalmente fizer?**
+
+---
+
+## Armadilhas diagnosticadas
+
+Treze lições de trilha encerrada, sem citação viva de skill ou do `ROADMAP § 2` no momento em que migraram (ago/2026). Comprimidas: número medido + mecanismo + conserto sobrevivem, narrativa de investigação sai.
+
+### Um guia de ferramenta externa citou uma convenção já substituída — "CSS Modules" três trilhas depois do Tailwind (ago/2026)
+O `guia-animation-logo.html` (removido após virar [F-1](plan/implemented/F-1-marca-pensando.md)) afirmava "CSS puro via CSS Modules, como já é a convenção do projeto" — falso desde a [DS-1](plan/implemented/DS-1-fundacao-tailwind.md): a convenção real é Tailwind v4, com `.module.css` reservado só ao que nenhuma utilidade alcança. Mesma classe de armadilha dos handoffs de design (nome de arquivo que não descreve conteúdo, screenshot de rodada anterior — ver entradas abaixo). Conserto: todo guia externo que cita "convenção do projeto" precisa ser conferido contra o código atual antes de virar plano. [`plan/implemented/F-1-marca-pensando.md`](plan/implemented/F-1-marca-pensando.md)
+
+### `@fontsource/<fonte>/400.css` traz subset demais, e o CSP bloqueia o que o Vite decide inlinar (ago/2026)
+Ao trocar `--font-mono` para JetBrains Mono auto-hospedada (DS-5), o import ingênuo (`@fontsource/jetbrains-mono/400.css`) carregou cinco subsets não pedidos; os menores ficam abaixo do limiar de inline do Vite e viram `data:` URI dentro do CSS, que o CSP `default-src 'self'` bloqueia — sem quebrar visualmente, porque o subset `latin` (usado pelo português) segue servido normalmente. Conserto: importar o arquivo de subset nomeado (`latin-400.css`), nunca o atalho `<peso>.css`. "Auto-hospedado" não é sinônimo de "sem rede em runtime". [`plan/implemented/DS-5-icones-fonte-e-acabamento.md`](plan/implemented/DS-5-icones-fonte-e-acabamento.md)
+
+### Um `className` no `Popover` derrota a regra de esconder do UA stylesheet — origem vence especificidade (ago/2026)
+Ao migrar `ModelSelector` para popover (DS-4), um `className` passado direto no `<Popover>` setava `display: flex`, que vence o `display: none` do UA stylesheet — origem da cascata (UA vs. autor) é ortogonal à especificidade. Só a verificação ao vivo (Playwright/Chromium real) achou; jsdom já escondia popover incondicionalmente e mascarava o defeito. Conserto: `Popover` não aceita mais `className` — o consumidor embrulha o conteúdo num `<div>` interno. [`plan/implemented/DS-4-acabamento-final.md`](plan/implemented/DS-4-acabamento-final.md)
+
+### Um segundo pacote de handoff repete a armadilha do nome de arquivo que não descreve o conteúdo (ago/2026)
+Seis screenshots nomeadas por estado, usadas como referência de QA do DS-4 — quatro das seis mostravam uma rodada anterior do protótipo, não a atual. Mesma armadilha que o DS-3 já tinha diagnosticado no handoff anterior, reincidindo meses depois. Conserto: a referência de QA passou a ser o `.dc.html` interativo, aberto por completo, não o diretório de PNGs — nome de arquivo é a intenção de quem gerou, não uma medição. [`plan/implemented/DS-4-acabamento-final.md`](plan/implemented/DS-4-acabamento-final.md)
+
+### Um script de verificação ao vivo não está isento da própria armadilha que ele existe para evitar (ago/2026)
+Na QA de fechamento do DS-4, um script Playwright descartável parecia mostrar o tema preso no claro — na verdade o script não tinha limpado a emulação de `prefers-color-scheme` do próprio Playwright (padrão `'light'`, vencendo `nativeTheme.themeSource`), a mesma ressalva que a skill `testing` já registrava, só não aplicada a este script improvisado. Conserto: `page.emulateMedia({ colorScheme: null })` antes de ler qualquer coisa do renderer. Um script "verificado ao vivo" fora do spec não herda a disciplina que o spec segue por convenção. [`plan/implemented/DS-4-acabamento-final.md`](plan/implemented/DS-4-acabamento-final.md)
+
+### `min-w-0` não gera CSS quando a base `--spacing` do Tailwind está desligada — falha silenciosa, e é a regressão da D13.5 (ago/2026)
+Medido no DS-2 via `grep` no CSS de produção: `min-w-0`/`min-h-0` não emitiam regra nenhuma, porque o projeto desliga `--spacing-*: initial` e mapeia só os degraus nomeados 1-9, deixando o v4 sem valor de tema para `<prop>-0`. Dano real: regressão da rolagem estrutural da fase 13 (bloco de código largo empurra a coluna para fora da tela), invisível a qualquer teste de nível 2 (jsdom não faz layout). Conserto: valor arbitrário `min-w-[0px]`, que ignora o tema. O único juiz do que o v4 gera é o `grep` no CSS construído, não a documentação. [`plan/implemented/DS-2-migracao-da-casca-e-features.md`](plan/implemented/DS-2-migracao-da-casca-e-features.md)
+
+### O preflight do Tailwind é um reset de página web, e ele desmonta o que a plataforma dava de graça (ago/2026)
+Medido no DS-1, comparando o app com e sem preflight: 1,19% dos pixels mudaram. A divergência que importa: `*, ::before, ::after { margin: 0 }` zera o `dialog { margin: auto }` do navegador, e o modal de Configurações passava a renderizar em `rect=0,0` em vez de centralizado. Descartar o preflight foi recusado por motivo mecânico — as utilidades de borda do v4 dependem do `border: 0 solid` dele. Nenhum nível de teste pegaria isso (jsdom não implementa `<dialog>`); comparação antes/depois foi o único instrumento. [`plan/implemented/DS-1-fundacao-tailwind.md`](plan/implemented/DS-1-fundacao-tailwind.md)
+
+### `test_related` usava `--reporter basic`, removido no Vitest 4 — o hook bloquearia toda edição (ago/2026)
+Os scripts de hook foram "escritos e testados fora do plano", mas contra um Vitest anterior — ao ligá-los na fase 08, `test_related.mjs` passava `--reporter basic`, removido no Vitest 4, e o hook sairia com código 2 em **toda** edição de `.ts`, verde ou vermelho. Confirmado via Context7: substituto mínimo é `dot`. "Script testado fora do plano" não é "script testado nesta versão". [`plan/implemented/08-automacao-e-registro.md`](plan/implemented/08-automacao-e-registro.md)
+
+### A lista branca de esquemas existia, era testada, e o `main` não passava por ela (ago/2026)
+`CLAUDE.md` declarava lista branca de esquemas para abertura de link externo, testada em `shell/handlers.ts` — mas `src/main/index.ts` chamava `shell.openExternal` direto em dois pontos herdados do template (`setWindowOpenHandler`, `will-navigate`), sem passar pela lista. Nada pegou: guard não cobria isso, o spec de segurança testava só `window.api`. Conserto: `checkExternalUrl` extraído para `src/core/url.ts`, função pura usada pelos três chamadores. Validação que mora junto de um chamador vira bypass no segundo.
+
+### Chave inválida em `settings.json` do VS Code é ignorada em silêncio (ago/2026)
+`.vscode/settings.json` trazia duas chaves inexistentes (`js/ts.tsdk.path`...) — o VS Code descarta chave desconhecida sem aviso, e o editor usava o TypeScript embutido, não o do projeto. `CLAUDE.md` afirmava um efeito que não existia. Conserto: chaves reais (`typescript.tsdk`, `typescript.enablePromptUseWorkspaceTsdk`). Configuração de editor não falha, ela silencia — a única verificação é abrir a paleta e conferir a versão em uso.
+
+### `types` explícito no `tsconfig` remove a inclusão implícita de `@types/*` (ago/2026)
+Sem `types` em `compilerOptions`, o TypeScript inclui todo `@types/*` de `node_modules` automaticamente. Adicionar `types: ['vitest/globals']` substituiu essa lista inteira — `@types/node` parou de entrar, `typecheck:web` falhou com `Cannot find namespace 'NodeJS'`. Conserto: listar `'node'` explicitamente ao lado. Vale para qualquer `tsconfig` que ganhe `types` pela primeira vez. [`plan/implemented/04-testes-rapidos.md`](plan/implemented/04-testes-rapidos.md)
+
+### Doc do `readline` diz que erros do stream "não são propagados" — na prática, o `for await` lança (ago/2026)
+A doc de `rl[Symbol.asyncIterator]()` afirma que erros do stream "não são propagados" — testado empiricamente, o `for await` **lança** normalmente para `ENOENT`/`EISDIR`. A implementação real ficou um `try/catch` de doze linhas, um terço do que a leitura direta da doc levaria a construir. `stream.on('error', ...)` continua obrigatório (evento sem ouvinte derruba o processo). Doc genérica pode não refletir o comportamento observado. [`study/04-diario-de-bordo.md` § Caso 5](study/04-diario-de-bordo.md)
+
+### Hook que se desliga sozinho em silêncio (ago/2026)
+A primeira versão do `_shared.mjs` devolvia `null` quando não conseguia resolver o executável de uma dependência, e os hooks simplesmente não faziam nada — um "Prettier rodou e não alterou" era falso positivo por inação. Hook que se desliga sem avisar é pior que hook ausente. Conserto: duas estratégias de resolução e aviso no stderr quando o pacote está instalado mas não pôde ser resolvido; pacote genuinamente ausente segue silencioso (caso legítimo pré-fase 04).
