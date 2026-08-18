@@ -37,21 +37,15 @@ Nível 5 usa `electron-playwright-helpers`: `findLatestBuild('dist')` + `parseEl
 
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
 
-## O jsdom não é um navegador, e três coisas da fase 13 provaram isso caro
+## O jsdom não é um navegador — cinco limites, provados caros
 
-O nível 2 cobre muito, e a linha onde ele para não é óbvia. Três achados, em ordem de quanto custam se descobertos tarde:
+Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Quando o comportamento depende de tempo real de chegada, layout ou motor de CSS, jsdom não prova nada — só a verificação ao vivo prova. Cada um já citável por título em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § Armadilhas:
 
-**1. Existe defeito que só existe onde ele não é testável.** A lista de mensagens que acompanha o texto do modelo perdia uma corrida real: o DOM despacha `scroll` de forma **assíncrona**, então um token que chega antes do evento faz o efeito ler `pinned` desatualizado e desfazer a rolagem do usuário. Em jsdom não há cadência de token nem layout — `scrollHeight` e `clientHeight` são zero —, então **nenhum teste de nível 2 poderia ter pego**. A regra que sai disto: quando o comportamento depende de *tempo real de chegada* ou de *layout*, a verificação ao vivo (Playwright dirigindo o app com o Ollama no ar) não é reforço, é o **único** nível que prova. Diagnóstico completo em [`docs/HISTORY.md`](../../../docs/HISTORY.md).
-
-**2. O jsdom não implementa `<dialog>`.** No 30.0.1, `HTMLDialogElement` é subclasse **vazia** de `HTMLElement` — sem `show`, sem `showModal`, sem `close`, e sem flag (lido em `lib/jsdom/living/nodes/HTMLDialogElement-impl.js`, não no changelog). O sintoma é `TypeError: node.showModal is not a function` matando o arquivo inteiro. Há um polyfill mínimo em `test/setup-renderer.ts`, e o que ele **não** substitui está escrito nele: camada superior, foco preso, `Esc`, `closedby` e `::backdrop` não têm equivalente, e asseverá-los ali seria testar o shim.
-
-**3. O jsdom não aplica CSS, então nível 2 clica em botão escondido.** As ações de cada linha da lista de conversas são `visibility: hidden` até o `:hover`. O nível 2 encontra e clica sem hesitar; o Playwright respeita visibilidade e espera até estourar. Toda a família — revelar no hover, `display: none` por media query, elemento fora do viewport — é invisível abaixo do nível 4, e o sintoma imita "o dado não foi criado". Conserto: `hover()` na linha antes. Detalhe adjacente do mesmo spec: `getByRole('button', { name: título })` casa também com "Renomear \<título\>", porque o `aria-label` contém o título — **`exact: true` é obrigatório em lista com ações por linha.**
-
-**4. O Playwright emula `prefers-color-scheme`, e o padrão dele é `'light'`.** Não é "não interfere" — é emular claro ativamente, por CDP, e essa emulação **ganha do `nativeTheme.themeSource`**: o main reporta `shouldUseDarkColors: true` e o renderer continua respondendo claro. Consequência que vale saber antes de escrever qualquer spec sobre cor: **nenhum e2e deste repositório exercita o tema escuro.** Para verificar tema, `page.emulateMedia({ colorScheme: 'dark' })`.
-
-**5. O jsdom não roda o motor de animação do CSS, e não entrega `animationiteration`/`animationend` ao React.** Medido ao testar a marca "pensando" ([F-1](../../../docs/plan/implemented/F-1-marca-pensando.md)): `window.AnimationEvent` é `undefined`, e mesmo um `Event('animationiteration', { bubbles: true })` disparado à mão via `dispatchEvent` não chega ao `onAnimationIteration` de um componente React — confirmado com um componente de uma linha, sem `@keyframes` real nem CSS nenhum envolvido, então não é sobre o CSS não carregar. Regra: teste de nível 2 que precisa provar um handler de evento de animação chama a função **diretamente** (via `renderHook`, se o handler mora num hook), nunca via `fireEvent.animation*`; se o handler for interno a um componente sem hook extraível, essa parte só se prova ao vivo.
-
-Forma comum às cinco: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Para saber o que ele suporta, leia o `lib/` instalado — a matriz do jsdom é grande o bastante para dar a impressão errada por omissão.
+- `scroll` é assíncrono — jsdom não tem cadência de token nem layout, nenhum teste de nível 2 poderia ter pego. § *O evento `scroll` é assíncrono*.
+- `<dialog>` não é implementado — `HTMLDialogElement` é subclasse vazia. § *O jsdom não implementa `<dialog>`*.
+- CSS não é aplicado — nível 2 clica em botão `visibility: hidden` que só o `:hover` revela. § *Teste de nível 2 clica em botão que o CSS esconde*.
+- `prefers-color-scheme` — Playwright emula `'light'` por padrão, ganha do `nativeTheme`. § *O Playwright emula `prefers-color-scheme: light`*.
+- Eventos de animação não chegam ao React — `window.AnimationEvent` é `undefined`. § *`animationiteration` borbulha de 14 filhos*.
 
 ## O que persiste é testado contra o banco real, nunca contra uma fake
 
@@ -61,19 +55,13 @@ Os handlers de `conversation:*` e `settings:*` recebem o banco por parâmetro, e
 
 **O que nem isso alcança é o processo morrer.** `e2e/dev/persistence.spec.ts` fecha o `electronApp` e lança de novo — a única prova de que a escrita sobreviveu. Ele exige `--user-data-dir` numa pasta temporária por corrida (o e2e roda contra o `%APPDATA%` real, e um spec que limpasse para começar do zero apagaria o histórico de quem desenvolve), e a **primeira** asserção confere `app.getPath('userData')` antes de qualquer escrita. Atenção ao arrumar: os outros specs ainda lançam sem a flag; hoje é inofensivo porque nenhum deles escreve conversa.
 
-## Armadilha grave: `electron-builder` empacota direto do disco, não do que o git rastreia
+## Três armadilhas medidas, com dono no `HISTORY.md`
 
-`app.asar` não sabe o que está no `.gitignore` — ele empacota tudo que sobrevive ao filtro `files`, de onde estiver no disco. `.claude/settings.local.json` está no `.gitignore` (guarda a API key pessoal do MCP Context7) e mesmo assim vazava para dentro do instalador, porque `files` nunca excluía `.claude/`. Junto vazavam `coverage/`, `docs/`, `e2e/`, `scripts/`, `test/`, `test-results/`, `playwright-report/` e os configs de teste. Verificação real, não leitura de glob: `pnpm dlx @electron/asar list dist/win-unpacked/resources/app.asar | grep <candidato>` — antes e depois de qualquer mudança em `files`. `.gitignore` e `files` respondem perguntas diferentes (o que entra no histórico vs. o que entra no que o usuário instala) e nada as sincroniza automaticamente; todo tipo novo de arquivo local-only exige revisar as duas.
+- **`electron-builder` empacota direto do disco, não do que o git rastreia** — verificação real é `pnpm dlx @electron/asar list dist/win-unpacked/resources/app.asar`, nunca leitura de glob. § *`app.asar` empacotava `.claude/settings.local.json`*.
+- **`electron` importado por valor quebra em teste, mesmo só como default de parâmetro** — handler testável nunca importa o pacote real; só o composition root (`register-all.ts`) importa. § *Import de `electron` no arquivo do handler quebra em teste Node puro*.
+- **Glob de `coverage.include` sem `/` inicial não é ancorado à raiz** — mesmo segmento de nome compartilhado (`shared/`) captura a pasta errada. § *Glob de `coverage.include` sem `/` inicial*.
 
-## Armadilha: `electron` importado por valor quebra em teste, mesmo só como default
-
-Fora do binário real, `node_modules/electron/index.js` faz `module.exports = getElectronPath()` — o pacote inteiro é uma *string*, não o objeto com `app`/`shell`/etc. Um handler como `openExternal(args, fn = shell.openExternal)` ainda tem `import { shell } from 'electron'` no topo do arquivo, e isso é processado pelo dep-optimizer do Vite mesmo que o valor nunca seja acessado nos testes — de forma não determinística: passou isolado, quebrou junto com outro teste que também importava `electron`, com um `SyntaxError` de interop ESM/CJS dependente de cache.
-
-**A regra:** nenhum handler testável importa `electron` por valor — nem como default de parâmetro. O parâmetro fica obrigatório; só o composition root (`register-all.ts`, que nenhum teste alcança) importa `electron` de verdade e monta a chamada real.
-
-## Armadilha: glob de `coverage.include` sem `/` inicial não é ancorado só à raiz
-
-`coverage.include: ['src/shared/**']` foi pensado para pegar `src/shared/` (a raiz, contrato IPC). Quando a fase 05 criou `src/renderer/src/shared/ui/` (ver skill `design-system`), o mesmo glob passou a capturar os dois — os caminhos compartilham o segmento `shared/`, e o `picomatch` usado pelo coverage v8 não trata o padrão como ancorado ao início do path. Sintoma: um componente do renderer (sem meta de cobertura) aparecendo no relatório como se fosse `core/`/`shared/`, distorcendo a métrica em silêncio. Corrigido com `coverage.exclude: ['src/renderer/**']` — o default de `coverage.exclude` é array vazio, e as exclusões de proteção do próprio Vitest (setup/test/config files) são hardcoded e continuam aplicadas por cima, então isso não perde nada. Vale para qualquer par de pastas com segmento de nome compartilhado.
+Todas em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § Armadilhas.
 
 ## O mock de `window.api` é derivado do tipo do contrato
 
@@ -99,7 +87,7 @@ Dentro de `shared/`, nem tudo é lógica: um arquivo de só-constante (`APP_ID`)
 
 ## `pnpm build` não roda teste; `check:fast` é o portão
 
-`build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição (fase 08) e o pré-commit vão chamar — um lugar para manter alinhado, não três configs espalhadas. Meta: `check:fast` abaixo de 15s nesta altura do projeto: se já estiver mais lento, é hora de investigar antes de empilhar mais teste em cima. **Estava em 15–19s ao fim da fase 14** (28 arquivos, 207 testes — 35 testes a mais que a fase 13 e nenhum segundo a mais, porque os novos são de ambiente `node`), e a medição redireciona a investigação: a maior fatia é `environment` — a subida do jsdom, uma por arquivo —, não as asserções. Gatilho e número em [`ROADMAP § 2`](../../../docs/ROADMAP.md); não abra uma segunda lista aqui.
+`build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição (fase 08) e o pré-commit vão chamar — um lugar para manter alinhado, não três configs espalhadas. **Estava em 15–19s ao fim da fase 14** (28 arquivos, 207 testes), com a maior fatia em `environment` — a subida do jsdom, uma por arquivo —, não as asserções; a medição redireciona a investigação, não o número em si. **Remedido em ago/2026** (R-2, `pnpm check:fast`): 49 arquivos, 452 testes, e a suíte já passou da meta original de 15s. Gatilho e número atualizado ficam só no [`ROADMAP § 2`](../../../docs/ROADMAP.md); não abra uma segunda lista aqui.
 
 ## Globals do Vitest declarados manualmente no ESLint
 
