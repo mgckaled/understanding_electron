@@ -284,7 +284,7 @@ Daí a regra que vale sempre, independentemente do tamanho do arquivo:
 
 Adotada desde o início, ela custa zero e o teto passa a ser o disco. Retrofitada depois, é reescrever todo caminho de dados. É também a resposta para o custo da pré-visualização na conversa: ela é sempre uma página, tenha o arquivo 15 linhas ou 2 GB.
 
-**Configuração decorrente:** `memory_limit` do DuckDB fixado explicitamente em ~4 GB — não o padrão de 80% da RAM, que brigaria com o Chromium do próprio app — e `temp_directory` apontando para `app.getPath('userData')`, para que o derramamento tenha onde acontecer.
+**Configuração decorrente:** `memory_limit` do DuckDB fixado explicitamente — não o padrão de 80% da RAM, que brigaria com o Chromium do próprio app — e `temp_directory` apontando para `userData/duckdb-tmp`, para que o derramamento tenha onde acontecer. O valor de `memory_limit` é remedido contra a RAM livre da máquina no momento da implementação, não copiado de sessão em sessão — no plano 18-A (ago/2026) ficou em `2GB`, abaixo do ~4 GB antes escrito aqui; ver [`plan/implemented/18-A-motor-e-worker.md`](plan/implemented/18-A-motor-e-worker.md) § D18A.4.
 
 ### O teto do documento é tempo, não tamanho
 
@@ -319,7 +319,7 @@ Isso não é gratuito, e as três consequências ficam registradas agora:
 
 **Confirmação que mostra o que muda.** Antes de sobrescrever: quantas linhas entram e saem, e quais colunas desaparecem. Uma confirmação de "tem certeza?" sem números não informa nada.
 
-**SQL gerado por modelo roda com o motor restringido, não com o texto inspecionado.** O DuckDB é configurado com `allowed_directories`, `enable_external_access = false`, `autoinstall_known_extensions = false` e `lock_configuration = true` antes de qualquer consulta gerada. A garantia é do motor; uma expressão regular tentando adivinhar intenção em SQL não é defesa.
+**SQL gerado por modelo roda com o motor restringido, não com o texto inspecionado.** O DuckDB é configurado com `allowed_directories`, `enable_external_access = false`, `autoinstall_known_extensions = false` e `lock_configuration = true` antes de qualquer consulta gerada. A garantia é do motor; uma expressão regular tentando adivinhar intenção em SQL não é defesa. **A ordem entre esses `SET` não é livre** — `allowed_directories` e `temp_directory` têm que ser setados antes de `enable_external_access = false`, ou o próprio DuckDB rejeita mudá-los depois; `lock_configuration` continua por último. Verificado ao vivo no plano 18-A, detalhe em [`HISTORY.md`](HISTORY.md).
 
 ---
 

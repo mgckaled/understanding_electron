@@ -38,7 +38,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    0  revisão de escopo: identidade multiuso  ESCOPO.md · HISTORY.md    concluída (ago/2026)
    ── trilha F, segundo item ───────────────────────────────────────────────────────
    F-2  composer, modelo e sidebar      plan/implemented/F-2-...         concluída (ago/2026)
-▶  18 camada de dados (DuckDB)       study/05-proximos-passos.md
+   18-A motor e worker (DuckDB)       plan/implemented/18-A-...        concluída (ago/2026)
+▶  18-B canal e consulta             plan/active/18-B-...
    19 propor: consulta e passos
    20 gráfico como artefato
    ── extensão do arco (guia externo), ago/2026 ───────────────────────────────────
@@ -81,7 +82,7 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 | Quando acontecer | Revisitar | Registrado em |
 |---|---|---|
 | ~~O plano 16 desenhar o clipe de anexo de mensagem~~ **fechado, fundido em um só** — o clipe que a DS-5 relocou (`AttachButton.tsx`) continua o único gatilho; o plano 16 trocou só o que ele abre, de "visualizar dataset" (`OpenDatasetPanel`, morria num popover) para "anexar à conversa" (`dataset:attach`, vira `MessagePart`). Confirmado com o usuário no início da sessão do plano 16 — a leitura de "deveria ficar fora do composer" era memória de uma decisão nunca escrita; o que estava no código (DS-5) e no próprio texto do plano (D16.6) apontavam para dentro | [`plan/implemented/16-anexo-mecanismo-e-dataset.md`](plan/implemented/16-anexo-mecanismo-e-dataset.md) |
-| DuckDB instalado e carregando | `shamefullyHoist: false` no `pnpm-workspace.yaml` | [`03-sandbox`](plan/implemented/03-sandbox-e-seguranca.md) |
+| ~~DuckDB instalado e carregando~~ **disparado e cumprido no plano 18-A (ago/2026)** — `shamefullyHoist: false` desligou e expôs uma dependência fantasma (`@types/hast`, hoisted sem estar declarada), corrigida na mesma sessão; `pnpm check:fast`, `pnpm dev` e `pnpm build:win` verdes | ~~`shamefullyHoist: false` no `pnpm-workspace.yaml`~~ | [`18-A`](plan/implemented/18-A-motor-e-worker.md) |
 | ~~Primeira query reexecutada sobre o mesmo dataset~~ · ~~data marcada: plano 14~~ **fechado** — adotado em ago/2026 (`@tanstack/react-query` 5.101.4), e a promessa se cumpriu: três hooks tocados, **zero componentes**. O que a fez se cumprir está no [`HISTORY`](HISTORY.md) § *um hook público sobrevive à troca de fonte* | ~~Adotar TanStack Query para o **cache de servidor**~~ | [`14-persistencia`](plan/implemented/14-persistencia-das-conversas.md) |
 | Busca em texto completo sobre todo o histórico (FTS5) — **disponibilidade confirmada** no binário do Electron 42.8.0 (SQLite 3.53.1), então o gatilho é só de "quando", não mais de "se dá" | Tirar o SQLite síncrono do main — até lá, listar e inserir são operações indexadas de microssegundos | [`HISTORY`](HISTORY.md) § Decisão: persistência em `node:sqlite` |
 | ~~Máquina com GPU ou RAM que comporte um modelo com `tools` folgado~~ **disparado em ago/2026, por um caminho que ninguém previu** — não foi a máquina que cresceu, foi a frota: o `qwen2.5-coder:3b` declara `tools`, ocupa 1,9 GB e cabe com folga nos ~6 GB livres. O gatilho supunha que "modelo com `tools`" implicava 7B; um 3B especializado desfaz a suposição. **Reavaliar continua valendo**, agora por mérito e não por RAM: a saída estruturada validada da D9.4 funciona com qualquer modelo, e a pergunta passa a ser se *tool calling* entrega algo que ela não entrega — questão que os planos 21–23 (§ 1 acima) agora carregam | Reavaliar *tool calling* | [`HISTORY`](HISTORY.md) § A virada |

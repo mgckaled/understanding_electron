@@ -172,9 +172,9 @@ Cada etapa termina com `pnpm dev` funcionando e um commit. Seis pontos de retorn
 
 ## A armadilha que só aparece no instalador
 
-Uma pendência específica desta etapa merece destaque, porque tem um padrão de falha traiçoeiro: **o `.node` do DuckDB provavelmente vai precisar de entrada em `asarUnpack`.**
+Uma pendência específica desta etapa merece destaque, porque tem um padrão de falha traiçoeiro: biblioteca nativa não carrega de dentro do arquivo compactado em que o empacotador guarda o código — o sistema operacional precisa de um arquivo real no disco para carregar código binário.
 
-Biblioteca nativa não carrega de dentro do arquivo compactado em que o empacotador guarda o código — o sistema operacional precisa de um arquivo real no disco para carregar código binário. Sem essa entrada, o aplicativo funciona perfeitamente em desenvolvimento e falha só depois de empacotado.
+**Correção do plano 18-A (ago/2026):** o `electron-builder` já resolve isso sozinho na maioria dos casos — `asar.smartUnpack` (default `true`) detecta `.node` automaticamente e o extrai para `app.asar.unpacked`, sem entrada manual nenhuma. Sabotado ao vivo: um build sem qualquer `asarUnpack` para o DuckDB ainda assim produziu o binário desempacotado corretamente. Continua valendo escrever a entrada explícita — documenta a dependência e blinda contra o default mudar numa versão futura —, mas "vai quebrar sem isso" era afirmação não testada nesta base; o app **não** teria quebrado. E o caminho do `.pnpm/` observado em disco (pnpm sem `shamefullyHoist`) não é o caminho que sobrevive dentro do pacote — `electron-builder` achata `node_modules` ao empacotar, então o glob mira a árvore achatada, nunca o layout de origem. Detalhe e como verificar: [`HISTORY.md`](../HISTORY.md).
 
 Saber disso de antemão transforma uma tarde de investigação em cinco minutos. E é a razão de o projeto ter construído o teste do aplicativo empacotado **antes** de instalar o primeiro módulo nativo: quando o DuckDB chegar, a falha vem com o dedo apontado, em vez de misturada a dez outras coisas novas.
 

@@ -8,7 +8,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 ## Em execução
 
-Nenhum plano do arco em execução no momento — o 17 concluiu (movido para [`implemented/`](../implemented/17-anexo-documento-e-imagem.md)) e o 18 ainda não foi escrito, por convenção (ver [§ O arco conversacional](#o-arco-conversacional-1320) abaixo).
+O 18 (camada de dados) virou sub-planos 18-A a 18-F, ≤7 passos cada (ver [`ROADMAP § 1`](../../ROADMAP.md)). O 18-A (motor e worker) concluiu — [`implemented/`](../implemented/18-A-motor-e-worker.md) — e o 18-B (canal e consulta) é o próximo, com [`18-C`](18-C-pre-visualizacao.md) já escrito na fila.
 
 ---
 
