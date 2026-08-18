@@ -97,26 +97,30 @@ describe('ModelSelector', () => {
     expect(await modelTrigger()).toHaveTextContent('gemma3:4b')
   })
 
-  it('badges vision on the model that has it, and nothing else', async () => {
+  it('shows the vision sigla+icon on the model that has it, and nothing else', async () => {
+    // The sigla scheme itself (F2.1: which capability maps to which sigla,
+    // the tools/thinking "T" collision, the fallback for an unmapped
+    // capability) is unit-tested in CapabilityChips.test.tsx — this level
+    // only checks the popover shows the right chip for the right model.
     const user = userEvent.setup()
     mount()
     await user.click(await modelTrigger())
 
-    expect(await screen.findByText('imagem')).toBeInTheDocument()
-    expect(screen.queryByText('ferramentas')).not.toBeInTheDocument()
+    const chip = await screen.findByTitle('Imagem — entende imagens anexadas')
+    expect(chip).toHaveTextContent('IM')
+    expect(screen.queryByTitle('Ferramentas — function calling')).not.toBeInTheDocument()
   })
 
-  it('renders an unknown capability under its raw name', async () => {
-    // `insert` arrived with the qwen2.5-coder models and the app has no word
-    // for it. Showing it raw is what keeps the string[] decision honest on
-    // screen: a closed list would silently drop it.
+  it('shows tools and insert siglas for a model that declares both', async () => {
     const user = userEvent.setup()
     mount()
 
     await chooseModel(user, /qwen2\.5-coder:3b/)
 
-    expect(await screen.findByText('insert')).toBeInTheDocument()
-    expect(screen.getByText('ferramentas')).toBeInTheDocument()
+    expect(await screen.findByTitle('Ferramentas — function calling')).toHaveTextContent('TO')
+    expect(
+      screen.getByTitle('Inserção — fill-in-middle, autocomplete com sufixo')
+    ).toHaveTextContent('IN')
   })
 
   it('sends the chosen model, not the default one', async () => {

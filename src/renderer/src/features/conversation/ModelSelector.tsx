@@ -8,6 +8,8 @@ import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
+import CapabilityChip from './CapabilityChip'
+import { capabilityChips } from './capabilities'
 import { formatContext, formatSize } from './modelFormat'
 
 // ModelPicker (this file) and ContextControl (own file, F2.7) replaced a
@@ -15,21 +17,6 @@ import { formatContext, formatSize } from './modelFormat'
 // item 9). ConversationView composes the two (plus the reload icon) inside
 // the SAME render-prop Composer already calls (DS4.8) — the prop's type
 // never changes.
-
-// Capabilities the app has a word for; everything else renders under its raw
-// name, keeping the `string[]` promise alive on screen (`insert` arrived
-// unpredicted). `completion` is on every model, says nothing, and is dropped.
-const CAPABILITY_LABEL: Record<string, string> = {
-  vision: 'imagem',
-  tools: 'ferramentas',
-  embedding: 'embeddings'
-}
-
-function badges(model: AiModel): string[] {
-  return model.capabilities
-    .filter((capability) => capability !== 'completion')
-    .map((capability) => CAPABILITY_LABEL[capability] ?? capability)
-}
 
 // Marked, not disabled: free RAM is a snapshot of a machine the user is also
 // using, and closing a browser changes the answer (D15.2).
@@ -175,16 +162,11 @@ function ModelPicker({
             ))}
           </div>
 
-          {current !== undefined && badges(current).length > 0 && (
+          {current !== undefined && capabilityChips(current).length > 0 && (
             <ul className="mt-2 flex flex-wrap gap-2 px-2">
-              {badges(current).map((label) => (
-                // A capability with no label of its own renders under its raw name,
-                // so this stays legible for text nobody chose (`insert` was first).
-                <li
-                  key={label}
-                  className="rounded-sm border border-border bg-surface-raised px-3 py-1 text-2xs whitespace-nowrap text-text-muted"
-                >
-                  {label}
+              {capabilityChips(current).map((chip) => (
+                <li key={chip.capability}>
+                  <CapabilityChip {...chip} />
                 </li>
               ))}
             </ul>
