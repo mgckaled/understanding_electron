@@ -2,6 +2,11 @@ import type { DatasetPart } from '@shared/ipc'
 import { errorMessage } from '../../shared/ui/messages'
 import { useDatasetPreview } from './useDatasetPreview'
 
+// Mirrors the LIMIT baked into useDatasetPreview's SQL (D18C.2) — kept as a
+// second constant, not imported, because the hook's cap is SQL text and this
+// one is a display threshold; the two happen to share a value, not an owner.
+const PREVIEW_ROW_CAP = 50
+
 // Second occurrence of "format an Arrow cell for display" (D18C.6) — copied
 // from DatasetQueryPanel.formatCell, not extracted: régua dos três reserves
 // extraction for a third occurrence.
@@ -61,6 +66,12 @@ function DatasetPreview({ part }: { part: DatasetPart }): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-2">
+      {part.rowCount > PREVIEW_ROW_CAP && (
+        <p className="text-xs text-text-faint">
+          Mostrando as primeiras {PREVIEW_ROW_CAP} de {part.rowCount.toLocaleString('pt-BR')}{' '}
+          linhas.
+        </p>
+      )}
       <div className="max-h-[400px] overflow-auto rounded-md border border-border">
         <table className="w-full border-collapse text-xs selectable">
           <thead>

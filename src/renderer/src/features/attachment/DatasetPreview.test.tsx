@@ -72,6 +72,27 @@ describe('DatasetPreview', () => {
     expect(emptyStringCell).toBeDefined()
   })
 
+  it('warns about truncation against part.rowCount, not a probed row count', async () => {
+    const api = installApiMock()
+    const bytes = columnsToArrowBytes({ id: Array.from({ length: 50 }, (_, i) => BigInt(i)) })
+    vi.mocked(api.dataset.query).mockResolvedValue({ ok: true, value: bytes })
+
+    mount({ ...PART, rowCount: 200 })
+
+    expect(await screen.findByText('Mostrando as primeiras 50 de 200 linhas.')).toBeVisible()
+  })
+
+  it('shows no truncation warning when the file has 50 rows or fewer', async () => {
+    const api = installApiMock()
+    const bytes = columnsToArrowBytes({ id: [1n, 2n] })
+    vi.mocked(api.dataset.query).mockResolvedValue({ ok: true, value: bytes })
+
+    mount({ ...PART, rowCount: 2 })
+
+    await screen.findByText('1')
+    expect(screen.queryByText(/Mostrando as primeiras/)).not.toBeInTheDocument()
+  })
+
   // The must-have invariant D18C.7 exists to protect: if the preview ever
   // rendered part.columns instead of the engine's own schema, a real
   // disagreement between scanDelimited and read_csv_auto would be hidden,
