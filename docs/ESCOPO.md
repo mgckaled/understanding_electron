@@ -170,7 +170,7 @@ Três capacidades — busca web, documentação e raciocínio visível — chega
 |---|---|---|
 | **Busca web** | O modelo pede uma URL; o app busca e extrai o texto principal como contexto da resposta | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
 | **Documentação (MCP)** | Um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
-| **Raciocínio visível** | Alternável por turno; o texto de raciocínio do modelo aparece separado da resposta final, recolhível | Exige modelo que declare a capacidade — hoje nenhum da frota (ver [`CLAUDE.md`](../CLAUDE.md)) |
+| **Raciocínio visível** | Alternável por turno; o texto de raciocínio do modelo aparece separado da resposta final, recolhível | Ainda não construído — hoje o app manda `think: false` e descarta a fase de raciocínio (ago/2026, ver `HISTORY.md` § Armadilhas); a frota já tem um modelo que declara a capacidade (`qwen3:4b`, ver [`CLAUDE.md`](../CLAUDE.md)), o que faltava nunca foi o modelo |
 
 ⚠️ **Busca web, MCP e raciocínio pedem `tools`; anexo de imagem pede `vision`. Nenhum modelo desta máquina declara os dois** (ver [`CLAUDE.md`](../CLAUDE.md)) — então, hoje, usar estas ferramentas e anexar imagem são caminhos mutuamente exclusivos na mesma conversa. Trocar de modelo no meio dela resolve, ao custo do descarregamento já registrado acima.
 
