@@ -28,6 +28,15 @@ async function main(): Promise<void> {
   // can't be prepared!" — so the interpolated form is the only one that
   // works, not a fallback. Retry the bound form if issue duckdb-node-neo#45
   // ever closes (ROADMAP § 2).
+  //
+  // No startup message here — a survivor would resolve the first real query
+  // instead of it, since the correlation-free protocol resolves on the next
+  // 'message'. That protocol also makes this handler safe only because
+  // main-side createDuckdbRunQuery serializes calls to one in flight: two
+  // concurrent messages would interleave across these `await`s (view
+  // replaced for B, then A's read sees B's rows) — silently wrong, not an
+  // error. A second message kind (18-D) must go through that same
+  // serialization, not send around it.
   process.parentPort.on('message', async (e: { data: WorkerQueryRequest }) => {
     const { hash, sql } = e.data
     try {

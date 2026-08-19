@@ -76,10 +76,7 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 
 **Dentro do binário, sem pacote:** `node:sqlite` (SQLite 3.53.1 no Electron 42.8.0) guarda conversas e configurações de máquina em `app.getPath('userData')/crivo.db`, com escada de migração por `PRAGMA user_version`. Zero dependência npm, zero módulo nativo — e por isso **não** dispara o gatilho do `shamefullyHoist`.
 
-### Planejadas, ainda não instaladas
-
-- `@duckdb/node-api` — DuckDB via N-API, roda em `utilityProcess`, **nunca** no renderer
-- `apache-arrow` — transporte de resultados main → renderer sem serializar para JSON
+**Instaladas na trilha do DuckDB (planos 18-A/18-B):** `@duckdb/node-api` — DuckDB via N-API, roda em `utilityProcess`, **nunca** no renderer; `apache-arrow` — monta e serializa Arrow em JS (o binding **não** exporta Arrow nativo, ver `docs/HISTORY.md` § Plano 18-B), usado tanto no worker quanto no renderer (`tableFromIPC` em `DatasetQueryPanel`).
 
 `unpdf` já foi instalado, no plano 17 passo 3 — extração da camada de texto de PDF. **Zero dependências** extra (confirmado pelo `pnpm add`), sem módulo nativo. O `peerDependency` `@napi-rs/canvas` serve só para **renderizar** página como imagem e **não entra** — o que mantém fechado o gatilho do `shamefullyHoist` até o DuckDB.
 
@@ -232,7 +229,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 ### Arquitetura de dados
 
 - Query pesada **nunca** roda no processo main — trava a UI inteira, incluindo menus e a própria janela. Use `utilityProcess`.
-- Resultados grandes viajam como **Arrow IPC**, não como JSON — e o motivo **não** é transferência de posse: o IPC do Electron copia todo binário, sem exceção. É cópia de bloco contíguo contra alocar um milhão de objetos, o que segue valendo ordens de grandeza. Consequência: todo resultado grande é pago **duas vezes** em memória, momentaneamente — skill [`ipc`](.claude/skills/ipc/SKILL.md).
+- Resultados grandes viajam como **Arrow IPC**, não como JSON — e o motivo **não** é transferência de posse: o IPC do Electron copia todo binário, sem exceção; todo resultado grande é pago **duas vezes** em memória, momentaneamente. **A vantagem de tempo sobre JSON não é automática** — só quando o formato de origem já chega pronto, o que não é o caso de `@duckdb/node-api` (Arrow é montado em JS, plano 18-B): medido, JSON venceu Arrow em tempo total nas duas escalas testadas, porque a fronteira de processo custa pouco e quem pesa é a montagem em JS — skill [`ipc`](.claude/skills/ipc/SKILL.md).
 - O renderer nunca renderiza mais que ~200 linhas de DOM por vez. Use virtualização.
 
 ### Dependências
