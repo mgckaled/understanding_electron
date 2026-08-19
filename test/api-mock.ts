@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import type { AiModel, Api } from '@shared/ipc'
+import { columnsToArrowBytes } from '@core/duckdb/arrow'
 import { createStoreApi } from './store-api'
 
 /**
@@ -43,7 +44,16 @@ export function createApiMock(): Api {
       memory: vi.fn().mockResolvedValue({ freeBytes: 6 * 1024 ** 3, totalBytes: 16 * 1024 ** 3 })
     },
     shell: { openExternal: vi.fn() },
-    dataset: { pick: vi.fn(), attach: vi.fn(), query: vi.fn() },
+    dataset: {
+      pick: vi.fn(),
+      attach: vi.fn(),
+      // Resolves empty-but-valid Arrow bytes by default, for the same reason
+      // ai.models resolves a real catalog above: DatasetCard's preview (18-C)
+      // fires this on mount, so a bare vi.fn() resolving undefined would turn
+      // every dataset-attachment test into an error card, not just the ones
+      // actually about querying.
+      query: vi.fn().mockResolvedValue({ ok: true, value: columnsToArrowBytes({}) })
+    },
     document: { pick: vi.fn(), attach: vi.fn() },
     image: { pick: vi.fn(), attach: vi.fn() },
     // onEvent defaults to a no-op unsubscribe: a component whose useEffect
