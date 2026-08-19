@@ -153,6 +153,12 @@ describe('ollamaChat', () => {
     expect('promptTokens' in result).toBe(false)
   })
 
+  it('always sends think: false, to skip the reasoning phase a thinking model would otherwise stream as message.thinking', async () => {
+    const fetchMock = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
+    await ollamaChat(messages, { model: 'qwen3:4b' })
+    expect(requestBody(fetchMock).think).toBe(false)
+  })
+
   it('sends num_ctx in options only when it is defined', async () => {
     // Same reason already recorded for num_thread: an options object carrying a
     // zero default would push that default onto the runner.

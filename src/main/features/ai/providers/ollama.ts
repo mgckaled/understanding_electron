@@ -113,6 +113,10 @@ export const ollamaChat: ChatFn = async (
       model,
       messages,
       stream: true,
+      // think:false stopgap (2026-08-19): a `thinking`-capable model (qwen3:4b)
+      // streams reasoning in message.thinking, which this parser never reads —
+      // content stayed empty until CHAT_TIMEOUT_MS aborted it. Revisit for planos 21-23.
+      think: false,
       ...(options === undefined ? {} : { options })
     }),
     signal

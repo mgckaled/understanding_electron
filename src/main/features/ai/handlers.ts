@@ -20,7 +20,10 @@ import * as jobs from '../../jobs'
 // Short deadline for the availability ping, long one for the real call (D9.3):
 // without the split, the status card hangs for minutes when Ollama is down.
 const PING_TIMEOUT_MS = 10_000
-const CHAT_TIMEOUT_MS = 300_000
+// Measured 2026-08-19: gemma3:4b cold-loads in ~48 s and prefills at ~23
+// tok/s on this CPU — a 14 KB document alone used 240 s of the old 300 s
+// budget. Raised flat; excluding load from the clock was the alternative.
+const CHAT_TIMEOUT_MS = 1_000_000
 // Between the two: the catalog is N+1 requests (4,9 s for 14 models, measured)
 // and grows with the fleet, but it never runs inference, so minutes would only
 // mean the service is wedged.

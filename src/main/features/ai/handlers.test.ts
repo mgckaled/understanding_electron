@@ -309,10 +309,10 @@ describe('chat', () => {
       () => {},
       resolveImageBytes
     )
-    await vi.advanceTimersByTimeAsync(300_000)
+    await vi.advanceTimersByTimeAsync(1_000_000)
     const result = await promise
 
-    expect(result).toEqual({ ok: false, error: { kind: 'timeout', afterMs: 300_000 } })
+    expect(result).toEqual({ ok: false, error: { kind: 'timeout', afterMs: 1_000_000 } })
     vi.useRealTimers()
   })
 })
