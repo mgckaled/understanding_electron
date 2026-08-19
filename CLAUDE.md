@@ -135,16 +135,17 @@ Add-MpPreference -ExclusionProcess "node.exe"
 | CPU | Intel i5-8265U — 4 núcleos / 8 threads |
 | RAM | 16 GB. **Não há um número de "livre" — há três**, medidos em 10/08/2026: **~9 GB** com só o app Electron rodando · **~7,5 GB** com só o VS Code · **~6 GB** no ambiente de trabalho típico (VS Code, Edge, WhatsApp, Claude Code). A variação de 3 GB é maior que o peso da maioria dos modelos da frota, e é por isso que o teto de contexto se lê em runtime em vez de ser chumbado — ver [`plan/active/15`](docs/plan/implemented/15-orcamento-de-contexto-e-modelo.md) § D15.2 |
 | GPU | **sem aceleração para inferência — tudo roda em CPU** |
-| Ollama | 0.32.6, servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
+| Ollama | 0.32.14 (atualizado fora do app, 18/08/2026 — era 0.32.6), servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
 
-Frota de **12 entradas** no `/api/tags` em 10/08/2026, das quais 5 são variantes `-custom` por Modelfile, com os mesmos pesos e teto das originais. As 7 distintas:
+Frota de **13 entradas** no `/api/tags` em 18/08/2026, das quais 5 são variantes `-custom` por Modelfile, com os mesmos pesos e teto das originais. As 8 distintas:
 
 | Modelo | Tamanho | Teto treinado | KV/token | `capabilities` | Papel |
 |---|---|---|---|---|---|
 | `gemma3:4b` | 3,3 GB | 131.072 | ~24 KB | `completion`, `vision` | **default** — janela deslizante de 1024, o único com visão |
 | `gemma3:1b` | 815 MB | 32.768 | ~4 KB | `completion` | fallback de baixa RAM, fraco em síntese |
 | `qwen2.5-coder:3b` | 1,9 GB | 32.768 | 36 KB | `completion`, `tools`, `insert` | **o único que combina especialização em código com folga de RAM** — candidato a default do NL→SQL |
-| `phi4-mini` | 2,5 GB | 131.072 | **128 KB** | `completion`, **`tools`** | pesos leves e **o cache mais caro da frota** — a 32k custa o mesmo que o `qwen2.5:7b`, que pesa o dobro |
+| `phi4-mini` | 2,5 GB | 131.072 | 128 KB | `completion`, **`tools`** | pesos leves e cache caro — a 32k custa quase o mesmo que o `qwen2.5:7b`, que pesa o dobro |
+| `qwen3:4b` | 2,5 GB | 262.144 | **152,6 KB** | `completion`, `tools`, `thinking` | instalado 18/08/2026 (`ollama pull`, fora do app) — **agora o cache mais caro da frota**, e o maior teto treinado; a 32k já soma ~7,6 GB residentes, medido: 3,5 GB reais contra 3,43 GB previstos pela fórmula a 4.096. Único com raciocínio explícito — o app hoje descarta a fase com `think: false` (ver `HISTORY.md` § Armadilhas) |
 | `qwen2.5:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, **`tools`** | qualidade máxima de uso geral |
 | `qwen2.5-coder:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, `tools`, `insert` | teto de qualidade em código; escolha deliberada, não default |
 | `nomic-embed-text` | 274 MB | 2.048 | — | `embedding` | 768 dims — o embedder da D9.5 já está instalado |
