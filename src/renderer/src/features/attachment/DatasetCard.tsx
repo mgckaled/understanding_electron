@@ -34,15 +34,18 @@ function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
         <Button
           variant="ghost"
           size="sm"
+          className="flex-none"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
         >
-          Consultar
-          {expanded ? (
-            <ChevronUp size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-          ) : (
-            <ChevronDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-          )}
+          <span className="flex items-center gap-1.5">
+            Consultar
+            {expanded ? (
+              <ChevronUp size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            ) : (
+              <ChevronDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            )}
+          </span>
         </Button>
       </div>
       {expanded && <DatasetQueryPanel hash={part.hash} />}

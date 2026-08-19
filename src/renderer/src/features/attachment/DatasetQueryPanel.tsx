@@ -66,6 +66,7 @@ function DatasetQueryPanel({ hash }: { hash: string }): React.JSX.Element {
       />
       <div>
         <Button
+          variant="primary"
           size="sm"
           loading={loading}
           disabled={sql.trim().length === 0}
