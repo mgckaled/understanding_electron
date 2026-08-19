@@ -8,6 +8,9 @@ export type AppError =
   | { kind: 'timeout'; afterMs: number }
   | { kind: 'unavailable'; service: string; hint: string }
   | { kind: 'upstream'; service: string; status: number | null; message: string }
+  // Covers both the read-only guard rejecting a query (D18B.2) and a real
+  // DuckDB error (bad column, syntax) — message is the engine's own text.
+  | { kind: 'invalidQuery'; message: string }
   | { kind: 'unknown'; message: string }
 
 export type Result<T, E = AppError> = { ok: true; value: T } | { ok: false; error: E }
@@ -350,6 +353,10 @@ export const argsSchema = {
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
   'dataset:attach': z.object({ path: z.string(), jobId: z.string() }),
+  // hash's 64-char hex shape is NOT enforced here — z.string() alone doesn't
+  // impose it, and the real guard lives in core/duckdb/query.ts (D18B.3-bis),
+  // checked before any SQL string is built.
+  'dataset:query': z.object({ hash: z.string().min(1), sql: z.string().min(1) }),
   // Its own pair (D17.1): dataset:pick's file filter (csv/tsv/txt) does not
   // serve a document dialog, so a shared channel would need an internal
   // dispatch register-all.ts already gets for free by picking the function.
@@ -432,6 +439,12 @@ export type IpcContract = {
   'dataset:attach': {
     args: z.infer<(typeof argsSchema)['dataset:attach']>
     result: Result<DatasetPart>
+  }
+  // Arrow IPC bytes (D18B.1) — @duckdb/node-api builds no Arrow of its own,
+  // so this is JS-assembled, not a pass-through of the engine's own format.
+  'dataset:query': {
+    args: z.infer<(typeof argsSchema)['dataset:query']>
+    result: Result<Uint8Array>
   }
   'document:pick': {
     args: z.infer<(typeof argsSchema)['document:pick']>
@@ -525,6 +538,8 @@ export type Api = {
     pick(): Promise<Result<DatasetRef | null>>
     /** Reads, hashes and stores `path` once (D16.6), returning the resulting message part. */
     attach(path: string, jobId: JobId): Promise<Result<DatasetPart>>
+    /** Runs a read-only SQL query against the attached dataset, capped at 200 rows (D18B.4). Result is Arrow IPC bytes. */
+    query(hash: string, sql: string): Promise<Result<Uint8Array>>
   }
   document: {
     pick(): Promise<Result<DatasetRef | null>>

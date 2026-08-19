@@ -9,7 +9,8 @@ export interface DuckDbStartupOptions {
   tempDirectory: string
 }
 
-function sqlPath(path: string): string {
+/** Normalizes a filesystem path into a safely-quoted DuckDB SQL string literal body — reused by query.ts for the interpolated view fallback (D18B.3-bis). */
+export function sqlPath(path: string): string {
   return path.replace(/\\/g, '/').replace(/'/g, "''")
 }
 

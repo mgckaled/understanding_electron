@@ -8,7 +8,7 @@ import { DATABASE_FILE, openDatabase } from '../db/open'
 import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
-import { pickDataset, attachDataset } from '../features/dataset/handlers'
+import { pickDataset, attachDataset, queryDataset } from '../features/dataset/handlers'
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage } from '../features/image/handlers'
 import { cancelJob } from '../features/job/handlers'
@@ -45,7 +45,7 @@ import {
   updateConversationSettings
 } from '../features/conversation/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
-import { probeDuckdbWorker } from '../duckdb/spawnWorker'
+import { spawnDuckdbWorker, createDuckdbRunQuery } from '../duckdb/spawnWorker'
 
 function broadcastJobEvent(event: JobEvent): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -65,6 +65,10 @@ function broadcastJobEvent(event: JobEvent): void {
 export async function registerAll(): Promise<() => void> {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))
   const attachmentsDir = join(app.getPath('userData'), 'attachments')
+  // Spawned once, kept alive for the app's life (D18B.3-bis) — one DuckDB
+  // connection, not one per query.
+  const duckdbWorker = spawnDuckdbWorker(app.getPath('userData'))
+  const runDatasetQuery = createDuckdbRunQuery(duckdbWorker)
   // The scheme itself is registered in main/index.ts, before app.whenReady()
   // — registerSchemesAsPrivileged only works pre-ready. Wiring the handler
   // here, where attachmentsDir already exists, keeps main/index.ts thin (D17.6).
@@ -82,6 +86,7 @@ export async function registerAll(): Promise<() => void> {
   handle('dataset:attach', (args) =>
     attachDataset(args, readHashedFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
   )
+  handle('dataset:query', (args) => queryDataset(args, runDatasetQuery))
   handle('document:pick', (args) => pickDocument(args, dialog.showOpenDialog, statDocumentSize))
   handle('document:attach', (args) =>
     attachDocument(args, readDocumentFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
@@ -136,8 +141,8 @@ export async function registerAll(): Promise<() => void> {
   // with a fresh dataset:attach that has not been appended yet.
   await collectOrphanedAttachments(db, attachmentsDir).catch(() => {})
 
-  // Plan 18-A live check (Passo 3-5) — no channel, no window.api (D18A.5).
-  probeDuckdbWorker(app.getPath('userData'))
-
-  return () => db.close()
+  return () => {
+    db.close()
+    duckdbWorker.kill()
+  }
 }

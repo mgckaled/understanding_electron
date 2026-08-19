@@ -4,9 +4,14 @@ import type { DatasetPart, DatasetRef, JobEvent, JobId, Result } from '@shared/i
 import { ok, err } from '@core/result'
 import { scanDelimited } from '@core/dataset/scan'
 import { mapFsError } from '@core/fsError'
+import { isValidHash, isReadOnlyQuery, buildFinalSql } from '@core/duckdb/query'
 import * as jobs from '../../jobs'
 
 const PROGRESS_INTERVAL_MS = 100
+
+// The N+1 truncation trick (D18B.4): 201 rows back means there were more,
+// and the UI drops the last one. 200 matches the app-wide DOM row cap.
+const QUERY_ROW_LIMIT = 201
 
 type ShowOpenDialog = (options: OpenDialogOptions) => Promise<OpenDialogReturnValue>
 
@@ -67,5 +72,37 @@ export async function attachDataset(
     return err(mapFsError(error, path))
   } finally {
     jobs.finish(jobId)
+  }
+}
+
+/**
+ * Runs a read-only query against an attached dataset (D18B.6). Rejects a
+ * malformed hash or a non-read-only `sql` before ever calling `runQuery` —
+ * the hash check here only saves a round-trip (format, not path safety);
+ * `buildViewSqlParameterized`/`buildViewSqlInterpolated` enforce the same
+ * check again where the path is actually built, in the worker.
+ *
+ * @param runQuery - Sends `(hash, sql)` to the DuckDB worker and resolves
+ *   with Arrow IPC bytes; rejects with the engine's own error text.
+ */
+export async function queryDataset(
+  { hash, sql }: { hash: string; sql: string },
+  runQuery: (hash: string, sql: string) => Promise<Uint8Array>
+): Promise<Result<Uint8Array>> {
+  if (!isValidHash(hash)) {
+    return err({ kind: 'invalidQuery', message: 'Identificador de anexo inválido.' })
+  }
+  if (!isReadOnlyQuery(sql)) {
+    return err({
+      kind: 'invalidQuery',
+      message: 'Apenas consultas de leitura (SELECT/WITH) são permitidas.'
+    })
+  }
+
+  try {
+    const bytes = await runQuery(hash, buildFinalSql(sql, QUERY_ROW_LIMIT))
+    return ok(bytes)
+  } catch (error) {
+    return err({ kind: 'invalidQuery', message: (error as Error).message })
   }
 }

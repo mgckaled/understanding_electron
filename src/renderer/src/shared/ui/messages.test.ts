@@ -9,6 +9,7 @@ const SAMPLE_ERRORS: AppError[] = [
   { kind: 'timeout', afterMs: 1000 },
   { kind: 'unavailable', service: 'ollama', hint: 'dica' },
   { kind: 'upstream', service: 'ollama', status: 500, message: 'falha' },
+  { kind: 'invalidQuery', message: 'x' },
   { kind: 'unknown', message: 'x' }
 ]
 
@@ -21,6 +22,12 @@ describe('errorMessage', () => {
     const error: AppError = { kind: 'blocked', reason: 'PDF sem texto selecionável' }
 
     expect(errorMessage(error)).toBe('PDF sem texto selecionável')
+  })
+
+  it('returns the message verbatim for an invalidQuery error — the engine’s own text (D18B.6)', () => {
+    const error: AppError = { kind: 'invalidQuery', message: 'Binder Error: column "x" not found' }
+
+    expect(errorMessage(error)).toBe('Binder Error: column "x" not found')
   })
 
   it('falls back to a generic message for a kind this build does not know', () => {

@@ -16,13 +16,16 @@ const MESSAGES: Record<ErrorKind, string> = {
   timeout: 'A operação demorou demais e foi interrompida.',
   unavailable: 'Serviço indisponível no momento.',
   upstream: 'Falha ao se comunicar com um serviço externo.',
+  invalidQuery: 'Consulta inválida.',
   unknown: FALLBACK_MESSAGE
 }
 
-// blocked carries its own reason (e.g. "PDF sem texto selecionável", D17.8) —
-// the generic MESSAGES entry stays as the label for a bare AppError['kind'],
-// but a real blocked error is strictly more informative than that fallback.
+// blocked and invalidQuery carry their own text (D17.8; D18B.6 — the
+// engine's own error, useful on its own in a diagnostic tool) — the generic
+// MESSAGES entry stays as the label for a bare AppError['kind'], but a real
+// error of either kind is strictly more informative than that fallback.
 export function errorMessage(error: AppError): string {
   if (error.kind === 'blocked') return error.reason
+  if (error.kind === 'invalidQuery') return error.message
   return MESSAGES[error.kind] ?? FALLBACK_MESSAGE
 }

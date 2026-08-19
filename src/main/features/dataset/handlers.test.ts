@@ -1,5 +1,5 @@
 import * as jobs from '../../jobs'
-import { pickDataset, attachDataset } from './handlers'
+import { pickDataset, attachDataset, queryDataset } from './handlers'
 
 function throwingLines(error: Error): AsyncIterable<string> {
   return {
@@ -104,5 +104,60 @@ describe('attachDataset', () => {
 
     expect(result).toEqual({ ok: false, error: { kind: 'cancelled' } })
     expect(storeAttachment).not.toHaveBeenCalled()
+  })
+})
+
+describe('queryDataset', () => {
+  const VALID_HASH = 'a'.repeat(64)
+
+  it('calls runQuery with the final SQL, wrapped in the row cap, and returns its bytes', async () => {
+    const bytes = new Uint8Array([1, 2, 3])
+    const runQuery = vi.fn().mockResolvedValue(bytes)
+
+    const result = await queryDataset({ hash: VALID_HASH, sql: 'select * from dataset' }, runQuery)
+
+    expect(result).toEqual({ ok: true, value: bytes })
+    expect(runQuery).toHaveBeenCalledWith(
+      VALID_HASH,
+      'SELECT * FROM (select * from dataset) LIMIT 201'
+    )
+  })
+
+  it('rejects a malformed hash without ever calling runQuery', async () => {
+    const runQuery = vi.fn()
+
+    const result = await queryDataset({ hash: 'not-a-hash', sql: 'select 1' }, runQuery)
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'Identificador de anexo inválido.' }
+    })
+    expect(runQuery).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-read-only query without ever calling runQuery', async () => {
+    const runQuery = vi.fn()
+
+    const result = await queryDataset({ hash: VALID_HASH, sql: 'DROP VIEW dataset' }, runQuery)
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        kind: 'invalidQuery',
+        message: 'Apenas consultas de leitura (SELECT/WITH) são permitidas.'
+      }
+    })
+    expect(runQuery).not.toHaveBeenCalled()
+  })
+
+  it('wraps a real engine error as invalidQuery, with the engine text preserved', async () => {
+    const runQuery = vi.fn().mockRejectedValue(new Error('Binder Error: column "x" not found'))
+
+    const result = await queryDataset({ hash: VALID_HASH, sql: 'select x from dataset' }, runQuery)
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'Binder Error: column "x" not found' }
+    })
   })
 })
