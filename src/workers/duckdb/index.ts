@@ -25,10 +25,9 @@ async function main(): Promise<void> {
 
   // Live-confirmed in 18-B: `read_csv_auto($1)` rejects a bound parameter —
   // "Binder Error: Unexpected prepared parameter. This type of statement
-  // can't be prepared!" — so the interpolated form is not a fallback here,
-  // it is the only form that works. buildViewSqlParameterized stays exported
-  // from core/duckdb/query.ts in case a future @duckdb/node-api version
-  // changes this (ROADMAP § 2).
+  // can't be prepared!" — so the interpolated form is the only one that
+  // works, not a fallback. Retry the bound form if issue duckdb-node-neo#45
+  // ever closes (ROADMAP § 2).
   process.parentPort.on('message', async (e: { data: WorkerQueryRequest }) => {
     const { hash, sql } = e.data
     try {

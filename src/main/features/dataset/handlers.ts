@@ -79,8 +79,8 @@ export async function attachDataset(
  * Runs a read-only query against an attached dataset (D18B.6). Rejects a
  * malformed hash or a non-read-only `sql` before ever calling `runQuery` —
  * the hash check here only saves a round-trip (format, not path safety);
- * `buildViewSqlParameterized`/`buildViewSqlInterpolated` enforce the same
- * check again where the path is actually built, in the worker.
+ * `buildViewSqlInterpolated` enforces the same check again where the path
+ * is actually built, in the worker.
  *
  * @param runQuery - Sends `(hash, sql)` to the DuckDB worker and resolves
  *   with Arrow IPC bytes; rejects with the engine's own error text.

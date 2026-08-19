@@ -1,11 +1,4 @@
-import { join } from 'node:path'
-import {
-  isValidHash,
-  isReadOnlyQuery,
-  buildViewSqlParameterized,
-  buildViewSqlInterpolated,
-  buildFinalSql
-} from './query'
+import { isValidHash, isReadOnlyQuery, buildViewSqlInterpolated, buildFinalSql } from './query'
 
 const VALID_HASH = 'a'.repeat(64)
 
@@ -43,19 +36,6 @@ describe('isReadOnlyQuery', () => {
     ['empty', '']
   ])('rejects %s', (_label, sql) => {
     expect(isReadOnlyQuery(sql)).toBe(false)
-  })
-})
-
-describe('buildViewSqlParameterized', () => {
-  it('binds the resolved path as $1, never interpolated', () => {
-    const result = buildViewSqlParameterized(VALID_HASH, '/data/attachments')
-
-    expect(result.sql).toBe('CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto($1)')
-    expect(result.values).toEqual([join('/data/attachments', VALID_HASH)])
-  })
-
-  it('throws on a malformed hash instead of building unsafe SQL', () => {
-    expect(() => buildViewSqlParameterized('../escape', '/data/attachments')).toThrow()
   })
 })
 

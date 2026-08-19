@@ -22,34 +22,11 @@ export function isReadOnlyQuery(sql: string): boolean {
   return !body.includes(';')
 }
 
-export interface ParameterizedViewSql {
-  sql: string
-  values: [string]
-}
-
 /**
- * The `dataset` view, bound-parameter form — the path never touches the SQL
- * string (D18B.3-bis). Throws on a malformed hash: by the time this runs,
- * the main handler has already rejected the request once, so an invalid
- * hash here means that guard was bypassed, not a normal user mistake.
- *
- * @throws When `hash` is not a 64-char lowercase hex string.
- */
-export function buildViewSqlParameterized(
-  hash: string,
-  attachmentsDir: string
-): ParameterizedViewSql {
-  if (!isValidHash(hash)) throw new Error(`invalid attachment hash: ${hash}`)
-  return {
-    sql: 'CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto($1)',
-    values: [join(attachmentsDir, hash)]
-  }
-}
-
-/**
- * The `dataset` view, interpolated fallback — only reached if the engine
- * rejects a bound parameter as a table function argument (confirmed live in
- * passo 3, D18B.3-bis). Safe despite the interpolation: `hash` already
+ * The `dataset` view — interpolated, not bound: live-confirmed in passo 3
+ * that DuckDB rejects a bound parameter as `read_csv_auto`'s argument
+ * ("Binder Error: Unexpected prepared parameter. This type of statement
+ * can't be prepared!"). Safe despite the interpolation: `hash` already
  * passed the 64-char hex format check, so nothing user-controlled enters
  * the string verbatim.
  *

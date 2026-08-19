@@ -8,7 +8,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 ## Em execução
 
-O 18 (camada de dados) virou sub-planos 18-A a 18-F, ≤7 passos cada (ver [`ROADMAP § 1`](../../ROADMAP.md)). O 18-A (motor e worker) concluiu — [`implemented/`](../implemented/18-A-motor-e-worker.md) — e o 18-B (canal e consulta) é o próximo, com [`18-C`](18-C-pre-visualizacao.md) já escrito na fila.
+O 18 (camada de dados) virou sub-planos 18-A a 18-F, ≤7 passos cada (ver [`ROADMAP § 1`](../../ROADMAP.md)). O 18-A (motor e worker) e o 18-B (canal e consulta) concluíram — [`implemented/18-A`](../implemented/18-A-motor-e-worker.md), [`implemented/18-B`](../implemented/18-B-canal-e-consulta.md) — e o [`18-C`](18-C-pre-visualizacao.md) (pré-visualização) é o próximo, com [`18-D`](18-D-perfil-e-cartao-aninhado.md) já escrito na fila.
 
 ---
 

@@ -102,15 +102,12 @@ Para um milhão de linhas, isso significa: alocar um milhão de objetos, convert
 **Apache Arrow** é um formato de memória colunar padronizado. Os dados ficam como blocos binários contíguos — um por coluna — em vez de objetos individuais.
 
 ```
-DuckDB → Arrow (já é o formato nativo dele) → ArrayBuffer transferível → React
+DuckDB → objetos JS colunares → Arrow montado em JS → ArrayBuffer → React
 ```
 
-Duas propriedades fazem a diferença:
+⚠️ **Correção (plano 18-B, ago/2026): o DuckDB NÃO produz Arrow nativamente neste binding.** A frase original desta seção — "o DuckDB já produz Arrow nativamente, não há conversão na origem" — era verdade para o cliente Python (`.arrow()`/`to_arrow_reader()`), mas **não** para `@duckdb/node-api`: a exportação Arrow é uma [issue aberta](https://github.com/duckdb/duckdb-node-neo/issues/45), sem prazo. O que o binding devolve é dado JS nativo (`getColumnsObject()`), e a `Table` Arrow é **montada em JS**, via `apache-arrow` (`tableFromArrays`/`tableToIPC`) — ver `core/duckdb/arrow.ts`.
 
-1. **O DuckDB já produz Arrow nativamente.** Não há conversão na origem — os dados saem no formato final.
-2. **`ArrayBuffer` é transferível — dentro de um processo.** Entre renderer e um Web Worker, por exemplo, onde a memória é a mesma, o IPC pode *transferir a posse* do bloco em vez de copiá-lo, e a operação é praticamente instantânea. **Entre processos do sistema operacional — o caso daqui — os bytes são copiados de qualquer forma**; a posse não muda de dono, porque não há memória compartilhada para transferir posse sobre ela.
-
-A vantagem sobre JSON não desaparece por isso — só muda de origem. O *structured clone* binário do Arrow copia um bloco contíguo por coluna; o caminho por JSON aloca um milhão de objetos e os converte para texto, com nomes de campo repetidos em cada linha. É cópia rápida contra reconstrução objeto a objeto, e a diferença continua sendo de ordens de grandeza — mas **meça no passo 5 abaixo antes de assumir milissegundos**: é uma cópia de bytes, não uma operação grátis.
+Essa correção muda o que domina o custo. `ArrayBuffer`/bytes Arrow continuam **copiados**, não transferidos, entre processos do sistema operacional — não há memória compartilhada para transferir posse sobre ela, e o IPC do Electron não aceita lista de transferência em `invoke`/`send` de qualquer forma (skill `ipc`). Mas **medido no plano 18-B, não suposto:** a cópia em si é barata nas duas formas — ≤20ms mesmo a 100 mil linhas, tanto para os bytes Arrow quanto para o texto JSON. O que pesa é **montar e desmontar a `Table` em JS**, porque o motor não entrega Arrow pronto: nessa mesma medição (100 mil linhas, sem `LIMIT`), o caminho por JSON (`JSON.stringify`/`JSON.parse`, embutidos e muito otimizados) venceu Arrow por ~2,4× no tempo total. A vantagem de Arrow sobre JSON que esta seção previa **não se confirmou** para este binding, nesta escala — números completos e o porquê o canal ficou com Arrow mesmo assim: [`docs/HISTORY.md`](../HISTORY.md) § Plano 18-B.
 
 ⚠️ Duas ressalvas. Primeiro: quando a transferência de posse *de fato* ocorre — dentro do mesmo processo — ela é real: depois de enviado, o `ArrayBuffer` fica inutilizável na origem, o que surpreende quem espera semântica de cópia. Segundo, a implementação do Electron tem limitações conhecidas nesta área — há relato de mensagem que chega vazia ao transferir um `ArrayBuffer` de renderer para main, e de crash com certos transferíveis na lista do `MessagePortMain`. Correção e decisão completas em [`docs/plan/implemented/00-visao-geral.md`](../plan/implemented/00-visao-geral.md#uma-correção-no-caderno-de-estudos) e [`docs/HISTORY.md`](../HISTORY.md).
 
@@ -160,7 +157,7 @@ Uma operação só, para começar. O caminho completo está no [caderno 07](07-c
 
 **5. Arrow no transporte**
 
-Trocar o retorno de JSON para `ArrayBuffer` transferível. Medir a diferença — vale fazer o experimento com um arquivo grande de verdade, porque o número surpreende.
+Trocar o retorno de JSON para `ArrayBuffer` transferível. Medir a diferença — vale fazer o experimento com um arquivo grande de verdade, porque o número surpreende. **Feito no plano 18-B, e o número surpreendeu — só que ao contrário do que esta frase supunha:** JSON venceu Arrow no tempo total, nas duas escalas medidas. Ver a correção no topo desta seção e [`HISTORY.md`](../HISTORY.md) § Plano 18-B.
 
 **6. Tabela virtualizada**
 

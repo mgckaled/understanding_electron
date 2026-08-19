@@ -39,8 +39,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    ── trilha F, segundo item ───────────────────────────────────────────────────────
    F-2  composer, modelo e sidebar      plan/implemented/F-2-...         concluída (ago/2026)
    18-A motor e worker (DuckDB)       plan/implemented/18-A-...        concluída (ago/2026)
-▶  18-B canal e consulta             plan/active/18-B-...
-   19 propor: consulta e passos
+   18-B canal e consulta             plan/implemented/18-B-...        concluída (ago/2026)
+▶  19 propor: consulta e passos
    20 gráfico como artefato
    ── extensão do arco (guia externo), ago/2026 ───────────────────────────────────
    21 thinking mode                  reference/web-fetch_mcp_thinking.md
@@ -81,6 +81,7 @@ Decisões tomadas com um prazo de validade conhecido. Cada uma tem um **evento**
 
 | Quando acontecer | Revisitar | Registrado em |
 |---|---|---|
+| **A issue [duckdb-node-neo#45](https://github.com/duckdb/duckdb-node-neo/issues/45) fechar** — ou o teto de 201 linhas do `dataset:query` subir de verdade (não é o caso hoje: 18-C/18-D consultam o mesmo canal, sem mudar o teto) | D18B.1 — montar Arrow em JS deixa de ser necessário se o motor passar a exportá-lo nativo, o que eliminaria `core/duckdb/arrow.ts` inteiro. **Já medido, para quando isso for revisitado:** a 100 mil linhas sem `LIMIT`, Arrow perde de JSON por ~2,4× no tempo total (983ms vs. 386ms de mediana) — mas a fronteira de processo não é a causa (≤20ms mesmo nessa escala, dois `postMessage` reais medidos via `MessageChannel`); quem pesa é montar/desmontar a `Table` em JS. Decode por coluna mede 3× mais rápido que por linha (179ms vs. 526ms a 100 mil) — o primeiro lugar para procurar, se a issue não fechar e o teto ainda assim precisar subir | [`HISTORY`](HISTORY.md) § Plano 18-B |
 | ~~O plano 16 desenhar o clipe de anexo de mensagem~~ **fechado, fundido em um só** — o clipe que a DS-5 relocou (`AttachButton.tsx`) continua o único gatilho; o plano 16 trocou só o que ele abre, de "visualizar dataset" (`OpenDatasetPanel`, morria num popover) para "anexar à conversa" (`dataset:attach`, vira `MessagePart`). Confirmado com o usuário no início da sessão do plano 16 — a leitura de "deveria ficar fora do composer" era memória de uma decisão nunca escrita; o que estava no código (DS-5) e no próprio texto do plano (D16.6) apontavam para dentro | [`plan/implemented/16-anexo-mecanismo-e-dataset.md`](plan/implemented/16-anexo-mecanismo-e-dataset.md) |
 | ~~DuckDB instalado e carregando~~ **disparado e cumprido no plano 18-A (ago/2026)** — `shamefullyHoist: false` desligou e expôs uma dependência fantasma (`@types/hast`, hoisted sem estar declarada), corrigida na mesma sessão; `pnpm check:fast`, `pnpm dev` e `pnpm build:win` verdes | ~~`shamefullyHoist: false` no `pnpm-workspace.yaml`~~ | [`18-A`](plan/implemented/18-A-motor-e-worker.md) |
 | ~~Primeira query reexecutada sobre o mesmo dataset~~ · ~~data marcada: plano 14~~ **fechado** — adotado em ago/2026 (`@tanstack/react-query` 5.101.4), e a promessa se cumpriu: três hooks tocados, **zero componentes**. O que a fez se cumprir está no [`HISTORY`](HISTORY.md) § *um hook público sobrevive à troca de fonte* | ~~Adotar TanStack Query para o **cache de servidor**~~ | [`14-persistencia`](plan/implemented/14-persistencia-das-conversas.md) |
