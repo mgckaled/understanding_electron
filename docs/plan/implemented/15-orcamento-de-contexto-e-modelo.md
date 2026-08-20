@@ -501,6 +501,8 @@ Os dois candidatos estão pesquisados e registrados abaixo para que a pesquisa n
 
 > ⚠️ **A tensão que o plano de nuvem vai ter de resolver, registrada agora:** o `gemini-2.5-flash` **enxerga imagem** — seria o segundo modelo com visão do aplicativo, e o primeiro que não custa 80 s de prefill. E o [`ESCOPO.md`](../../ESCOPO.md) proíbe mandar imagem para a nuvem, porque imagem é nível 3 por construção. As duas coisas estão certas e se contradizem na tela: o usuário verá um modelo capaz de ver, com o anexo recusado. Isso não se resolve neste plano; resolve-se decidindo se a regra do nível 3 é sobre **o dado do usuário** (e então uma imagem que o próprio usuário anexou conscientemente talvez caiba num opt-in explícito) ou sobre **sair da máquina** (e então continua proibida). A segunda leitura é a que está escrita hoje.
 
+> **Atualizado e substituído por:** [`docs/reference/models/cloud-optin.md`](../../reference/models/cloud-optin.md) (ago/2026) — mesmos dois candidatos, dados oficiais reconferidos, com o teto de taxa do tier grátis e a divergência entre fontes já marcadas. A tabela acima fica como registro do que se sabia ao escrever esta decisão; o número atual mora no arquivo novo.
+
 ### D15.10 — Teto zero **não é uma janela**, e a margem de RAM não é um custo fixo
 
 Correção de 11/08/2026, encontrada em uso e não por teste. Escolhido o `qwen2.5-coder:7b`, o cabeçalho mostrou *"até 0k"*, o medidor mostrou *"~1 de 1 tokens"*, todo envio foi recusado, e o console registrou uma recusa de schema no `conversation:settings`. Três andares de um mesmo erro:

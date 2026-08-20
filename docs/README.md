@@ -82,7 +82,7 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Níveis de teste, mocks, o que não testar | skill `testing` | apontam |
 | Convenção de comentário e docstring (TSDoc) | skill `comments` | apontam |
 | Ferramentas do chat (busca web, MCP, raciocínio visível) | [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md) | apontam |
-| Peso/cache KV por modelo Ollama, elegibilidade, inviáveis e descartados | [`reference/models/`](reference/models/README.md) | apontam — a frota **instalada** continua com dono no `CLAUDE.md` |
+| Peso/cache KV por modelo Ollama e ficha técnica dos modelos de nuvem opt-in, elegibilidade, inviáveis e descartados | [`reference/models/`](reference/models/README.md) | apontam — a frota **instalada** continua com dono no `CLAUDE.md` |
 | Stack fixada, versões, regras invioláveis | [`CLAUDE.md`](../CLAUDE.md) | apontam |
 | Armadilhas diagnosticadas | [`HISTORY.md`](HISTORY.md) + `study/04-diario-de-bordo.md` | apontam |
 | Histórico, decisões, alternativas descartadas | [`HISTORY.md`](HISTORY.md) | apontam |

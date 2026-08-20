@@ -9,7 +9,7 @@ Documentos de **consulta estável**: comparativos, medições, especificações 
 | [Brief para o Claude Design](BRIEF-claude-design.md) | ago/2026 | O prompt que leva as restrições do design system até a ferramenta externa que gera os protótipos — `@theme inline`, os tokens exatos, a D10.1 via `@utility`, e o que **não** vira utilidade. Registra também a fronteira: o que é trabalho dela e o que é deste repositório |
 | [Handoff do Claude Design](handoff-ds-ago2026/README.md) | ago/2026 | O que voltou, curado de ~50 arquivos para dois: o protótipo das cinco extensões de interface (insumo do DS-3) e uma captura. O README lista **o que foi descartado e por quê** — incluindo a cópia dos tokens, que a regra de fonte única proíbe, e duas propostas do protótipo que foram recusadas |
 | [Web Fetch, MCP e Thinking Mode](web-fetch_mcp_thinking.md) | ago/2026 | Guia de implementação, gerado fora deste repositório, propondo três capacidades de chat via *tool calling* do Ollama — busca web, MCP (Context7) e modo de raciocínio. Origem dos planos 21–23 do arco (ver [`ESCOPO`](../ESCOPO.md#ferramentas-do-chat) e [`ROADMAP § 1`](../ROADMAP.md#1-a-sequência)) |
-| [Modelos Ollama — ficha técnica](models/README.md) | ago/2026 | Peso, cache KV por faixa de contexto, capacidades e papel de cada modelo da frota; elegíveis, inviáveis e descartados, cada um com o fato que bloqueia e o que reabriria a análise |
+| [Modelos — ficha técnica](models/README.md) | ago/2026 | Local (Ollama): peso, cache KV por faixa de contexto, capacidades e papel de cada modelo da frota; elegíveis, inviáveis e descartados, cada um com o fato que bloqueia. Nuvem (`cloud-optin.md`): `gemini-2.5-flash`/`glm-4.7-flash`, contexto, preço, teto de taxa do tier grátis — pesquisados, ainda sem integração |
 
 ---
 
@@ -37,7 +37,6 @@ Não existem ainda; ficam anotados para que, quando surgirem, não acabem no lug
 - **Medição de leitura de arquivo grande** — sai da validação manual da [fase 06](../plan/implemented/06-primeira-feature.md). Vira a linha de base contra a qual o DuckDB será comparado.
 - **Dialetos e sujeira de CSV** — separadores, encodings, BOM, cabeçalho fora da primeira linha. Catálogo do que o app precisa reconhecer, com exemplo real de cada caso.
 - **Peculiaridades do `.xlsx`** — planilhas múltiplas, células mescladas, tipo por célula, datas em serial, valor armazenado versus formatado. O [`ESCOPO.md`](../ESCOPO.md) registra o teto de memória; o detalhe do formato mora aqui.
-- **Ficha técnica dos modelos de nuvem (`models/cloud-optin.md`)** — quando a fatia 3 da [camada de IA](../plan/active/09-camada-de-ia.md) tirar o opt-in de nuvem do papel (D15.9). Peso e cache KV não se aplicam (não há `num_ctx` a reservar num provedor remoto); o que entra é custo por token, limite de taxa e o que cada provedor expõe do parecido com `/api/show`.
 
 ---
 
