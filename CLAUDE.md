@@ -132,7 +132,7 @@ Add-MpPreference -ExclusionProcess "node.exe"
 |---|---|
 | CPU | Intel i5-8265U — 4 núcleos / 8 threads |
 | RAM | 16 GB. **Não há um número de "livre" — há três**, medidos em 10/08/2026: **~9 GB** com só o app Electron rodando · **~7,5 GB** com só o VS Code · **~6 GB** no ambiente de trabalho típico (VS Code, Edge, WhatsApp, Claude Code). A variação de 3 GB é maior que o peso da maioria dos modelos da frota, e é por isso que o teto de contexto se lê em runtime em vez de ser chumbado — ver [`plan/active/15`](docs/plan/implemented/15-orcamento-de-contexto-e-modelo.md) § D15.2 |
-| GPU | **sem aceleração para inferência — tudo roda em CPU** |
+| GPU | NVIDIA MX150, 2 GB VRAM, CUDA configurado (herança do mill.tools, que a reserva para o Whisper) — mas o app roda **CPU-only por decisão testada, não por ausência de hardware**: `num_gpu` forçado no `gemma3:1b` foi medido e descartado para geração a contexto grande, sem estouro de VRAM — números e protocolo em [`docs/reference/models/ollama-models-gpu-analysis.md`](docs/reference/models/ollama-models-gpu-analysis.md) |
 | Ollama | 0.32.14 (atualizado fora do app, 18/08/2026 — era 0.32.6), servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
 
 Frota de **13 entradas** no `/api/tags` em 18/08/2026, das quais 5 são variantes `-custom` por Modelfile, com os mesmos pesos e teto das originais. As 8 distintas:
