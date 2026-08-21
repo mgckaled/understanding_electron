@@ -229,10 +229,18 @@ function AttachButton({
             <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-xs">
               {attachment.kind === 'dataset' ? (
                 <>
-                  {/* format === 'json', never === 'delimited': a part stored
-                      before 18-E comes back with format: undefined, and must
-                      fall into this Separador branch like any other CSV. */}
-                  {attachment.format === 'json' ? (
+                  {/* Checked in this order on purpose (D18F.6): 'excel' first,
+                      'json' second, and undefined/anything else falls into
+                      this last Separador branch — never a switch that treats
+                      undefined as its own case. A part stored before 18-E
+                      comes back with format: undefined and must read like any
+                      other CSV. */}
+                  {attachment.format === 'excel' ? (
+                    <div className="contents">
+                      <dt className="text-text-muted">Formato</dt>
+                      <dd className="text-text [word-break:break-word]">Excel</dd>
+                    </div>
+                  ) : attachment.format === 'json' ? (
                     <div className="contents">
                       <dt className="text-text-muted">Formato</dt>
                       <dd className="text-text [word-break:break-word]">JSON</dd>

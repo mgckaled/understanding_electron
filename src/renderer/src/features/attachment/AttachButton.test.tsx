@@ -41,6 +41,29 @@ const JSON_SUMMARY: DatasetPart = {
   rowCount: 42
 }
 
+const EXCEL_SUMMARY: DatasetPart = {
+  kind: 'dataset',
+  hash: 'h1-excel',
+  fileName: 'data.xlsx',
+  format: 'excel',
+  columns: ['id', 'name'],
+  rowCount: 42
+}
+
+// A dataset part persisted before 18-E: `MessagePart` rows are cast, not
+// `.parse()`d on read, so `format` can genuinely arrive as `undefined` — this
+// must fall into the Separador branch like any other CSV, never crash or
+// silently read as JSON/Excel (D18F.6, the regression 18-E already paid for
+// once, now covered by a fixture instead of only by code convention).
+const UNDEFINED_FORMAT_SUMMARY = {
+  kind: 'dataset',
+  hash: 'h1-legacy',
+  fileName: 'legado.csv',
+  delimiter: ',',
+  columns: ['id', 'name'],
+  rowCount: 42
+} as DatasetPart
+
 const DOCUMENT: DocumentPart = {
   kind: 'document',
   hash: 'h2',
@@ -119,6 +142,43 @@ describe('AttachButton', () => {
     expect(screen.getByText('Formato')).toBeInTheDocument()
     expect(screen.getByText('JSON')).toBeInTheDocument()
     expect(screen.queryByText('Separador')).not.toBeInTheDocument()
+  })
+
+  // D18F.6 — an Excel attach shows "Formato: Excel" instead of Separador.
+  it('shows "Formato: Excel" instead of Separador for an Excel dataset part', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/data.xlsx' } })
+    vi.mocked(api.dataset.attach).mockResolvedValue({ ok: true, value: EXCEL_SUMMARY })
+    const user = userEvent.setup()
+
+    render(<ControlledAttachButton />)
+    await open(user)
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
+    await screen.findByText('data.xlsx')
+    await open(user)
+
+    expect(screen.getByText('Formato')).toBeInTheDocument()
+    expect(screen.getByText('Excel')).toBeInTheDocument()
+    expect(screen.queryByText('Separador')).not.toBeInTheDocument()
+  })
+
+  // D18F.6 — the regression 18-E already paid for once: a part stored before
+  // 18-E comes back with format: undefined and must keep reading as
+  // Separador, never crash and never be mistaken for JSON or Excel.
+  it('shows "Separador", not Formato, for a legacy dataset part with format: undefined', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/legado.csv' } })
+    vi.mocked(api.dataset.attach).mockResolvedValue({ ok: true, value: UNDEFINED_FORMAT_SUMMARY })
+    const user = userEvent.setup()
+
+    render(<ControlledAttachButton />)
+    await open(user)
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
+    await screen.findByText('legado.csv')
+    await open(user)
+
+    expect(screen.getByText('Separador')).toBeInTheDocument()
+    expect(screen.queryByText('Formato')).not.toBeInTheDocument()
   })
 
   it('lifts the attached document part to the caller and shows it as a chip', async () => {
