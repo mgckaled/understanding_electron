@@ -18,7 +18,13 @@ export async function pickDataset(
 ): Promise<Result<DatasetRef | null>> {
   const { canceled, filePaths } = await showOpenDialog({
     properties: ['openFile'],
+    // The OS dialog shows only the FIRST filter's extensions by default — a
+    // second filter is a dropdown the user has to notice and switch, not an
+    // OR. A combined filter listed first is what makes both formats visible
+    // without that extra step (bug found live: JSON/NDJSON were invisible
+    // until the user manually picked the second filter).
     filters: [
+      { name: 'Dados tabulares', extensions: ['csv', 'tsv', 'txt', 'json', 'ndjson', 'jsonl'] },
       { name: 'Delimited text', extensions: ['csv', 'tsv', 'txt'] },
       { name: 'JSON', extensions: ['json', 'ndjson', 'jsonl'] }
     ]

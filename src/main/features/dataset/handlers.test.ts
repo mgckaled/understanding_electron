@@ -17,6 +17,21 @@ describe('pickDataset', () => {
 
     expect(result).toEqual({ ok: true, value: null })
   })
+
+  // Regression: the OS dialog shows only the FIRST filter by default — a
+  // JSON-only second filter left JSON/NDJSON invisible until the user
+  // manually switched the dropdown (found live, fixed post-18-E). The first
+  // filter must list every extension this button supports.
+  it('lists every supported extension in the first (default) filter', async () => {
+    const showOpenDialog = vi.fn().mockResolvedValue({ canceled: true, filePaths: [] })
+
+    await pickDataset(undefined, showOpenDialog)
+
+    const { filters } = showOpenDialog.mock.calls[0][0]
+    expect(filters[0].extensions).toEqual(
+      expect.arrayContaining(['csv', 'tsv', 'txt', 'json', 'ndjson', 'jsonl'])
+    )
+  })
 })
 
 // attachDataset itself only dispatches on sniffFormat (D18E.1/D18E.3) — each
