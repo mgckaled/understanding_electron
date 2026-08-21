@@ -223,7 +223,7 @@ Todos os quatro são os dois. Três deles são quase de graça; um não é.
 |---|---|---|---|
 | **CSV / TSV / delimitados** | nativa no DuckDB | nativa | O caso base e o mais bagunçado do mundo real |
 | **Parquet** | nativa | nativa | Colunar, tipado, comprimido — a saída natural do app |
-| **JSON / NDJSON** | nativa | nativa | NDJSON é direto; JSON aninhado exige achatamento |
+| **JSON / NDJSON** | nativa | nativa | NDJSON é direto; JSON aninhado é **recusado**, com o nome da coluna (18-E, D18E.4) — o motor relacional exige linha/coluna, então não há achatamento automático |
 | **Excel (`.xlsx`)** | extensão `excel` do DuckDB, ou biblioteca à parte | idem | **Assimétrico — ver abaixo** |
 
 ### Documento — entrada apenas

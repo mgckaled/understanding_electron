@@ -47,4 +47,16 @@ describe('formatDataCard', () => {
     expect(card).not.toContain(SENTINEL)
     expect(card).toContain('observacao') // the column NAME is allowed — only the cell is not
   })
+
+  // D18E — a JSON part carries no delimiter at all (schema field is
+  // optional). Guards against the card ever growing a `delimiter` line: it
+  // would compile clean and print the literal text "undefined".
+  it('renders a JSON part with no delimiter field, the same shape as delimited', () => {
+    const card = formatDataCard(
+      datasetPart({ fileName: 'vendas.json', format: 'json', delimiter: undefined })
+    )
+
+    expect(card).not.toContain('undefined')
+    expect(card).toContain('vendas.json')
+  })
 })
