@@ -20,6 +20,7 @@ const datasetPart: DatasetPart = {
   kind: 'dataset',
   hash: 'abc123',
   fileName: 'vendas.csv',
+  format: 'delimited',
   delimiter: ',',
   columns: ['id', 'valor'],
   rowCount: 10

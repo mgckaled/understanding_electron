@@ -7,6 +7,7 @@ function datasetPart(overrides: Partial<DatasetPart> = {}): DatasetPart {
     kind: 'dataset',
     hash: 'abc123',
     fileName: 'vendas.csv',
+    format: 'delimited',
     delimiter: ',',
     columns: ['id', 'valor'],
     rowCount: 10,
@@ -35,7 +36,13 @@ describe('formatDataCard', () => {
 
     const scanned = await scanDelimited({ lines: fixtureLines() })
     if (!scanned.ok) throw new Error('fixture scan failed')
-    const card = formatDataCard({ kind: 'dataset', hash: 'h', fileName: 'f.csv', ...scanned.value })
+    const card = formatDataCard({
+      kind: 'dataset',
+      hash: 'h',
+      fileName: 'f.csv',
+      format: 'delimited',
+      ...scanned.value
+    })
 
     expect(card).not.toContain(SENTINEL)
     expect(card).toContain('observacao') // the column NAME is allowed — only the cell is not

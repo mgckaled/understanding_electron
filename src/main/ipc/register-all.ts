@@ -17,7 +17,7 @@ import {
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage } from '../features/image/handlers'
 import { cancelJob } from '../features/job/handlers'
-import { readHashedFile } from '../features/dataset/lines'
+import { readHashedFile, sniffFileFormat } from '../features/dataset/lines'
 import { readDocumentFile, statDocumentSize } from '../features/document/readFile'
 import { readImageFile } from '../features/image/readFile'
 import { rasterizeToPng } from '../image/rasterize'
@@ -89,7 +89,15 @@ export async function registerAll(): Promise<() => void> {
   handle('shell:openExternal', (args) => openExternal(args, shell.openExternal))
   handle('dataset:pick', (args) => pickDataset(args, dialog.showOpenDialog))
   handle('dataset:attach', (args) =>
-    attachDataset(args, readHashedFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
+    attachDataset(
+      args,
+      readHashedFile,
+      attachmentsDir,
+      ensureAttachment,
+      broadcastJobEvent,
+      sniffFileFormat,
+      duckdbClient.runSchema
+    )
   )
   handle('dataset:query', (args) => queryDataset(args, duckdbClient.runQuery))
   handle('dataset:profile', (args) => profileDataset(args, duckdbClient.runProfile))

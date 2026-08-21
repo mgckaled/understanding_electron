@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readHashedFile } from './lines'
+import { readHashedFile, sniffFileFormat } from './lines'
 
 async function collect(iterable: AsyncIterable<string>): Promise<string[]> {
   const lines: string[] = []
@@ -41,5 +41,31 @@ describe('readHashedFile', () => {
 
   it('rejects with EISDIR when the path is a directory', async () => {
     await expect(collect(readHashedFile(dir).lines)).rejects.toMatchObject({ code: 'EISDIR' })
+  })
+})
+
+describe('sniffFileFormat', () => {
+  let dir: string
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'crivo-lines-sniff-'))
+  })
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true })
+  })
+
+  it('reads json for a JSON file, without reading past the sample window', async () => {
+    const path = join(dir, 'sample.json')
+    await writeFile(path, '[{"id": 1}, {"id": 2}]', 'utf-8')
+
+    await expect(sniffFileFormat(path)).resolves.toBe('json')
+  })
+
+  it('reads delimited for a CSV file', async () => {
+    const path = join(dir, 'sample.csv')
+    await writeFile(path, 'id,nome\n1,Ana\n', 'utf-8')
+
+    await expect(sniffFileFormat(path)).resolves.toBe('delimited')
   })
 })

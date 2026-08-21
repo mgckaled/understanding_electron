@@ -11,6 +11,7 @@ const PART: DatasetPart = {
   kind: 'dataset',
   hash: 'h1',
   fileName: 'clientes.csv',
+  format: 'delimited',
   delimiter: ',',
   columns: ['id', 'nome'],
   rowCount: 10

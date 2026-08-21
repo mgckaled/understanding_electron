@@ -22,7 +22,15 @@ type AttachmentKind = 'dataset' | 'document' | 'image'
 function attachmentPart(kind: AttachmentKind, hash: string): MessagePart {
   switch (kind) {
     case 'dataset':
-      return { kind, hash, fileName: 'a.csv', delimiter: ',', columns: ['id'], rowCount: 1 }
+      return {
+        kind,
+        hash,
+        fileName: 'a.csv',
+        format: 'delimited',
+        delimiter: ',',
+        columns: ['id'],
+        rowCount: 1
+      }
     case 'document':
       return { kind, hash, fileName: 'a.md', format: 'md', text: 'conteúdo' }
     case 'image':

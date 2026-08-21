@@ -582,6 +582,7 @@ describe('ConversationView — anexo de dataset', () => {
         kind: 'dataset',
         hash: 'h1',
         fileName: 'vendas.csv',
+        format: 'delimited',
         delimiter: ',',
         columns: ['id', 'valor'],
         rowCount: 3
@@ -612,6 +613,7 @@ describe('ConversationView — anexo de dataset', () => {
         kind: 'dataset',
         hash: 'h1',
         fileName: 'vendas.csv',
+        format: 'delimited',
         delimiter: ',',
         columns: ['id', 'valor'],
         rowCount: 3
@@ -626,6 +628,7 @@ function bigDatasetPart(columnCount: number): DatasetPart {
     kind: 'dataset',
     hash: 'big-hash',
     fileName: 'grande.csv',
+    format: 'delimited',
     delimiter: ',',
     columns: Array.from({ length: columnCount }, (_, i) => `c${i}`),
     rowCount: 1000
@@ -755,6 +758,7 @@ describe('ConversationView — os três tipos de anexo numa conversa', () => {
     kind: 'dataset',
     hash: 'h-dataset',
     fileName: 'vendas.csv',
+    format: 'delimited',
     delimiter: ',',
     columns: ['id', 'valor'],
     rowCount: 10

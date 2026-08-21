@@ -230,6 +230,7 @@ describe('chat', () => {
             kind: 'dataset',
             hash: 'h',
             fileName: 'vendas.csv',
+            format: 'delimited',
             delimiter: ',',
             columns: ['id', 'valor'],
             rowCount: 10

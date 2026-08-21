@@ -1,14 +1,5 @@
 import type { ColumnProfile } from '@shared/ipc'
-import * as jobs from '../../jobs'
 import { pickDataset, attachDataset, queryDataset, profileDataset } from './handlers'
-
-function throwingLines(error: Error): AsyncIterable<string> {
-  return {
-    [Symbol.asyncIterator]() {
-      return { next: (): Promise<IteratorResult<string>> => Promise.reject(error) }
-    }
-  }
-}
 
 describe('pickDataset', () => {
   it('returns the picked path when the user selects a file', async () => {
@@ -28,83 +19,60 @@ describe('pickDataset', () => {
   })
 })
 
-describe('attachDataset', () => {
-  function fakeHashedLines(
-    lines: string[],
-    digestValue: string
-  ): () => { lines: AsyncIterable<string>; digest: () => string } {
-    return () => ({
-      lines: (async function* () {
-        for (const line of lines) yield line
-      })(),
-      digest: () => digestValue
-    })
-  }
-
-  it('returns the dataset part and stores the file under its hash', async () => {
+// attachDataset itself only dispatches on sniffFormat (D18E.1/D18E.3) — each
+// path's own behavior (delimited: attachDelimited.test.ts, JSON:
+// attachJson.test.ts) is tested against attachDelimitedDataset/
+// attachJsonDataset directly, not re-tested here.
+describe('attachDataset (dispatcher)', () => {
+  it('routes to the JSON path when sniffFormat resolves json', async () => {
     const storeAttachment = vi.fn().mockResolvedValue(undefined)
-
-    const result = await attachDataset(
-      { path: '/data/vendas.csv', jobId: 'attach-ok' },
-      fakeHashedLines(['id,name', '1,Ana', '2,Bruno'], 'hash-abc'),
-      '/tmp/attachments',
-      storeAttachment,
-      vi.fn()
-    )
-
-    expect(result).toEqual({
-      ok: true,
-      value: {
-        kind: 'dataset',
-        hash: 'hash-abc',
-        fileName: 'vendas.csv',
-        delimiter: ',',
-        columns: ['id', 'name'],
-        rowCount: 2
-      }
+    const runSchema = vi.fn().mockResolvedValue({ columns: ['id'], rowCount: 1 })
+    const createHashedLines = (): { lines: AsyncIterable<string>; digest: () => string } => ({
+      lines: (async function* () {
+        yield '{"id": 1}'
+      })(),
+      digest: () => 'hash-json'
     })
-    expect(storeAttachment).toHaveBeenCalledWith('/tmp/attachments', 'hash-abc', '/data/vendas.csv')
-  })
-
-  it('maps an ENOENT error and never stores anything when the read fails', async () => {
-    const fsError = Object.assign(new Error('no such file'), { code: 'ENOENT' })
-    const storeAttachment = vi.fn()
 
     const result = await attachDataset(
-      { path: '/missing.csv', jobId: 'attach-missing' },
-      () => ({ lines: throwingLines(fsError), digest: () => 'unused' }),
+      { path: '/data/vendas.json', jobId: 'dispatch-json' },
+      createHashedLines,
       '/tmp/attachments',
       storeAttachment,
-      vi.fn()
+      vi.fn(),
+      async () => 'json',
+      runSchema
     )
 
-    expect(result).toEqual({ ok: false, error: { kind: 'not-found', path: '/missing.csv' } })
-    expect(storeAttachment).not.toHaveBeenCalled()
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.value.format).toBe('json')
+    expect(runSchema).toHaveBeenCalledWith('hash-json')
   })
 
-  it('never stores anything when the job is cancelled mid-scan', async () => {
-    const jobId = 'attach-cancel'
-    const storeAttachment = vi.fn()
+  it('routes to the delimited path when sniffFormat resolves delimited', async () => {
+    const storeAttachment = vi.fn().mockResolvedValue(undefined)
+    const runSchema = vi.fn()
     const createHashedLines = (): { lines: AsyncIterable<string>; digest: () => string } => ({
       lines: (async function* () {
         yield 'id,name'
         yield '1,Ana'
-        jobs.cancel(jobId)
-        yield '2,Bruno'
       })(),
-      digest: () => 'unused'
+      digest: () => 'hash-csv'
     })
 
     const result = await attachDataset(
-      { path: '/x.csv', jobId },
+      { path: '/data/vendas.csv', jobId: 'dispatch-csv' },
       createHashedLines,
       '/tmp/attachments',
       storeAttachment,
-      vi.fn()
+      vi.fn(),
+      async () => 'delimited',
+      runSchema
     )
 
-    expect(result).toEqual({ ok: false, error: { kind: 'cancelled' } })
-    expect(storeAttachment).not.toHaveBeenCalled()
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.value.format).toBe('delimited')
+    expect(runSchema).not.toHaveBeenCalled()
   })
 })
 

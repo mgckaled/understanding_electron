@@ -26,6 +26,7 @@ const SUMMARY: DatasetPart = {
   kind: 'dataset',
   hash: 'h1',
   fileName: 'data.csv',
+  format: 'delimited',
   delimiter: ',',
   columns: ['id', 'name'],
   rowCount: 42
