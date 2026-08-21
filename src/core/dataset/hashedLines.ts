@@ -34,3 +34,22 @@ export async function* hashedLines(
   buffer += decoder.end()
   if (buffer.length > 0) yield buffer
 }
+
+/**
+ * Feeds every chunk to `hash` with no text decoding at all (D18F.4) — unlike
+ * {@link hashedLines}, there is no line-shaped product to hand back for a
+ * binary format like `.xlsx`: decoding it as UTF-8 would both corrupt it and
+ * hold the whole discardable string in memory until a `\n` that never comes
+ * in a meaningful place.
+ *
+ * @param hash - Mutated via `update()` as chunks arrive; `digest()` on it is
+ *   only meaningful after this promise resolves.
+ */
+export async function hashFile(
+  chunks: AsyncIterable<Buffer>,
+  hash: ReturnType<typeof createHash>
+): Promise<void> {
+  for await (const chunk of chunks) {
+    hash.update(chunk)
+  }
+}

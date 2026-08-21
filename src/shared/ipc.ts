@@ -197,16 +197,17 @@ export type TextPart = z.infer<typeof textPartSchema>
  * on every read would trade a file stat for nothing. `hash` addresses
  * `userData/attachments/<hash>` (D16.3); no `path` — the source file may move
  * or vanish, the stored copy may not. `format` (plano 18-E, D18E.2) tells a
- * delimited attach from a JSON one, which has no `delimiter`. Never validated
- * on read (`MessagePart` rows are cast, not `.parse()`d), so a part stored
- * before 18-E comes back with `format: undefined` — treat that as
- * `'delimited'`, never as `'json'`.
+ * delimited attach from a JSON one, which has no `delimiter`; `'excel'`
+ * (plano 18-F, D18F.3) is the third, also with no `delimiter`. Never
+ * validated on read (`MessagePart` rows are cast, not `.parse()`d), so a
+ * part stored before 18-E comes back with `format: undefined` — treat that
+ * as `'delimited'`, never as `'json'` or `'excel'`.
  */
 export const datasetPartSchema = z.object({
   kind: z.literal('dataset'),
   hash: z.string().min(1),
   fileName: z.string().min(1),
-  format: z.enum(['delimited', 'json']),
+  format: z.enum(['delimited', 'json', 'excel']),
   delimiter: z.string().optional(),
   columns: z.array(z.string()),
   rowCount: z.number().int().nonnegative()

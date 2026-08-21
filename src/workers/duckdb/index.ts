@@ -28,7 +28,7 @@ async function sniffFileFormat(path: string): Promise<DatasetFormat> {
   try {
     const buffer = Buffer.alloc(FORMAT_SNIFF_BYTES)
     const { bytesRead } = await handle.read(buffer, 0, FORMAT_SNIFF_BYTES, 0)
-    return sniffDatasetFormat(buffer.subarray(0, bytesRead).toString('utf8'))
+    return sniffDatasetFormat(buffer.subarray(0, bytesRead))
   } finally {
     await handle.close()
   }

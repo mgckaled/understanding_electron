@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readHashedFile, sniffFileFormat } from './lines'
+import { readHashedFile, sniffFileFormat, hashOnlyFile } from './lines'
 
 async function collect(iterable: AsyncIterable<string>): Promise<string[]> {
   const lines: string[] = []
@@ -41,6 +41,54 @@ describe('readHashedFile', () => {
 
   it('rejects with EISDIR when the path is a directory', async () => {
     await expect(collect(readHashedFile(dir).lines)).rejects.toMatchObject({ code: 'EISDIR' })
+  })
+})
+
+describe('hashOnlyFile', () => {
+  let dir: string
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'crivo-lines-hashonly-'))
+  })
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true })
+  })
+
+  it('hashes the real file bytes without decoding them as text', async () => {
+    const path = join(dir, 'sample.xlsx')
+    // Bytes that are not valid standalone UTF-8 (0xff is never a lead byte) —
+    // proof this never goes through StringDecoder.
+    const content = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0xff, 0x00, 0x80])
+    await writeFile(path, content)
+
+    const { run, digest } = hashOnlyFile(path)
+    await run(new AbortController().signal)
+
+    expect(digest()).toBe(createHash('sha256').update(content).digest('hex'))
+  })
+
+  it('rejects with ENOENT for a path that does not exist', async () => {
+    const path = join(dir, 'missing.xlsx')
+
+    await expect(hashOnlyFile(path).run(new AbortController().signal)).rejects.toMatchObject({
+      code: 'ENOENT'
+    })
+  })
+
+  it('stops reading when the signal aborts mid-stream, instead of hanging', async () => {
+    const path = join(dir, 'large.xlsx')
+    await writeFile(path, Buffer.alloc(1024 * 1024, 1))
+
+    const controller = new AbortController()
+    const { run } = hashOnlyFile(path)
+    const pending = run(controller.signal)
+    controller.abort()
+
+    // destroy()'d mid-read either resolves early or rejects — both are
+    // legitimate cancellation outcomes; the point of this test is only that
+    // it settles instead of hanging.
+    await pending.catch(() => undefined).catch(() => undefined)
   })
 })
 

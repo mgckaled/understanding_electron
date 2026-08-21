@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { hashedLines } from './hashedLines'
+import { hashedLines, hashFile } from './hashedLines'
 
 async function* iterate(chunks: Buffer[]): AsyncGenerator<Buffer> {
   for (const chunk of chunks) yield chunk
@@ -48,5 +48,19 @@ describe('hashedLines', () => {
 
     expect(chunked.digest).toBe(expected)
     expect(whole.digest).toBe(expected)
+  })
+})
+
+describe('hashFile', () => {
+  it('produces the same digest as hashing the buffer directly, for binary content', async () => {
+    // Bytes that are not valid UTF-8 on their own (a lone continuation byte) —
+    // proof this never goes through StringDecoder, unlike hashedLines.
+    const buffer = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0xff, 0x00, 0x80, 0x01])
+    const expected = createHash('sha256').update(buffer).digest('hex')
+
+    const hash = createHash('sha256')
+    await hashFile(iterate([buffer.subarray(0, 3), buffer.subarray(3)]), hash)
+
+    expect(hash.digest('hex')).toBe(expected)
   })
 })
