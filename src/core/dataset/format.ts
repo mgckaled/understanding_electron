@@ -1,3 +1,5 @@
+export type DatasetFormat = 'delimited' | 'json'
+
 const BOM = '﻿'
 
 /**
@@ -12,7 +14,7 @@ const BOM = '﻿'
  * inspecting the next character, or a BOM-prefixed JSON file silently reads
  * as delimited.
  */
-export function sniffDatasetFormat(sample: string): 'delimited' | 'json' {
+export function sniffDatasetFormat(sample: string): DatasetFormat {
   const withoutBom = sample.startsWith(BOM) ? sample.slice(BOM.length) : sample
   const firstChar = withoutBom.trimStart().charAt(0)
   return firstChar === '{' || firstChar === '[' ? 'json' : 'delimited'

@@ -1,5 +1,7 @@
+import { open } from 'node:fs/promises'
 import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
+import { sniffDatasetFormat, type DatasetFormat } from '@core/dataset/format'
 import { buildDuckDbStartupCommands, DUCKDB_MEMORY_LIMIT } from '@core/duckdb/config'
 import { ensureDatasetView } from '@core/duckdb/query'
 import { columnsToArrowBytes } from '@core/duckdb/arrow'
@@ -12,8 +14,25 @@ import {
   qualifiesForTopValues,
   type ColumnProfile
 } from '@core/duckdb/profile'
+import { buildDescribeSql, hasNestedType } from '@core/duckdb/schema'
 import type { WorkerRequest, WorkerResponse } from '@core/duckdb/protocol'
 import { normalizeColumns } from './normalizeColumns'
+
+// Enough to see past a BOM and any leading whitespace (D18E.1) — never the
+// whole file: a 2GB attachment must not be read into JS to answer "is this
+// JSON?" (ESCOPO.md § Escala).
+const FORMAT_SNIFF_BYTES = 256
+
+async function sniffFileFormat(path: string): Promise<DatasetFormat> {
+  const handle = await open(path, 'r')
+  try {
+    const buffer = Buffer.alloc(FORMAT_SNIFF_BYTES)
+    const { bytesRead } = await handle.read(buffer, 0, FORMAT_SNIFF_BYTES, 0)
+    return sniffDatasetFormat(buffer.subarray(0, bytesRead).toString('utf8'))
+  } finally {
+    await handle.close()
+  }
+}
 
 const userDataPath = process.argv[2]
 const attachmentsDir = join(userDataPath, 'attachments')
@@ -57,10 +76,25 @@ async function main(): Promise<void> {
   // silently mis-profiled, by a hand-rolled view statement of its own.
   const encodingByHash = new Map<string, 'latin-1'>()
 
+  // Same reasoning as encodingByHash, generalized to format (D18E.1): the
+  // same content-addressed hash never changes format, so it is sniffed once
+  // — by a query, a profile, or a schema request, whichever sees it first.
+  const formatByHash = new Map<string, DatasetFormat>()
+
+  async function resolveFormat(hash: string): Promise<DatasetFormat> {
+    const known = formatByHash.get(hash)
+    if (known) return known
+    const format = await sniffFileFormat(join(attachmentsDir, hash))
+    formatByHash.set(hash, format)
+    return format
+  }
+
   async function ensureView(hash: string): Promise<void> {
+    const format = await resolveFormat(hash)
     const encoding = await ensureDatasetView({
       hash,
       attachmentsDir,
+      format,
       knownEncoding: encodingByHash.get(hash),
       run: (viewSql) => connection.run(viewSql)
     })
@@ -130,12 +164,56 @@ async function main(): Promise<void> {
     }
   }
 
+  /**
+   * Resolves the schema for a JSON attach (D18E.3) — the source of
+   * `columns`/`rowCount` is the engine's own `DESCRIBE`, never a hand-rolled
+   * parser: writing one would duplicate the inference `read_json_auto`
+   * already does. Rejects with `ok: false` on the first nested column found
+   * (D18E.4) — `STRUCT`/`MAP`/`LIST` are typed happily by the engine, but no
+   * downstream cell renderer knows how to draw one.
+   */
+  async function handleSchema(hash: string): Promise<WorkerResponse> {
+    try {
+      await ensureView(hash)
+      const describeReader = await connection.runAndReadAll(buildDescribeSql('dataset'))
+      const describeRows = describeReader.getRowObjectsJS() as {
+        column_name: unknown
+        column_type: unknown
+      }[]
+
+      for (const row of describeRows) {
+        const columnType = String(row.column_type)
+        if (hasNestedType(columnType)) {
+          return {
+            kind: 'schema',
+            ok: false,
+            message: `A coluna "${String(row.column_name)}" tem um valor aninhado (${columnType}), que este app não trata — achate a coluna antes de anexar.`
+          }
+        }
+      }
+
+      const countReader = await connection.runAndReadAll(buildCountSql('dataset'))
+      const [countRow] = countReader.getRowObjectsJS() as [{ row_count: bigint | number }]
+
+      return {
+        kind: 'schema',
+        ok: true,
+        columns: describeRows.map((row) => String(row.column_name)),
+        rowCount: Number(countRow.row_count)
+      }
+    } catch (error) {
+      return { kind: 'schema', ok: false, message: (error as Error).message }
+    }
+  }
+
   function handleRequest(request: WorkerRequest): Promise<WorkerResponse> {
     switch (request.kind) {
       case 'query':
         return handleQuery(request.hash, request.sql)
       case 'profile':
         return handleProfile(request.hash)
+      case 'schema':
+        return handleSchema(request.hash)
     }
   }
 

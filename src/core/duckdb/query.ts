@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import type { DatasetFormat } from '../dataset/format'
 import { sqlPath } from './config'
 
 // Mirrors main/attachments/protocol.ts's HASH_PATTERN (D17.6) — two call
@@ -30,17 +31,24 @@ export function isReadOnlyQuery(sql: string): boolean {
  * passed the 64-char hex format check, so nothing user-controlled enters
  * the string verbatim. `encoding` is the fixed set DuckDB's CSV reader
  * builds in — `utf-8`, `utf-16` or `latin-1` — never a value read from
- * user input.
+ * user input. `format: 'json'` dispatches to `read_json_auto` instead
+ * (D18E.1/D18E.5) — it covers array and newline-delimited JSON on its own
+ * (confirmed: Context7, `duckdb-web`), so no separate NDJSON branch, and
+ * `encoding` never applies to it (JSON in this app is UTF-8 only).
  *
  * @throws When `hash` is not a 64-char lowercase hex string.
  */
 export function buildViewSqlInterpolated(
   hash: string,
   attachmentsDir: string,
+  format: DatasetFormat,
   encoding?: 'latin-1'
 ): string {
   if (!isValidHash(hash)) throw new Error(`invalid attachment hash: ${hash}`)
   const path = sqlPath(join(attachmentsDir, hash))
+  if (format === 'json') {
+    return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_json_auto('${path}')`
+  }
   const encodingClause = encoding ? `, encoding = '${encoding}'` : ''
   return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto('${path}'${encodingClause})`
 }
@@ -57,13 +65,15 @@ export function isUtf8EncodingError(message: string): boolean {
 
 /**
  * Creates or refreshes the `dataset` view, retrying once with
- * `encoding = 'latin-1'` when the plain attempt fails on invalid UTF-8.
+ * `encoding = 'latin-1'` when a delimited read fails on invalid UTF-8.
  * `knownEncoding` skips straight to that retry for a hash this worker
  * already classified — the file's bytes never change (content-addressed),
  * so the same file never needs classifying twice. If the retry itself
  * throws (measured: DuckDB's `latin-1` decoder rejects some byte sequences
  * too, so it is not a can't-fail fallback), the *original* utf-8 error
  * propagates — it names the real problem, the retry's own error does not.
+ * `format: 'json'` skips the encoding dance entirely (D18E.5) — a single
+ * `read_json_auto` call, never retried.
  *
  * @param run - Executes one SQL statement against the live connection;
  *   injected so this stays testable without a real DuckDB instance.
@@ -72,17 +82,24 @@ export function isUtf8EncodingError(message: string): boolean {
 export async function ensureDatasetView(params: {
   hash: string
   attachmentsDir: string
+  format: DatasetFormat
   knownEncoding: 'latin-1' | undefined
   run: (sql: string) => Promise<unknown>
 }): Promise<'latin-1' | undefined> {
-  const { hash, attachmentsDir, knownEncoding, run } = params
+  const { hash, attachmentsDir, format, knownEncoding, run } = params
+
+  if (format === 'json') {
+    await run(buildViewSqlInterpolated(hash, attachmentsDir, format))
+    return undefined
+  }
+
   try {
-    await run(buildViewSqlInterpolated(hash, attachmentsDir, knownEncoding))
+    await run(buildViewSqlInterpolated(hash, attachmentsDir, format, knownEncoding))
     return knownEncoding
   } catch (error) {
     if (knownEncoding || !isUtf8EncodingError((error as Error).message)) throw error
     try {
-      await run(buildViewSqlInterpolated(hash, attachmentsDir, 'latin-1'))
+      await run(buildViewSqlInterpolated(hash, attachmentsDir, format, 'latin-1'))
     } catch {
       throw error
     }

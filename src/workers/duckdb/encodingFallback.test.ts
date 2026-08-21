@@ -34,6 +34,7 @@ describe('ensureDatasetView against a real, non-UTF-8 CSV (HISTORY.md § Correç
       const encoding = await ensureDatasetView({
         hash: HASH,
         attachmentsDir,
+        format: 'delimited',
         knownEncoding: undefined,
         run: (sql) => connection.run(sql)
       })
@@ -71,6 +72,7 @@ describe('ensureDatasetView against a real, non-UTF-8 CSV (HISTORY.md § Correç
         ensureDatasetView({
           hash: HASH,
           attachmentsDir,
+          format: 'delimited',
           knownEncoding: undefined,
           run: (sql) => connection.run(sql)
         })

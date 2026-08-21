@@ -6,10 +6,14 @@
 import type { ColumnProfile } from './profile'
 
 export type WorkerRequest =
-  { kind: 'query'; hash: string; sql: string } | { kind: 'profile'; hash: string }
+  | { kind: 'query'; hash: string; sql: string }
+  | { kind: 'profile'; hash: string }
+  | { kind: 'schema'; hash: string }
 
 export type WorkerResponse =
   | { kind: 'query'; ok: true; bytes: Uint8Array }
   | { kind: 'query'; ok: false; message: string }
   | { kind: 'profile'; ok: true; profile: ColumnProfile[] }
   | { kind: 'profile'; ok: false; message: string }
+  | { kind: 'schema'; ok: true; columns: string[]; rowCount: number }
+  | { kind: 'schema'; ok: false; message: string }

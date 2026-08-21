@@ -69,15 +69,16 @@ function createEnqueue(
 }
 
 /**
- * Builds the two closures `queryDataset`/`profileDataset` call, bound to one
- * worker kept alive for the app's whole life (D18B.3-bis — one connection,
- * spawned once). Both share one `createEnqueue` queue (D18D.1): a second
- * request kind must go through the same serialization as the first, not
- * around it.
+ * Builds the three closures `queryDataset`/`profileDataset`/`attachDataset`
+ * (JSON path) call, bound to one worker kept alive for the app's whole life
+ * (D18B.3-bis — one connection, spawned once). All three share one
+ * `createEnqueue` queue (D18D.1, generalized D18E.3): a new request kind
+ * must go through the same serialization as the others, not around it.
  */
 export function createDuckdbWorkerClient(worker: UtilityProcess): {
   runQuery: (hash: string, sql: string) => Promise<Uint8Array>
   runProfile: (hash: string) => Promise<ColumnProfile[]>
+  runSchema: (hash: string) => Promise<{ columns: string[]; rowCount: number }>
 } {
   const enqueue = createEnqueue(worker)
 
@@ -97,6 +98,14 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
       }
       if (!response.ok) throw new Error(response.message)
       return response.profile
+    },
+    async runSchema(hash) {
+      const response = await enqueue({ kind: 'schema', hash })
+      if (response.kind !== 'schema') {
+        throw new Error(`DuckDB worker replied with kind "${response.kind}", expected "schema"`)
+      }
+      if (!response.ok) throw new Error(response.message)
+      return { columns: response.columns, rowCount: response.rowCount }
     }
   }
 }

@@ -48,7 +48,7 @@ describe('isReadOnlyQuery', () => {
 
 describe('buildViewSqlInterpolated', () => {
   it('embeds the resolved path as a quoted, forward-slashed literal', () => {
-    const sql = buildViewSqlInterpolated(VALID_HASH, 'C:\\data\\attachments')
+    const sql = buildViewSqlInterpolated(VALID_HASH, 'C:\\data\\attachments', 'delimited')
 
     expect(sql).toBe(
       `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto('C:/data/attachments/${VALID_HASH}')`
@@ -56,14 +56,29 @@ describe('buildViewSqlInterpolated', () => {
   })
 
   it('throws on a malformed hash instead of building unsafe SQL', () => {
-    expect(() => buildViewSqlInterpolated("'; DROP TABLE x; --", '/data/attachments')).toThrow()
+    expect(() =>
+      buildViewSqlInterpolated("'; DROP TABLE x; --", '/data/attachments', 'delimited')
+    ).toThrow()
   })
 
   it('appends an encoding clause when given one', () => {
-    const sql = buildViewSqlInterpolated(VALID_HASH, 'C:\\data\\attachments', 'latin-1')
+    const sql = buildViewSqlInterpolated(
+      VALID_HASH,
+      'C:\\data\\attachments',
+      'delimited',
+      'latin-1'
+    )
 
     expect(sql).toBe(
       `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto('C:/data/attachments/${VALID_HASH}', encoding = 'latin-1')`
+    )
+  })
+
+  it('dispatches to read_json_auto for format "json", with no encoding clause', () => {
+    const sql = buildViewSqlInterpolated(VALID_HASH, 'C:\\data\\attachments', 'json')
+
+    expect(sql).toBe(
+      `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_json_auto('C:/data/attachments/${VALID_HASH}')`
     )
   })
 })
@@ -97,6 +112,7 @@ describe('ensureDatasetView', () => {
     const encoding = await ensureDatasetView({
       hash: VALID_HASH,
       attachmentsDir: '/data/attachments',
+      format: 'delimited',
       knownEncoding: undefined,
       run
     })
@@ -119,6 +135,7 @@ describe('ensureDatasetView', () => {
     const encoding = await ensureDatasetView({
       hash: VALID_HASH,
       attachmentsDir: '/data/attachments',
+      format: 'delimited',
       knownEncoding: undefined,
       run
     })
@@ -134,6 +151,7 @@ describe('ensureDatasetView', () => {
     const encoding = await ensureDatasetView({
       hash: VALID_HASH,
       attachmentsDir: '/data/attachments',
+      format: 'delimited',
       knownEncoding: 'latin-1',
       run
     })
@@ -150,6 +168,7 @@ describe('ensureDatasetView', () => {
       ensureDatasetView({
         hash: VALID_HASH,
         attachmentsDir: '/data/attachments',
+        format: 'delimited',
         knownEncoding: undefined,
         run
       })
@@ -167,6 +186,7 @@ describe('ensureDatasetView', () => {
       ensureDatasetView({
         hash: VALID_HASH,
         attachmentsDir: '/data/attachments',
+        format: 'delimited',
         knownEncoding: undefined,
         run
       })
