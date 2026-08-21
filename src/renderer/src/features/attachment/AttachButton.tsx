@@ -229,12 +229,22 @@ function AttachButton({
             <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-xs">
               {attachment.kind === 'dataset' ? (
                 <>
-                  <div className="contents">
-                    <dt className="text-text-muted">Separador</dt>
-                    <dd className="text-text [word-break:break-word]">
-                      {attachment.delimiter === '\t' ? 'tabulação' : attachment.delimiter}
-                    </dd>
-                  </div>
+                  {/* format === 'json', never === 'delimited': a part stored
+                      before 18-E comes back with format: undefined, and must
+                      fall into this Separador branch like any other CSV. */}
+                  {attachment.format === 'json' ? (
+                    <div className="contents">
+                      <dt className="text-text-muted">Formato</dt>
+                      <dd className="text-text [word-break:break-word]">JSON</dd>
+                    </div>
+                  ) : (
+                    <div className="contents">
+                      <dt className="text-text-muted">Separador</dt>
+                      <dd className="text-text [word-break:break-word]">
+                        {attachment.delimiter === '\t' ? 'tabulação' : attachment.delimiter}
+                      </dd>
+                    </div>
+                  )}
                   <div className="contents">
                     <dt className="text-text-muted">Colunas</dt>
                     <dd className="text-text [word-break:break-word]">

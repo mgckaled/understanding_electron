@@ -32,6 +32,15 @@ const SUMMARY: DatasetPart = {
   rowCount: 42
 }
 
+const JSON_SUMMARY: DatasetPart = {
+  kind: 'dataset',
+  hash: 'h1-json',
+  fileName: 'data.json',
+  format: 'json',
+  columns: ['id', 'name'],
+  rowCount: 42
+}
+
 const DOCUMENT: DocumentPart = {
   kind: 'document',
   hash: 'h2',
@@ -90,6 +99,26 @@ describe('AttachButton', () => {
 
     expect(screen.getByText('id, name')).toBeInTheDocument()
     expect(screen.getByText('42')).toBeInTheDocument()
+    expect(screen.getByText('Separador')).toBeInTheDocument()
+    expect(screen.queryByText('Formato')).not.toBeInTheDocument()
+  })
+
+  // D18E.6 — a JSON attach shows "Formato: JSON" instead of "Separador".
+  it('shows "Formato: JSON" instead of Separador for a JSON dataset part', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.pick).mockResolvedValue({ ok: true, value: { path: '/data.json' } })
+    vi.mocked(api.dataset.attach).mockResolvedValue({ ok: true, value: JSON_SUMMARY })
+    const user = userEvent.setup()
+
+    render(<ControlledAttachButton />)
+    await open(user)
+    await user.click(screen.getByRole('button', { name: 'Dados tabulares', hidden: true }))
+    await screen.findByText('data.json')
+    await open(user)
+
+    expect(screen.getByText('Formato')).toBeInTheDocument()
+    expect(screen.getByText('JSON')).toBeInTheDocument()
+    expect(screen.queryByText('Separador')).not.toBeInTheDocument()
   })
 
   it('lifts the attached document part to the caller and shows it as a chip', async () => {
