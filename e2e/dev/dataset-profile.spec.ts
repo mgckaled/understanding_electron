@@ -134,3 +134,28 @@ test('profiles a Latin-1 CSV via the same encoding retry as dataset:query', asyn
   const nome = profile.find((column) => column.column === 'nome')
   expect([nome?.min, nome?.max]).toEqual(expect.arrayContaining(['José da Silva', 'Ana Souza']))
 })
+
+// Found live, post-18-E: SUMMARIZE's own `avg` for DATE/TIMESTAMP is a real
+// value, but a datetime STRING ("2023-11-04 12:00:00"), not null like a
+// VARCHAR column's. `Number(...)` on that string is NaN — a silent
+// `avg: number | null` contract violation the renderer had no guard for
+// (printed the literal text "NaN" in the Perfil table). Fixed in
+// workers/duckdb/index.ts by treating a non-finite parse as null, same as a
+// genuinely absent avg.
+test('avg is null, not NaN, for DATE and TIMESTAMP columns', async () => {
+  const fixturePath = join(process.cwd(), 'e2e/fixtures/sample.ndjson')
+
+  const profile = await page.evaluate(async (path) => {
+    const api = (window as unknown as { api: Api }).api
+    const attached = await api.dataset.attach(path, 'e2e-profile-date-avg')
+    if (!attached.ok) throw new Error('attach failed')
+    const result = await api.dataset.profile(attached.value.hash)
+    if (!result.ok) throw new Error(`profile failed: ${JSON.stringify(result.error)}`)
+    return result.value
+  }, fixturePath)
+
+  const nascimento = profile.find((column) => column.column === 'nascimento')
+  const criadoEm = profile.find((column) => column.column === 'criado_em')
+  expect(nascimento?.avg).toBeNull()
+  expect(criadoEm?.avg).toBeNull()
+})

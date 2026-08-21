@@ -133,7 +133,15 @@ async function main(): Promise<void> {
         approxUnique,
         min: row.min === null || row.min === undefined ? null : String(row.min),
         max: row.max === null || row.max === undefined ? null : String(row.max),
-        avg: row.avg === null || row.avg === undefined ? null : Number(row.avg)
+        // DATE/TIMESTAMP's own `avg` is a real DuckDB value, but a datetime
+        // string ("2023-11-04 12:00:00") — `Number(...)` on it is NaN, a
+        // silent contract violation of `avg: number | null` (bug found live:
+        // the renderer's formatNumber has no NaN guard, so it printed "NaN").
+        avg: (() => {
+          if (row.avg === null || row.avg === undefined) return null
+          const parsed = Number(row.avg)
+          return Number.isFinite(parsed) ? parsed : null
+        })()
       }
       if (qualifiesForTopValues(approxUnique, rowCount)) {
         const topReader = await connection.runAndReadAll(
