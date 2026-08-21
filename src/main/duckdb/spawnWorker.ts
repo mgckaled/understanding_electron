@@ -1,6 +1,7 @@
 import { utilityProcess, type UtilityProcess } from 'electron'
 import { join } from 'node:path'
-import type { WorkerQueryResponse } from '@core/duckdb/protocol'
+import type { ColumnProfile } from '@core/duckdb/profile'
+import type { WorkerRequest, WorkerResponse } from '@core/duckdb/protocol'
 
 /**
  * Forks the DuckDB worker built next to main/index.js (D18A.1). `userDataPath`
@@ -23,27 +24,24 @@ export function spawnDuckdbWorker(userDataPath: string): UtilityProcess {
 }
 
 /**
- * Builds the `runQuery` closure `queryDataset` calls, bound to one worker
- * kept alive for the app's whole life (D18B.3-bis — one connection, spawned
- * once). Calls are serialized on a tail promise: the protocol carries no
- * correlation id (resolves on the *next* `'message'`), so two queries in
- * flight — two expanded `DatasetCard`s firing at once — would otherwise
- * race for each other's reply.
+ * Serializes every request to `worker` on a single tail promise, regardless
+ * of `kind` — the protocol carries no correlation id (resolves on the
+ * *next* `'message'`), so a query and a profile request in flight at once
+ * would otherwise race for each other's reply (D18D.1).
  */
-export function createDuckdbRunQuery(
+function createEnqueue(
   worker: UtilityProcess
-): (hash: string, sql: string) => Promise<Uint8Array> {
+): (request: WorkerRequest) => Promise<WorkerResponse> {
   let tail = Promise.resolve()
 
-  function runOne(hash: string, sql: string): Promise<Uint8Array> {
+  function sendOne(request: WorkerRequest): Promise<WorkerResponse> {
     return new Promise((resolve, reject) => {
-      function onMessage(message: WorkerQueryResponse): void {
+      function onMessage(message: WorkerResponse): void {
         cleanup()
-        if (message.ok) resolve(message.bytes)
-        else reject(new Error(message.message))
+        resolve(message)
       }
-      // memory_limit is 2GB (D18A.4) and passo 5 deliberately runs an
-      // uncapped ~100k-row query — worker death is a real path, and without
+      // memory_limit is 2GB (D18A.4) and passo 6 deliberately runs an
+      // uncapped profile query — worker death is a real path, and without
       // this the UI would spin forever with no error.
       function onExit(code: number): void {
         cleanup()
@@ -55,17 +53,50 @@ export function createDuckdbRunQuery(
       }
       worker.on('message', onMessage)
       worker.once('exit', onExit)
-      worker.postMessage({ hash, sql })
+      worker.postMessage(request)
     })
   }
 
-  return (hash, sql) => {
-    const settled = tail.then(() => runOne(hash, sql))
-    // Swallow so one query's rejection doesn't poison the tail for the next.
+  return (request) => {
+    const settled = tail.then(() => sendOne(request))
+    // Swallow so one request's rejection doesn't poison the tail for the next.
     tail = settled.then(
       () => undefined,
       () => undefined
     )
     return settled
+  }
+}
+
+/**
+ * Builds the two closures `queryDataset`/`profileDataset` call, bound to one
+ * worker kept alive for the app's whole life (D18B.3-bis — one connection,
+ * spawned once). Both share one `createEnqueue` queue (D18D.1): a second
+ * request kind must go through the same serialization as the first, not
+ * around it.
+ */
+export function createDuckdbWorkerClient(worker: UtilityProcess): {
+  runQuery: (hash: string, sql: string) => Promise<Uint8Array>
+  runProfile: (hash: string) => Promise<ColumnProfile[]>
+} {
+  const enqueue = createEnqueue(worker)
+
+  return {
+    async runQuery(hash, sql) {
+      const response = await enqueue({ kind: 'query', hash, sql })
+      if (response.kind !== 'query') {
+        throw new Error(`DuckDB worker replied with kind "${response.kind}", expected "query"`)
+      }
+      if (!response.ok) throw new Error(response.message)
+      return response.bytes
+    },
+    async runProfile(hash) {
+      const response = await enqueue({ kind: 'profile', hash })
+      if (response.kind !== 'profile') {
+        throw new Error(`DuckDB worker replied with kind "${response.kind}", expected "profile"`)
+      }
+      if (!response.ok) throw new Error(response.message)
+      return response.profile
+    }
   }
 }

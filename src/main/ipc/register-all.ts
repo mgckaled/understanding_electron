@@ -45,7 +45,7 @@ import {
   updateConversationSettings
 } from '../features/conversation/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
-import { spawnDuckdbWorker, createDuckdbRunQuery } from '../duckdb/spawnWorker'
+import { spawnDuckdbWorker, createDuckdbWorkerClient } from '../duckdb/spawnWorker'
 
 function broadcastJobEvent(event: JobEvent): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -68,7 +68,7 @@ export async function registerAll(): Promise<() => void> {
   // Spawned once, kept alive for the app's life (D18B.3-bis) — one DuckDB
   // connection, not one per query.
   const duckdbWorker = spawnDuckdbWorker(app.getPath('userData'))
-  const runDatasetQuery = createDuckdbRunQuery(duckdbWorker)
+  const duckdbClient = createDuckdbWorkerClient(duckdbWorker)
   // The scheme itself is registered in main/index.ts, before app.whenReady()
   // — registerSchemesAsPrivileged only works pre-ready. Wiring the handler
   // here, where attachmentsDir already exists, keeps main/index.ts thin (D17.6).
@@ -86,7 +86,7 @@ export async function registerAll(): Promise<() => void> {
   handle('dataset:attach', (args) =>
     attachDataset(args, readHashedFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
   )
-  handle('dataset:query', (args) => queryDataset(args, runDatasetQuery))
+  handle('dataset:query', (args) => queryDataset(args, duckdbClient.runQuery))
   handle('document:pick', (args) => pickDocument(args, dialog.showOpenDialog, statDocumentSize))
   handle('document:attach', (args) =>
     attachDocument(args, readDocumentFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
