@@ -1,6 +1,6 @@
 import { basename } from 'node:path'
 import type { OpenDialogOptions, OpenDialogReturnValue } from 'electron'
-import type { DatasetPart, DatasetRef, JobEvent, JobId, Result } from '@shared/ipc'
+import type { ColumnProfile, DatasetPart, DatasetRef, JobEvent, JobId, Result } from '@shared/ipc'
 import { ok, err } from '@core/result'
 import { scanDelimited } from '@core/dataset/scan'
 import { mapFsError } from '@core/fsError'
@@ -102,6 +102,29 @@ export async function queryDataset(
   try {
     const bytes = await runQuery(hash, buildFinalSql(sql, QUERY_ROW_LIMIT))
     return ok(bytes)
+  } catch (error) {
+    return err({ kind: 'invalidQuery', message: (error as Error).message })
+  }
+}
+
+/**
+ * Computes the level-2 profile for an attached dataset (D18D.2). Same hash
+ * guard as `queryDataset`, ahead of the same real check in the worker.
+ *
+ * @param runProfile - Sends `hash` to the DuckDB worker and resolves with
+ *   one entry per column; rejects with the engine's own error text.
+ */
+export async function profileDataset(
+  { hash }: { hash: string },
+  runProfile: (hash: string) => Promise<ColumnProfile[]>
+): Promise<Result<ColumnProfile[]>> {
+  if (!isValidHash(hash)) {
+    return err({ kind: 'invalidQuery', message: 'Identificador de anexo inválido.' })
+  }
+
+  try {
+    const profile = await runProfile(hash)
+    return ok(profile)
   } catch (error) {
     return err({ kind: 'invalidQuery', message: (error as Error).message })
   }

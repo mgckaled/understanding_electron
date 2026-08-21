@@ -1,5 +1,6 @@
+import type { ColumnProfile } from '@shared/ipc'
 import * as jobs from '../../jobs'
-import { pickDataset, attachDataset, queryDataset } from './handlers'
+import { pickDataset, attachDataset, queryDataset, profileDataset } from './handlers'
 
 function throwingLines(error: Error): AsyncIterable<string> {
   return {
@@ -158,6 +159,53 @@ describe('queryDataset', () => {
     expect(result).toEqual({
       ok: false,
       error: { kind: 'invalidQuery', message: 'Binder Error: column "x" not found' }
+    })
+  })
+})
+
+describe('profileDataset', () => {
+  const VALID_HASH = 'a'.repeat(64)
+
+  it('calls runProfile with the hash and returns its profile', async () => {
+    const profile: ColumnProfile[] = [
+      {
+        column: 'idade',
+        type: 'BIGINT',
+        nullPercentage: 0,
+        approxUnique: 40,
+        min: '18',
+        max: '65',
+        avg: 34.2
+      }
+    ]
+    const runProfile = vi.fn().mockResolvedValue(profile)
+
+    const result = await profileDataset({ hash: VALID_HASH }, runProfile)
+
+    expect(result).toEqual({ ok: true, value: profile })
+    expect(runProfile).toHaveBeenCalledWith(VALID_HASH)
+  })
+
+  it('rejects a malformed hash without ever calling runProfile', async () => {
+    const runProfile = vi.fn()
+
+    const result = await profileDataset({ hash: 'not-a-hash' }, runProfile)
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'Identificador de anexo inválido.' }
+    })
+    expect(runProfile).not.toHaveBeenCalled()
+  })
+
+  it('wraps a real engine error as invalidQuery, with the engine text preserved', async () => {
+    const runProfile = vi.fn().mockRejectedValue(new Error('Out of Memory Error'))
+
+    const result = await profileDataset({ hash: VALID_HASH }, runProfile)
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'Out of Memory Error' }
     })
   })
 })

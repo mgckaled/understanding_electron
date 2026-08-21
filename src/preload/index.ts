@@ -18,7 +18,8 @@ const api: Api = {
   dataset: {
     pick: () => invoke('dataset:pick'),
     attach: (path, jobId) => invoke('dataset:attach', { path, jobId }),
-    query: (hash, sql) => invoke('dataset:query', { hash, sql })
+    query: (hash, sql) => invoke('dataset:query', { hash, sql }),
+    profile: (hash) => invoke('dataset:profile', { hash })
   },
   document: {
     pick: () => invoke('document:pick'),

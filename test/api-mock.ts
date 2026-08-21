@@ -52,7 +52,11 @@ export function createApiMock(): Api {
       // fires this on mount, so a bare vi.fn() resolving undefined would turn
       // every dataset-attachment test into an error card, not just the ones
       // actually about querying.
-      query: vi.fn().mockResolvedValue({ ok: true, value: columnsToArrowBytes({}) })
+      query: vi.fn().mockResolvedValue({ ok: true, value: columnsToArrowBytes({}) }),
+      // Unlike query, nothing fires this on mount — the profile section only
+      // queries when its own disclosure opens (D18D.6) — so a bare vi.fn()
+      // is safe here, same as pick/attach above.
+      profile: vi.fn()
     },
     document: { pick: vi.fn(), attach: vi.fn() },
     image: { pick: vi.fn(), attach: vi.fn() },

@@ -209,6 +209,23 @@ export const datasetPartSchema = z.object({
 export type DatasetPart = z.infer<typeof datasetPartSchema>
 
 /**
+ * A dataset's level-2 profile (plano 18-D, D18D.2) — one entry per column,
+ * produced by `SUMMARIZE` against a materialized copy of the view. Plain
+ * TypeScript, no zod schema: `dataset:profile`'s result never validates its
+ * own output (D18D.4), same rule as every other main→renderer payload.
+ */
+export interface ColumnProfile {
+  column: string
+  type: string
+  nullPercentage: number
+  approxUnique: number
+  min: string | number | null
+  max: string | number | null
+  avg: number | null
+  topValues?: { value: string; count: number }[]
+}
+
+/**
  * A document attached to a message (plano 17, D17.2) — `text` carries the
  * whole extraction inline, produced once by `document:attach`: the chat is
  * stateless and resends the transcript every turn, so what must not repeat is
@@ -357,6 +374,7 @@ export const argsSchema = {
   // impose it, and the real guard lives in core/duckdb/query.ts (D18B.3-bis),
   // checked before any SQL string is built.
   'dataset:query': z.object({ hash: z.string().min(1), sql: z.string().min(1) }),
+  'dataset:profile': z.object({ hash: z.string().min(1) }),
   // Its own pair (D17.1): dataset:pick's file filter (csv/tsv/txt) does not
   // serve a document dialog, so a shared channel would need an internal
   // dispatch register-all.ts already gets for free by picking the function.
@@ -445,6 +463,13 @@ export type IpcContract = {
   'dataset:query': {
     args: z.infer<(typeof argsSchema)['dataset:query']>
     result: Result<Uint8Array>
+  }
+  // One row per column, at most a few dozen — small enough that Arrow's
+  // per-row-allocation savings never apply (D18D.4). No zod on the way out,
+  // same rule as every other main→renderer payload.
+  'dataset:profile': {
+    args: z.infer<(typeof argsSchema)['dataset:profile']>
+    result: Result<ColumnProfile[]>
   }
   'document:pick': {
     args: z.infer<(typeof argsSchema)['document:pick']>
@@ -540,6 +565,8 @@ export type Api = {
     attach(path: string, jobId: JobId): Promise<Result<DatasetPart>>
     /** Runs a read-only SQL query against the attached dataset, capped at 200 rows (D18B.4). Result is Arrow IPC bytes. */
     query(hash: string, sql: string): Promise<Result<Uint8Array>>
+    /** Computes the level-2 profile — SUMMARIZE plus cardinality-gated top-N — for the attached dataset (D18D.2). */
+    profile(hash: string): Promise<Result<ColumnProfile[]>>
   }
   document: {
     pick(): Promise<Result<DatasetRef | null>>

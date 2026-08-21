@@ -1,13 +1,6 @@
-export interface ColumnProfile {
-  column: string
-  type: string
-  nullPercentage: number
-  approxUnique: number
-  min: string | number | null
-  max: string | number | null
-  avg: number | null
-  topValues?: { value: string; count: number }[]
-}
+// ColumnProfile is the IPC contract's result type (shared/ipc.ts owns it,
+// D18D.4) — core/ imports from shared/, never the other way.
+export type { ColumnProfile } from '@shared/ipc'
 
 /**
  * Escapes a DuckDB identifier for double-quoted interpolation — same
