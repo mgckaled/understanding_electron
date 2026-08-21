@@ -81,6 +81,14 @@ describe('buildViewSqlInterpolated', () => {
       `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_json_auto('C:/data/attachments/${VALID_HASH}')`
     )
   })
+
+  it('dispatches to read_xlsx for format "excel", with header = true and no encoding clause', () => {
+    const sql = buildViewSqlInterpolated(VALID_HASH, 'C:\\data\\attachments', 'excel')
+
+    expect(sql).toBe(
+      `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_xlsx('C:/data/attachments/${VALID_HASH}', header = true)`
+    )
+  })
 })
 
 describe('isUtf8EncodingError', () => {
@@ -174,6 +182,22 @@ describe('ensureDatasetView', () => {
       })
     ).rejects.toThrow('Binder Error: syntax error')
     expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  it('builds the plain view and returns no encoding for format "excel", skipping the dance', async () => {
+    const run = vi.fn().mockResolvedValue(undefined)
+
+    const encoding = await ensureDatasetView({
+      hash: VALID_HASH,
+      attachmentsDir: '/data/attachments',
+      format: 'excel',
+      knownEncoding: undefined,
+      run
+    })
+
+    expect(encoding).toBeUndefined()
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(run).toHaveBeenCalledWith(expect.stringContaining('read_xlsx'))
   })
 
   it('re-throws the original utf-8 error when the latin-1 retry itself fails', async () => {

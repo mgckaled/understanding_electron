@@ -29,16 +29,24 @@ describe('pickDataset', () => {
 
     const { filters } = showOpenDialog.mock.calls[0][0]
     expect(filters[0].extensions).toEqual(
-      expect.arrayContaining(['csv', 'tsv', 'txt', 'json', 'ndjson', 'jsonl'])
+      expect.arrayContaining(['csv', 'tsv', 'txt', 'json', 'ndjson', 'jsonl', 'xlsx'])
     )
   })
 })
 
 // attachDataset itself only dispatches on sniffFormat (D18E.1/D18E.3) — each
 // path's own behavior (delimited: attachDelimited.test.ts, JSON:
-// attachJson.test.ts) is tested against attachDelimitedDataset/
-// attachJsonDataset directly, not re-tested here.
+// attachJson.test.ts, Excel: attachExcel.test.ts) is tested against
+// attachDelimitedDataset/attachJsonDataset/attachExcelDataset directly, not
+// re-tested here.
 describe('attachDataset (dispatcher)', () => {
+  const unusedHashOnlyFile = (): never => {
+    throw new Error('createHashOnlyFile should not be called for this format')
+  }
+  const unusedHashedLines = (): never => {
+    throw new Error('createHashedLines should not be called for this format')
+  }
+
   it('routes to the JSON path when sniffFormat resolves json', async () => {
     const storeAttachment = vi.fn().mockResolvedValue(undefined)
     const runSchema = vi.fn().mockResolvedValue({ columns: ['id'], rowCount: 1 })
@@ -52,8 +60,8 @@ describe('attachDataset (dispatcher)', () => {
     const result = await attachDataset(
       { path: '/data/vendas.json', jobId: 'dispatch-json' },
       createHashedLines,
-      '/tmp/attachments',
-      storeAttachment,
+      unusedHashOnlyFile,
+      { attachmentsDir: '/tmp/attachments', storeAttachment },
       vi.fn(),
       async () => 'json',
       runSchema
@@ -78,8 +86,8 @@ describe('attachDataset (dispatcher)', () => {
     const result = await attachDataset(
       { path: '/data/vendas.csv', jobId: 'dispatch-csv' },
       createHashedLines,
-      '/tmp/attachments',
-      storeAttachment,
+      unusedHashOnlyFile,
+      { attachmentsDir: '/tmp/attachments', storeAttachment },
       vi.fn(),
       async () => 'delimited',
       runSchema
@@ -88,6 +96,32 @@ describe('attachDataset (dispatcher)', () => {
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.value.format).toBe('delimited')
     expect(runSchema).not.toHaveBeenCalled()
+  })
+
+  it('routes to the excel path when sniffFormat resolves excel', async () => {
+    const storeAttachment = vi.fn().mockResolvedValue(undefined)
+    const runSchema = vi.fn().mockResolvedValue({ columns: ['id'], rowCount: 1 })
+    const createHashOnlyFile = (): {
+      run: (signal: AbortSignal) => Promise<void>
+      digest: () => string
+    } => ({
+      run: async () => {},
+      digest: () => 'hash-excel'
+    })
+
+    const result = await attachDataset(
+      { path: '/data/vendas.xlsx', jobId: 'dispatch-excel' },
+      unusedHashedLines,
+      createHashOnlyFile,
+      { attachmentsDir: '/tmp/attachments', storeAttachment },
+      vi.fn(),
+      async () => 'excel',
+      runSchema
+    )
+
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.value.format).toBe('excel')
+    expect(runSchema).toHaveBeenCalledWith('hash-excel')
   })
 })
 

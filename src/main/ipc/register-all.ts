@@ -17,7 +17,7 @@ import {
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage } from '../features/image/handlers'
 import { cancelJob } from '../features/job/handlers'
-import { readHashedFile, sniffFileFormat } from '../features/dataset/lines'
+import { readHashedFile, hashOnlyFile, sniffFileFormat } from '../features/dataset/lines'
 import { readDocumentFile, statDocumentSize } from '../features/document/readFile'
 import { readImageFile } from '../features/image/readFile'
 import { rasterizeToPng } from '../image/rasterize'
@@ -106,8 +106,8 @@ export async function registerAll(): Promise<() => void> {
     attachDataset(
       args,
       readHashedFile,
-      attachmentsDir,
-      ensureAttachment,
+      hashOnlyFile,
+      { attachmentsDir, storeAttachment: ensureAttachment },
       broadcastJobEvent,
       sniffFileFormat,
       duckdbClient.runSchema

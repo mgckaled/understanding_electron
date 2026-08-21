@@ -35,6 +35,9 @@ export function isReadOnlyQuery(sql: string): boolean {
  * (D18E.1/D18E.5) — it covers array and newline-delimited JSON on its own
  * (confirmed: Context7, `duckdb-web`), so no separate NDJSON branch, and
  * `encoding` never applies to it (JSON in this app is UTF-8 only).
+ * `format: 'excel'` dispatches to `read_xlsx` (D18F.5) — no encoding clause
+ * either, for a different reason: a `.xlsx` cell is typed, not raw bytes to
+ * decode, so there is no charset ambiguity to begin with.
  *
  * @throws When `hash` is not a 64-char lowercase hex string.
  */
@@ -48,6 +51,9 @@ export function buildViewSqlInterpolated(
   const path = sqlPath(join(attachmentsDir, hash))
   if (format === 'json') {
     return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_json_auto('${path}')`
+  }
+  if (format === 'excel') {
+    return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_xlsx('${path}', header = true)`
   }
   const encodingClause = encoding ? `, encoding = '${encoding}'` : ''
   return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto('${path}'${encodingClause})`
@@ -72,8 +78,9 @@ export function isUtf8EncodingError(message: string): boolean {
  * throws (measured: DuckDB's `latin-1` decoder rejects some byte sequences
  * too, so it is not a can't-fail fallback), the *original* utf-8 error
  * propagates — it names the real problem, the retry's own error does not.
- * `format: 'json'` skips the encoding dance entirely (D18E.5) — a single
- * `read_json_auto` call, never retried.
+ * `format: 'json'` and `format: 'excel'` both skip the encoding dance
+ * entirely (D18E.5, D18F.5) — a single `read_json_auto`/`read_xlsx` call,
+ * never retried.
  *
  * @param run - Executes one SQL statement against the live connection;
  *   injected so this stays testable without a real DuckDB instance.
@@ -88,7 +95,7 @@ export async function ensureDatasetView(params: {
 }): Promise<'latin-1' | undefined> {
   const { hash, attachmentsDir, format, knownEncoding, run } = params
 
-  if (format === 'json') {
+  if (format === 'json' || format === 'excel') {
     await run(buildViewSqlInterpolated(hash, attachmentsDir, format))
     return undefined
   }

@@ -5,6 +5,7 @@ import { ok, err } from '@core/result'
 import { isValidHash, isReadOnlyQuery, buildFinalSql } from '@core/duckdb/query'
 import { attachJsonDataset } from './attachJson'
 import { attachDelimitedDataset } from './attachDelimited'
+import { attachExcelDataset } from './attachExcel'
 
 // The N+1 truncation trick (D18B.4): 201 rows back means there were more,
 // and the UI drops the last one. 200 matches the app-wide DOM row cap.
@@ -24,9 +25,13 @@ export async function pickDataset(
     // without that extra step (bug found live: JSON/NDJSON were invisible
     // until the user manually picked the second filter).
     filters: [
-      { name: 'Dados tabulares', extensions: ['csv', 'tsv', 'txt', 'json', 'ndjson', 'jsonl'] },
+      {
+        name: 'Dados tabulares',
+        extensions: ['csv', 'tsv', 'txt', 'json', 'ndjson', 'jsonl', 'xlsx']
+      },
       { name: 'Delimited text', extensions: ['csv', 'tsv', 'txt'] },
-      { name: 'JSON', extensions: ['json', 'ndjson', 'jsonl'] }
+      { name: 'JSON', extensions: ['json', 'ndjson', 'jsonl'] },
+      { name: 'Excel', extensions: ['xlsx'] }
     ]
   })
 
@@ -36,31 +41,61 @@ export async function pickDataset(
 
 /**
  * Attaches a dataset, dispatching on `sniffFormat` of the original file
- * (D18E.1/D18E.3) — delimited and JSON take different orders (the latter
- * copies to `attachmentsDir` before it can ask the engine for a schema, D18A.3),
- * so each lives in its own module: {@link attachDelimitedDataset},
- * {@link attachJsonDataset}.
+ * (D18E.1/D18E.3) — delimited, JSON and Excel take different orders (the
+ * latter two copy to `attachmentsDir` before they can ask the engine for a
+ * schema, D18A.3), so each lives in its own module: {@link
+ * attachDelimitedDataset}, {@link attachJsonDataset}, {@link
+ * attachExcelDataset}.
+ *
+ * `storage` groups `attachmentsDir`/`storeAttachment` into one parameter —
+ * adding `createHashOnlyFile` for the Excel path would have pushed this
+ * signature to 8 injected dependencies (D18F, decided in passo 3).
  */
 export async function attachDataset(
   args: { path: string; jobId: JobId },
   createHashedLines: (path: string) => { lines: AsyncIterable<string>; digest: () => string },
-  attachmentsDir: string,
-  storeAttachment: (dir: string, hash: string, sourcePath: string) => Promise<void>,
+  createHashOnlyFile: (path: string) => {
+    run: (signal: AbortSignal) => Promise<void>
+    digest: () => string
+  },
+  storage: {
+    attachmentsDir: string
+    storeAttachment: (dir: string, hash: string, sourcePath: string) => Promise<void>
+  },
   emitProgress: (event: JobEvent) => void,
   sniffFormat: (path: string) => Promise<DatasetFormat>,
   runSchema: (hash: string) => Promise<{ columns: string[]; rowCount: number }>
 ): Promise<Result<DatasetPart>> {
   const format = await sniffFormat(args.path)
-  return format === 'json'
-    ? attachJsonDataset(
-        args,
-        createHashedLines,
-        attachmentsDir,
-        storeAttachment,
-        runSchema,
-        emitProgress
-      )
-    : attachDelimitedDataset(args, createHashedLines, attachmentsDir, storeAttachment, emitProgress)
+  const { attachmentsDir, storeAttachment } = storage
+
+  if (format === 'json') {
+    return attachJsonDataset(
+      args,
+      createHashedLines,
+      attachmentsDir,
+      storeAttachment,
+      runSchema,
+      emitProgress
+    )
+  }
+  if (format === 'excel') {
+    return attachExcelDataset(
+      args,
+      createHashOnlyFile,
+      attachmentsDir,
+      storeAttachment,
+      runSchema,
+      emitProgress
+    )
+  }
+  return attachDelimitedDataset(
+    args,
+    createHashedLines,
+    attachmentsDir,
+    storeAttachment,
+    emitProgress
+  )
 }
 
 /**

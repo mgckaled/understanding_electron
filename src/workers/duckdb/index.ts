@@ -58,17 +58,6 @@ async function main(): Promise<void> {
     await connection.run(sql)
   }
 
-  // Temporary passo 2 probe (18-F) — read_xlsx cannot be routed to for real
-  // until passo 4 wires ensureDatasetView's 'excel' branch, so this is what
-  // proves the resolved path survived fork() and LOAD succeeded, in both
-  // `pnpm dev` and the packaged app (spawnWorker.ts forwards this stdout with
-  // a "[duckdb worker stdout]" prefix). Deleted in passo 4, once ensureView
-  // can prove the same thing for real, against an actual .xlsx.
-  const probe = await connection.runAndReadAll(
-    "SELECT function_name FROM duckdb_functions() WHERE function_name = 'read_xlsx'"
-  )
-  console.log('[duckdb worker] read_xlsx registered:', probe.getRowObjectsJS().length === 1)
-
   // Live-confirmed in 18-B: `read_csv_auto($1)` rejects a bound parameter —
   // "Binder Error: Unexpected prepared parameter. This type of statement
   // can't be prepared!" — so the interpolated form is the only one that
