@@ -41,8 +41,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
    18-A motor e worker (DuckDB)       plan/implemented/18-A-...        concluída (ago/2026)
    18-B canal e consulta             plan/implemented/18-B-...        concluída (ago/2026)
    18-C pré-visualização automática  plan/implemented/18-C-...        concluída (ago/2026)
-▶  18-D perfil e cartão aninhado
-   19 propor: consulta e passos
+   18-D perfil e cartão aninhado     plan/implemented/18-D-...        concluída (ago/2026)
+▶  19 propor: consulta e passos
    20 gráfico como artefato
    ── extensão do arco (guia externo), ago/2026 ───────────────────────────────────
    21 thinking mode                  reference/web-fetch_mcp_thinking.md
