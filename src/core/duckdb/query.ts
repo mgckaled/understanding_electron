@@ -28,13 +28,66 @@ export function isReadOnlyQuery(sql: string): boolean {
  * ("Binder Error: Unexpected prepared parameter. This type of statement
  * can't be prepared!"). Safe despite the interpolation: `hash` already
  * passed the 64-char hex format check, so nothing user-controlled enters
- * the string verbatim.
+ * the string verbatim. `encoding` is the fixed set DuckDB's CSV reader
+ * builds in — `utf-8`, `utf-16` or `latin-1` — never a value read from
+ * user input.
  *
  * @throws When `hash` is not a 64-char lowercase hex string.
  */
-export function buildViewSqlInterpolated(hash: string, attachmentsDir: string): string {
+export function buildViewSqlInterpolated(
+  hash: string,
+  attachmentsDir: string,
+  encoding?: 'latin-1'
+): string {
   if (!isValidHash(hash)) throw new Error(`invalid attachment hash: ${hash}`)
-  return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto('${sqlPath(join(attachmentsDir, hash))}')`
+  const path = sqlPath(join(attachmentsDir, hash))
+  const encodingClause = encoding ? `, encoding = '${encoding}'` : ''
+  return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto('${path}'${encodingClause})`
+}
+
+// Matches DuckDB's own wording for a plain (utf-8) CSV read that hits a byte
+// sequence the decoder rejects — measured against the real engine, not
+// guessed from the error text. See HISTORY.md for the encoding fix this
+// backs and why `latin-1` is not a can't-fail retry.
+const UTF8_ENCODING_ERROR_PATTERN = /this file is not utf-8 encoded/i
+
+export function isUtf8EncodingError(message: string): boolean {
+  return UTF8_ENCODING_ERROR_PATTERN.test(message)
+}
+
+/**
+ * Creates or refreshes the `dataset` view, retrying once with
+ * `encoding = 'latin-1'` when the plain attempt fails on invalid UTF-8.
+ * `knownEncoding` skips straight to that retry for a hash this worker
+ * already classified — the file's bytes never change (content-addressed),
+ * so the same file never needs classifying twice. If the retry itself
+ * throws (measured: DuckDB's `latin-1` decoder rejects some byte sequences
+ * too, so it is not a can't-fail fallback), the *original* utf-8 error
+ * propagates — it names the real problem, the retry's own error does not.
+ *
+ * @param run - Executes one SQL statement against the live connection;
+ *   injected so this stays testable without a real DuckDB instance.
+ * @returns The encoding the view ended up using, for the caller to cache.
+ */
+export async function ensureDatasetView(params: {
+  hash: string
+  attachmentsDir: string
+  knownEncoding: 'latin-1' | undefined
+  run: (sql: string) => Promise<unknown>
+}): Promise<'latin-1' | undefined> {
+  const { hash, attachmentsDir, knownEncoding, run } = params
+  try {
+    await run(buildViewSqlInterpolated(hash, attachmentsDir, knownEncoding))
+    return knownEncoding
+  } catch (error) {
+    if (knownEncoding || !isUtf8EncodingError((error as Error).message)) throw error
+    try {
+      await run(buildViewSqlInterpolated(hash, attachmentsDir, 'latin-1'))
+    } catch {
+      throw error
+    }
+    return 'latin-1'
+  }
 }
 
 /**

@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
 import { buildDuckDbStartupCommands, DUCKDB_MEMORY_LIMIT } from '@core/duckdb/config'
-import { buildViewSqlInterpolated } from '@core/duckdb/query'
+import { ensureDatasetView } from '@core/duckdb/query'
 import { columnsToArrowBytes } from '@core/duckdb/arrow'
 import type { WorkerQueryRequest, WorkerQueryResponse } from '@core/duckdb/protocol'
 import { normalizeColumns } from './normalizeColumns'
@@ -37,10 +37,21 @@ async function main(): Promise<void> {
   // replaced for B, then A's read sees B's rows) — silently wrong, not an
   // error. A second message kind (18-D) must go through that same
   // serialization, not send around it.
+
+  // Content-addressed, so a hash's encoding never changes once classified —
+  // this only ever avoids retrying the same file's utf-8 attempt again.
+  const encodingByHash = new Map<string, 'latin-1'>()
+
   process.parentPort.on('message', async (e: { data: WorkerQueryRequest }) => {
     const { hash, sql } = e.data
     try {
-      await connection.run(buildViewSqlInterpolated(hash, attachmentsDir))
+      const encoding = await ensureDatasetView({
+        hash,
+        attachmentsDir,
+        knownEncoding: encodingByHash.get(hash),
+        run: (viewSql) => connection.run(viewSql)
+      })
+      if (encoding) encodingByHash.set(hash, encoding)
       const reader = await connection.runAndReadAll(sql)
       const bytes = columnsToArrowBytes(normalizeColumns(reader.getColumnsObject()))
       const response: WorkerQueryResponse = { ok: true, bytes }

@@ -1,4 +1,11 @@
-import { isValidHash, isReadOnlyQuery, buildViewSqlInterpolated, buildFinalSql } from './query'
+import {
+  isValidHash,
+  isReadOnlyQuery,
+  buildViewSqlInterpolated,
+  buildFinalSql,
+  isUtf8EncodingError,
+  ensureDatasetView
+} from './query'
 
 const VALID_HASH = 'a'.repeat(64)
 
@@ -50,6 +57,121 @@ describe('buildViewSqlInterpolated', () => {
 
   it('throws on a malformed hash instead of building unsafe SQL', () => {
     expect(() => buildViewSqlInterpolated("'; DROP TABLE x; --", '/data/attachments')).toThrow()
+  })
+
+  it('appends an encoding clause when given one', () => {
+    const sql = buildViewSqlInterpolated(VALID_HASH, 'C:\\data\\attachments', 'latin-1')
+
+    expect(sql).toBe(
+      `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_csv_auto('C:/data/attachments/${VALID_HASH}', encoding = 'latin-1')`
+    )
+  })
+})
+
+describe('isUtf8EncodingError', () => {
+  // Captured from a real DuckDB read_csv_auto failure against a Latin-1
+  // fixture (§ HISTORY.md) — matching against the real string, not a guess.
+  const REAL_MESSAGE = `Invalid Input Error: CSV Error on Line: 2
+Original Line: cliente_id;nome;cidade;vip;email
+Invalid unicode (byte sequence mismatch) detected. This file is not utf-8 encoded.
+
+Possible Solution: Set the correct encoding, if available, to read this CSV File (e.g., encoding='UTF-16')`
+
+  it('matches the real engine message', () => {
+    expect(isUtf8EncodingError(REAL_MESSAGE)).toBe(true)
+  })
+
+  it('does not match an unrelated engine error', () => {
+    expect(isUtf8EncodingError('Binder Error: column "missing_column" does not exist')).toBe(false)
+  })
+
+  it('does not match the latin-1 decoder rejecting its own retry', () => {
+    expect(isUtf8EncodingError('Invalid Input Error: File is not latin-1 encoded')).toBe(false)
+  })
+})
+
+describe('ensureDatasetView', () => {
+  it('builds the plain view and returns no encoding when the first attempt succeeds', async () => {
+    const run = vi.fn().mockResolvedValue(undefined)
+
+    const encoding = await ensureDatasetView({
+      hash: VALID_HASH,
+      attachmentsDir: '/data/attachments',
+      knownEncoding: undefined,
+      run
+    })
+
+    expect(encoding).toBeUndefined()
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(run).toHaveBeenCalledWith(expect.not.stringContaining('encoding'))
+  })
+
+  it('retries once with latin-1 when the first attempt fails on invalid utf-8', async () => {
+    const run = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error(
+          'Invalid unicode (byte sequence mismatch) detected. This file is not utf-8 encoded.'
+        )
+      )
+      .mockResolvedValueOnce(undefined)
+
+    const encoding = await ensureDatasetView({
+      hash: VALID_HASH,
+      attachmentsDir: '/data/attachments',
+      knownEncoding: undefined,
+      run
+    })
+
+    expect(encoding).toBe('latin-1')
+    expect(run).toHaveBeenCalledTimes(2)
+    expect(run).toHaveBeenLastCalledWith(expect.stringContaining("encoding = 'latin-1'"))
+  })
+
+  it('skips straight to latin-1 when the hash was already classified', async () => {
+    const run = vi.fn().mockResolvedValue(undefined)
+
+    const encoding = await ensureDatasetView({
+      hash: VALID_HASH,
+      attachmentsDir: '/data/attachments',
+      knownEncoding: 'latin-1',
+      run
+    })
+
+    expect(encoding).toBe('latin-1')
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(run).toHaveBeenCalledWith(expect.stringContaining("encoding = 'latin-1'"))
+  })
+
+  it('re-throws a non-encoding error without retrying', async () => {
+    const run = vi.fn().mockRejectedValue(new Error('Binder Error: syntax error'))
+
+    await expect(
+      ensureDatasetView({
+        hash: VALID_HASH,
+        attachmentsDir: '/data/attachments',
+        knownEncoding: undefined,
+        run
+      })
+    ).rejects.toThrow('Binder Error: syntax error')
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  it('re-throws the original utf-8 error when the latin-1 retry itself fails', async () => {
+    const run = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('This file is not utf-8 encoded.'))
+      .mockRejectedValueOnce(new Error('Invalid Input Error: File is not latin-1 encoded'))
+
+    await expect(
+      ensureDatasetView({
+        hash: VALID_HASH,
+        attachmentsDir: '/data/attachments',
+        knownEncoding: undefined,
+        run
+      })
+    ).rejects.toThrow('This file is not utf-8 encoded.')
+    expect(run).toHaveBeenCalledTimes(2)
   })
 })
 

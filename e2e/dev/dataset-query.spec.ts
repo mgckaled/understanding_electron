@@ -98,3 +98,28 @@ test('a real DuckDB error (bad column) surfaces the engine text as invalidQuery'
   expect(error?.kind).toBe('invalidQuery')
   expect((error as Extract<AppError, { kind: 'invalidQuery' }>).message).toMatch(/missing_column/i)
 })
+
+// clientes-latin1.csv is a real Latin-1/Windows-1252 export ("José da Silva",
+// "São Paulo" as raw ISO-8859-1 bytes) — the exact shape that made
+// read_csv_auto's plain utf-8 attempt throw before the worker's retry
+// (D18C-fix.1, see HISTORY.md).
+test('a Latin-1 CSV queries successfully via the encoding retry, decoding accents correctly', async () => {
+  const fixturePath = join(process.cwd(), 'e2e/fixtures/clientes-latin1.csv')
+
+  const bytes = await page.evaluate(async (path) => {
+    const api = (window as unknown as { api: Api }).api
+    const attached = await api.dataset.attach(path, 'e2e-attach-4')
+    if (!attached.ok) throw new Error('attach failed')
+    const result = await api.dataset.query(
+      attached.value.hash,
+      'SELECT * FROM dataset ORDER BY cliente_id'
+    )
+    if (!result.ok) throw new Error(`query failed: ${JSON.stringify(result.error)}`)
+    return Array.from(result.value)
+  }, fixturePath)
+
+  const table = tableFromIPC(new Uint8Array(bytes))
+  const rows = [...table].map((row) => row.toArray())
+  expect(rows[0]).toEqual([1n, 'José da Silva', 'São Paulo', true, 'jose@example.com'])
+  expect(rows[1]).toEqual([2n, 'Ana Souza', 'Curitiba', false, 'ana@example.com'])
+})
