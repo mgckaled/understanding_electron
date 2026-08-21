@@ -5,6 +5,7 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Button from '../../shared/ui/Button/Button'
 import DatasetPreview from './DatasetPreview'
 import DatasetQueryPanel from './DatasetQueryPanel'
+import DatasetProfile from './DatasetProfile'
 
 // What plano 16 draws in the transcript for a dataset attachment (D16.4 Passo
 // 4) — schema and row count only, the same fields the model itself reads
@@ -12,9 +13,13 @@ import DatasetQueryPanel from './DatasetQueryPanel'
 // a glance, not the payload. The disclosure below (D18B.5) copies the form
 // DocumentCard already has (useState + conditional render), not extracted:
 // this is the second occurrence, and the régua dos três reserves extraction
-// for the third (18-D). Consultar swaps the automatic preview for the custom
-// SQL panel — the two never render a table at once, or the default query
-// duplicates the rows already shown above it (post-18-C fix, see HISTORY.md).
+// for a third that has not shown up yet — the Consultar section below
+// stopped being disclosure-shaped once the post-18-C fix turned it into a
+// switcher (see DatasetProfile's own comment, D18D.5 revista). Consultar
+// swaps the automatic preview for the custom SQL panel — the two never
+// render a table at once, or the default query duplicates the rows already
+// shown above it (post-18-C fix, see HISTORY.md). Profile is unrelated
+// content (aggregate stats, not rows), so it renders alongside either one.
 function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
 
@@ -52,6 +57,7 @@ function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
         </Button>
       </div>
       {expanded ? <DatasetQueryPanel hash={part.hash} /> : <DatasetPreview part={part} />}
+      <DatasetProfile hash={part.hash} />
     </div>
   )
 }
