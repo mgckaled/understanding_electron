@@ -28,7 +28,7 @@ function DatasetProfile({ hash }: { hash: string }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-3 border-t border-border pt-3">
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         className="self-start"
         onClick={() => setOpen((value) => !value)}

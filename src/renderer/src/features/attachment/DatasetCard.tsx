@@ -40,7 +40,7 @@ function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
           </span>
         </div>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           className="flex-none"
           onClick={() => setExpanded((value) => !value)}
