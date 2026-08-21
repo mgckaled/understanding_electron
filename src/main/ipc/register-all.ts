@@ -70,9 +70,23 @@ function broadcastJobEvent(event: JobEvent): void {
 export async function registerAll(): Promise<() => void> {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))
   const attachmentsDir = join(app.getPath('userData'), 'attachments')
+  // Resolved once, here, where app.isPackaged/process.resourcesPath are known
+  // terrain (icon.png already reads process.resourcesPath the same way) —
+  // the worker never imports electron, so it cannot resolve this itself
+  // (D18F.2). asarUnpack: resources/** (electron-builder.yml) is what makes
+  // the packaged path exist on disk instead of inside app.asar.
+  const excelExtensionPath = app.isPackaged
+    ? join(
+        process.resourcesPath,
+        'app.asar.unpacked',
+        'resources',
+        'duckdb-extensions',
+        'excel.duckdb_extension'
+      )
+    : join(app.getAppPath(), 'resources', 'duckdb-extensions', 'excel.duckdb_extension')
   // Spawned once, kept alive for the app's life (D18B.3-bis) — one DuckDB
   // connection, not one per query.
-  const duckdbWorker = spawnDuckdbWorker(app.getPath('userData'))
+  const duckdbWorker = spawnDuckdbWorker(app.getPath('userData'), excelExtensionPath)
   const duckdbClient = createDuckdbWorkerClient(duckdbWorker)
   // The scheme itself is registered in main/index.ts, before app.whenReady()
   // — registerSchemesAsPrivileged only works pre-ready. Wiring the handler

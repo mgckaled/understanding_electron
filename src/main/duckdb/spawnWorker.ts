@@ -5,13 +5,16 @@ import type { WorkerRequest, WorkerResponse } from '@core/duckdb/protocol'
 
 /**
  * Forks the DuckDB worker built next to main/index.js (D18A.1). `userDataPath`
- * travels as a fork argument, not an imported module — the worker never
- * imports `electron` (D18A.2), so it cannot resolve `app.getPath` itself.
+ * and `extensionPath` travel as fork arguments, not imported modules — the
+ * worker never imports `electron` (D18A.2), so it cannot resolve
+ * `app.getPath`/`process.resourcesPath` itself (D18F.2).
  */
-export function spawnDuckdbWorker(userDataPath: string): UtilityProcess {
-  const worker = utilityProcess.fork(join(__dirname, 'duckdbWorker.js'), [userDataPath], {
-    stdio: 'pipe'
-  })
+export function spawnDuckdbWorker(userDataPath: string, extensionPath: string): UtilityProcess {
+  const worker = utilityProcess.fork(
+    join(__dirname, 'duckdbWorker.js'),
+    [userDataPath, extensionPath],
+    { stdio: 'pipe' }
+  )
   // 'inherit' (the default) did not surface worker output through electron-vite's
   // spawn chain on Windows — piping and forwarding explicitly is the reliable path.
   worker.stdout?.on('data', (chunk: Buffer) =>
