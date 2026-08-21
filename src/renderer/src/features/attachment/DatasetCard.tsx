@@ -12,9 +12,9 @@ import DatasetQueryPanel from './DatasetQueryPanel'
 // a glance, not the payload. The disclosure below (D18B.5) copies the form
 // DocumentCard already has (useState + conditional render), not extracted:
 // this is the second occurrence, and the régua dos três reserves extraction
-// for the third (18-D). DatasetPreview always renders below this row
-// (D18C.5); the Consultar toggle stays here rather than moving below it —
-// 18-D owns final ordering of the card's sections, not this plan.
+// for the third (18-D). Consultar swaps the automatic preview for the custom
+// SQL panel — the two never render a table at once, or the default query
+// duplicates the rows already shown above it (post-18-C fix, see HISTORY.md).
 function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
 
@@ -39,10 +39,10 @@ function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
           size="sm"
           className="flex-none"
           onClick={() => setExpanded((value) => !value)}
-          aria-expanded={expanded}
+          aria-pressed={expanded}
         >
           <span className="flex items-center gap-1.5">
-            Consultar
+            {expanded ? 'Ver amostra' : 'Consultar'}
             {expanded ? (
               <ChevronUp size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
             ) : (
@@ -51,8 +51,7 @@ function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
           </span>
         </Button>
       </div>
-      <DatasetPreview part={part} />
-      {expanded && <DatasetQueryPanel hash={part.hash} />}
+      {expanded ? <DatasetQueryPanel hash={part.hash} /> : <DatasetPreview part={part} />}
     </div>
   )
 }

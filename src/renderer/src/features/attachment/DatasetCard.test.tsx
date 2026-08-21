@@ -36,7 +36,7 @@ describe('DatasetCard', () => {
     expect(api.dataset.query).toHaveBeenCalledWith('h1', 'SELECT * FROM dataset LIMIT 50')
   })
 
-  it('keeps the Consultar toggle independent of the always-visible preview', async () => {
+  it('shows the preview or the query panel, never both at once', async () => {
     const api = installApiMock()
     vi.mocked(api.dataset.query).mockResolvedValue({
       ok: true,
@@ -48,8 +48,14 @@ describe('DatasetCard', () => {
     await screen.findByText('1')
     expect(screen.queryByLabelText('Consulta SQL')).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Consultar/ }))
+    await user.click(screen.getByRole('button', { name: 'Consultar' }))
 
     expect(screen.getByLabelText('Consulta SQL')).toBeInTheDocument()
+    expect(screen.queryByText('1')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Ver amostra' }))
+
+    expect(await screen.findByText('1')).toBeVisible()
+    expect(screen.queryByLabelText('Consulta SQL')).not.toBeInTheDocument()
   })
 })

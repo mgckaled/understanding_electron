@@ -17,11 +17,12 @@ function formatCell(value: unknown): string {
 }
 
 /**
- * The dataset's first 50 rows, always rendered inside DatasetCard — no click,
- * the conversation's counterpart to markdown appearing without one (D18C.5).
- * Renders every ViewState branch as text or a table, never a blank section:
- * this fires the moment the card mounts, so a silent gap would read as the
- * card breaking rather than loading.
+ * The dataset's first 50 rows, rendered by default inside DatasetCard — no
+ * click, fired the moment the card mounts. Renders every ViewState branch as
+ * text or a table, never a blank section: a silent gap here would read as
+ * the card breaking rather than loading. DatasetCard swaps this out for
+ * DatasetQueryPanel while Consultar is open, so the two never show a table
+ * at the same time (post-18-C fix, see HISTORY.md).
  */
 function DatasetPreview({ part }: { part: DatasetPart }): React.JSX.Element {
   const state = useDatasetPreview(part.hash)
