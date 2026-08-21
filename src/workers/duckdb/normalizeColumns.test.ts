@@ -1,4 +1,4 @@
-import { DuckDBDateValue } from '@duckdb/node-api'
+import { DuckDBDateValue, DuckDBTimestampValue, DuckDBTimestampTZValue } from '@duckdb/node-api'
 import { normalizeColumns } from './normalizeColumns'
 
 describe('normalizeColumns', () => {
@@ -8,6 +8,28 @@ describe('normalizeColumns', () => {
     const result = normalizeColumns({ createdAt: [new DuckDBDateValue(days)] })
 
     expect(result.createdAt[0]).toEqual(new Date(Date.UTC(2024, 5, 15)))
+  })
+
+  // The wrapper a JSON attach's ISO datetime column comes back as (D18E.6),
+  // confirmed live against the real engine — read_json_auto('...criado_em":
+  // "2026-08-21T10:30:00"...') hands getColumnsObject() a DuckDBTimestampValue,
+  // not a plain value, same class of gap DuckDBDateValue closed for 18-B.
+  it('unwraps a DuckDBTimestampValue into a Date at the same instant', () => {
+    const instant = Date.UTC(2026, 7, 21, 10, 30, 0)
+    const result = normalizeColumns({
+      createdAt: [new DuckDBTimestampValue(BigInt(instant) * 1_000n)]
+    })
+
+    expect(result.createdAt[0]).toEqual(new Date(instant))
+  })
+
+  it('unwraps a DuckDBTimestampTZValue the same way', () => {
+    const instant = Date.UTC(2026, 7, 21, 10, 30, 0)
+    const result = normalizeColumns({
+      createdAt: [new DuckDBTimestampTZValue(BigInt(instant) * 1_000n)]
+    })
+
+    expect(result.createdAt[0]).toEqual(new Date(instant))
   })
 
   it('leaves already-plain values untouched', () => {

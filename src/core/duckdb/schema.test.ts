@@ -15,7 +15,10 @@ describe('hasNestedType', () => {
     ['a STRUCT', 'STRUCT(a INTEGER)'],
     ['a MAP', 'MAP(VARCHAR, INTEGER)'],
     ['a LIST', 'INTEGER[]'],
-    ['a LIST of STRUCT', 'STRUCT(a INTEGER)[]']
+    ['a LIST of STRUCT', 'STRUCT(a INTEGER)[]'],
+    // read_json_auto's own fallback for a field whose type disagrees across
+    // rows (verified live) — never VARCHAR, so a plain string column is safe.
+    ['inconsistent-type JSON', 'JSON']
   ])('flags %s as nested', (_label, columnType) => {
     expect(hasNestedType(columnType)).toBe(true)
   })
