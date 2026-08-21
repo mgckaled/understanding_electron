@@ -9,7 +9,7 @@ Ficha técnica por modelo, local e de nuvem. Nasceu do candidato já previsto em
 | [`ollama-qualified.md`](ollama-qualified.md) | Frota atual (peso/KV/total por contexto, capacidades, papel) e elegíveis (analisados, sem bloqueio, sem papel ainda) |
 | [`ollama-disqualified.md`](ollama-disqualified.md) | Inviáveis (bloqueados por um fato que pode mudar) e descartados (decisão já fechada) |
 | [`cloud-optin.md`](cloud-optin.md) | Ficha técnica dos dois candidatos de nuvem (`gemini-2.5-flash`, `glm-4.7-flash`) — contexto, preço, teto de taxa do tier grátis. Nenhum dos dois está integrado; entra em uso quando a fatia 3 da [camada de IA](../../plan/active/09-camada-de-ia.md) (D15.9) sair do papel |
-| [`ollama-models-gpu-analysis.md`](ollama-models-gpu-analysis.md) | Teste medido de `num_gpu` (MX150, 2 GB VRAM) contra `gemma3:1b` — GPU ganha no prefill, perde 3-4× na geração a contexto grande, sem estouro de VRAM. Recomendação: não construir suporte a GPU agora |
+| [`ollama-models-gpu-analysis.md`](ollama-models-gpu-analysis.md) | Teste medido de `num_gpu` (MX150, 2 GB VRAM) contra `gemma3:1b` — GPU ganha no prefill, perde 3-4× na geração já a partir de 8k de cache ocupado (não só em contexto extremo), sem estouro de VRAM. Recomendação: não construir suporte a GPU agora |
 
 ---
 
