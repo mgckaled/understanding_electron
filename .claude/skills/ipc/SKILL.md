@@ -105,13 +105,13 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 **A pergunta já tem resposta prática, e não é um canal:** bytes de imagem viajam do disco ao `<img>` do renderer pelo protocolo customizado `attachment://` (`src/main/attachments/protocol.ts`, `protocol.handle` + `registerSchemesAsPrivileged`, D17.6, plano 17) — nunca por `invoke`/JSON. É o caminho a seguir para qualquer payload binário futuro que precise chegar ao DOM.
 
-## Os 25 canais de hoje
+## Os 26 canais de hoje
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
 | `app` | `info`, `memory` | não |
 | `shell` | `openExternal` | sim |
-| `dataset` | `pick`, `attach`, `query` | sim |
+| `dataset` | `pick`, `attach`, `query`, `profile` | sim |
 | `document` | `pick`, `attach` | sim |
 | `image` | `pick`, `attach` | sim |
 | `job` | `cancel` | não |

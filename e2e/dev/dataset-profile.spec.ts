@@ -81,3 +81,56 @@ test("a second profile request, for a different hash, does not see the first one
   expect(first.map((column) => column.column)).toEqual(['id', 'cidade', 'idade'])
   expect(second.map((column) => column.column)).toEqual(['id', 'name', 'city'])
 })
+
+// null_percentage's scale (0-100 vs. a 0-1 fraction) is not documented by
+// DuckDB in a way Context7 surfaced — measured live in this session at 25
+// for 1 null in 4 rows, confirming ColumnProfile.nullPercentage needs no
+// scaling before display. Locked in as a permanent regression, not just a
+// one-off script, since a silent 100x error here would ship wrong and no
+// unit test touches the worker's SUMMARIZE-row parsing.
+test('nullPercentage is already on a 0-100 scale, not a 0-1 fraction', async () => {
+  const fixturePath = join(process.cwd(), 'e2e/fixtures/nulos.csv')
+
+  const profile = await page.evaluate(async (path) => {
+    const api = (window as unknown as { api: Api }).api
+    const attached = await api.dataset.attach(path, 'e2e-profile-nulls')
+    if (!attached.ok) throw new Error('attach failed')
+    const result = await api.dataset.profile(attached.value.hash)
+    if (!result.ok) throw new Error('profile failed')
+    return result.value
+  }, fixturePath)
+
+  const idade = profile.find((column) => column.column === 'idade')
+  expect(idade?.nullPercentage).toBe(25)
+})
+
+// Same shared encodingByHash/ensureView path as dataset:query (D18D.3) — a
+// profile handler that built its own view SQL instead of reusing it would
+// regress the post-18-C encoding fix silently, only on an accented-header
+// Latin-1 file. No other test exercises this path for dataset:profile.
+test('profiles a Latin-1 CSV via the same encoding retry as dataset:query', async () => {
+  const fixturePath = join(process.cwd(), 'e2e/fixtures/clientes-latin1.csv')
+
+  const profile = await page.evaluate(async (path) => {
+    const api = (window as unknown as { api: Api }).api
+    const attached = await api.dataset.attach(path, 'e2e-profile-latin1')
+    if (!attached.ok) throw new Error('attach failed')
+    const result = await api.dataset.profile(attached.value.hash)
+    if (!result.ok) throw new Error(`profile failed: ${JSON.stringify(result.error)}`)
+    return result.value
+  }, fixturePath)
+
+  expect(profile.map((column) => column.column)).toEqual([
+    'cliente_id',
+    'nome',
+    'cidade',
+    'vip',
+    'email'
+  ])
+  // Only 2 rows — every column is 100% unique, so none qualifies for top-N
+  // (D18D.2's ratio gate). min/max are what SUMMARIZE gives back here, and
+  // they are the field that would mojibake if the encoding retry silently
+  // regressed for this handler.
+  const nome = profile.find((column) => column.column === 'nome')
+  expect([nome?.min, nome?.max]).toEqual(expect.arrayContaining(['José da Silva', 'Ana Souza']))
+})
