@@ -23,7 +23,7 @@ async function writeLatin1Fixture(attachmentsDir: string): Promise<void> {
   await writeFile(join(attachmentsDir, HASH), content)
 }
 
-describe('ensureDatasetView against a real, non-UTF-8 CSV (D18C-fix.1)', () => {
+describe('ensureDatasetView against a real, non-UTF-8 CSV (HISTORY.md § Correção pós-18-C)', () => {
   it('falls back to latin-1 and decodes the accented columns correctly', async () => {
     const attachmentsDir = await mkdtemp(join(tmpdir(), 'crivo-encoding-fallback-'))
     try {

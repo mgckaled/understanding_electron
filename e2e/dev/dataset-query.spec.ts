@@ -101,8 +101,8 @@ test('a real DuckDB error (bad column) surfaces the engine text as invalidQuery'
 
 // clientes-latin1.csv is a real Latin-1/Windows-1252 export ("José da Silva",
 // "São Paulo" as raw ISO-8859-1 bytes) — the exact shape that made
-// read_csv_auto's plain utf-8 attempt throw before the worker's retry
-// (D18C-fix.1, see HISTORY.md).
+// read_csv_auto's plain utf-8 attempt throw before the worker's retry.
+// See HISTORY.md § Correção pós-18-C.
 test('a Latin-1 CSV queries successfully via the encoding retry, decoding accents correctly', async () => {
   const fixturePath = join(process.cwd(), 'e2e/fixtures/clientes-latin1.csv')
 

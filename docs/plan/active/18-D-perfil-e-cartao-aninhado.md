@@ -67,7 +67,7 @@ Diferente de `dataset:query` (18-B), o resultado de `dataset:profile` **não** u
 
 ### D18D.6 — Cache por hash via TanStack Query, mesmo padrão do 18-C
 
-`useDatasetProfile(hash)`, `queryKey: ['dataset', 'profile', hash]`, `staleTime: Infinity` — mesmo raciocínio da D18C.4 (conteúdo imutável por hash). Diferente da pré-visualização (D18C.5, sempre visível), a consulta só dispara **quando o `Disclosure` abre** — `enabled: expanded` no `useQuery`, para não computar `SUMMARIZE` de arquivos que ninguém pediu perfil (a bifurcação 1 da sessão que abriu o arco 18: perfil é sob demanda, não automático).
+`useDatasetProfile(hash)`, `queryKey: ['dataset', 'profile', hash]`, `staleTime: Infinity` — mesmo raciocínio da D18C.4 (conteúdo imutável por hash). Diferente da pré-visualização (D18C.5, dispara sozinha ao montar — a correção pós-18-C fez o `DatasetCard` esconder essa seção enquanto "Consultar" está aberto, mas o disparo automático em si não mudou), a consulta só dispara **quando o `Disclosure` abre** — `enabled: expanded` no `useQuery`, para não computar `SUMMARIZE` de arquivos que ninguém pediu perfil (a bifurcação 1 da sessão que abriu o arco 18: perfil é sob demanda, não automático).
 
 ---
 
