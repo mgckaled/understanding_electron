@@ -2,7 +2,7 @@
 export const DUCKDB_MEMORY_LIMIT = '2GB'
 
 export interface DuckDbStartupOptions {
-  /** Extension files to `LOAD` by explicit path — empty until 18-F (D18A.3). */
+  /** Extension files to `LOAD` by explicit path (D18A.3) — populated with the excel extension since 18-F. */
   extensionPaths: string[]
   allowedDirectories: string[]
   memoryLimit: string

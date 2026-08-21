@@ -8,7 +8,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 ## Em execução
 
-O 18 (camada de dados) virou sub-planos 18-A a 18-F, ≤7 passos cada (ver [`ROADMAP § 1`](../../ROADMAP.md)). O 18-A (motor e worker), o 18-B (canal e consulta), o 18-C (pré-visualização), o 18-D (perfil e cartão aninhado) e o 18-E (anexo de JSON e NDJSON) concluíram — [`implemented/18-A`](../implemented/18-A-motor-e-worker.md), [`implemented/18-B`](../implemented/18-B-canal-e-consulta.md), [`implemented/18-C`](../implemented/18-C-pre-visualizacao.md), [`implemented/18-D`](../implemented/18-D-perfil-e-cartao-aninhado.md), [`implemented/18-E`](../implemented/18-E-json-ndjson.md) — e o **19** (propor: consulta e passos) é o próximo do arco.
+O 18 (camada de dados) virou sub-planos 18-A a 18-F, ≤7 passos cada (ver [`ROADMAP § 1`](../../ROADMAP.md)). Todos os seis concluíram — [`implemented/18-A`](../implemented/18-A-motor-e-worker.md), [`implemented/18-B`](../implemented/18-B-canal-e-consulta.md), [`implemented/18-C`](../implemented/18-C-pre-visualizacao.md), [`implemented/18-D`](../implemented/18-D-perfil-e-cartao-aninhado.md), [`implemented/18-E`](../implemented/18-E-json-ndjson.md), [`implemented/18-F`](../implemented/18-F-excel.md) — o arco 18 fecha aqui, e o **19** (propor: consulta e passos) é o próximo do arco.
 
 ---
 

@@ -265,6 +265,8 @@ Somado ao limite do próprio formato — 1.048.576 linhas por planilha — o Exc
 
 E traz um mundo próprio de decisões que os outros não têm: múltiplas planilhas (qual abrir?), células mescladas, tipo por célula em vez de por coluna, fórmulas (valor ou expressão?), datas como número serial, e a diferença entre o que está armazenado e o que está formatado na tela.
 
+**"Data como número serial" é o caso particular de uma regra mais ampla: célula é tipada pela formatação, não pelo valor** — medido ao vivo no 18-F. Uma coluna de números inteiros sem formatação de "inteiro" no Excel de origem (o comum: a formatação padrão "Geral") lê como `DOUBLE`, não `BIGINT` — o motor não tem como saber que `1`, `2`, `3` deveriam ser inteiros só olhando o valor. Não é defeito do app: `DOUBLE` já é o tipo que qualquer CSV com coluna decimal produz, e o resto do caminho (perfil, pré-visualização, consulta) não distingue a origem. É dado de entrada ambíguo, mesma classe da data sem formatação — ver [`plan/implemented/18-F-excel.md`](plan/implemented/18-F-excel.md) § passo 5.
+
 **Decisão:** Excel entra no escopo, e entra por último entre os quatro. Ao chegar, começa pelo caminho simples — uma planilha, primeira linha como cabeçalho, valores calculados — com o resto explicitamente adiado.
 
 ---

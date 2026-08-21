@@ -8,12 +8,8 @@ import { DATABASE_FILE, openDatabase } from '../db/open'
 import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
-import {
-  pickDataset,
-  attachDataset,
-  queryDataset,
-  profileDataset
-} from '../features/dataset/handlers'
+import { attachDataset, queryDataset, profileDataset } from '../features/dataset/handlers'
+import { pickDataset } from '../features/dataset/pick'
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage } from '../features/image/handlers'
 import { cancelJob } from '../features/job/handlers'
