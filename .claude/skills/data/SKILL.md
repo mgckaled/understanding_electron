@@ -1,6 +1,6 @@
 ---
 name: data
-description: A camada de dados do crivo — motor DuckDB em `utilityProcess`, o motor restrito (`allowed_directories`, `enable_external_access`, `lock_configuration`, e a ordem que o DuckDB exige entre eles), `memory_limit`, a extensão `excel` vendorizada e travada por versão, o veredito medido Arrow-vs-JSON (JSON venceu, porque o binding não exporta Arrow nativo), e a armadilha de `NULL` em `Vector.toArray()`. Use ao tocar `core/duckdb/`, `main/duckdb/` ou `workers/duckdb/`, mexer no motor restrito, adicionar um formato de dataset novo, ou decidir entre Arrow e JSON num canal.
+description: A camada de dados do crivo — motor DuckDB restrito em `utilityProcess`, a ordem exigida dos `SET` de segurança, `memory_limit`, a extensão `excel` vendorizada, e o veredito medido Arrow-vs-JSON (JSON venceu, o binding não exporta Arrow nativo). Use ao tocar `core/duckdb/`, `main/duckdb/`, `workers/duckdb/`, mexer no motor restrito, ou decidir entre Arrow e JSON num canal.
 ---
 
 # Camada de dados — crivo
@@ -41,7 +41,7 @@ Efeito prático em quem adiciona um formato de dataset novo: a ordem do anexo se
 
 ## A armadilha de `NULL` em `Vector.toArray()`
 
-`Vector.toArray()` lê o buffer tipado bruto sem consultar o *bitmap* de validade — troca `NULL` por `0` em silêncio. Só iterar (`[...vector]`, ou `row.toArray()` de uma *row proxy* via `for (const row of table)`) consulta a validade de verdade. `formatCell()` em `DatasetQueryPanel.tsx` já resolve isso certo (`∅` para `null`/`undefined`, `.toString()` para `bigint`) — reaproveite essa forma; é a "segunda ocorrência" que já vale copiar em vez de inventar um segundo marcador.
+`Vector.toArray()` lê o buffer tipado bruto sem consultar o *bitmap* de validade — troca `NULL` por `0` em silêncio. Só iterar (`[...vector]`, ou `row.toArray()` de uma *row proxy* via `for (const row of table)`) consulta a validade de verdade. `formatCell()` já resolve isso certo (`∅` para `null`/`undefined`, `.toString()` para `bigint`) — existe hoje em **dois** lugares, `DatasetQueryPanel.tsx` (original) e `DatasetPreview.tsx` (cópia deliberada, comentário próprio cita a régua dos três: copiar a segunda ocorrência, extrair só na terceira). Copie a mesma forma se surgir um terceiro consumidor; não invente um marcador novo, e lembre que a terceira cópia é o gatilho para extrair, não a segunda.
 
 ## Formatos suportados hoje
 
