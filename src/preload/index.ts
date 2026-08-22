@@ -59,6 +59,11 @@ const api: Api = {
   settings: {
     read: () => invoke('settings:read'),
     write: (patch) => invoke('settings:write', patch)
+  },
+  secrets: {
+    write: (provider, apiKey) => invoke('secrets:write', { provider, apiKey }),
+    has: (provider) => invoke('secrets:has', { provider }),
+    remove: (provider) => invoke('secrets:remove', { provider })
   }
 }
 

@@ -81,7 +81,14 @@ export function createApiMock(): Api {
     // Not bare vi.fn()s: these two are the surfaces the renderer READS BACK
     // after writing, so a mock that forgets everything would make every test
     // about switching, renaming, history or a persisted setting vacuous.
-    ...createStoreApi()
+    ...createStoreApi(),
+    secrets: {
+      write: vi.fn(),
+      // false, not a bare vi.fn(): undefined is neither of the field's two
+      // states, the same trap ai.models' own comment above describes.
+      has: vi.fn().mockResolvedValue(false),
+      remove: vi.fn()
+    }
   } satisfies Api
 }
 

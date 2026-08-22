@@ -370,6 +370,18 @@ export const DEFAULT_APP_SETTINGS: AppSettings = { numThread: 4, theme: 'system'
 // payloads through it and preload subscribes with ipcRenderer.on. Its name
 // lives in shared/channels.ts, not here — see that file for why.
 
+/**
+ * Cloud secret providers (plano N-1-A, DN1A.5) — one credential per
+ * PROVIDER, never per model: a Google AI Studio key authenticates every
+ * Gemini model the account can reach, so a model added or swapped later
+ * touches no credential screen. Distinct from AiService/aiServiceSchema
+ * above, which names who `ai:*` talks to today ('ollama' only) — joining
+ * that enum is N-1-B's job, not this array's.
+ */
+export const CLOUD_PROVIDERS = ['gemini', 'glm'] as const
+export type CloudProvider = (typeof CLOUD_PROVIDERS)[number]
+export const cloudProviderSchema = z.enum(CLOUD_PROVIDERS)
+
 export const argsSchema = {
   'app:info': z.void(),
   'app:memory': z.void(),
@@ -443,7 +455,13 @@ export const argsSchema = {
   'settings:read': z.void(),
   // A patch, not the whole object: a setting added later is written by whoever
   // owns it, without every writer having to know the full shape.
-  'settings:write': appSettingsSchema.partial()
+  'settings:write': appSettingsSchema.partial(),
+  // secrets:read does NOT exist (DN1A.3) — the mão única rule (CLAUDE.md §
+  // Segurança) means the renderer writes and asks whether a key exists, never
+  // reads it back. A fourth schema here would be the bypass.
+  'secrets:write': z.object({ provider: cloudProviderSchema, apiKey: z.string().min(1) }),
+  'secrets:has': z.object({ provider: cloudProviderSchema }),
+  'secrets:remove': z.object({ provider: cloudProviderSchema })
 } as const
 
 export type IpcContract = {
@@ -552,6 +570,16 @@ export type IpcContract = {
   }
   'settings:read': { args: z.infer<(typeof argsSchema)['settings:read']>; result: AppSettings }
   'settings:write': { args: z.infer<(typeof argsSchema)['settings:write']>; result: void }
+  // weakBackend: true on SUCCESS is the DN1A.4 signal (Linux basic_text) —
+  // never an AppError, which is reserved for the real failure path below.
+  'secrets:write': {
+    args: z.infer<(typeof argsSchema)['secrets:write']>
+    result: Result<{ weakBackend: boolean }>
+  }
+  // No Result: whether a key exists cannot fail in a way the UI reacts to
+  // differently from "false" — same reasoning as the conversation channels.
+  'secrets:has': { args: z.infer<(typeof argsSchema)['secrets:has']>; result: boolean }
+  'secrets:remove': { args: z.infer<(typeof argsSchema)['secrets:remove']>; result: void }
 }
 
 export type Channel = keyof IpcContract
@@ -617,5 +645,12 @@ export type Api = {
   settings: {
     read(): Promise<AppSettings>
     write(patch: Partial<AppSettings>): Promise<void>
+  }
+  secrets: {
+    /** Encrypts and stores `apiKey` for `provider`, overwriting any existing one. */
+    write(provider: CloudProvider, apiKey: string): Promise<Result<{ weakBackend: boolean }>>
+    /** Whether a key is stored for `provider` — never the key itself (DN1A.3). */
+    has(provider: CloudProvider): Promise<boolean>
+    remove(provider: CloudProvider): Promise<void>
   }
 }

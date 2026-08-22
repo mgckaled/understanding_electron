@@ -139,3 +139,25 @@ describe('argsSchema — conversation:*', () => {
     expect(argsSchema['conversation:rename'].safeParse({ id: 'c1', title: '' }).success).toBe(true)
   })
 })
+
+describe('argsSchema — secrets:*', () => {
+  it('accepts a well-formed secrets:write payload', () => {
+    const result = argsSchema['secrets:write'].safeParse({ provider: 'gemini', apiKey: 'sk-x' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an empty apiKey', () => {
+    const result = argsSchema['secrets:write'].safeParse({ provider: 'gemini', apiKey: '' })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects a provider outside CLOUD_PROVIDERS', () => {
+    const result = argsSchema['secrets:write'].safeParse({ provider: 'openai', apiKey: 'sk-x' })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts secrets:has/secrets:remove with a known provider', () => {
+    expect(argsSchema['secrets:has'].safeParse({ provider: 'glm' }).success).toBe(true)
+    expect(argsSchema['secrets:remove'].safeParse({ provider: 'glm' }).success).toBe(true)
+  })
+})
