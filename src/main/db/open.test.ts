@@ -15,24 +15,24 @@ function tableNames(db: DatabaseSync): string[] {
 }
 
 describe('openDatabase', () => {
-  it('takes a fresh database from v0 to v1, creating the three tables', () => {
+  it('takes a fresh database to the top of the ladder, creating every table', () => {
     const db = new DatabaseSync(':memory:')
     expect(currentVersion(db)).toBe(0)
     db.close()
 
     const opened = openDatabase(':memory:')
 
-    expect(currentVersion(opened)).toBe(1)
-    expect(tableNames(opened)).toEqual(['app_settings', 'conversations', 'messages'])
+    expect(currentVersion(opened)).toBe(2)
+    expect(tableNames(opened)).toEqual(['app_settings', 'conversations', 'messages', 'secrets'])
     opened.close()
   })
 
   it('is a no-op on a database already at the top of the ladder', () => {
     const db = openDatabase(':memory:')
 
-    // Re-running must not re-execute v1 — a second CREATE TABLE would throw.
-    expect(migrate(db)).toBe(1)
-    expect(currentVersion(db)).toBe(1)
+    // Re-running must not re-execute v1/v2 — a second CREATE TABLE would throw.
+    expect(migrate(db)).toBe(2)
+    expect(currentVersion(db)).toBe(2)
     db.close()
   })
 
@@ -51,12 +51,12 @@ describe('openDatabase', () => {
 
 /*
  * The rung that proves the ladder (D14.2). The fixture rung lives here and
- * never in production code: what is under test is that a SECOND rung runs at
- * all, on a database that already has rows in it — the situation the real v2
- * will meet, and the one a single-rung ladder never exercises.
+ * never in production code: what is under test is that a FURTHER rung runs
+ * at all, on a database that already has rows in it — the situation every
+ * real rung after v1 meets, and the one a single-rung ladder never exercises.
  */
-describe('migrate — the second rung', () => {
-  const v2: Migration = (db) => {
+describe('migrate — a further rung', () => {
+  const v3: Migration = (db) => {
     db.exec('ALTER TABLE conversations ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0')
   }
 
@@ -71,12 +71,12 @@ describe('migrate — the second rung', () => {
     return db
   }
 
-  it('climbs from v1 to v2 leaving the existing rows intact', () => {
+  it('climbs to a third rung leaving the existing rows intact', () => {
     const db = seeded()
 
-    expect(migrate(db, [...migrations, v2])).toBe(2)
+    expect(migrate(db, [...migrations, v3])).toBe(3)
 
-    expect(currentVersion(db)).toBe(2)
+    expect(currentVersion(db)).toBe(3)
     const conversation = db.prepare('SELECT title, pinned FROM conversations').get()
     expect(conversation?.['title']).toBe('Vendas')
     expect(conversation?.['pinned']).toBe(0)
@@ -95,7 +95,7 @@ describe('migrate — the second rung', () => {
 
     // Both halves matter: a bumped version would make the next open skip the
     // rung, and a surviving table would make its retry fail on CREATE TABLE.
-    expect(currentVersion(db)).toBe(1)
+    expect(currentVersion(db)).toBe(2)
     expect(tableNames(db)).not.toContain('half')
     db.close()
   })

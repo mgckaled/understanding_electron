@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, shell, dialog, nativeTheme, BrowserWindow } from 'electron'
+import { app, shell, dialog, nativeTheme, safeStorage, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import type { JobEvent } from '@shared/ipc'
 import { JOB_EVENT_CHANNEL } from '@shared/channels'
@@ -46,7 +46,19 @@ import {
   updateConversationSettings
 } from '../features/conversation/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
+import { hasSecret, removeSecret, writeSecret } from '../features/secrets/handlers'
 import { spawnDuckdbWorker, createDuckdbWorkerClient } from '../duckdb/spawnWorker'
+
+// getSelectedStorageBackend() only exists on Linux (Electron's own binding is
+// under #if BUILDFLAG(IS_LINUX)) — calling it on win32/macOS throws. null
+// there is not "unknown", it is "this platform has no such concept"
+// (DN1A.4, core/ai/secrets.ts).
+function readSecretBackendInfo(): { encryptionAvailable: boolean; backend: string | null } {
+  return {
+    encryptionAvailable: safeStorage.isEncryptionAvailable(),
+    backend: process.platform === 'linux' ? safeStorage.getSelectedStorageBackend() : null
+  }
+}
 
 function broadcastJobEvent(event: JobEvent): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -158,6 +170,12 @@ export async function registerAll(): Promise<() => void> {
     writeSettings(args, db)
     if (args.theme !== undefined) nativeTheme.themeSource = args.theme
   })
+
+  handle('secrets:write', (args) =>
+    writeSecret(args, db, safeStorage.encryptString, readSecretBackendInfo())
+  )
+  handle('secrets:has', (args) => hasSecret(args, db))
+  handle('secrets:remove', (args) => removeSecret(args, db))
 
   // Startup sweep (D16.2): closes the gap a removal event cannot reach — an
   // attach that succeeded and was discarded before ever being sent. Awaited,

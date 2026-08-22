@@ -42,4 +42,18 @@ const v1: Migration = (db) => {
   `)
 }
 
-export const migrations: readonly Migration[] = [v1]
+// One row per cloud provider (DN1A.2, plano N-1-A) — never the app_settings
+// table: readSettings() does SELECT * with no filter, which would hand the
+// renderer the ciphertext on every settings:read. ciphertext is a BLOB:
+// safeStorage.encryptString() returns a Buffer, a Uint8Array subclass that
+// node:sqlite accepts directly, no base64 detour.
+const v2: Migration = (db) => {
+  db.exec(`
+    CREATE TABLE secrets (
+      provider   TEXT PRIMARY KEY,
+      ciphertext BLOB NOT NULL
+    );
+  `)
+}
+
+export const migrations: readonly Migration[] = [v1, v2]
