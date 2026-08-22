@@ -119,17 +119,25 @@ describe('ModelSelector', () => {
     expect(within(coder).queryByTitle('Imagem — entende imagens anexadas')).not.toBeInTheDocument()
   })
 
-  it('shows Gemini and GLM as locked placeholders under Nuvem (Opt-in)', async () => {
+  it('shows GLM as a real option (disabled without a key) and Gemini as a locked placeholder (N-1-B)', async () => {
     const user = userEvent.setup()
     mount()
     await user.click(await modelTrigger())
 
-    for (const name of ['Gemini', 'GLM']) {
-      const item = await screen.findByRole('button', { name, hidden: true })
-      expect(item).toBeDisabled()
-      // Not selectable options: the arrow-key listbox never lands on either.
-      expect(screen.queryByRole('option', { name, hidden: true })).not.toBeInTheDocument()
-    }
+    // mount() never configures a GLM key (api-mock's secrets.has defaults to
+    // false) — the button exists and shows the real model name, but is not
+    // clickable, same "correção, não cortesia" the nível-3 gate uses.
+    const glm = await screen.findByRole('button', { name: 'glm-4.7-flash', hidden: true })
+    expect(glm).toBeDisabled()
+
+    const gemini = screen.getByRole('button', { name: 'Gemini', hidden: true })
+    expect(gemini).toBeDisabled()
+
+    // Neither is a selectable option: the arrow-key listbox is scoped to Locais.
+    expect(
+      screen.queryByRole('option', { name: 'glm-4.7-flash', hidden: true })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Gemini', hidden: true })).not.toBeInTheDocument()
   })
 
   it('sends the chosen model, not the default one', async () => {
@@ -187,8 +195,11 @@ describe('ModelSelector', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
     await waitFor(() =>
+      // service travels atomically with model (N-1-B, DN1B.7) — the pair the
+      // lock writes down is now a triple.
       expect(api.conversation.updateSettings).toHaveBeenCalledWith(expect.any(String), {
         model: 'qwen2.5-coder:3b',
+        service: 'ollama',
         numCtx: 32768
       })
     )
@@ -205,7 +216,7 @@ describe('ModelSelector', () => {
     expect(await screen.findByText('Nenhum modelo instalado.')).toBeInTheDocument()
   })
 
-  it('degrades to a legible state instead of breaking when the catalog fails', async () => {
+  it('degrades to a legible state instead of breaking when the catalog fails, and the picker stays usable for GLM (N-1-B)', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
     vi.mocked(api.ai.models).mockResolvedValue({
@@ -217,10 +228,15 @@ describe('ModelSelector', () => {
     // The Ollama version moved to the sidebar footer (DS-3), so the selector's
     // own error is the sync point — and it is the state this test is about.
     await screen.findByText('Serviço indisponível no momento.')
-    // The composer and the rest of the view still render; only the selector is
-    // in an error state. A catalog that fails must not take the screen with it.
+    // The composer and the rest of the view still render; only the Locais
+    // section is in an error state. A downed Ollama must not also hide the
+    // trigger, or the GLM row sitting beside Locais inside it (N-1-B) — with
+    // nothing local to fall back to, the picker resolves to the one entry
+    // left: GLM.
     expect(screen.getByPlaceholderText(PROMPT)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Modelo' })).not.toBeInTheDocument()
+    const trigger = screen.getByRole('button', { name: 'Modelo' })
+    expect(trigger).toBeEnabled()
+    expect(trigger).toHaveTextContent('glm-4.7-flash')
   })
 
   it('refetches the catalog when asked, because installing a model is invisible', async () => {

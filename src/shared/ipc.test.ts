@@ -56,6 +56,21 @@ describe('argsSchema', () => {
     expect(result.success).toBe(false)
   })
 
+  it('accepts glm as a second ai:isAvailable service (N-1-B)', () => {
+    const result = argsSchema['ai:isAvailable'].safeParse({ service: 'glm' })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts a glm ai:chat payload', () => {
+    const result = argsSchema['ai:chat'].safeParse({
+      service: 'glm',
+      model: 'glm-4.7-flash',
+      messages: chatMessages,
+      jobId: 'j1'
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('accepts ai:chat with an optional numThread', () => {
     const result = argsSchema['ai:chat'].safeParse({
       service: 'ollama',
@@ -137,6 +152,22 @@ describe('argsSchema — conversation:*', () => {
 
   it('accepts an empty rename — the renderer decides what an empty title means', () => {
     expect(argsSchema['conversation:rename'].safeParse({ id: 'c1', title: '' }).success).toBe(true)
+  })
+
+  it('accepts a settings patch carrying service (N-1-B)', () => {
+    const result = argsSchema['conversation:settings'].safeParse({
+      id: 'c1',
+      patch: { model: 'glm-4.7-flash', service: 'glm' }
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts a settings patch with no service — absence means ollama', () => {
+    const result = argsSchema['conversation:settings'].safeParse({
+      id: 'c1',
+      patch: { model: 'gemma3:4b' }
+    })
+    expect(result.success).toBe(true)
   })
 })
 

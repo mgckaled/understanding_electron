@@ -18,15 +18,21 @@ import { formatContext, formatSize } from './modelFormat'
 // the SAME render-prop Composer already calls (DS4.8) — the prop's type
 // never changes.
 
-// Blocked placeholders for a future cloud pillar (plano 09 fatia 3) — no
-// onClick, same disabled shape as AttachButton's "Código" item.
-const CLOUD_MODELS = ['Gemini', 'GLM']
+// Still-locked, via N-1-C (Gemini + cota) — same disabled shape AttachButton's
+// "Código" item uses. GLM left this list in N-1-B, when it became a real option.
+const CLOUD_PLACEHOLDERS = ['Gemini']
 
 const GROUP_LABEL =
   'flex items-center gap-2 px-4 text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase'
 
 type ModelPickerProps = {
   state: ViewState<AiModel[]>
+  /** The GLM catalog (N-1-B) — a pinned table (Peça C), so this rarely differs from a single-entry ready list. */
+  cloudModels: AiModel[]
+  /** Whether a GLM key is stored (Peça 9) — gates the click, never the row's visibility. */
+  cloudReady: boolean
+  /** The same hint `ai:isAvailable` returns, shown when `cloudReady` is false. */
+  cloudHint: string | undefined
   /** Already resolved: the conversation's model, or the first installed one. */
   selected: string | null
   disabled: boolean
@@ -44,13 +50,17 @@ type ModelPickerProps = {
 /** The model name pill: trigger, listbox, and the selected model's capability badges. */
 function ModelPicker({
   state,
+  cloudModels,
+  cloudReady,
+  cloudHint,
   selected,
   disabled,
   locked,
   onSelect,
   ceilingOf
 }: ModelPickerProps): React.JSX.Element {
-  const current = state.status === 'ready' ? state.data.find((m) => m.name === selected) : undefined
+  // Local catalog only — `selected` already carries the right name whichever
+  // catalog it belongs to, so the trigger label never needed a lookup here.
   const models = state.status === 'ready' ? state.data : []
 
   const [open, setOpen] = useState(false)
@@ -88,19 +98,11 @@ function ModelPicker({
     }
   }
 
-  if (state.status !== 'ready') {
-    return (
-      <StateView
-        state={state}
-        emptyMessage="Nenhum modelo instalado."
-        // Never called: `ready` returns below. StateView is here for the other
-        // four states, which is the half of it that carries the loading bar
-        // and the error registry.
-        render={() => null}
-      />
-    )
-  }
-
+  // No early return on `state.status !== 'ready'` here any more (N-1-B):
+  // that used to blank the WHOLE picker, trigger included — which meant a
+  // downed Ollama also hid the GLM row it sits beside. The trigger and the
+  // Nuvem section render unconditionally now; only the Locais section falls
+  // back to StateView, scoped to the catalog that is actually not ready.
   return (
     <>
       {/* Field must wrap the trigger, not the StateView: Field clones its child
@@ -117,7 +119,7 @@ function ModelPicker({
           onClick={() => (open ? setOpen(false) : openMenu())}
         >
           <span className="min-w-[0px] overflow-hidden text-ellipsis whitespace-nowrap">
-            {current?.name ?? selected ?? 'Selecionar modelo'}
+            {selected ?? 'Selecionar modelo'}
           </span>
           <ChevronDown size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
         </button>
@@ -131,63 +133,86 @@ function ModelPicker({
             <HardDrive size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
             Locais
           </p>
-          <div
-            ref={listboxRef}
-            role="listbox"
-            id={listboxId}
-            aria-label="Modelo"
-            tabIndex={0}
-            onKeyDown={onListKeyDown}
-            aria-activedescendant={
-              models[highlighted] !== undefined ? `${listboxId}-option-${highlighted}` : undefined
-            }
-            className="flex flex-col gap-1 focus-visible:outline-none"
-          >
-            {/* Two lines (F2.2): name alone on top; size, the machine's real
-                ceiling ("memória" — the practical limit, not a per-token
-                cost) and capability chips below. Every row, not just the
-                selected one — a scope change from the old single-line
-                `optionLabel` + capabilities shown only for `current`. */}
-            {models.map((model, index) => {
-              const ceiling = ceilingOf(model)
-              const chips = capabilityChips(model)
-              return (
-                <div
-                  key={model.name}
-                  id={`${listboxId}-option-${index}`}
-                  role="option"
-                  aria-selected={model.name === selected}
-                  onClick={() => {
-                    onSelect(model.name)
-                    setOpen(false)
-                  }}
-                  onMouseEnter={() => setHighlighted(index)}
-                  className={`flex cursor-pointer flex-col gap-1 rounded-md border px-4 py-2 ${
-                    index === highlighted ? 'border-border-strong bg-surface' : 'border-border'
-                  }`}
-                >
-                  <span className="font-ui text-md text-text">{model.name}</span>
-                  <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted">
-                    <span>{formatSize(model.sizeBytes)}</span>
-                    {ceiling !== null && <span>até {formatContext(ceiling)}</span>}
-                    {!fitsInMemory(ceiling) && <span className="text-warn-text">não cabe</span>}
-                    {chips.map((chip) => (
-                      <CapabilityChip key={chip.capability} {...chip} />
-                    ))}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
+          {state.status !== 'ready' ? (
+            <StateView state={state} emptyMessage="Nenhum modelo instalado." render={() => null} />
+          ) : (
+            <div
+              ref={listboxRef}
+              role="listbox"
+              id={listboxId}
+              aria-label="Modelo"
+              tabIndex={0}
+              onKeyDown={onListKeyDown}
+              aria-activedescendant={
+                models[highlighted] !== undefined ? `${listboxId}-option-${highlighted}` : undefined
+              }
+              className="flex flex-col gap-1 focus-visible:outline-none"
+            >
+              {/* Two lines (F2.2): name alone on top; size, the machine's real
+                  ceiling ("memória" — the practical limit, not a per-token
+                  cost) and capability chips below. Every row, not just the
+                  selected one — a scope change from the old single-line
+                  `optionLabel` + capabilities shown only for `current`. */}
+              {models.map((model, index) => {
+                const ceiling = ceilingOf(model)
+                const chips = capabilityChips(model)
+                return (
+                  <div
+                    key={model.name}
+                    id={`${listboxId}-option-${index}`}
+                    role="option"
+                    aria-selected={model.name === selected}
+                    onClick={() => {
+                      onSelect(model.name)
+                      setOpen(false)
+                    }}
+                    onMouseEnter={() => setHighlighted(index)}
+                    className={`flex cursor-pointer flex-col gap-1 rounded-md border px-4 py-2 ${
+                      index === highlighted ? 'border-border-strong bg-surface' : 'border-border'
+                    }`}
+                  >
+                    <span className="font-ui text-md text-text">{model.name}</span>
+                    <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted">
+                      <span>{formatSize(model.sizeBytes)}</span>
+                      {ceiling !== null && <span>até {formatContext(ceiling)}</span>}
+                      {!fitsInMemory(ceiling) && <span className="text-warn-text">não cabe</span>}
+                      {chips.map((chip) => (
+                        <CapabilityChip key={chip.capability} {...chip} />
+                      ))}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           <div className="my-2 border-t border-border-strong" />
           <p className={GROUP_LABEL}>
             <Cloud size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
             Nuvem (Opt-in)
           </p>
-          {/* Locked placeholders, same shape as AttachButton's "Código" item
-              — no plano wires them yet (plano 09 fatia 3, nuvem opt-in). */}
-          {CLOUD_MODELS.map((name) => (
+          {/* A real option now (N-1-B) — no size/ceiling row like Locais gets:
+              a cloud entry costs no local RAM, and "0 B" would be true data
+              read as a wrong signal (DN1B.2). `cloudReady` gates the click,
+              never the row itself — the model always shows, same "correção,
+              não cortesia" reasoning as the nível-3 refusal in chat(). */}
+          {cloudModels.map((model) => (
+            <button
+              key={model.name}
+              type="button"
+              disabled={!cloudReady}
+              title={cloudReady ? undefined : cloudHint}
+              onClick={() => {
+                onSelect(model.name)
+                setOpen(false)
+              }}
+              className="flex items-center rounded-md px-4 py-2 text-left font-ui text-md text-text disabled:cursor-not-allowed disabled:text-text-faint"
+            >
+              {model.name}
+            </button>
+          ))}
+          {/* Still locked, via N-1-C — same shape as AttachButton's "Código" item. */}
+          {CLOUD_PLACEHOLDERS.map((name) => (
             <button
               key={name}
               type="button"

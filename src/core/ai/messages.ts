@@ -1,4 +1,12 @@
-import type { AttachmentPart, ChatMessage, ImagePart, Message, MessagePart } from '@shared/ipc'
+import type {
+  AiService,
+  AppError,
+  AttachmentPart,
+  ChatMessage,
+  ImagePart,
+  Message,
+  MessagePart
+} from '@shared/ipc'
 import { formatDataCard } from './dataCard'
 import { formatDocumentCard } from './documentCard'
 
@@ -6,6 +14,31 @@ import { formatDocumentCard } from './documentCard'
 // The translation lives in core/, not the renderer, because plano 16 hangs the
 // three-level privacy boundary here — a decision two callers need belongs in
 // core/, or validation next to one becomes a bypass in the second.
+
+/** Whether `service` is a cloud provider — every non-'ollama' value is (N-1-B). */
+export function isCloudService(service: AiService): boolean {
+  return service !== 'ollama'
+}
+
+/**
+ * The nível-3 refusal (`ESCOPO.md`): document and image are nível 3 by
+ * construction, and the cloud blocks nível 3 outright. Reuses
+ * `AppError.kind: 'blocked'` — the same shape a scanned PDF or an
+ * unrecognized image format already returns — rather than a new kind.
+ */
+export function checkLevel3(messages: Message[], service: AiService): AppError | null {
+  if (!isCloudService(service)) return null
+  const hasRestrictedPart = messages.some((message) =>
+    message.parts.some((part) => part.kind === 'document' || part.kind === 'image')
+  )
+  return hasRestrictedPart
+    ? {
+        kind: 'blocked',
+        reason:
+          'Documento e imagem são nível 3 — bloqueados em modelos de nuvem. Use um modelo local para este anexo.'
+      }
+    : null
+}
 
 /**
  * All the text a message carries, in order. Non-text parts contribute nothing

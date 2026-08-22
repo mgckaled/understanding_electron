@@ -316,6 +316,48 @@ describe('chat', () => {
     expect(result).toEqual({ ok: false, error: { kind: 'timeout', afterMs: 1_000_000 } })
     vi.useRealTimers()
   })
+
+  it('blocks a document/image attachment on a cloud service, without calling chatFn or opening a job (N-1-B, DN1B.6)', async () => {
+    const chatFn: ChatFn = vi.fn(async () => ({ content: 'should not be reached' }))
+    const create = vi.spyOn(jobs, 'create')
+    const withImage: Message[] = [
+      {
+        id: 'm1',
+        role: 'user',
+        parts: [
+          { kind: 'image', hash: 'h1', fileName: 'grafico.png', mimeType: 'image/png' },
+          { kind: 'text', text: 'o que é isso?' }
+        ],
+        createdAt: 1
+      }
+    ]
+
+    const result = await chat(
+      { service: 'glm', model: 'glm-4.7-flash', messages: withImage, jobId: 'j9' },
+      chatFn,
+      () => {},
+      resolveImageBytes
+    )
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error).toEqual({ kind: 'blocked', reason: expect.any(String) })
+    expect(chatFn).not.toHaveBeenCalled()
+    expect(create).not.toHaveBeenCalled()
+    create.mockRestore()
+  })
+
+  it('lets a text-only send through on a cloud service', async () => {
+    const chatFn: ChatFn = async () => ({ content: 'ok' })
+
+    const result = await chat(
+      { service: 'glm', model: 'glm-4.7-flash', messages, jobId: 'j10' },
+      chatFn,
+      () => {},
+      resolveImageBytes
+    )
+
+    expect(result).toEqual({ ok: true, value: { content: 'ok' } })
+  })
 })
 
 /*

@@ -1,4 +1,5 @@
 import {
+  GLM_MODELS,
   hasCapability,
   normalizeOllamaModel,
   normalizeOllamaRunning,
@@ -269,5 +270,18 @@ describe('normalizeOllamaRunning', () => {
     // ~NaN min" — absence has to have the shape of absence.
     expect(normalizeOllamaRunning({ name: 'x', size: 1 }).expiresAt).toBe(0)
     expect(normalizeOllamaRunning({ name: 'x', size: 1, expires_at: 'nunca' }).expiresAt).toBe(0)
+  })
+})
+
+describe('GLM_MODELS', () => {
+  it('declares completion — selectableModels() (D15.11) filters on it, and a missing entry disappears in silence', () => {
+    expect(GLM_MODELS[0]?.capabilities).toContain('completion')
+  })
+
+  it('carries provider: glm and no local RAM cost', () => {
+    const [model] = GLM_MODELS
+    expect(model?.provider).toBe('glm')
+    expect(model?.sizeBytes).toBe(0)
+    expect(model?.attention).toBeNull()
   })
 })

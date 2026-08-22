@@ -13,7 +13,7 @@ import type {
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { runChat } from '@core/ai/chat'
-import { toChatMessagesWithImages } from '@core/ai/messages'
+import { checkLevel3, toChatMessagesWithImages } from '@core/ai/messages'
 import { ok, err } from '@core/result'
 import * as jobs from '../../jobs'
 
@@ -30,7 +30,8 @@ const CHAT_TIMEOUT_MS = 1_000_000
 const CATALOG_TIMEOUT_MS = 60_000
 
 const HINTS: Record<AiService, string> = {
-  ollama: 'Verifique se o Ollama está em execução (ollama serve) na porta 11434.'
+  ollama: 'Verifique se o Ollama está em execução (ollama serve) na porta 11434.',
+  glm: 'Configure a chave da Z.ai em Configurações para usar o GLM.'
 }
 
 /**
@@ -115,6 +116,11 @@ export async function chat(
   emit: (event: JobEvent) => void,
   resolveImageBytes: (hash: string) => Promise<Buffer>
 ): Promise<Result<ChatReply>> {
+  // Nível 3 refusal (N-1-B, DN1B.6) — checked before a job exists, so a
+  // refused send opens no controller, no timeout, no runChat.
+  const levelError = checkLevel3(messages, service)
+  if (levelError !== null) return err(levelError)
+
   const controller = jobs.create(jobId)
   // Two abort sources feed one controller; `timedOut` tells them apart in the
   // catch — the user's cancel and the deadline must map to different AppErrors.

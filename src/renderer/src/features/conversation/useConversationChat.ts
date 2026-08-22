@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type {
+  AiService,
   AttachmentPart,
   ChatReply,
   ConversationSettings,
@@ -14,18 +15,19 @@ import type { ViewState } from '../../shared/ui/state'
 import { stoppedFromError } from './conversations'
 import { useActiveConversation, useConversations } from './conversationsContext'
 
-const SERVICE = 'ollama' as const
-
 /**
  * Streams the model's reply to the active conversation, committing only the
  * finished turn to the store — the streaming text is kept out of it (D13.2).
  *
+ * @param service - Which provider `model` belongs to (N-1-B); recorded
+ *   alongside `model` in the pair the first send locks (D15.13).
  * @param model - `null` when the machine has no model installed (D15.2); the
  *   caller must guard, since there is then no model to address the call to.
  * @param numCtx - Context window this conversation reserves (D15.2). Undefined
  *   lets Ollama decide, which here is 4096 — a number nobody chose.
  */
 export function useConversationChat(
+  service: AiService,
   model: string | null,
   numThread?: number,
   numCtx?: number
@@ -87,10 +89,11 @@ export function useConversationChat(
 
       // Writes only what is MISSING (D15.13): both the first-send lock and the
       // one-time backfill for a conversation that predates it, never rewriting a
-      // pair already recorded.
+      // pair already recorded. `service` writes atomically with `model` — they
+      // describe the same locked choice (N-1-B), never independently.
       const recorded = conversationId === active?.id ? active.settings : {}
       const pair: ConversationSettings = {
-        ...(recorded.model === undefined ? { model } : {}),
+        ...(recorded.model === undefined ? { model, service } : {}),
         ...(recorded.numCtx === undefined && numCtx !== undefined ? { numCtx } : {})
       }
       if (Object.keys(pair).length > 0) updateSettings(conversationId, pair)
@@ -122,10 +125,7 @@ export function useConversationChat(
       const newJobId = crypto.randomUUID()
       setJobId(newJobId)
       const result = await run(() =>
-        window.api.ai.chat(
-          { service: SERVICE, model, messages: history, numThread, numCtx },
-          newJobId
-        )
+        window.api.ai.chat({ service, model, messages: history, numThread, numCtx }, newJobId)
       )
       setJobId(null)
       const partial = partialRef.current
@@ -172,6 +172,7 @@ export function useConversationChat(
       append,
       updateSettings,
       clearStreaming,
+      service,
       model,
       numThread,
       numCtx,

@@ -1,15 +1,23 @@
 import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import type { AiModel, AppError, ConversationSettings, MessageStopped } from '@shared/ipc'
+import type {
+  AiModel,
+  AiService,
+  AppError,
+  ConversationSettings,
+  MessageStopped
+} from '@shared/ipc'
 import { attachmentPartOf, imageCountOf, messageText, toChatMessages } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
+import { GLM_MODELS } from '@core/ai/models'
 import { errorMessage } from '../../shared/ui/messages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
+import { useCloudSecret } from '../settings/useCloudSecret'
 import AttachmentCard from '../attachment/AttachmentCard'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
@@ -38,6 +46,13 @@ function availabilityText(error: AppError): string {
   return error.kind === 'unavailable' ? error.hint : errorMessage(error)
 }
 
+// The loading line names whichever service the composer is currently
+// addressing (N-1-B) — it used to say "o Ollama" unconditionally.
+const SERVICE_LABEL: Record<AiService, string> = {
+  ollama: 'o Ollama',
+  glm: 'o GLM'
+}
+
 // Reading a saved conversation, "there is no answer here" and "the answer was
 // cut short" look identical without this (D14.3). The two reasons are told
 // apart because the user's own cancel and a deadline are different facts.
@@ -50,7 +65,17 @@ function ConversationView(): React.JSX.Element {
   const conversation = useActiveConversation()
   const { updateSettings } = useConversations()
   const { settings } = useSettings()
-  const { state: catalog, reload } = useAiModels()
+  const { state: catalog, reload } = useAiModels('ollama')
+  // A pinned table (Peça C), not a fetch — GLM_MODELS is the same constant
+  // core/ai/models.ts already gives the main process, imported directly
+  // instead of round-tripping through ai:models for data that never changes
+  // at runtime (N-1-B).
+  const cloudModels = GLM_MODELS
+  // Whether a GLM key is stored — decoupled from ai:isAvailable/`service`
+  // below on purpose: this gates the Nuvem ROW regardless of which model is
+  // currently selected, and reuses the query useCloudSecret (N-1-A) already
+  // runs for Configurações, instead of adding a second always-on probe.
+  const { hasKey: cloudReady } = useCloudSecret('glm')
 
   // Held ONLY for the window in which no conversation exists yet — on a fresh
   // database there is no row to write a setting into, and dropping the choice
@@ -59,6 +84,15 @@ function ConversationView(): React.JSX.Element {
   // Already filtered by the hook, so this list and the one the selector draws
   // are the same object — see D15.11 for what happened when they were not.
   const installed = catalog.status === 'ready' ? catalog.data : EMPTY_CATALOG
+  // Ollama first, always — and NOT appended while `catalog` is still
+  // loading (N-1-B). GLM_MODELS resolves synchronously, the Ollama catalog
+  // does not; concatenating them unconditionally let GLM win allModels[0]
+  // (resolveModel's unset-choice fallback) on every fresh render, purely
+  // because Ollama had not answered yet — a timing accident, not the
+  // "nuvem is opt-in, never the silent default" the comment on resolveModel
+  // below actually wants. Once `catalog` settles (ready, error or empty),
+  // `installed` reflects that and this stops racing.
+  const allModels = catalog.status === 'loading' ? installed : [...installed, ...cloudModels]
 
   // Branch, not `conversation?.settings.model ?? pending`: that spelling leaks —
   // a conversation that chose nothing yields `undefined` and falls through to
@@ -69,7 +103,12 @@ function ConversationView(): React.JSX.Element {
   // transcript counts as locked: `messages` is `[]` while it is in flight, and
   // unlocking a saved conversation for a frame is the direction that hurts.
   const locked = conversation !== null && (!conversation.messagesLoaded || messages.length > 0)
-  const model = resolveModel(chosen.model, installed, locked)
+  // Fed allModels, not just the local catalog (N-1-B) — resolveModel falls
+  // back to null (locked) or the first entry (unlocked) when `chosen.model`
+  // is absent from the catalog it is given; feeding it only Ollama's list
+  // would null out a locked GLM conversation on reload, or silently revert an
+  // unlocked GLM pick back to the first local model.
+  const model = resolveModel(chosen.model, allModels, locked)
 
   // min(trained ceiling, what this machine can hold) — see contextCeiling. The
   // second bound is what matters (phi4-mini's 131072 = 16 GB cache), and it is
@@ -78,8 +117,12 @@ function ConversationView(): React.JSX.Element {
   const ceilingOf = (entry: AiModel): number | null =>
     memory === undefined ? null : contextCeiling(entry, memory.freeBytes, RAM_MARGIN_BYTES)
 
-  const current = installed.find((entry) => entry.name === model)
+  const current = allModels.find((entry) => entry.name === model)
   const ceiling = current === undefined ? null : ceilingOf(current)
+  // The resolved model's own provider is authoritative (covers "no Ollama
+  // models installed, GLM auto-selected"); chosen.service covers the frame
+  // before either catalog has loaded; 'ollama' is the last-resort default.
+  const service: AiService = current?.provider ?? chosen.service ?? 'ollama'
 
   // One writer for both settings: hold it locally so a choice made before any
   // conversation exists is not dropped in silence, and persist it as soon as
@@ -99,11 +142,21 @@ function ConversationView(): React.JSX.Element {
       : null
 
   const { streaming, lastRequestId, state, send, cancel, lastPrompt } = useConversationChat(
+    service,
     model,
     settings.numThread,
     numCtx ?? undefined
   )
-  const { state: availability, retry: retryAvailability } = useAiAvailability()
+  // Reflects whichever service the SELECTED model belongs to, not always
+  // Ollama's (N-1-B) — else picking GLM with Ollama down would leave the
+  // composer disabled for a reason that has nothing to do with GLM.
+  const { state: availability, retry: retryAvailability } = useAiAvailability(service)
+  // Same hint text HINTS.glm gives on the main side (main/features/ai/handlers.ts)
+  // — duplicated here because useCloudSecret answers only hasKey, not an
+  // AppError with a hint; this is UI copy, not the mão-única secret itself.
+  const cloudHint = cloudReady
+    ? undefined
+    : 'Configure a chave da Z.ai em Configurações para usar o GLM.'
 
   // What the next send would carry: the whole transcript, since the provider
   // is stateless and every turn resends everything. Routed through
@@ -149,7 +202,7 @@ function ConversationView(): React.JSX.Element {
       <div className="flex-1 min-h-[0px] overflow-y-auto p-7" ref={threadRef}>
         {availability.status === 'loading' && (
           <p className={STATUS} role="status">
-            Verificando o Ollama…
+            Verificando {SERVICE_LABEL[service]}…
           </p>
         )}
         {/* mb-5 moves from the <p> (UNAVAILABLE below) to this row, now that a
@@ -269,12 +322,21 @@ function ConversationView(): React.JSX.Element {
           <>
             <ModelPicker
               state={catalog}
+              cloudModels={cloudModels}
+              cloudReady={cloudReady}
+              cloudHint={cloudHint}
               selected={model}
               // Two different reasons to be inert: busy, which passes, and
               // locked, which does not (D15.13).
               disabled={isLoading}
               locked={locked}
-              onSelect={(name) => choose({ model: name })}
+              // The picker's own two rows still call onSelect with a bare
+              // name (N-1-B, DN1B.7); the service comes from looking it up
+              // in allModels here, not from a second callback param.
+              onSelect={(name) => {
+                const picked = allModels.find((entry) => entry.name === name)
+                choose({ model: name, service: picked?.provider ?? 'ollama' })
+              }}
               ceilingOf={ceilingOf}
             />
             {/* Button + shape="square" (DS-5 fixup), not a raw <button> with

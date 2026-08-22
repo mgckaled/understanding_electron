@@ -1,0 +1,137 @@
+import { afterEach, vi } from 'vitest'
+import type { ChatMessage } from '@shared/ipc'
+import { UpstreamError } from '@core/ai/types'
+import { makeGlmChat, makeGlmProbe } from './glm'
+
+const messages: ChatMessage[] = [{ role: 'user', content: 'oi' }]
+
+// Same discipline as ollama.test.ts's stubChatStream: pieces are enqueued
+// verbatim, so splitting an SSE line across two proves the cross-chunk
+// buffering, not just the happy path.
+function stubStream(
+  pieces: string[],
+  init?: { ok?: boolean; status?: number }
+): ReturnType<typeof vi.fn> {
+  const encoder = new TextEncoder()
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const piece of pieces) controller.enqueue(encoder.encode(piece))
+      controller.close()
+    }
+  })
+  const fetchMock = vi.fn(async () => ({ ok: init?.ok ?? true, status: init?.status ?? 200, body }))
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
+function requestHeaders(fetchMock: ReturnType<typeof vi.fn>): Record<string, string> {
+  const init = (fetchMock.mock.calls[0] as unknown[])[1] as { headers: Record<string, string> }
+  return init.headers
+}
+
+function requestBody(fetchMock: ReturnType<typeof vi.fn>): Record<string, unknown> {
+  const init = (fetchMock.mock.calls[0] as unknown[])[1] as { body: string }
+  return JSON.parse(init.body)
+}
+
+afterEach(() => vi.unstubAllGlobals())
+
+describe('makeGlmProbe', () => {
+  it('resolves without calling fetch when a key is stored', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(makeGlmProbe(() => true)({})).resolves.toBe('glm-4.7-flash')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('throws without calling fetch when no key is stored', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(makeGlmProbe(() => false)({})).rejects.toBeInstanceOf(UpstreamError)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('makeGlmChat', () => {
+  const chat = makeGlmChat(() => 'sk-test')
+
+  it('throws without calling fetch when no key is stored', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const noKeyChat = makeGlmChat(() => null)
+
+    await expect(noKeyChat(messages, { model: 'glm-4.7-flash' })).rejects.toBeInstanceOf(
+      UpstreamError
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('sends the bearer header and the model the caller passed, never a literal', async () => {
+    const fetchMock = stubStream([
+      'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+    ])
+
+    await chat(messages, { model: 'glm-4.7-flash' })
+
+    expect(requestHeaders(fetchMock).authorization).toBe('Bearer sk-test')
+    expect(requestBody(fetchMock).model).toBe('glm-4.7-flash')
+    expect(requestBody(fetchMock).thinking).toEqual({ type: 'disabled' })
+  })
+
+  it('assembles content across SSE chunks and forwards each piece to onChunk', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"content":"Olá"},"finish_reason":null}]}\n\n',
+      'data: {"choices":[{"delta":{"content":", mundo"},"finish_reason":null}]}\n\n',
+      'data: {"choices":[{"delta":{"content":""},"finish_reason":"stop"}]}\n\n',
+      'data: [DONE]\n\n'
+    ])
+    const seen: string[] = []
+
+    const result = await chat(messages, { model: 'glm-4.7-flash', onChunk: (t) => seen.push(t) })
+
+    expect(result.content).toBe('Olá, mundo')
+    expect(seen).toEqual(['Olá', ', mundo'])
+  })
+
+  it('handles an SSE line split across two socket reads', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"content":"Ol',
+      'á"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'glm-4.7-flash' })
+
+    expect(result.content).toBe('Olá')
+  })
+
+  it('reads usage from the final chunk, alongside finish_reason', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":null}]}\n\n',
+      'data: {"choices":[{"finish_reason":"stop","delta":{"role":"assistant","content":""}}],"usage":{"prompt_tokens":8,"completion_tokens":262,"total_tokens":270}}\n\n',
+      'data: [DONE]\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'glm-4.7-flash' })
+
+    expect(result).toEqual({ content: 'ok', promptTokens: 8, evalTokens: 262 })
+  })
+
+  it('omits the counters rather than reporting zero when usage never arrives', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'glm-4.7-flash' })
+
+    expect(result).toEqual({ content: 'ok' })
+    expect('promptTokens' in result).toBe(false)
+  })
+
+  it('throws UpstreamError on a non-2xx response', async () => {
+    stubStream([], { ok: false, status: 401 })
+
+    await expect(chat(messages, { model: 'glm-4.7-flash' })).rejects.toBeInstanceOf(UpstreamError)
+  })
+})

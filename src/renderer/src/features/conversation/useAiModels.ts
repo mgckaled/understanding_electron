@@ -1,11 +1,8 @@
 import { useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { AiModel } from '@shared/ipc'
+import type { AiModel, AiService } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
 import { selectableModels } from './conversations'
-
-const SERVICE = 'ollama' as const
-const MODELS_KEY = ['ai', 'models'] as const
 
 /**
  * The installed models, a server cache with manual reload (D15.1). The catalog
@@ -14,18 +11,25 @@ const MODELS_KEY = ['ai', 'models'] as const
  * because INSTALLING A MODEL IS A SYSTEM EVENT the app cannot observe. `empty`
  * is distinct from `error`: a fresh Ollama deserves "install a model", not a
  * red card.
+ *
+ * @param service - Which provider's catalog (N-1-B) — the query key includes
+ *   it, so switching service never shows the other one's cached list.
  */
-export function useAiModels(): { state: ViewState<AiModel[]>; reload: () => void } {
+export function useAiModels(service: AiService): {
+  state: ViewState<AiModel[]>
+  reload: () => void
+} {
   const queryClient = useQueryClient()
+  const modelsKey = useMemo(() => ['ai', 'models', service] as const, [service])
 
   const { data, isPending, isError } = useQuery({
-    queryKey: MODELS_KEY,
-    queryFn: () => window.api.ai.models(SERVICE)
+    queryKey: modelsKey,
+    queryFn: () => window.api.ai.models(service)
   })
 
   const reload = useCallback((): void => {
-    void queryClient.invalidateQueries({ queryKey: MODELS_KEY })
-  }, [queryClient])
+    void queryClient.invalidateQueries({ queryKey: modelsKey })
+  }, [queryClient, modelsKey])
 
   const state = useMemo((): ViewState<AiModel[]> => {
     if (isPending) return { status: 'loading' }

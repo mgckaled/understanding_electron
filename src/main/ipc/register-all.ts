@@ -1,8 +1,9 @@
 import { join } from 'node:path'
 import { app, shell, dialog, nativeTheme, safeStorage, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
-import type { JobEvent } from '@shared/ipc'
+import type { AiService, JobEvent } from '@shared/ipc'
 import { JOB_EVENT_CHANNEL } from '@shared/channels'
+import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { handle } from './registry'
 import { DATABASE_FILE, openDatabase } from '../db/open'
 import { freemem, totalmem } from 'node:os'
@@ -37,6 +38,13 @@ import {
   ollamaUnload
 } from '../features/ai/providers/ollama'
 import {
+  glmLoaded,
+  glmModels,
+  glmUnload,
+  makeGlmChat,
+  makeGlmProbe
+} from '../features/ai/providers/glm'
+import {
   appendMessage,
   createConversation,
   listConversations,
@@ -47,6 +55,7 @@ import {
 } from '../features/conversation/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
 import { hasSecret, removeSecret, writeSecret } from '../features/secrets/handlers'
+import { readSecretForUse } from '../features/secrets/read'
 import { seedSecretsFromEnv } from '../features/secrets/seed'
 import { spawnDuckdbWorker, createDuckdbWorkerClient } from '../duckdb/spawnWorker'
 
@@ -67,6 +76,23 @@ function readSecretBackendInfo(): { encryptionAvailable: boolean; backend: strin
 // (pnpm dev): the seed's UnhandledPromiseRejectionWarning is what caught it.
 function encryptSecret(plainText: string): Uint8Array {
   return safeStorage.encryptString(plainText)
+}
+
+// Same wrapper shape as encryptSecret, for the same reason (N-1-B, DN1B.4):
+// safeStorage.decryptString called bare from within a normal function body,
+// never passed as a detached reference.
+function decryptSecret(ciphertext: Uint8Array): string {
+  return safeStorage.decryptString(Buffer.from(ciphertext))
+}
+
+/** One provider's bundle of seams — what `resolveProvider` picks between (N-1-B, DN1B.5). */
+type ProviderAdapter = {
+  probe: ProbeFn
+  models: ModelsFn
+  loaded: LoadedFn
+  unload: UnloadFn
+  chat: ChatFn
+  host?: string
 }
 
 function broadcastJobEvent(event: JobEvent): void {
@@ -149,15 +175,43 @@ export async function registerAll(): Promise<() => void> {
     )
   )
   handle('job:cancel', (args) => cancelJob(args))
-  // Single provider in step 1 — the args.service enum admits only 'ollama'.
-  // Step 3 (cloud opt-in) replaces the fixed adapters with a service→provider
-  // resolver; nothing else in this file changes.
-  handle('ai:isAvailable', (args) => aiIsAvailable(args, ollamaProbe, ollamaDisplayHost))
-  handle('ai:models', (args) => aiModels(args, ollamaModels))
-  handle('ai:loaded', (args) => aiLoaded(args, ollamaLoaded))
-  handle('ai:unload', (args) => aiUnload(args, ollamaUnload))
+
+  const ollamaAdapter: ProviderAdapter = {
+    probe: ollamaProbe,
+    models: ollamaModels,
+    loaded: ollamaLoaded,
+    unload: ollamaUnload,
+    chat: ollamaChat,
+    host: ollamaDisplayHost
+  }
+  const glmAdapter: ProviderAdapter = {
+    // hasKey/getApiKey close over `db` — the sonda never decrypts (DN1B.3).
+    probe: makeGlmProbe(() => hasSecret({ provider: 'glm' }, db)),
+    models: glmModels,
+    loaded: glmLoaded,
+    unload: glmUnload,
+    chat: makeGlmChat(() => readSecretForUse('glm', db, decryptSecret))
+  }
+  // N-1-B: what step 1 (N-1-A) left as a single fixed adapter is now a
+  // service→provider resolver — nothing else in this file changes shape.
+  function resolveProvider(service: AiService): ProviderAdapter {
+    return service === 'glm' ? glmAdapter : ollamaAdapter
+  }
+
+  handle('ai:isAvailable', (args) => {
+    const provider = resolveProvider(args.service)
+    return aiIsAvailable(args, provider.probe, provider.host)
+  })
+  handle('ai:models', (args) => aiModels(args, resolveProvider(args.service).models))
+  handle('ai:loaded', (args) => aiLoaded(args, resolveProvider(args.service).loaded))
+  handle('ai:unload', (args) => aiUnload(args, resolveProvider(args.service).unload))
   handle('ai:chat', (args) =>
-    aiChat(args, ollamaChat, broadcastJobEvent, resolveAttachmentBytes(attachmentsDir))
+    aiChat(
+      args,
+      resolveProvider(args.service).chat,
+      broadcastJobEvent,
+      resolveAttachmentBytes(attachmentsDir)
+    )
   )
 
   handle('conversation:list', (args) => listConversations(args, db))

@@ -9,7 +9,7 @@ import { toAnchorName } from '../shared/ui/Popover/anchorName'
 // app has only ever checked availability once, at startup, and the reload button
 // covers models and memory, never this. No Panel: the footer supplies the surface.
 function OllamaStatus(): React.JSX.Element {
-  const { state: availability } = useAiAvailability()
+  const { state: availability } = useAiAvailability('ollama')
   const [open, setOpen] = useState(false)
   const anchorName = toAnchorName(useId())
 

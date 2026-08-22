@@ -1,5 +1,26 @@
 import type { AiModel, AiModelAttention, LoadedModel } from '@shared/ipc'
 
+/**
+ * The pinned catalog for the GLM cloud provider (N-1-B, Peça C) — there is no
+ * `/api/show` to sonde, so this is hand-written from `cloud-optin.md`, not
+ * derived. `sizeBytes: 0`/`attention: null` are true values, not stand-ins:
+ * this model costs no local RAM, and `contextCeiling`/`fitsInMemory` already
+ * treat a null `attention` as "uncosted". `'completion'` must stay in
+ * `capabilities` — `selectableModels()` (D15.11) filters on it.
+ */
+export const GLM_MODELS: AiModel[] = [
+  {
+    provider: 'glm',
+    name: 'glm-4.7-flash',
+    parameterSize: '31B',
+    sizeBytes: 0,
+    capabilities: ['completion', 'tools', 'thinking'],
+    contextLength: 200_000,
+    attention: null,
+    variantOf: null
+  }
+]
+
 // The two raw shapes this module normalizes. Declared loose on purpose: they
 // belong to Ollama, not to us, and every field the app depends on is read
 // defensively below. A missing field yields null, never a throw — the catalog

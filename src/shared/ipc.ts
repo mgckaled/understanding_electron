@@ -64,8 +64,9 @@ export type DatasetRef = {
 
 // AI layer (plano 09, fatia 1). aiServiceSchema is the single source for the
 // set of providers — z.infer keeps the type from being written in parallel.
-// Cloud providers (gemini, glm) join this enum in step 3, never before.
-export const aiServiceSchema = z.enum(['ollama'])
+// 'glm' joined in N-1-B; 'gemini' stays a CloudProvider (has a secret slot)
+// without being an AiService yet — N-1-C is what promotes it.
+export const aiServiceSchema = z.enum(['ollama', 'glm'])
 export type AiService = z.infer<typeof aiServiceSchema>
 
 export const chatMessageSchema = z.object({
@@ -323,7 +324,9 @@ export type Message = z.infer<typeof messageSchema>
 export const conversationSettingsSchema = z.object({
   model: z.string().min(1).optional(),
   /** Context window reserved for this conversation — maps to options.num_ctx. */
-  numCtx: z.number().int().positive().optional()
+  numCtx: z.number().int().positive().optional(),
+  /** Which provider `model` belongs to (N-1-B); absent means 'ollama', so no backfill is needed. */
+  service: aiServiceSchema.optional()
 })
 export type ConversationSettings = z.infer<typeof conversationSettingsSchema>
 
