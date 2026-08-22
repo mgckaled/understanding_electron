@@ -2,7 +2,7 @@
 
 Esta pasta é a documentação versionada do projeto, organizada **por finalidade**: escopo, história, roadmap, estudo, referência e planos por estado.
 
-> Este arquivo é o mapa. A tabela de fonte única aqui cobre a documentação em `docs/`; o [`CLAUDE.md`](../CLAUDE.md) traz a versão que inclui também os assuntos que não têm dono dentro desta pasta (camada de dados, IA de nuvem) — é ela, hoje, a mais completa das duas.
+> Este arquivo é o mapa. A tabela de fonte única aqui cobre a documentação em `docs/`; o [`CLAUDE.md`](../CLAUDE.md) traz a versão que inclui também os assuntos que ainda não têm dono próprio (IA de nuvem, ML, RAG — hoje em [`plan/active/09-camada-de-ia.md`](plan/active/09-camada-de-ia.md)) — é ela, hoje, a mais completa das duas.
 
 ---
 
@@ -81,6 +81,7 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Tokens, primitivos, `ViewState`, convenções de desktop | skill `design-system` | apontam |
 | Níveis de teste, mocks, o que não testar | skill `testing` | apontam |
 | Convenção de comentário e docstring (TSDoc) | skill `comments` | apontam |
+| Camada de dados (DuckDB, `utilityProcess`, Arrow, motor restrito) | skill `data` | apontam |
 | Ferramentas do chat (busca web, MCP, raciocínio visível) | [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md) | apontam |
 | Peso/cache KV por modelo Ollama e ficha técnica dos modelos de nuvem opt-in, elegibilidade, inviáveis e descartados | [`reference/models/`](reference/models/README.md) | apontam — a frota **instalada** continua com dono no `CLAUDE.md` |
 | Stack fixada, versões, regras invioláveis | [`CLAUDE.md`](../CLAUDE.md) | apontam |

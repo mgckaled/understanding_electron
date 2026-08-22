@@ -48,7 +48,7 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | Tokens, primitivos, `ViewState`, convenções de desktop | skill [`design-system`](.claude/skills/design-system/SKILL.md) |
 | Níveis de teste, mocks, o que não testar | skill [`testing`](.claude/skills/testing/SKILL.md) |
 | Convenção de comentário e docstring (TSDoc) | skill [`comments`](.claude/skills/comments/SKILL.md) |
-| Camada de dados (DuckDB, `utilityProcess`, Arrow) | [`docs/study/05-proximos-passos.md`](docs/study/05-proximos-passos.md) |
+| Camada de dados (DuckDB, `utilityProcess`, Arrow, motor restrito) | skill [`data`](.claude/skills/data/SKILL.md) |
 | IA local e de nuvem, ML, RAG | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
 | Peso/cache KV por modelo Ollama (por faixa de contexto) e ficha técnica dos modelos de nuvem opt-in, elegíveis, inviáveis, descartados | [`docs/reference/models/`](docs/reference/models/README.md) — a frota **instalada** continua dona deste arquivo |
 | Decisões, alternativas descartadas, armadilhas | [`docs/HISTORY.md`](docs/HISTORY.md) |

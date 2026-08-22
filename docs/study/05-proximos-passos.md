@@ -4,6 +4,8 @@ A fundação está construída: contrato de comunicação tipado, fronteira de s
 
 Nada aqui está implementado ainda. É um plano com justificativa, para ser conferido contra a realidade quando a implementação acontecer.
 
+> ⚠️ **O plano 18 (sub-planos 18-A a 18-F) já implementou a camada de dados, ago/2026.** As correções pontuais abaixo (Arrow montado em JS, ordem dos `SET`, etc.) continuam registradas aqui como parte do caderno de aprendizado — o valor pedagógico é justamente ver o que a implementação real corrigiu. Mas o que se **consulta enquanto se edita código** — motor restrito, `memory_limit`, extensão vendorizada, o veredito Arrow-vs-JSON, formatos suportados — tem dono na skill [`data`](../../.claude/skills/data/SKILL.md) desde R-3. Este documento continua sendo a explicação de conceito (por que `utilityProcess`, por que colunar, o que é ABI/N-API), não a fonte operacional.
+
 ---
 
 ## O problema real

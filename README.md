@@ -213,7 +213,7 @@ Cada assunto tem **um** dono; os demais apontam para ele, nunca duplicam.
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | O que ainda falta, e o que reabre cada decisão adiada |
 | [`docs/study/`](docs/study/README.md) | Caderno didático, do zero ao estado atual |
 | [`CLAUDE.md`](CLAUDE.md) | Stack fixada, regras do projeto e ambiente de desenvolvimento |
-| `.claude/skills/{architecture,ipc,design-system,testing,comments}` | Dono técnico de cada assunto — camadas, contrato IPC, tokens visuais, estratégia de teste, convenção de comentário |
+| `.claude/skills/{architecture,ipc,design-system,testing,comments,data}` | Dono técnico de cada assunto — camadas, contrato IPC, tokens visuais, estratégia de teste, convenção de comentário, camada de dados (DuckDB) |
 
 O [diário de bordo](docs/study/04-diario-de-bordo.md) é o mais útil quando algo quebra: ele registra os problemas reais enfrentados até aqui com o raciocínio de diagnóstico preservado — porque o método sobrevive às versões.
 
