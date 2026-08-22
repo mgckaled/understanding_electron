@@ -75,6 +75,23 @@ export default defineConfig(
     }
   },
   {
+    files: ['src/preload/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/core/**', '**/main/**', '**/renderer/**', '**/workers/**'],
+              message:
+                'preload/ só importa shared/ (por tipo) e electron — é a ponte estreita, não deve carregar lógica de outra camada. Ver skill architecture.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     files: ['src/renderer/**/*.tsx'],
     rules: {
       // eslint-plugin-react checks JSX props against a hand-maintained list of
