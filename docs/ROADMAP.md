@@ -34,7 +34,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 20 | F-2 | composer, modelo e sidebar | ✅ concluída |
 | 21 | 18-A..18-F | motor DuckDB completo (CSV/JSON/Excel) | ✅ concluída |
 | 22 | — | revisão de escopo: exportação e nuvem (4ª) | ✅ concluída |
-| 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ▶ em andamento — N-1-A (segredo) concluído, N-1-B (um provedor ponta a ponta) é o próximo |
+| 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ▶ em andamento — N-1-A (segredo) e N-1-B (GLM ponta a ponta) concluídos, N-1-C (Gemini + cota/limite de taxa) é o próximo |
 | 24 | 19 | propor: consulta e passos | planejado |
 | 25 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
 | 26 | 20 | gráfico como artefato | planejado |
@@ -134,6 +134,11 @@ O motor hoje só lê `utf-8`/`utf-16`/`latin-1` nativamente (medido: nem `latin-
 
 ### `preload/index.ts` cruzou o teto de 60 linhas "sem exceção" (plano N-1-A)
 Estava em 69 linhas antes deste plano — já acima do teto do [`CLAUDE.md`](../CLAUDE.md), *breach* pré-existente, não causado aqui. Os três canais `secrets:*` (DN1A.3) levaram para 74. Não corrigido nesta sessão: dividir o arquivo em módulos exigiria o preload deixar de ser um único arquivo bundlado (skill `architecture` § *preload é bundle único*), decisão que pertence a uma sessão própria, não a um acréscimo pontual de canal. Gatilho de revisão: o próximo canal novo que tocar `preload/index.ts` — se o teto seguir subindo sem plano, a régua perde o sentido de alarme que a subida do componente do renderer (ago/2026) já discutiu para outro caso.
+
+### `ConversationView.tsx` fechou em 392 linhas, perto do teto de 400 (plano N-1-B)
+A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resolução do provedor selecionado, `isReady` por serviço) entrou no mesmo arquivo que já compunha o cabeçalho, o histórico da conversa e o composer — ainda dentro do teto do [`CLAUDE.md`](../CLAUDE.md), não dividido nesta sessão porque "divide-se ao tocar" não distingue tocar-e-crescer-dentro-do-teto de estourá-lo. Candidato natural a extrair, se a próxima extensão empurrar para além de 400: a resolução de `service`/`allModels` (hoje ~15 linhas de lógica pura misturadas a JSX) para uma função em `conversations.ts`, ao lado de `resolveModel`/`selectableModels`, testável sem montar o componente inteiro. Gatilho de revisão: o próximo plano que tocar este arquivo.
+
+**Segundo `Record<AiService, string>` exaustivo, achado só na revisão de fechamento.** `ConversationView.tsx` ganhou `SERVICE_LABEL: Record<AiService, string>` (rótulo do provedor na UI), ao lado do `HINTS: Record<AiService, string>` que já existia em `main/features/ai/handlers.ts` (DN1B.5) — o plano tinha gravado um grep por `Record<AiService` no passo 1, mas esse grep rodou **antes** deste segundo mapa nascer no passo 6. Não é bug: os dois compilam hoje e `pnpm typecheck` reprova os dois quando um `AiService` novo entra, o que já é a garantia que se quer. Só registrado para N-1-C não se surpreender: adicionar `'gemini'` vai apontar o compilador para **dois** arquivos, não um.
 
 ### O pilar "Código" não tem plano numerado
 O `CLAUDE.md` já lista código ao lado de documento, imagem, busca web, MCP e raciocínio como pilar próprio — mas, diferente de Web Search/Thinking/MCP (planos 21-23 já reservados), código não tem lugar na sequência ainda. O [F-2](plan/implemented/F-2-composer-modelo-sidebar.md) deu a ele o primeiro item visível na tela — desabilitado, no menu de anexo — e conferiu que o mecanismo **não** está pronto por baixo, ao contrário do que a tabela de formatos do [`ESCOPO.md`](ESCOPO.md) sugere à primeira leitura: o extrator de `.txt` já sabe ler código-fonte, mas o diálogo do canal `document:pick` filtra só `txt/md/pdf`, então nenhum arquivo de código chega lá hoje. Registrado para o item desabilitado não ficar mudo — quando este pilar ganhar prioridade, decide-se então se é só abrir o filtro do diálogo ou se pede ficha própria (com realce de sintaxe, já que o plano 12 entrega a paleta).
