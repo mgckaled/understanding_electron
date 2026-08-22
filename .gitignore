@@ -22,6 +22,10 @@ dist
 # .claude/settings.local.json em docs/HISTORY.md (fase 07).
 .env
 .env.*
+# The seed template (plano N-1-A, DN1A.1) — confirmed with `git check-ignore
+# -v` that .env.* above would swallow it too without this negation. No real
+# value inside, so it is the one .env* file meant to be committed.
+!.env.example
 
 # Vitest — docs/plan/implemented/04-testes-rapidos.md
 coverage

@@ -47,6 +47,7 @@ import {
 } from '../features/conversation/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
 import { hasSecret, removeSecret, writeSecret } from '../features/secrets/handlers'
+import { seedSecretsFromEnv } from '../features/secrets/seed'
 import { spawnDuckdbWorker, createDuckdbWorkerClient } from '../duckdb/spawnWorker'
 
 // getSelectedStorageBackend() only exists on Linux (Electron's own binding is
@@ -58,6 +59,14 @@ function readSecretBackendInfo(): { encryptionAvailable: boolean; backend: strin
     encryptionAvailable: safeStorage.isEncryptionAvailable(),
     backend: process.platform === 'linux' ? safeStorage.getSelectedStorageBackend() : null
   }
+}
+
+// safeStorage.encryptString is a native method — passing the bare property
+// (safeStorage.encryptString) detaches it from its `this`, and Electron's
+// binding throws "Illegal invocation" when called that way. Measured live
+// (pnpm dev): the seed's UnhandledPromiseRejectionWarning is what caught it.
+function encryptSecret(plainText: string): Uint8Array {
+  return safeStorage.encryptString(plainText)
 }
 
 function broadcastJobEvent(event: JobEvent): void {
@@ -171,11 +180,23 @@ export async function registerAll(): Promise<() => void> {
     if (args.theme !== undefined) nativeTheme.themeSource = args.theme
   })
 
-  handle('secrets:write', (args) =>
-    writeSecret(args, db, safeStorage.encryptString, readSecretBackendInfo())
-  )
+  handle('secrets:write', (args) => writeSecret(args, db, encryptSecret, readSecretBackendInfo()))
   handle('secrets:has', (args) => hasSecret(args, db))
   handle('secrets:remove', (args) => removeSecret(args, db))
+
+  // Dev-only seed (DN1A.1): .env never ships (app.isPackaged guards it), and
+  // it only FILLS a key that is still unset — a key already written through
+  // the UI is never overwritten. try/catch because it is not confirmed
+  // whether process.loadEnvFile() throws when no .env is present, which is
+  // the common case (Risco 1).
+  if (!app.isPackaged) {
+    try {
+      process.loadEnvFile()
+    } catch {
+      // No local .env — nothing to seed.
+    }
+    seedSecretsFromEnv(db, process.env, encryptSecret, readSecretBackendInfo())
+  }
 
   // Startup sweep (D16.2): closes the gap a removal event cannot reach — an
   // attach that succeeded and was discarded before ever being sent. Awaited,
