@@ -1,6 +1,6 @@
 ---
 name: ipc
-description: O contrato IPC do crivo — src/shared/ipc.ts como declaração única de canal→{args,result} com dois consumidores (main tipa handlers, preload tipa chamadas), a superfície de domínio window.api em vez de invoke genérico, os seis lugares que um canal novo toca, a régua de Result vs exceção, zod nos argumentos e nunca na saída, o wrapper handle() e por que handler é função exportada, eventos que não são canais (job:event em shared/channels.ts) e a armadilha de arrastar zod para o bundle do preload, identidade gerada em quem age (JobId, id de conversa), e o fato medido de que não existe zero-cópia no IPC do Electron. Use ao criar um canal novo, mudar a assinatura de um existente, decidir se algo retorna Result, escolher entre canal e evento, mandar payload binário entre processos, ou entender por que window.api tem essa forma.
+description: O contrato IPC do crivo — src/shared/ipc.ts como fonte única de canal→{args,result}, a superfície de domínio window.api, os seis lugares que um canal novo toca, Result vs exceção, e a armadilha de zod vazando para o bundle do preload. Use ao criar ou mudar um canal, decidir se algo retorna Result, escolher entre canal e evento, ou mandar payload binário entre processos.
 ---
 
 # IPC — crivo

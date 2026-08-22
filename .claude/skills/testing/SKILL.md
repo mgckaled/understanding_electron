@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Estratégia de teste do crivo — a pirâmide de cinco níveis e onde cada um roda, por que handlers de IPC precisam ser funções exportadas (não closures) para serem testáveis sem subir o Electron, a armadilha de importar 'electron' por valor em código testável, o mock de window.api derivado do contrato via satisfies, os limites do jsdom (não implementa dialog; defeito que depende de layout ou de tempo real de chegada só se prova ao vivo), Playwright/_electron para os níveis 4-5 e a emulação de prefers-color-scheme que o padrão dele impõe, a verificação real do que vai para dentro do app.asar, e o que não vale a pena testar. Use ao escrever um teste novo, decidir se algo precisa de mock, decidir se um comportamento é verificável em jsdom ou exige o app real, avaliar se um handler está estruturado de forma testável, escrever um spec E2E, ajustar o files do electron-builder.yml, ou julgar se vale perseguir cobertura em renderer/ ou main/.
+description: Estratégia de teste do crivo — a pirâmide de cinco níveis, por que handler de IPC precisa ser função exportada (não closure), a armadilha de importar 'electron' por valor em código testável, os limites do jsdom (não implementa `<dialog>`, nem tempo real), e a verificação real do que vai para dentro do `app.asar`. Use ao escrever um teste, decidir se algo precisa de mock, se um comportamento exige o app real, escrever um spec E2E, ou julgar se vale perseguir cobertura em renderer/main.
 ---
 
 # Testes — crivo

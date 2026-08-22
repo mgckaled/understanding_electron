@@ -1,6 +1,6 @@
 ---
 name: design-system
-description: Tokens de design do crivo — o design system como envelope (define a linguagem visual, não constrói feature; o que já existe ganha a linguagem, o que ainda não existe nasce depois já vestido), os dois níveis (primitivo/semântico) e a regra de nenhum componente tocar o primitivo direto, Tailwind v4 sobre `tokens.css` com CSS Modules só onde há limite físico (Dialog, Popover, MarkdownMessage), as duas densidades (chrome compacto vs superfície de leitura), tema por `nativeTheme` com alternador manual (Sistema/Claro/Escuro), comportamento de desktop (seleção de texto, foco, movimento), nove primitivos (Button, Field, Panel, Toolbar, Dialog, Popover, MarkdownMessage, Switch, Slider), ViewState/StateView e o registro central de mensagens de erro. Use ao criar um componente novo, escolher uma cor, medida ou tamanho de texto, abrir um modal ou popover, decidir onde um estado de UI mora, ou tratar um AppError na interface.
+description: Tokens de design do crivo — o design system como envelope (veste o que já existe; feature nova nasce vestida no próprio plano), os dois níveis de token (primitivo/semântico), Tailwind v4 sobre `tokens.css`, as duas densidades (chrome vs leitura), tema por `nativeTheme`, e os nove primitivos de `shared/ui/`. Use ao criar um componente, escolher cor/medida/texto, abrir modal/popover, decidir onde um estado de UI mora, ou tratar um `AppError` na interface.
 ---
 
 # Design tokens — crivo

@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: Decisões estruturais do crivo — fronteira de processo (main/preload/renderer/core/shared/workers) e a regra de importação verificada por ESLint, a estrutura interna do renderer (app/ vs features/ vs shared/ui/, e a casca que não importa de features/), aliases, o que entra de SOLID, erro como dado na fronteira, o registro de jobs canceláveis, o sandbox do renderer e por que o preload é bundle único, convenção de idioma, régua para dependência nova, e o critério "caro de desfazer" para decidir se algo é urgente ou pode esperar. Use ao decidir em que camada ou pasta um arquivo vai, compor uma tela nova na casca, avaliar se uma dependência nova se justifica, mexer em webPreferences ou navegação da janela, ou julgar se uma decisão pode ser adiada. Não cobre o contrato IPC em si (skill ipc), tokens de design (skill design-system) nem estratégia de teste (skill testing).
+description: Decisões estruturais do crivo — fronteira de processo, regra de importação, estrutura do renderer, sandbox e o critério "caro de desfazer". Use ao decidir em que camada um arquivo vai, compor tela nova na casca, avaliar dependência nova, mexer em webPreferences/navegação, ou julgar se uma decisão pode esperar. Não cobre IPC (skill ipc), tokens (skill design-system) nem teste (skill testing).
 ---
 
 # Arquitetura — crivo
