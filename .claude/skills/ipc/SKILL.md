@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 **A pergunta já tem resposta prática, e não é um canal:** bytes de imagem viajam do disco ao `<img>` do renderer pelo protocolo customizado `attachment://` (`src/main/attachments/protocol.ts`, `protocol.handle` + `registerSchemesAsPrivileged`, D17.6, plano 17) — nunca por `invoke`/JSON. É o caminho a seguir para qualquer payload binário futuro que precise chegar ao DOM.
 
-## Os 26 canais de hoje
+## Os 29 canais de hoje
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -118,6 +118,9 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat` | sim |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `append`, `settings` | não |
 | `settings` | `read`, `write` | não |
+| `secrets` | `write` (`Result`), `has`, `remove` | `write` só — `has`/`remove` seguem a régua de `conversation`: nada que a UI precise distinguir de um `false`/vazio |
+
+`secrets:read` **não existe** — nem por omissão, por desenho (plano N-1-A, DN1A.3): a regra de mão única do [`CLAUDE.md`](../../../CLAUDE.md#segurança) proíbe o renderer de reler um segredo já gravado, só perguntar se ele existe.
 
 Fora do mapa, por não passarem por `handle()`: `job:event`, declarado em `src/shared/channels.ts`.
 

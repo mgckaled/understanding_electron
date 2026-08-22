@@ -33,8 +33,8 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 19 | — | revisão de escopo: identidade multiuso (3ª) | ✅ concluída |
 | 20 | F-2 | composer, modelo e sidebar | ✅ concluída |
 | 21 | 18-A..18-F | motor DuckDB completo (CSV/JSON/Excel) | ✅ concluída |
-| 22 | — | revisão de escopo: exportação e nuvem (4ª) | ▶ em andamento |
-| 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | planejado |
+| 22 | — | revisão de escopo: exportação e nuvem (4ª) | ✅ concluída |
+| 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ▶ em andamento — N-1-A (segredo) concluído, N-1-B (um provedor ponta a ponta) é o próximo |
 | 24 | 19 | propor: consulta e passos | planejado |
 | 25 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
 | 26 | 20 | gráfico como artefato | planejado |
@@ -131,6 +131,9 @@ Durante a auditoria de ago/2026, `electron-builder` passou a falhar com `EBUSY: 
 
 ### Extensão `encodings` do DuckDB (windows-1252 e +1000 codificações) — o bloqueio de configuração caiu, falta vendorizar
 O motor hoje só lê `utf-8`/`utf-16`/`latin-1` nativamente (medido: nem `latin-1` aceita todo byte — ver [`HISTORY`](HISTORY.md) § armadilhas). A extensão `encodings` cobriria `windows-1252` de verdade e a maioria dos casos reais de planilha brasileira. **O 18-F (ago/2026) já abriu esse caminho** — `extensionPaths` é `string[]`, `buildDuckDbStartupCommands` já carrega mais de uma (`config.test.ts` cobre duas entradas), `resources/duckdb-extensions/` é convenção, e `scripts/fetch-duckdb-excel-extension.mjs` é rerodável trocando só o nome da extensão. O que falta é mecânico, não arquitetural: vendorizar `encodings.duckdb_extension` (mesma D18F.1 — instância `:memory:` sem config restrita, `INSTALL`/`LOAD`, copiar o binário) e decidir se o fallback silencioso de latin-1 acima passa a avisar o usuário — "as duas pendências se resolvem com o mesmo trabalho de abrir o contrato" já dito acima continua valendo. **Preço a considerar antes de vendorizar uma segunda extensão:** `excel.duckdb_extension` sozinha pesa 22.704.662 bytes (22,7 MB) — duas binários desse porte no git somam ~45 MB, número a registrar quando a decisão for tomada, não a redescobrir.
+
+### `preload/index.ts` cruzou o teto de 60 linhas "sem exceção" (plano N-1-A)
+Estava em 69 linhas antes deste plano — já acima do teto do [`CLAUDE.md`](../CLAUDE.md), *breach* pré-existente, não causado aqui. Os três canais `secrets:*` (DN1A.3) levaram para 74. Não corrigido nesta sessão: dividir o arquivo em módulos exigiria o preload deixar de ser um único arquivo bundlado (skill `architecture` § *preload é bundle único*), decisão que pertence a uma sessão própria, não a um acréscimo pontual de canal. Gatilho de revisão: o próximo canal novo que tocar `preload/index.ts` — se o teto seguir subindo sem plano, a régua perde o sentido de alarme que a subida do componente do renderer (ago/2026) já discutiu para outro caso.
 
 ### O pilar "Código" não tem plano numerado
 O `CLAUDE.md` já lista código ao lado de documento, imagem, busca web, MCP e raciocínio como pilar próprio — mas, diferente de Web Search/Thinking/MCP (planos 21-23 já reservados), código não tem lugar na sequência ainda. O [F-2](plan/implemented/F-2-composer-modelo-sidebar.md) deu a ele o primeiro item visível na tela — desabilitado, no menu de anexo — e conferiu que o mecanismo **não** está pronto por baixo, ao contrário do que a tabela de formatos do [`ESCOPO.md`](ESCOPO.md) sugere à primeira leitura: o extrator de `.txt` já sabe ler código-fonte, mas o diálogo do canal `document:pick` filtra só `txt/md/pdf`, então nenhum arquivo de código chega lá hoje. Registrado para o item desabilitado não ficar mudo — quando este pilar ganhar prioridade, decide-se então se é só abrir o filtro do diálogo ou se pede ficha própria (com realce de sintaxe, já que o plano 12 entrega a paleta).
