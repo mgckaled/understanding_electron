@@ -7,6 +7,7 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Versions from '../../components/Versions'
 import { useSettings } from './settingsContext'
 import LoadedModels from './LoadedModels'
+import CloudSecrets from './CloudSecrets'
 
 // Settings is a detour, not a destination (D13.8): a navigation destination would
 // UNMOUNT the conversation, but this modal keeps it visible behind, so a reply
@@ -136,6 +137,9 @@ function Settings(): React.JSX.Element {
         {/* Only while open: its query refetches on mount, and mounting it with
             the modal closed would poll the provider from boot onwards. */}
         {open && <LoadedModels />}
+        {/* Same reason: secrets:has fires on mount, and <dialog> keeps closed
+            children mounted (DN1A.3, passo 6). */}
+        {open && <CloudSecrets />}
         {/* The build versions moved here from the sidebar footer, which the DS-3
             target gives to the Ollama status. Gated on `open` so app:info does
             not fetch at boot. */}

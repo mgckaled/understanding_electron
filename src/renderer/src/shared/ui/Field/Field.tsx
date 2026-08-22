@@ -1,6 +1,6 @@
 import { useId, cloneElement, isValidElement, type ReactElement } from 'react'
 
-type FieldControlProps = {
+export type FieldControlProps = {
   id?: string
   'aria-describedby'?: string
 }
