@@ -35,13 +35,14 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 21 | 18-A..18-F | motor DuckDB completo (CSV/JSON/Excel) | ✅ concluída |
 | 22 | — | revisão de escopo: exportação e nuvem (4ª) | ✅ concluída |
 | 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ▶ em andamento — N-1-A (segredo) e N-1-B (GLM ponta a ponta) concluídos, N-1-C (Gemini + cota/limite de taxa) é o próximo |
-| 24 | 19 | propor: consulta e passos | planejado |
-| 25 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
-| 26 | 20 | gráfico como artefato | planejado |
-| 27 | **E-2** | motor `.pptx` (aproveita imagens de gráfico do 20) | planejado |
-| 28 | 21 | raciocínio visível — local **e** nuvem numa tacada só, depende do N-1 | planejado |
-| 29 | 22 | busca web | planejado |
-| 30 | 23 | MCP Context7 | planejado |
+| 24 | **R-3** | sincronização de docs pós-18/N-1 e nascimento da skill `data` | planejado |
+| 25 | 19 | propor: consulta e passos | planejado |
+| 26 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
+| 27 | 20 | gráfico como artefato | planejado |
+| 28 | **E-2** | motor `.pptx` (aproveita imagens de gráfico do 20) | planejado |
+| 29 | 21 | raciocínio visível — local **e** nuvem numa tacada só, depende do N-1 | planejado |
+| 30 | 22 | busca web | planejado |
+| 31 | 23 | MCP Context7 | planejado |
 | — | — | receitas salvas · catálogo camada 2 · observatório · RAG (fatia 5 do 09) · ML (fatia 6 do 09) | depois do arco |
 
 **Por que 21–23 (e agora E-1/E-2/N-1) não pegam número fora da ordem em que foram escritos.** O 16 preenchia um vão dentro do intervalo já reservado (13–20); os planos 21–23 vêm de um guia externo ([`web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md)) e dependem só da fatia 1 do [plano 09](plan/active/09-camada-de-ia.md) (chat local, já concluída) — nunca do 17, do 18 ou do 19. Entram **depois** do 20 na numeração, não entre o 16 e o 17: renumerar custaria a mesma reescrita de tabela e referências cruzadas que a trilha DS recusou pagar (`plano 21-23` já é citado em fonte, no `AttachButton` do F-2). A trilha **E** (Exportação) e a trilha **N** (Nuvem) seguem a mesma regra — letra própria em vez de renumerar 19/20/21-23, e cada plano nasce como arquivo **na sessão em que for o próximo a ser executado**, nunca antes.
