@@ -20,9 +20,10 @@
  *   3. CONTEXTBRIDGE SURFACE — `exposeInMainWorld` with any key but 'api'.
  *      The renderer gets exactly one domain-shaped surface (ISP).
  *
- *   4. SECRET LEAK — `process.env` inside src/renderer/. There is no
- *      `process` there under sandbox, and it is the one place an API key must
- *      never appear. Relevant ahead of the AI layer (Ollama/Gemini/GLM).
+ *   4. SECRET LEAK — `process.env` or `import.meta.env` inside src/renderer/.
+ *      There is no `process` there under sandbox, and Vite statically inlines
+ *      any `VITE_*` value into the built bundle — the two ways a renderer
+ *      leaks a secret. Relevant since the AI layer (Ollama/Gemini/GLM) landed.
  *
  *   5. LAYER PURITY — `electron` imported from src/core/ or src/shared/.
  *      Redundant with ESLint by design: this fires on every edit, whereas
@@ -53,6 +54,12 @@
  *      narrative goes in `//` (≤3 lines) or a `/**` docstring, and long
  *      rationale in HISTORY.md by decision id. Added by R-1.
  *
+ *  10. LINE CEILING — src/main/index.ts and src/preload/index.ts past the
+ *      100-line "sem exceção" ceiling in CLAUDE.md's régua de tamanho. The
+ *      only two hard numeric ceilings in the project; added by R-3, after
+ *      preload/index.ts was found already over its old 60-line ceiling with
+ *      nothing here checking it.
+ *
  * On violation: writes an explanation to stderr and exits 2, which feeds the
  * message back to Claude so it self-corrects. Otherwise exits 0. Any internal
  * error exits 0, so the hook never breaks the session.
@@ -64,12 +71,22 @@ import { REPO_ROOT, editedFile, readHookInput, repoRelative, stripComments } fro
 
 const INSPECTED_EXT = new Set(['.ts', '.tsx', '.mts', '.cts', '.css'])
 const TOKENS_CSS = path.join(REPO_ROOT, 'src/renderer/src/shared/ui/tokens.css')
+// The two hard, "sem exceção" numeric ceilings in CLAUDE.md's régua de
+// tamanho — counted as total physical lines (comment and blank line
+// included), matching wc -l.
+const LINE_CEILINGS = {
+  'src/main/index.ts': 100,
+  'src/preload/index.ts': 100
+}
 
 const UNSAFE_WEBPREFS =
   /\b(?:sandbox\s*:\s*false|contextIsolation\s*:\s*false|nodeIntegration\s*:\s*true|webSecurity\s*:\s*false)\b/
 const IPC_MAIN = /\bipcMain\s*\.\s*(?:handle|handleOnce|on|once)\s*\(/
 const EXPOSE = /exposeInMainWorld\s*\(\s*['"]([^'"]+)['"]/g
 const PROCESS_ENV = /\bprocess\s*\.\s*env\b/
+// Vite's own idiom for exposing a build-time value to the renderer bundle —
+// the same leak surface as `process.env`, just the Vite-native spelling.
+const IMPORT_META_ENV = /\bimport\s*\.\s*meta\s*\.\s*env\b/
 const ELECTRON_IMPORT =
   /^\s*(?:import\s[^\n]*from\s*['"]electron['"]|import\s*['"]electron['"]|(?:const|let|var)\s[^\n]*require\(\s*['"]electron['"])/m
 const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/g
@@ -160,13 +177,24 @@ for (const [, name] of code.matchAll(EXPOSE)) {
   }
 }
 
-// 4. Secret leak surface.
-if (rel.startsWith('src/renderer/') && !isTest && PROCESS_ENV.test(code)) {
-  violations.push(
-    '`process.env` no renderer. Sob sandbox não existe `process` ali, e é exatamente o ' +
-      'lugar onde uma chave de API nunca pode aparecer. Segredo mora no main (safeStorage); ' +
-      'o renderer pergunta se está configurado, nunca lê o valor.'
-  )
+// 4. Secret leak surface — process.env (no `process` under sandbox anyway)
+// and import.meta.env (Vite statically inlines VITE_-prefixed values into
+// the built bundle — the leak vector a Vite renderer actually has).
+if (rel.startsWith('src/renderer/') && !isTest) {
+  if (PROCESS_ENV.test(code)) {
+    violations.push(
+      '`process.env` no renderer. Sob sandbox não existe `process` ali, e é exatamente o ' +
+        'lugar onde uma chave de API nunca pode aparecer. Segredo mora no main (safeStorage); ' +
+        'o renderer pergunta se está configurado, nunca lê o valor.'
+    )
+  }
+  if (IMPORT_META_ENV.test(code)) {
+    violations.push(
+      '`import.meta.env` no renderer. É o idioma nativo do Vite para expor variável de ' +
+        'ambiente ao bundle — qualquer chave `VITE_*` acaba embutida no build. Segredo mora ' +
+        'no main (safeStorage); o renderer pergunta se está configurado, nunca lê o valor.'
+    )
+  }
 }
 
 // 5. Layer purity.
@@ -257,8 +285,13 @@ if (isTsLike && !isTest) {
     /^\/\*[\s!]*(?:eslint|global|prettier|ts-|@ts-|c8|istanbul|v8|@?__PURE__|webpack|@?vite)/
   const narrative = [...raw.matchAll(/\/\*(?!\*)[\s\S]*?\*\//g)].filter((m) => {
     if (BLOCK_DIRECTIVE.test(m[0])) return false
-    // A JSX comment `{/* … */}` is the only way to comment inside JSX — allowed.
-    return !raw.slice(0, m.index).trimEnd().endsWith('{')
+    // A JSX comment is `{/* … */}` — the brace wraps the comment on BOTH sides.
+    // Checking only the left brace let an object literal with a comment as its
+    // first token slip through (`const x = { /* narrative */ a: 1 }` also ends
+    // with `{` before the comment, but has real content — not `}` — right after).
+    const before = raw.slice(0, m.index).trimEnd()
+    const after = raw.slice(m.index + m[0].length).trimStart()
+    return !(before.endsWith('{') && after.startsWith('}'))
   })
   if (narrative.length > 0) {
     violations.push(
@@ -266,6 +299,20 @@ if (isTsLike && !isTest) {
         'bloco: use `//` para nota curta (até ~3 linhas, só o que o código não diz) ou ' +
         '`/** */` para docstring TSDoc; razão longa vai ao HISTORY.md, citada pela sigla. ' +
         'Comentário JSX `{/* */}` e diretivas continuam permitidos.'
+    )
+  }
+}
+
+// 10. Line ceiling for the two thin composition roots — the only two hard,
+// "sem exceção" numbers in CLAUDE.md's régua de tamanho.
+if (rel in LINE_CEILINGS) {
+  const lineCount = (raw.match(/\n/g) ?? []).length
+  const ceiling = LINE_CEILINGS[rel]
+  if (lineCount > ceiling) {
+    violations.push(
+      `${rel} tem ${lineCount} linhas, acima do teto de ${ceiling} declarado no CLAUDE.md ` +
+        '("sem exceção"). main/index.ts é só ciclo de vida e criação de janela; preload/index.ts ' +
+        'é só tradução de chamada — lógica que cresceu aqui pertence a main/features/ ou core/.'
     )
   }
 }
