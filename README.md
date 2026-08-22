@@ -14,9 +14,9 @@
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows&logoColor=white)
 ![Ollama](https://img.shields.io/badge/Ollama-local-000000?logo=ollama&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Gemini-planejado-8E75B2?logo=googlegemini&logoColor=white)
-![GLM](https://img.shields.io/badge/GLM-planejado-3B82F6)
+![GLM](https://img.shields.io/badge/GLM-integrado-3B82F6)
 ![SQLite](https://img.shields.io/badge/SQLite-embutido-003B57?logo=sqlite&logoColor=white)
-![DuckDB](https://img.shields.io/badge/DuckDB-planejado-FFF000?logo=duckdb&logoColor=black)
+![DuckDB](https://img.shields.io/badge/DuckDB-embutido-FFF000?logo=duckdb&logoColor=black)
 
 ![License](https://img.shields.io/badge/licen%C3%A7a-PolyForm%20Noncommercial%201.0.0-blue)
 ![privacidade](https://img.shields.io/badge/dados-nunca%20saem%20da%20m%C3%A1quina-success)
@@ -83,6 +83,8 @@ O coração da privacidade do app: a IA recebe o **mínimo** necessário para se
 | ✅ | Tema claro e escuro automáticos, com contraste de cor medido |
 | ✅ | Orçamento de contexto por conversa — teto do modelo, medidor, recusa de envio que estouraria a janela |
 | ✅ | Anexar dataset (com detecção de separador), documento (`.txt`/`.md`/PDF) e imagem à mesma conversa, com gate de capacidade (`vision`) |
+| ✅ | Motor de dados DuckDB, em processo isolado (`utilityProcess`): consulta SQL e pré-visualização automática de dataset CSV, JSON/NDJSON e Excel |
+| ✅ | IA de nuvem opt-in (GLM), com segredo salvo localmente e nunca relido pelo renderer |
 | ✅ | Segurança fechada: o app roda isolado, sem acesso indevido ao sistema |
 | ✅ | Cinco níveis de teste, do unitário ao aplicativo já empacotado |
 
@@ -90,11 +92,10 @@ O coração da privacidade do app: a IA recebe o **mínimo** necessário para se
 
 | | |
 |---|---|
-| ⬜ | Motor de dados DuckDB, rodando sem travar a interface |
 | ⬜ | A IA propondo consultas e sequências de tratamento |
 | ⬜ | Tabela grande exibida com fluidez, e gráficos como resultado |
 | ⬜ | Busca web, documentação (MCP) e raciocínio visível no chat |
-| ⬜ | Receitas salvas e reaplicáveis · Excel, JSON e outros formatos |
+| ⬜ | Receitas salvas e reaplicáveis · Parquet e outros formatos |
 | ⬜ | Instalador distribuível, assinado |
 
 O caminho completo, etapa por etapa, está em [`docs/ROADMAP.md`](docs/ROADMAP.md); o histórico do que já foi decidido e por quê, em [`docs/HISTORY.md`](docs/HISTORY.md).
@@ -195,7 +196,7 @@ Cada escolha aqui foi deliberada, não herança de template. O raciocínio compl
 | Build | electron-vite 5 + Vite 7 | Monta o app com recarga rápida |
 | Cache de dados | TanStack Query 5 | Guarda o histórico da conversa na interface |
 | Histórico | SQLite embutido | Já vem dentro do Electron — zero instalação extra |
-| Motor de dados | DuckDB *(planejado)* | Consulta arquivos grandes sem carregar tudo na memória |
+| Motor de dados | DuckDB, em `utilityProcess` | Consulta arquivos grandes sem carregar tudo na memória |
 | Pacotes | pnpm 11 | Instalação enxuta e reproduzível |
 
 ---
