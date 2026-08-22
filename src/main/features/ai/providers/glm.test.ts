@@ -10,7 +10,7 @@ const messages: ChatMessage[] = [{ role: 'user', content: 'oi' }]
 // buffering, not just the happy path.
 function stubStream(
   pieces: string[],
-  init?: { ok?: boolean; status?: number }
+  init?: { ok?: boolean; status?: number; errorBody?: string }
 ): ReturnType<typeof vi.fn> {
   const encoder = new TextEncoder()
   const body = new ReadableStream<Uint8Array>({
@@ -19,7 +19,12 @@ function stubStream(
       controller.close()
     }
   })
-  const fetchMock = vi.fn(async () => ({ ok: init?.ok ?? true, status: init?.status ?? 200, body }))
+  const fetchMock = vi.fn(async () => ({
+    ok: init?.ok ?? true,
+    status: init?.status ?? 200,
+    body,
+    text: async () => init?.errorBody ?? ''
+  }))
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
@@ -133,5 +138,25 @@ describe('makeGlmChat', () => {
     stubStream([], { ok: false, status: 401 })
 
     await expect(chat(messages, { model: 'glm-4.7-flash' })).rejects.toBeInstanceOf(UpstreamError)
+  })
+
+  it('logs the raw body to the console and throws a short classified message (N-1-B follow-up)', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    stubStream([], {
+      ok: false,
+      status: 401,
+      errorBody: '{"error":{"message":"invalid api key"}}'
+    })
+
+    await expect(chat(messages, { model: 'glm-4.7-flash' })).rejects.toMatchObject({
+      status: 401,
+      message: 'Chave de acesso ausente ou inválida (HTTP 401 Unauthorized).'
+    })
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[glm] HTTP 401',
+      '{"error":{"message":"invalid api key"}}'
+    )
+
+    consoleSpy.mockRestore()
   })
 })

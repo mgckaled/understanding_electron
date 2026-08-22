@@ -30,6 +30,20 @@ describe('errorMessage', () => {
     expect(errorMessage(error)).toBe('Binder Error: column "x" not found')
   })
 
+  it('returns the message verbatim for an upstream error — already classified main-side by describeUpstreamError', () => {
+    const error: AppError = {
+      kind: 'upstream',
+      service: 'glm',
+      status: 429,
+      message:
+        'Limite de uso do serviço atingido (HTTP 429 Too Many Requests) — tente novamente em instantes.'
+    }
+
+    expect(errorMessage(error)).toBe(
+      'Limite de uso do serviço atingido (HTTP 429 Too Many Requests) — tente novamente em instantes.'
+    )
+  })
+
   it('falls back to a generic message for a kind this build does not know', () => {
     const error = { kind: 'future-kind' } as unknown as AppError
 

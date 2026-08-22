@@ -1,6 +1,7 @@
 import type { AiModel } from '@shared/ipc'
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
+import { describeUpstreamError } from '@core/ai/upstreamError'
 import {
   normalizeOllamaModel,
   normalizeOllamaRunning,
@@ -15,6 +16,15 @@ const OLLAMA_HOST = 'http://127.0.0.1:11434'
 
 /** For display only (the footer's popover) — never re-parsed back into a URL. */
 export const ollamaDisplayHost = OLLAMA_HOST.replace(/^https?:\/\//, '')
+
+// Raw, untreated — the terminal running `pnpm dev` is the only place the
+// actual Ollama error body is visible; the UI only gets the short
+// classification from describeUpstreamError.
+async function upstreamErrorFor(response: Response): Promise<UpstreamError> {
+  const body = await response.text().catch(() => '')
+  console.error(`[ollama] HTTP ${response.status}`, body)
+  return new UpstreamError(response.status, describeUpstreamError(response.status, body))
+}
 
 // One line of the /api/chat stream. The chat endpoint carries text under
 // message.content (unlike /api/generate, which uses `response`); an error mid
@@ -33,7 +43,7 @@ type OllamaChatLine = {
 // enumerating models or touching disk (D9.3 — short timeout for the probe).
 export const ollamaProbe: ProbeFn = async ({ signal }) => {
   const response = await fetch(`${OLLAMA_HOST}/api/version`, { signal })
-  if (!response.ok) throw new UpstreamError(response.status, `HTTP ${response.status}`)
+  if (!response.ok) throw await upstreamErrorFor(response)
   const body = (await response.json()) as { version?: string }
   return body.version ?? 'unknown'
 }
@@ -43,7 +53,7 @@ export const ollamaProbe: ProbeFn = async ({ signal }) => {
 // to classify, exactly as ollamaProbe does.
 async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
   const response = await fetch(`${OLLAMA_HOST}${path}`, init)
-  if (!response.ok) throw new UpstreamError(response.status, `HTTP ${response.status}`)
+  if (!response.ok) throw await upstreamErrorFor(response)
   return (await response.json()) as T
 }
 
@@ -123,7 +133,7 @@ export const ollamaChat: ChatFn = async (
   })
 
   if (!response.ok || response.body === null) {
-    throw new UpstreamError(response.status, `HTTP ${response.status}`)
+    throw await upstreamErrorFor(response)
   }
 
   const reader = response.body.getReader()
@@ -146,7 +156,10 @@ export const ollamaChat: ChatFn = async (
         if (line === '') continue
 
         const parsed = JSON.parse(line) as OllamaChatLine
-        if (parsed.error !== undefined) throw new UpstreamError(null, parsed.error)
+        if (parsed.error !== undefined) {
+          console.error('[ollama] mid-stream error', parsed.error)
+          throw new UpstreamError(null, parsed.error)
+        }
 
         const piece = parsed.message?.content ?? ''
         if (piece !== '') {

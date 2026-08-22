@@ -20,7 +20,12 @@ function stubChatStream(
       controller.close()
     }
   })
-  const fetchMock = vi.fn(async () => ({ ok: init?.ok ?? true, status: init?.status ?? 200, body }))
+  const fetchMock = vi.fn(async () => ({
+    ok: init?.ok ?? true,
+    status: init?.status ?? 200,
+    body,
+    text: async () => ''
+  }))
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
@@ -98,7 +103,7 @@ describe('ollamaModels', () => {
   it('throws UpstreamError when the daemon answers non-2xx', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: false, status: 503 }))
+      vi.fn(async () => ({ ok: false, status: 503, text: async () => '' }))
     )
 
     await expect(ollamaModels({})).rejects.toBeInstanceOf(UpstreamError)
@@ -217,7 +222,7 @@ describe('ollamaProbe', () => {
   it('throws UpstreamError when the service answers non-ok', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) }))
+      vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}), text: async () => '' }))
     )
 
     await expect(ollamaProbe({})).rejects.toBeInstanceOf(UpstreamError)

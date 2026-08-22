@@ -1,6 +1,7 @@
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { GLM_MODELS } from '@core/ai/models'
+import { describeUpstreamError } from '@core/ai/upstreamError'
 
 // Confirmed via Context7 (docs.z.ai, N-1-B): OpenAI-compatible chat
 // completions, SSE streaming — corroborated by mill.tools running this same
@@ -48,7 +49,12 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
     })
 
     if (!response.ok || response.body === null) {
-      throw new UpstreamError(response.status, `HTTP ${response.status}`)
+      const body = await response.text().catch(() => '')
+      // Raw, untreated — the terminal running `pnpm dev` is the only place
+      // the actual GLM error body is visible; the UI only gets the short
+      // classification below.
+      console.error(`[glm] HTTP ${response.status}`, body)
+      throw new UpstreamError(response.status, describeUpstreamError(response.status, body))
     }
 
     const reader = response.body.getReader()
