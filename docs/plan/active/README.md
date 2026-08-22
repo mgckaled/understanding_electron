@@ -78,7 +78,7 @@ Nasceu da [virada de ago/2026](../../HISTORY.md), que fez do chat a porta de ent
 
 ## Fora do arco, ainda em `active/`
 
-- [**09 — camada de IA e ML**](09-camada-de-ia.md). Continua sendo o **dono das decisões D9.1–D9.6**. A fatia 1 (chat local) está implementada; as fatias 2 e 4 foram absorvidas pelo arco (planos 19 e 16/18); restam as fatias 3 (nuvem opt-in e segredos), 5 (RAG) e 6 (ML item a item), todas depois do 20. A **fatia 5 ganhou escopo** com a entrada de documento: além de cartões e receitas, indexa documento acima de ~8k tokens e a descrição de imagem produzida no anexo — mas só por essa razão, porque abaixo desse teto indexar **perde** para mandar o documento inteiro ([`HISTORY.md`](../../HISTORY.md) § RAG entra por capacidade).
+- [**09 — camada de IA e ML**](09-camada-de-ia.md). Continua sendo o **dono das decisões D9.1–D9.6**. A fatia 1 (chat local) está implementada; as fatias 2, 3 e 4 foram absorvidas pelo arco (planos 19, N-1 e 16/18) — a fatia 3 (nuvem opt-in e segredos) virou a trilha **N**, trazida para rodar **antes** do 19 (o `ModelPicker` do F-2 já reserva o slot "Locais/Nuvem" desabilitado na UI real, ver [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência)); restam as fatias 5 (RAG) e 6 (ML item a item), depois do arco. A **fatia 5 ganhou escopo** com a entrada de documento: além de cartões e receitas, indexa documento acima de ~8k tokens e a descrição de imagem produzida no anexo — mas só por essa razão, porque abaixo desse teto indexar **perde** para mandar o documento inteiro ([`HISTORY.md`](../../HISTORY.md) § RAG entra por capacidade).
 
 ---
 

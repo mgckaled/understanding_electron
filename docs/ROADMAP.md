@@ -8,78 +8,53 @@ O que ainda falta. Documento **vivo**: item concluído sai daqui e vira entrada 
 
 ## 1. A sequência
 
-O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md):
+O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — como uma lista única, porque é a única forma que mostra o entrelaçamento das trilhas transversais (DS, R, F, e agora E e N) sem duplicar as tabelas por trilha que [`plan/active/README.md`](plan/active/README.md) já é dono.
 
-```
-   fundação — 8 fases                plan/implemented/                concluída (ago/2026)
-   cor e markdown                    plan/implemented/10, 11          concluída (ago/2026)
-   0  revisão de escopo              ESCOPO.md · HISTORY.md           concluída (ago/2026)
-   12 realce de sintaxe              plan/implemented/12-...          concluída (ago/2026)
-   13 casca conversacional           plan/implemented/13-...          concluída (ago/2026)
-   0  revisão de escopo: documento    ESCOPO.md · HISTORY.md           concluída (ago/2026)
-   14 persistência das conversas      plan/implemented/14-...          concluída (ago/2026)
-   15 orçamento de contexto e modelo   plan/implemented/15-...          concluída (ago/2026)
-   ── trilha DS, transversal ao arco ──────────────────────────────────────────────
-   DS-1 fundação Tailwind v4          plan/implemented/DS-1-...        concluída (ago/2026)
-   DS-2 migração da casca e features   plan/implemented/DS-2-...        concluída (ago/2026)
-   DS-3 a interface chega ao alvo     plan/implemented/DS-3-...        concluída (ago/2026)
-   ── trilha R (refatoração), transversal ─────────────────────────────────────────
-   R-1 comentários e TSDoc            plan/implemented/R-1-...         concluída (ago/2026)
-   R-2 documentação técnica/histórica plan/implemented/R-2-...         concluída (ago/2026)
-   ── segunda rodada de handoff, transversal ──────────────────────────────────────
-   DS-4 popover, tema e acabamento final  plan/implemented/DS-4-...        concluída (ago/2026)
-   ── terceira rodada de handoff, transversal ─────────────────────────────────────
-   DS-5 ícones, fonte e acabamento      plan/implemented/DS-5-...        concluída (ago/2026)
-   ── trilha F (features avulsas), transversal ────────────────────────────────────
-   F-1  marca "pensando" no chat        plan/implemented/F-1-...         concluída (ago/2026)
-   ── o arco, retomado depois da DS-5 ─────────────────────────────────────────────
-   16 anexo: mecanismo + dataset        plan/implemented/16-...          concluída (ago/2026)
-   17 anexo: documento e imagem        plan/implemented/17-...          concluída (ago/2026)
-   0  revisão de escopo: identidade multiuso  ESCOPO.md · HISTORY.md    concluída (ago/2026)
-   ── trilha F, segundo item ───────────────────────────────────────────────────────
-   F-2  composer, modelo e sidebar      plan/implemented/F-2-...         concluída (ago/2026)
-   18-A motor e worker (DuckDB)       plan/implemented/18-A-...        concluída (ago/2026)
-   18-B canal e consulta             plan/implemented/18-B-...        concluída (ago/2026)
-   18-C pré-visualização automática  plan/implemented/18-C-...        concluída (ago/2026)
-   18-D perfil e cartão aninhado     plan/implemented/18-D-...        concluída (ago/2026)
-   18-E anexo de JSON e NDJSON       plan/implemented/18-E-...        concluída (ago/2026)
-   18-F anexo de Excel (.xlsx)       plan/implemented/18-F-...        concluída (ago/2026)
-▶  19 propor: consulta e passos
-   20 gráfico como artefato
-   ── extensão do arco (guia externo), ago/2026 ───────────────────────────────────
-   21 thinking mode                  reference/web-fetch_mcp_thinking.md
-   22 web fetch local                reference/web-fetch_mcp_thinking.md
-   23 MCP Context7                   reference/web-fetch_mcp_thinking.md
-   ── depois do arco ──────────────────────────────────────────────────────────────
-   receitas salvas · catálogo camada 2
-   observatório                      ← ver abaixo
-   nuvem, RAG e ML                   plan/active/09-camada-de-ia.md   fatias 3, 5 e 6
-```
+| # | Trilha/nº | Entrega em uma linha | Estado |
+|---|---|---|---|
+| 1 | fundação (8 fases) | scaffold electron-vite até base pronta | ✅ concluída |
+| 2 | 10, 11 | cor/contraste, markdown na resposta | ✅ concluída |
+| 3 | — | revisão de escopo (1ª) | ✅ concluída |
+| 4 | 12 | realce de sintaxe | ✅ concluída |
+| 5 | 13 | casca conversacional | ✅ concluída |
+| 6 | — | revisão de escopo: documento (2ª) | ✅ concluída |
+| 7 | 14 | persistência das conversas | ✅ concluída |
+| 8 | 15 | orçamento de contexto e modelo | ✅ concluída |
+| 9 | DS-1 | fundação Tailwind v4 | ✅ concluída |
+| 10 | DS-2 | migração da casca e features | ✅ concluída |
+| 11 | DS-3 | a interface chega ao alvo | ✅ concluída |
+| 12 | R-1 | comentários e TSDoc | ✅ concluída |
+| 13 | R-2 | documentação técnica/histórica | ✅ concluída |
+| 14 | DS-4 | popover, tema e acabamento final | ✅ concluída |
+| 15 | DS-5 | ícones, fonte e acabamento | ✅ concluída |
+| 16 | F-1 | marca "pensando" no chat | ✅ concluída |
+| 17 | 16 | anexo: mecanismo + dataset | ✅ concluída |
+| 18 | 17 | anexo: documento e imagem | ✅ concluída |
+| 19 | — | revisão de escopo: identidade multiuso (3ª) | ✅ concluída |
+| 20 | F-2 | composer, modelo e sidebar | ✅ concluída |
+| 21 | 18-A..18-F | motor DuckDB completo (CSV/JSON/Excel) | ✅ concluída |
+| 22 | — | revisão de escopo: exportação e nuvem (4ª) | ▶ em andamento |
+| 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | planejado |
+| 24 | 19 | propor: consulta e passos | planejado |
+| 25 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
+| 26 | 20 | gráfico como artefato | planejado |
+| 27 | **E-2** | motor `.pptx` (aproveita imagens de gráfico do 20) | planejado |
+| 28 | 21 | raciocínio visível — local **e** nuvem numa tacada só, depende do N-1 | planejado |
+| 29 | 22 | busca web | planejado |
+| 30 | 23 | MCP Context7 | planejado |
+| — | — | receitas salvas · catálogo camada 2 · observatório · RAG (fatia 5 do 09) · ML (fatia 6 do 09) | depois do arco |
 
-**O 18-E rodou em ago/2026 logo depois do 18-D, adiantado da posição "depois do arco" que esta tabela listava antes** — o próprio plano se descreve como "quinto sub-plano do 18", dependente de 18-A a 18-D, e a leitura anterior ("JSON/NDJSON" só depois do 19/20/21-23) tinha ficado desatualizada assim que o plano foi escrito com essa dependência explícita. Anexar `.json`/`.ndjson`/`.jsonl` **plano** passa pelo mesmo caminho que hoje só aceita CSV/TSV/TXT — mesmo `DatasetCard`, mesma pré-visualização, mesma consulta, mesmo perfil, confirmado ao vivo que nenhum dos quatro componentes mudou uma linha. Ver [`HISTORY.md`](HISTORY.md) § Plano 18-E.
+**Por que 21–23 (e agora E-1/E-2/N-1) não pegam número fora da ordem em que foram escritos.** O 16 preenchia um vão dentro do intervalo já reservado (13–20); os planos 21–23 vêm de um guia externo ([`web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md)) e dependem só da fatia 1 do [plano 09](plan/active/09-camada-de-ia.md) (chat local, já concluída) — nunca do 17, do 18 ou do 19. Entram **depois** do 20 na numeração, não entre o 16 e o 17: renumerar custaria a mesma reescrita de tabela e referências cruzadas que a trilha DS recusou pagar (`plano 21-23` já é citado em fonte, no `AttachButton` do F-2). A trilha **E** (Exportação) e a trilha **N** (Nuvem) seguem a mesma regra — letra própria em vez de renumerar 19/20/21-23, e cada plano nasce como arquivo **na sessão em que for o próximo a ser executado**, nunca antes.
 
-**O 18-F rodou em ago/2026 logo depois do 18-E, na posição que a tabela já reservava — sexto e último sub-plano do arco 18, e o mais arriscado dos seis.** `extensionPaths` (`core/duckdb/config.ts`, vazio desde o 18-A) recebeu sua primeira entrada real: a extensão `excel` do DuckDB, vendorizada em `resources/duckdb-extensions/` e carregada por `LOAD` de caminho local — o gatilho que a D18A.3 tinha nomeado seis sub-planos antes. Anexar `.xlsx` passa pelo mesmo caminho que CSV/JSON/NDJSON — mesmo `DatasetCard`, mesma pré-visualização, mesma consulta, mesmo perfil — com um terceiro ramo em `AttachButton.tsx` só para o rótulo "Formato: Excel". **O arco 18 (18-A a 18-F) fecha aqui**: os formatos que `ESCOPO.md` lista como dado tabular (CSV, JSON/NDJSON, Excel) mais a base do motor estão implementados; Parquet segue fora, sem demanda real. Ver [`HISTORY.md`](HISTORY.md) § Plano 18-F.
+**A sequência foi refeita pela [virada de ago/2026](HISTORY.md)**, que tornou o chat a porta de entrada do aplicativo, e outra vez pela 4ª revisão de escopo (ago/2026). Três consequências que não se leem na tabela:
 
-**A trilha DS entrou em ago/2026 e rodou antes do 16**, com numeração própria em vez de inserida no arco — o porquê, e o custo medido de renumerar um plano já escrito, são de [`plan/active/README.md`](plan/active/README.md#a-trilha-de-design-system-ds-n). Executou primeiro por um motivo de custo: cada tela nova encarece a migração, e o 16 trouxe a pré-visualização de anexo e o cartão de dados. **O clipe em si, a DS-5 já tinha posto** — para abrir um dataset; o 16 trocou o que ele abre, sem duplicar o ícone ([`HISTORY.md`](HISTORY.md) § Plano 16).
+- **A camada de IA deixou de ser a última etapa e virou a interface.** O [plano 09](plan/active/09-camada-de-ia.md) segue vivo como dono das decisões D9.1–D9.6, mas suas fatias foram absorvidas pelo arco: a fatia 2 (NL→passo) é o plano 19; a fatia 4 (cartão de dados) se divide entre os planos 16 e 18; a **fatia 3 (nuvem opt-in e segredos) é agora a trilha N**, adiantada da posição "depois do arco" que ocupava antes — o gatilho foi o `ModelPicker` (F-2) já ter o slot "Locais/Nuvem" reservado e desabilitado na UI real. Só as fatias 5 (RAG) e 6 (ML) continuam no fim da fila.
+- **A ordem antiga colocava a camada de dados antes de tudo; agora ela vem no meio.** Não é adiamento gratuito: os planos 13–17 constroem a casca, a persistência e o anexo, e o anexo já produz um cartão útil com o `dataset:scan` que a [fase 06](plan/implemented/06-primeira-feature.md) entregou. O DuckDB entra para transformar esse cartão raso em perfil real — e chega com consumidor pronto, em vez de esperar por um.
+- **Exportar a resposta do modelo como arquivo entrou no escopo sem contradizer o veto a exportar o documento anexado** — são objetos diferentes, ver [`ESCOPO.md § Exportação da resposta como arquivo`](ESCOPO.md#exportação-da-resposta-como-arquivo). `.pptx` fica separado (E-2, depois do gráfico) por ser mais trabalhoso — esquema de deck e catálogo de layout, não só biblioteca.
 
-**A trilha R (refatoração) entrou em ago/2026**, também com numeração própria e transversal ao arco: aplica um padrão já decidido ao que a precede, sem tocar comportamento — código no caso do [`R-1`](plan/implemented/R-1-comentarios-e-tsdoc.md), que leva a skill [`comments`](../.claude/skills/comments/SKILL.md) ao `src/` inteiro e fecha, com um guard, o pior sintoma de reincidência; documentação no caso do [`R-2`](plan/implemented/R-2-documentacao-tecnica-e-historica.md), que sincroniza `README.md`/`docs/README.md`/quatro skills com o estado real do projeto e comprime+arquiva `HISTORY.md` por trilha fechada.
-
-**A trilha F (features avulsas) entrou em ago/2026**, também com numeração própria e transversal ao arco — mas por um motivo diferente de DS e R: nem envelope (DS nunca constrói feature) nem refatoração (R garante zero mudança de comportamento) cobrem uma feature nova, pequena, local, que não pertence à sequência de dados/IA. O [`F-1`](plan/implemented/F-1-marca-pensando.md) — o monograma do crivo animando enquanto o modelo responde — é o primeiro; nasceu de um guia de ferramenta externa, fora do arco por natureza, não por adiamento. **O [`F-2`](plan/implemented/F-2-composer-modelo-sidebar.md) é o segundo** — acabamento do popover de anexo (seção Ferramentas, item Código), do seletor de modelo (cards com sigla+ícone de capability, separador Locais/Nuvem) e do controle de contexto (slider no lugar do `<input type="number">`), mais o rail retraído da sidebar com 4 botões funcionais. Dois primitivos novos (`Switch`, `Slider`), nenhum canal IPC.
-
-**O arco ganhou um plano em ago/2026**, com a [entrada de escopo de documento e imagem](HISTORY.md). O 16 construiu o **mecanismo** de anexo de forma genérica — o clipe no composer, `userData/attachments/<hash>`, as variantes de `MessagePart` — com o dataset como seu primeiro consumidor; o 17 acrescentou os extratores de documento e imagem sobre esse mesmo mecanismo, já exercitado. A ordem importava por um motivo concreto: mecanismo de anexo desenhado sabendo que só existe dataset nasceria com forma de dataset, e o 17 o reescreveria. ✅ **Concluído em ago/2026** — os três tipos de anexo (dataset, documento, imagem) coexistem numa mesma conversa, com o gate de `vision` e a rasterização SVG/WebP verificados ao vivo. Ver [`HISTORY.md`](HISTORY.md) § Plano 17.
-
-**O arco ganhou mais três planos em ago/2026, por um caminho diferente do 16.** O 16 preenchia um vão dentro do intervalo já reservado (13–20); os planos 21–23 vêm de um guia externo ([`web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md)) propondo busca web, MCP (Context7) e modo de raciocínio para o chat — capacidades do [`ESCOPO`](ESCOPO.md#ferramentas-do-chat) que dependem só da fatia 1 do [plano 09](plan/active/09-camada-de-ia.md) (chat local, já concluída), nunca do 17, do 18 ou do 19. Entram **depois** do 20, não entre o 16 e o 17: renumerar para abrir espaço custaria a mesma reescrita de tabela e referências cruzadas que a trilha DS recusou pagar. Cada um ganha plano próprio **na sessão em que for o próximo a ser executado** — mesma convenção do 17–20.
-
-**O ESCOPO ganhou uma terceira revisão em ago/2026, sem plano novo no arco.** O app já não cabia na moldura "bancada de dados, com ferramentas de chat auxiliares" — o anexo de documento e imagem (16–17) e as três ferramentas propostas para 21–23 tinham peso de pilar, não de acessório, e fingir o contrário confundia o que é fronteira do que é rótulo desatualizado. Entrada completa, com o critério que substitui "não é um chat genérico": [`HISTORY`](HISTORY.md) § revisão de escopo: identidade multiuso.
+Cada etapa depende da anterior por razão real, não por ordem arbitrária — as dependências completas estão nos documentos linkados. O arco 13–23 tem índice próprio em [`plan/active/README.md`](plan/active/README.md); a tabela ali cobre hoje até o 20, e os planos novos (N-1, E-1, E-2) entram nela quando cada um ganhar arquivo próprio.
 
 **Observatório** — ideia portada do mill.tools, sem portar o que ele observa. Um lugar onde o app **se observa**: read-only, local, com um canto que roda avaliação. O que faz valer aqui é a [falha silenciosa](HISTORY.md) do SQL gerado — a verificação pós-execução avisa caso a caso, mas só uma taxa (*"8 de 30 propostas produziram coluna inteiramente nula"*) diz se o cartão de dados e o prompt estão funcionando. Junto dela, o que este projeto já sabe que precisa medir: tokens/s de prefill contra geração por modelo, e o que o SQLite e os anexos ocupam em `userData`. Entra depois do plano 19, que é quem produz o que há para observar — **exceto o primeiro medidor, que se antecipou por necessidade**: o que o `/api/ps` reporta (modelo residente, tamanho, tempo até descarregar) saiu do plano 17 e já está entregue (`ai:loaded`/`ai:unload`), antecipado porque anexo de imagem torna a gerência de modelo carregado um problema de RAM, não de curiosidade.
-
-Cada etapa depende da anterior por razão real, não por ordem arbitrária. As dependências estão nos documentos linkados, e o arco 13–23 tem índice próprio em [`plan/active/README.md`](plan/active/README.md) — a tabela ali cobre hoje até o 20; os planos 21–23 entram nela quando cada um ganhar arquivo próprio.
-
-**A sequência foi refeita pela [virada de ago/2026](HISTORY.md)**, que tornou o chat a porta de entrada do aplicativo. Duas consequências que não se leem no diagrama:
-
-- **A camada de IA deixou de ser a última etapa e virou a interface.** O [plano 09](plan/active/09-camada-de-ia.md) segue vivo, mas suas fatias foram absorvidas pelo arco: a fatia 2 (NL→passo) é o plano 19, agora com um segundo verbo ao lado; a fatia 4 (cartão de dados) se divide entre os planos 16 e 18. Só as fatias 3 (nuvem), 5 (RAG) e 6 (ML) continuam no fim da fila — a **5 ganhou escopo** com a entrada de documento: além de cartões e receitas, ela indexa documento grande e a descrição de imagem, pelos motivos da [decisão sobre RAG](HISTORY.md). O documento continua sendo o dono das decisões D9.1–D9.6.
-- **A ordem antiga colocava a camada de dados antes de tudo; agora ela vem no meio.** Não é adiamento gratuito: os planos 13–17 constroem a casca, a persistência e o anexo, e o anexo já produz um cartão útil com o `dataset:scan` que a [fase 06](plan/implemented/06-primeira-feature.md) entregou. O DuckDB entra para transformar esse cartão raso em perfil real — e chega com consumidor pronto, em vez de esperar por um.
 
 ---
 

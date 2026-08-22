@@ -117,6 +117,7 @@ Uma mensagem não é só texto em markdown. Ela carrega **artefatos** — blocos
 | proposta de passos | pedido que virou tratamento | executar · salvar como receita |
 | resultado | execução de uma proposta | plotar |
 | gráfico | um resultado agregado | — |
+| **exportação** | resposta do modelo, sob pedido explícito | baixar · salvar em disco |
 
 Isso substitui as abas fixas de uma bancada tradicional: o que seria "aba de pré-visualização" é um bloco preso à mensagem em que o arquivo foi anexado, e some da vista junto com ela.
 
@@ -326,6 +327,27 @@ Isso não é gratuito, e as três consequências ficam registradas agora:
 
 ---
 
+## Exportação da resposta como arquivo
+
+Diferente do documento **anexado** — que só entra como contexto e nunca produz saída (ver [Duas classes de arquivo](#duas-classes-de-arquivo-e-a-linha-entre-elas)) —, a **resposta do modelo**, sob pedido explícito do usuário, pode virar um arquivo novo. São objetos diferentes: um é o material que o usuário trouxe para dentro da conversa; o outro é o que a conversa produziu. Confundir os dois foi o erro da terceira revisão de escopo que esta seção corrige.
+
+**Por que isto é pilar, não produto novo.** O teste da seção acima já admite *"dado tratado e exportado"* como artefato que sobrevive fora da conversa sem precisar de estado próprio — mesma categoria de um `.parquet` exportado pelo verbo *tratar*. Um `.docx` salvo no disco do usuário não pede tela de gerência dentro do app.
+
+**Por que o veto antigo não alcança isto.** A recusa a "exportar documento" (revisão anterior) tinha um motivo específico, registrado no [`ROADMAP § 2`](ROADMAP.md): *"a trava não é o modelo, é escrita em caminho arbitrário escolhida por ele"*. Aqui **duas** decisões são exclusivas do usuário, nunca do modelo: o **caminho**, sempre via `dialog.showSaveDialog`, e o **formato** (`.md`/`.pdf`/`.docx`/`.xml`), escolhido no momento em que o usuário pede a exportação — nunca uma sugestão do modelo que se concretiza sozinha. O modelo produz o conteúdo da resposta; exportar, e em qual formato, é ação do usuário, do mesmo jeito que executar uma proposta de consulta já é. O motivo registrado já está satisfeito por construção, então não é uma exceção ao veto: é fora do alcance dele.
+
+| Formato | Como se gera | Observação |
+|---|---|---|
+| `.md` | texto que o modelo já produziu, salvo direto | sem biblioteca — não é motor, é `writeFile` |
+| `.xml` | idem, texto estruturado | sem biblioteca |
+| `.pdf` | `pdf-lib` | desenha texto/posição; sem paginação automática de prosa longa |
+| `.docx` | `docx` (dolanmiu) | API declarativa por parágrafo, Node puro, sem módulo nativo |
+
+`.pptx` fica fora **desta** entrega — layout em slide pede um esquema de deck e uma decisão própria sobre catálogo de template, tratada em plano separado. `.odp` e `.ppt` ficam fora do escopo, registrado abaixo.
+
+**Herda, não reinventa.** As regras de [Escrita e segurança do dado](#escrita-e-segurança-do-dado) que fazem sentido aqui se aplicam sem mudança: escrita atômica (arquivo temporário + rename) e o erro claro de arquivo aberto em outro programa (`WinError 32`). **Não herda** a confirmação de "o que muda" — não há versão anterior para comparar; é sempre arquivo novo, nunca sobrescrita.
+
+---
+
 ## Fora do escopo
 
 Registrado explicitamente para não ser confundido com "ainda não":
@@ -337,8 +359,9 @@ Registrado explicitamente para não ser confundido com "ainda não":
 - **Colaboração e multiusuário** — aplicativo de uma pessoa, uma máquina.
 - **Versionamento de dados** — sem histórico de versões do dataset.
 - **PDF escaneado e OCR** — PDF sem camada de texto é recusado, com o motivo dito na tela ("este PDF não tem texto selecionável"). Rasterizar e passar por visão custaria ~80 s **por página** e traria um módulo nativo (`@napi-rs/canvas`) para dentro do projeto. Recusar é mais honesto que entregar um anexo vazio, que cai direto na falha silenciosa descrita acima.
-- **`.docx`, `.pptx` e o resto do escritório** — cada um é um parser e um mundo de casos próprios, como o Excel já demonstra na seção de formatos.
-- **Editar, anotar ou exportar documento — inclusive código colado ou anexado** — decorre do [teste que separa pilar de produto novo](#o-teste-que-separa-pilar-de-produto-novo): documento entra como contexto e não sai como arquivo. **Criar ou reescrever arquivo de código é a mesma pergunta, com um agravante:** o caminho de saída seria escolhido pelo modelo, não pelo usuário num diálogo de salvar — decisão de segurança própria, gatilho em [`ROADMAP § 2`](ROADMAP.md).
+- **Ler `.docx`, `.pptx` e o resto do escritório como anexo** — cada um é um parser e um mundo de casos próprios, como o Excel já demonstra na seção de formatos. (Gerar `.docx` **como saída** da resposta do modelo é outra pergunta, sem parsing nenhum envolvido — ver [Exportação da resposta como arquivo](#exportação-da-resposta-como-arquivo).)
+- **Gerar `.pptx` nesta entrega, `.odp` e `.ppt` em qualquer entrega** — `.pptx` tem plano próprio, depois do arco de gráficos, por ser mais trabalhoso (esquema de deck, catálogo de layout). `.odp` não tem biblioteca JS madura para gerar (verificado). `.ppt` é formato binário anterior a 2007; como o `.doc`, não vale a pena gerar nativo. Converter via LibreOffice foi avaliado e descartado: as bibliotecas existentes (`libreoffice-convert` e afins) são só invólucros que chamam o binário `soffice` — exigem LibreOffice **instalado no sistema do usuário**, o que contraria a ferramenta local autocontida.
+- **Editar, anotar ou exportar o documento anexado — inclusive código colado ou anexado** — decorre do [teste que separa pilar de produto novo](#o-teste-que-separa-pilar-de-produto-novo): o documento que entra como contexto não sai como arquivo. Isto é diferente de exportar a **resposta do modelo** como arquivo novo, que tem seção própria acima — o objeto que sai não é o que entrou. **Criar ou reescrever arquivo de código é a mesma pergunta que o documento anexado, com um agravante:** o caminho de saída seria escolhido pelo modelo, não pelo usuário num diálogo de salvar — decisão de segurança própria, gatilho em [`ROADMAP § 2`](ROADMAP.md).
 - **Índice vetorial de imagens** — busca por semelhança visual não é pergunta que este aplicativo tenha. O que serve é buscar pela **descrição** que o modelo de visão já produziu no anexo, e isso é texto, indexado pelo embedder que já existe. Ver [`HISTORY.md`](HISTORY.md) para o que foi medido.
 
 ### Onde passa a linha do gráfico
