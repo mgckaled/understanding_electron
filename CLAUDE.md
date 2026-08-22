@@ -71,6 +71,7 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 | electron-vite | 5.0.0 | build tool específica para Electron |
 | Vite | 7.x | **não subir para 8** — ver abaixo |
 | React | 19.2.8 | apenas no renderer |
+| Tailwind CSS | ^4.3.3 | sobre `tokens.css`, sem substituí-los — trilha DS, ago/2026 |
 | TanStack Query | 5.101.4 | cache de servidor no renderer; estado de cliente segue em Context — ver [`HISTORY.md`](docs/HISTORY.md) |
 | TypeScript | 5.9.3 | migração para 6 planejada, ver abaixo |
 | electron-builder | 26.x | empacotamento e instaladores |
@@ -89,14 +90,16 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 
 ```bash
 pnpm dev          # desenvolvimento com HMR
-pnpm typecheck    # checa tipos nos dois ambientes (node + web)
+pnpm typecheck    # checa tipos nos três ambientes (node + web + e2e)
 pnpm lint         # ESLint
 pnpm format       # Prettier
+pnpm test         # testes dos níveis 1 a 3
+pnpm check:fast   # o portão: tipos + lint + testes rápidos (o que roda antes de cada commit)
 pnpm build        # typecheck + build de produção
 pnpm build:win    # instalador NSIS para Windows
 ```
 
-`pnpm typecheck` roda **dois** projetos TypeScript separados (`tsconfig.node.json` e `tsconfig.web.json`) porque main/preload e renderer vivem em ambientes diferentes. Rodar só um dá falsa sensação de segurança.
+`pnpm typecheck` roda **três** projetos TypeScript separados (`tsconfig.node.json`, `tsconfig.web.json` e `tsconfig.e2e.json`) porque main/preload, renderer e os specs de ponta a ponta vivem em ambientes diferentes. Rodar só um dá falsa sensação de segurança.
 
 ---
 
@@ -192,7 +195,9 @@ Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha
 | Componente do renderer | 250 | 400 |
 | Hook | 80 | 120 |
 | `src/main/index.ts` | — | **100, sem exceção** |
-| `src/preload/index.ts` | — | **60, sem exceção** |
+| `src/preload/index.ts` | — | **100, sem exceção** |
+
+Contagem = linhas totais do arquivo, comentário e linha em branco inclusos (o que `wc -l` mede) — sem essa definição explícita o teto pode ser violado sem que ninguém note, como aconteceu com o `preload/index.ts` antes de R-3.
 
 As duas últimas linhas são a decisão de manter main e preload finos, tornada mensurável: main que cresce vira lugar de lógica; preload que cresce, lugar de lógica no pior sítio para testá-la. **Divide-se ao tocar** — não varra a base atrás de arquivo grande; divida quando for estendê-lo. E coesão pesa abaixo do teto: componente que orquestra duas features, ou handlers de domínios diferentes no mesmo arquivo, dividem mesmo curtos.
 
