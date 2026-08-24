@@ -85,6 +85,10 @@
     user-select: text;
   }
 
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-accent-text) 30%, transparent);
+  }
+
   img {
     display: block;
     max-width: 100%;

@@ -1,34 +1,21 @@
 /*
- * The utility layer, mapped onto tokens.css. Own file so that tokens.css stays
- * byte-identical and tokens.contrast.test.ts keeps proving it (DS1.1).
+ * The utility layer, mapped onto tokens.css. Rationale for every block below
+ * lives in the design-system skill (.claude/skills/design-system/SKILL.md).
  *
- * ⚠️ tokens.css must stay OUTSIDE every @layer (DS1.5). The self-referencing
- * declarations below are cycles that only lose the cascade because an unlayered
- * declaration beats a layered one; wrapping tokens.css in a @layer makes the
- * cycle reachable and every colour in the app disappears at once.
+ * ⚠️ tokens.css must stay OUTSIDE every @layer — wrap it and every colour in
+ * the app disappears at once (DS1.5).
  */
 
 @import 'tailwindcss';
 
-/* `inline` because every value is a var() into tokens.css: the utility has to
-   carry the reference itself, so the light theme's @media block — which
-   redefines the semantic layer, never the theme — still reaches it. */
 @theme inline {
-  /* Defaults off. A surviving `bg-slate-800` or a 4px-multiple `p-4` would be a
-     second place deciding colour and density, which is the half-migration the
-     plan exists to avoid. */
   --color-*: initial;
   --spacing-*: initial;
   --text-*: initial;
   --radius-*: initial;
-  /* Measured, because the guess goes the other way: this does NOT take
-     --font-weight-* with it, so font-bold survives. It kills font-sans and
-     font-serif, which would otherwise compete with --font-ui. */
   --font-*: initial;
 
-  /* Colour — the semantic layer only; primitives (--gray-N) stay unreachable
-     from a utility, as they are from a component. The solid fills are missing
-     on purpose: see @utility below. */
+  /* Colour */
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
   --color-surface-raised: var(--color-surface-raised);
@@ -45,8 +32,7 @@
   --color-warn-text: var(--color-warn-text);
   --color-ok-text: var(--color-ok-text);
 
-  /* Space — named, not the 4px multiplier, so p-6 is 16px. The desktop
-     calibration of phase 05 is the reason the scale exists at all. */
+  /* Space */
   --spacing-1: var(--space-1);
   --spacing-2: var(--space-2);
   --spacing-3: var(--space-3);
@@ -57,14 +43,13 @@
   --spacing-8: var(--space-8);
   --spacing-9: var(--space-9);
 
-  /* Radius — same name on both sides, the D1.5 case in its purest form. */
+  /* Radius */
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-full: var(--radius-full);
 
-  /* Type. --text-reading is the reading surface, off the t-shirt scale on
-     purpose — the comment on --font-size-reading in tokens.css says why. */
+  /* Type */
   --text-2xs: var(--font-size-2xs);
   --text-xs: var(--font-size-xs);
   --text-sm: var(--font-size-sm);
@@ -74,21 +59,11 @@
   --text-2xl: var(--font-size-2xl);
   --text-reading: var(--font-size-reading);
 
-  /* Family. `font-ui` is the chrome face the body already inherits; it exists
-     as a utility for the element that has to restate it (a form control does
-     not inherit font by itself). */
+  /* Family */
   --font-ui: var(--font-ui);
   --font-mono: var(--font-mono);
 }
 
-/*
- * The solid fills, and the whole point is what they are NOT. The --color-*
- * namespace is all-or-nothing: declaring --color-accent above would also mint
- * text-accent, which is literally the 2,96:1 bug phase 10 measured and killed
- * (D10.1). As a utility, only the fill exists — the wrong one is unwritable.
- *
- * Variants work here, so the Button's hover is hover:bg-accent-hover.
- */
 @utility bg-accent {
   background-color: var(--color-accent);
 }
@@ -109,14 +84,6 @@
   background-color: var(--color-ok);
 }
 
-/*
- * The Button's loading spinner. Its own name rather than Tailwind's animate-spin
- * because that one is locked to 1s and this project's is --duration-slow (320ms);
- * `duration-*` sets transition-duration, never animation-duration.
- *
- * The keyframes sit outside: @utility cannot hold an at-rule, and the brief
- * already lists keyframes among the things that stay in CSS.
- */
 @keyframes spinner {
   to {
     transform: rotate(360deg);
@@ -127,16 +94,6 @@
   animation: spinner var(--duration-slow) linear infinite;
 }
 
-/*
- * ThinkingMark's 14 dots (F-1). One shared keyframe, parameterised by
- * per-dot custom properties ThinkingMark.tsx sets inline — the pattern
- * Tailwind's own docs show for per-instance values on a shared utility.
- *
- * `thinking-dot` alone IS the rest position, and 0%/100% below match it
- * exactly on purpose: prefers-reduced-motion in base.css forces a single
- * 0.01ms iteration, which has to land here or a reduced-motion user sees
- * the mark frozen off-shape.
- */
 @utility thinking-dot {
   position: absolute;
   top: 50%;
@@ -150,6 +107,9 @@
     scale(1);
 }
 
+/* 0%/100% must match thinking-dot's rest position exactly — see the skill:
+   prefers-reduced-motion forces a single 0.01ms iteration onto this keyframe,
+   which lands wherever 0%/100% put it. */
 @keyframes dotThinking {
   0%,
   100% {
@@ -174,9 +134,6 @@
   }
 }
 
-/* Added and removed per dot, at that dot's own animationiteration boundary
-   (ThinkingMark.tsx) — never all 14 at once, since --thinking-dot-delay
-   staggers when each one actually wraps back to rest. */
 @utility animate-thinking-dot {
   animation: dotThinking var(--duration-thinking-cycle, 2400ms) ease-in-out infinite;
   animation-delay: var(--thinking-dot-delay);
