@@ -32,7 +32,7 @@ A superfície de leitura chegou com o chat e tomou, em silêncio, uma decisão d
 
 | | Densidade | Quem |
 |---|---|---|
-| **Chrome** | compacta — a escala de desktop da fase 05 (`--font-size-sm` é o corpo, 13px) | sidebar, nav, rodapé, cabeçalho da conversa, controles do composer, toolbar, modal |
+| **Chrome** | compacta — a escala de desktop da fase 05 (`--font-size-sm` é o corpo, 14px) | sidebar, nav, rodapé, cabeçalho da conversa, controles do composer, toolbar, modal |
 | **Leitura** | generosa — `--font-size-reading` (18px) | mensagem do usuário, resposta do assistente, artefatos, o texto que se digita no composer |
 
 O critério não é "é importante?", é **quanto tempo o olho fica ali**: chrome se escaneia, resposta de modelo se lê por um minuto seguido, e 13px cansa nessa duração.
@@ -148,7 +148,7 @@ Toda a narrativa de decisão que antes vivia espalhada em comentário dentro de 
 
 - **`::selection`** usa `color-mix(in oklab, var(--color-accent-text) 30%, transparent)` — cor da paleta em vez do default do SO, opção deliberada para consistência visual; funciona nos dois temas porque `--color-accent-text` já é redefinido no tema claro. Sem token novo. **Verificado ao vivo o contraste do texto selecionado nos dois temas** — `tokens.contrast.test.ts` só resolve pares de token escritos à mão, e a saída de um `color-mix()` não está nessa lista.
 - **Números tabulares (`tabular-nums`) são convenção, não regra global.** Superfície de dados (pré-visualização de dataset, resultado de consulta, qualquer coluna numérica) deveria usar a utilidade `tabular-nums` do próprio Tailwind (`font-variant-numeric: tabular-nums` — confirmado via Context7 contra a doc oficial: é uma declaração estática, sem `var()`, então não interage com nenhum dos resets `--font-*`/`--text-*: initial` acima). Não é regra do `body` porque número tabular em prosa corrida fica menos legível — a aplicação é por componente de dado, quando esse componente existir.
-- **Tokens fora de `@theme inline` — por que, e quais.** `--duration-*`, `--control-height-*`, `--sidebar-width*` e o canal `--thinking-*` são consumidos por referência direta a `var()` (`duration-(--duration-fast)`, `h-(--control-height-sm)`), não por nome mapeado — eles não têm consumidor no formato nomeado (`bg-surface`, `rounded-md`) que justificaria a entrada em `@theme inline`. Fora deles, dois tokens semânticos ficam de fora por ter um único consumidor fora do Tailwind: `--color-backdrop` (só `Dialog.module.css`, CSS Module) e `--syntax-*` (paleta importada como conjunto, D12.4). Nenhum dos dois precisa de exposição — confirmado nesta sessão comparando `tokens.css` inteiro contra `@theme inline`.
+- **Tokens fora de `@theme inline` — por que, e quais.** `--duration-*`, `--control-height-*`, `--table-row-height`, `--sidebar-width*` e o canal `--thinking-*` são consumidos por referência direta a `var()` (`duration-(--duration-fast)`, `h-(--control-height-sm)`), não por nome mapeado — eles não têm consumidor no formato nomeado (`bg-surface`, `rounded-md`) que justificaria a entrada em `@theme inline`. Fora deles, dois tokens semânticos ficam de fora por ter um único consumidor fora do Tailwind: `--color-backdrop` (só `Dialog.module.css`, CSS Module) e `--syntax-*` (paleta importada como conjunto, D12.4). Nenhum dos dois precisa de exposição — confirmado nesta sessão comparando `tokens.css` inteiro contra `@theme inline`.
 - **`:disabled` é decisão por componente, não regra global.** Cada componente trata o próprio estado desabilitado (`disabled:opacity-50`, `disabled:cursor-not-allowed` no `Button`) porque a intensidade do esmaecimento depende da superfície do controle. Não ganha `[disabled]` global em `base.css` sem decisão própria de design system — hoje são poucos consumidores para justificar utilidade compartilhada.
 
 ### Leve — estado atual, documentado por escrito (DS-6)
@@ -162,3 +162,44 @@ Decisões que já existiam no código, sem registro escrito até agora.
 - **`::backdrop` é por componente**, hoje só `Dialog.module.css`. Sem regra global de backdrop em `base.css`; se um segundo componente precisar, decide-se então se extrai algo compartilhado.
 - **Fills sólidos disponíveis:** `bg-accent`, `bg-accent-hover`, `bg-danger`, `bg-warn`, `bg-ok`. Não existe hover para `danger`/`warn`/`ok` porque `tokens.css` não declara `--color-danger-hover`/`--color-warn-hover`/`--color-ok-hover` — se um dia precisar, o token nasce primeiro, a utilidade depois.
 - **`ease-initial` é palavra-chave do Tailwind (`ease`), não token.** `tokens.css` não declara nenhum `--ease-*` hoje; `Button`, `Switch` e `Sidebar` usam a palavra-chave embutida do Tailwind diretamente. Se um dia entrar token de curva de easing, mapeia-se aqui.
+
+## Tokens — convenções e registros de ausência (DS-7)
+
+Origem: relatório externo (`notes/reports/r_tokens-css.md`), 21 itens avaliados contra o repositório real, `advisor` (Opus) como filtro de chanceler. Só duas correções sobreviveram como fato — nenhum item virou token novo: DS-7 não adiciona nada a `tokens.css`/`tailwind.css`, é consolidação de narrativa (que vivia em comentário em `tokens.css`, migrada para cá no mesmo espírito do DS-6) e correção de duas contagens que tinham envelhecido. Entrada em [`HISTORY.md`](../../../docs/HISTORY.md).
+
+### Hover e seleção já têm convenção — nenhum token de tint é necessário
+
+Hover de superfície **sobe um degrau na escada existente**, nunca tint: `bg-surface` → `hover:bg-surface-raised` (`ConversationList`, `AttachButton`), e o inverso onde o item já parte de `bg-surface-raised` (itens de popover sobre painel elevado). Seleção/estado ativo (`ConversationList`, a barra de acento da DS-3) é a composição de três coisas, não um fundo: borda esquerda de 2px na cor de acento (`border-l-2`, largura **sempre reservada**, mesmo inativa, para o texto não deslocar ao ativar) + o mesmo `bg-surface-raised` do hover + peso de fonte (`font-semibold`). Um token como `--color-accent-subtle` resolveria um problema que o app já não tem — e, se entrasse em `@theme inline` sob `--color-*`, cunharia `text-accent-subtle` de graça, o mesmo bug que a D10.1 matou (seção acima). Se um dia um estado selecionado precisar de tint de fundo em vez de borda (ex.: linha de tabela), decide-se então, contra este precedente — não é lacuna hoje.
+
+### Radius: default é `md`, `lg` é o contêiner primário (correção contra o uso real)
+
+A escala (`sm` 4px, `md` 6px, `lg` 10px, `full` circular) não segue "sm = controle, md = card". Medido: **`md` é o default** (botão, input, linha de lista, item de menu, e qualquer contêiner que não fez escolha própria); **`lg` é o contêiner de superfície primário** (`Panel`, `Dialog`, `Popover`, os três cartões de anexo, `Composer`, bolha de mensagem); **`sm` tem um único consumidor** (`CapabilityChip`) — não há lacuna para um `--radius-xs` de badge, o chip que existiria já usa `sm`; `full` é circular/pílula (`Switch`, `Slider`, dot de status, `Button` circle/spinner).
+
+### Ausências registradas — verificado, sem consumidor hoje
+
+- **`--control-height-xs`.** Botão só-ícone (`shape="circle"`/`"square"`) reusa `sm`/`md`/`lg` via `aspect-square` — não existe um quarto degrau menor.
+- **`--duration-instant` (0ms).** Troca de tema não anima nenhum token de cor por transição própria; nada precisa de uma duração explicitamente zero.
+- **Escala de `z-index`.** `Dialog` e `Popover` usam a camada superior nativa (`showModal()`, `popover="auto"`), acima de qualquer `z-index` de autor. Uma escala só se justifica se um overlay não nativo aparecer.
+- **Breakpoints e estilos de impressão.** App de layout fixo de desktop — zoom muda o viewport efetivo em px CSS, mas não deveria disparar breakpoint; o app não imprime.
+- **Espessura de borda.** Sempre 1px (`border`), com 2px como exceção pontual em dois lugares sem relação entre si — a barra de acento (`border-l-2`, ver acima) e o anel do spinner de `Button` (`border-2`). Hairline universal, não tokenizado em nenhum design system de referência.
+
+### Convenções registradas, sem token
+
+- **Alinhamento vertical de controle.** `display: flex; align-items: center` é o default de todo controle (`Button` BASE, linhas de lista, `ContextControl`/`ModelSelector`) — o espaço entre altura do controle e tamanho de fonte é sempre distribuído simetricamente por isso, nunca por padding assimétrico.
+- **`line-height`.** `1.5` para corpo/prosa (`body`, `.markdown`), `1.3` para heading de markdown — dois valores, ambos em CSS que não passa por utilitário Tailwind. Tokeniza-se se um terceiro valor ou um consumidor via utility aparecer.
+- **`--font-size-xl` (20px) é um degrau sem consumidor hoje**, não uma lacuna — faz parte da escala em camiseta desde a fase 05; fica reservado até que um componente o peça, sem comprometer para qual.
+- **Gatilho para nova linha em `tokens.contrast.test.ts`.** Cor de estado nova (inclusive um futuro `--syntax-*` extra) ganha linha na hora em que um componente a usa como texto ou fundo — o registro só sabe da intenção que alguém escreveu à mão, nunca descobre um par novo sozinho.
+
+### `--color-backdrop` e `--syntax-*`: por que ficam de fora do `@theme inline` (detalhe)
+
+`--color-backdrop` é a única camada com alpha do arquivo: carrega transparência de propósito (é a superfície de baixo, esmaecida — um valor opaco seria um segundo fundo, não um véu), tem um único consumidor (`Dialog.module.css`) e não entra em `tokens.contrast.test.ts` porque nada se desenha por cima dele para medir.
+
+`--syntax-*` é um conjunto importado de `@primer/primitives` (D12.4) que **não corresponde nome a nome** ao vocabulário do `highlight.js`: cada token do projeto nomeia o que colore na gramática do `highlight.js`, não como o Primer chama a cor — o `variable` do Primer colore `built_in`/`symbol` aqui, enquanto `.hljs-variable` cai no grupo `constant`; herdar o nome do Primer apontaria para a classe errada. No tema claro há uma divergência deliberada: o Primer funde `entityTag` em `constant` (ambos `#0550ae`), mas o `highlight.js` não funde `name`/`selector-tag` com `attr`/`selector-class` — seguir o Primer à risca pintaria `<div class="x">` com `div` e `class` na mesma cor no claro e cores diferentes no escuro. `--syntax-tag` usa o verde `stringRegexp` do próprio Primer em vez disso, mantendo o par distinto nos dois temas sem sair da paleta.
+
+### Layout da casca: um consumidor real hoje, não três
+
+O par `--sidebar-width`/`--sidebar-width-collapsed` tem hoje **um** consumidor: `Sidebar.tsx`, que lê os dois valores para a largura (expandida/recolhida) e conduz a própria transição (`transition-[width]`) no mesmo elemento — não há um segundo arquivo de transição nem persistência da largura. O plano 13 previu uma "largura persistida pelo plano 14"; o plano 14 decidiu contra isso (D14.7: não existe alça de redimensionar, persistir um booleano seria adiantar metade de uma feature). Se um recurso de redimensionar a sidebar chegar um dia, é ele quem reabre a pergunta.
+
+### `ThinkingMark`: canais de animação, não tokens de design
+
+As 8 variáveis `--thinking-*` (`--thinking-r`, `--thinking-rest-x` etc.) são exceção deliberada à regra "token é valor visual com nome semântico": existem porque o `@utility thinking-dot`/`dotThinking` de `tailwind.css` precisa de um nome para cada valor por ponto que `ThinkingMark.tsx` sobrescreve inline, e ficam em `tokens.css` com default inerte só para que um typo no par falhe alto (`guard.mjs` guarda 7) em vez de renderizar nada.
