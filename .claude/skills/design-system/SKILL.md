@@ -111,3 +111,25 @@ A trilha DS (DS-1 a DS-5, ago/2026) reconstruiu a camada de estilo dos component
 `Popover` (DS-4, passo 3) é o atributo nativo `popover="auto"` + CSS anchor positioning — mesmo raciocínio do `Dialog`, plataforma em vez de biblioteca. Controle 100% imperativo (`open` prop → `useEffect` → `showPopover()`/`hidePopover()`), nunca `popovertarget` declarativo; um listener de `toggle` sincroniza o fechamento nativo (clique fora, `Esc`) de volta ao `onClose`. **jsdom também não implementa a Popover API** — mesma família de shim do `Dialog` em `test/setup-renderer.ts` — e tem uma armadilha própria além da ausência: a folha de estilo default do próprio jsdom já tem `[popover]:not(:popover-open) { display:none }`, que o shim não alcança, então **todo** conteúdo de `Popover` computa `display:none` sob jsdom independente do estado real — consultas de nível 2 com `getByRole` precisam de `{ hidden: true }` (`docs/HISTORY.md` § jsdom esconde popover).
 
 `Field` clona o `children` (`cloneElement`) para injetar `id`/`aria-describedby` no controle real, o que o deixa agnóstico ao tipo de input. `Button` esconde o rótulo com `visibility: hidden` durante `loading` (não `color: transparent`) para o spinner herdar `currentColor` — a cor certa do `variant`, sem precisar de uma cor extra por variante.
+
+## Fundação de desktop: `base.css` e `tailwind.css` (DS-6)
+
+Toda a narrativa de decisão que antes vivia espalhada em comentário dentro de `base.css`/`tailwind.css` mora aqui — os dois arquivos citam esta seção como referência única, no topo do arquivo. Só um aviso sobrevive como linha solta no fonte: violá-lo é catastrófico (some toda cor do app) e não é algo que quem lê só o arquivo adivinharia — `tokens.css` nunca entra num `@layer` (DS1.5).
+
+### O que já existia, migrado para cá
+
+**`@layer base`** (DS-1 passo 2): o arquivo inteiro cai na mesma camada do preflight do Tailwind, perdendo de qualquer utilitário sem disputa de especificidade — `@layer utilities` vem depois, em `main.tsx`.
+
+**Duas correções ao preflight do Tailwind**, medidas na DS-1 passo 1, não adivinhadas: `* { margin: 0 }` leva o `dialog { margin: auto }` do navegador junto, e o modal cai em `0,0` em vez de centrado; `font: inherit` em controles troca `line-height: normal` por `1.5`, movendo cada rótulo 1px. `option`/`meter`/`::placeholder` revertem ao chrome nativo pelo mesmo motivo — padding do popup do dropdown, o `<meter>` que o orçamento de contexto desenha, cor de placeholder — adotar qualquer um deles é decisão da DS-3, não efeito colateral do reset.
+
+**`:focus-visible` só reage ao teclado**: desktop pesa mais nisso que a web — o anel nunca aparece em clique de mouse, só quando o teclado foi usado.
+
+### Alta — comportamento de desktop que faltava (DS-6)
+
+- **`color-scheme` por tema.** Sem ele, o Chromium renderiza controle nativo (`<meter>`, `<option>`, scrollbar de sistema) no esquema padrão — visível de imediato, porque são exatamente os três seletores que a seção acima já devolve ao chrome nativo. Casa com a mesma `@media (prefers-color-scheme)` que `tokens.css` já usa, então segue `nativeTheme.themeSource` sem tocar componente nenhum. Verificado ao vivo nos dois temas.
+- **`forced-colors: active`.** O Windows High Contrast Mode substitui cor de autor por cor de sistema (`ButtonText`/`Highlight` — cores de sistema CSS, não tokens do projeto); sem tratamento, controle interativo pode perder contorno visível. Verificado ao vivo com um tema de contraste do Windows ligado (Configurações → Acessibilidade → Temas de contraste).
+- **`overflow-wrap: break-word` no `body`.** Caminho de arquivo do Windows, hash, id de modelo: string longa sem espaço quebra em vez de estourar o container. Quem precisa de outro comportamento (bloco de código) já define o próprio `white-space` (`MarkdownMessage`).
+- **Autofill do Chromium neutralizado.** O `box-shadow` inset usa `--color-surface-sunken` — "interior de campo", o mesmo token que `ConversationList` e `CloudSecrets` já usam em `bg-surface-sunken` nos inputs reais (não `--color-surface`, que é a superfície ao redor, não o campo). `transition: background-color 9999s` é o truque consolidado para impedir a animação de fundo do autofill sem recorrer a `!important`.
+- **`caret-color: var(--color-accent-text)`.** Mesmo token do anel de foco e do link — o cursor de inserção herda a mesma intenção de destaque.
+- **`-webkit-user-drag: none` em `img`/`svg`/`video`.** Evita o drag fantasma do SO ao clicar-e-arrastar uma imagem sem querer. Sem `user-select: none` junto — já herda de `html`, no topo do arquivo.
+- **`img { display: block; max-width: 100% }`.** Imagem é `inline` por padrão, o que cria um espaço de baseline abaixo dela (o "gap fantasma"); `max-width` contém uma imagem maior que o container — relevante para o preview de anexo de imagem.

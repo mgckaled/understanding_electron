@@ -1,14 +1,10 @@
 /*
- * Desktop app behavior, not web page behavior. See docs/plan/implemented/05-design-tokens.md.
+ * Desktop app behavior, not web page behavior. Rationale for every rule below
+ * lives in the design-system skill (.claude/skills/design-system/SKILL.md).
  *
- * The whole file is @layer base (DS-1 step 2). Two consequences, and both are
- * the point: it now sits in the same layer as Tailwind's preflight and wins by
- * coming later in main.tsx, and every utility beats it without a specificity
- * contest, because @layer utilities comes after.
- *
- * ⚠️ tokens.css must NOT get the same treatment — it stays outside every layer,
- * and DS1.5 says why: the theme's self-referencing declarations only lose the
- * cascade because unlayered beats layered.
+ * ⚠️ tokens.css must stay OUTSIDE every @layer — wrap it and every colour in
+ * the app disappears at once (DS1.5). This file's own @layer base does not
+ * apply to it.
  */
 
 @layer base {
@@ -18,11 +14,16 @@
     box-sizing: border-box;
   }
 
-  /* Two corrections to Tailwind's preflight, which resets a web page where this
-     file resets a desktop app. Measured in DS-1 step 1, not guessed: its
-     `* { margin: 0 }` takes the browser's `dialog { margin: auto }` with it, so
-     the modal lands at 0,0 instead of centred, and its `font: inherit` on
-     controls swaps their `line-height: normal` for 1.5, moving every label 1px. */
+  :root {
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      color-scheme: light;
+    }
+  }
+
   dialog {
     margin: auto;
   }
@@ -34,10 +35,6 @@
     line-height: normal;
   }
 
-  /* Native control chrome belongs to the platform, not to a page reset: the
-     dropdown popup's padding, the <meter> the token budget draws, and the
-     placeholder colour preflight rewrites as `color-mix(currentcolor 50%)`.
-     Adopting any of them is a DS-3 decision, not a side effect. */
   option {
     padding: revert;
   }
@@ -68,6 +65,7 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-wrap: break-word;
   }
 
   #root {
@@ -85,6 +83,31 @@
 
   .selectable {
     user-select: text;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  img,
+  svg,
+  video {
+    -webkit-user-drag: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable='true'] {
+    caret-color: var(--color-accent-text);
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface-sunken) inset;
+    -webkit-text-fill-color: var(--color-text);
+    transition: background-color 9999s ease-in-out 0s;
   }
 
   /* Scrollbar */
@@ -109,8 +132,6 @@
     background-clip: content-box;
   }
 
-  /* Keyboard navigation matters more on desktop than on the web — the ring
-     should only appear when the keyboard was used, never on mouse click. */
   :focus {
     outline: none;
   }
@@ -118,6 +139,19 @@
   :focus-visible {
     outline: 2px solid var(--color-accent-text);
     outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    button,
+    input,
+    select,
+    textarea {
+      border: 1px solid ButtonText;
+    }
+
+    :focus-visible {
+      outline: 2px solid Highlight;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
