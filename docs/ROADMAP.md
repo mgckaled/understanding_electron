@@ -43,6 +43,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 29 | 21 | raciocínio visível — local **e** nuvem numa tacada só, depende do N-1 | planejado |
 | 30 | 22 | busca web | planejado |
 | 31 | 23 | MCP Context7 | planejado |
+| 32 | **R-4** | reconciliação factual das cinco skills técnicas + 2 ajustes no `CLAUDE.md` | ✅ concluída |
 | — | — | receitas salvas · catálogo camada 2 · observatório · RAG (fatia 5 do 09) · ML (fatia 6 do 09) | depois do arco |
 
 **Por que 21–23 (e agora E-1/E-2/N-1) não pegam número fora da ordem em que foram escritos.** O 16 preenchia um vão dentro do intervalo já reservado (13–20); os planos 21–23 vêm de um guia externo ([`web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md)) e dependem só da fatia 1 do [plano 09](plan/active/09-camada-de-ia.md) (chat local, já concluída) — nunca do 17, do 18 ou do 19. Entram **depois** do 20 na numeração, não entre o 16 e o 17: renumerar custaria a mesma reescrita de tabela e referências cruzadas que a trilha DS recusou pagar (`plano 21-23` já é citado em fonte, no `AttachButton` do F-2). A trilha **E** (Exportação) e a trilha **N** (Nuvem) seguem a mesma regra — letra própria em vez de renumerar 19/20/21-23, e cada plano nasce como arquivo **na sessão em que for o próximo a ser executado**, nunca antes.
@@ -140,6 +141,9 @@ A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resoluçã
 
 ### O pilar "Código" não tem plano numerado
 O `CLAUDE.md` já lista código ao lado de documento, imagem, busca web, MCP e raciocínio como pilar próprio — mas, diferente de Web Search/Thinking/MCP (planos 21-23 já reservados), código não tem lugar na sequência ainda. O [F-2](plan/implemented/F-2-composer-modelo-sidebar.md) deu a ele o primeiro item visível na tela — desabilitado, no menu de anexo — e conferiu que o mecanismo **não** está pronto por baixo, ao contrário do que a tabela de formatos do [`ESCOPO.md`](ESCOPO.md) sugere à primeira leitura: o extrator de `.txt` já sabe ler código-fonte, mas o diálogo do canal `document:pick` filtra só `txt/md/pdf`, então nenhum arquivo de código chega lá hoje. Registrado para o item desabilitado não ficar mudo — quando este pilar ganhar prioridade, decide-se então se é só abrir o filtro do diálogo ou se pede ficha própria (com realce de sintaxe, já que o plano 12 entrega a paleta).
+
+### Duas menções desatualizadas no `CLAUDE.md`, achadas pelo R-4 mas fora do escopo dele
+Seção "Instaladas na trilha do DuckDB", a linha do binário do Excel: "mantém fechado o gatilho do `shamefullyHoist` até o DuckDB" é framing histórico correto no contexto em que foi escrito (plano 17, antes do DuckDB chegar), mas lida isolada — depois que a tabela de segurança da mesma página passou a dizer "desligado" (R-4) — sugere ao leitor rápido que o gate ainda está aberto. Tabela de segurança, linha "Segredos": "**nenhum segredo existe ainda**" está desatualizada desde N-1-A/N-1-B (o segredo de nuvem do GLM já existe). Nenhuma das duas estava nos 22 itens que motivaram o R-4 (`notes/reports/r-skills.md`); registradas aqui para não expandir escopo em execução e para não se perderem.
 
 ---
 

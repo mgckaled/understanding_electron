@@ -1,11 +1,11 @@
 ---
 name: testing
-description: Estratégia de teste do crivo — a pirâmide de cinco níveis, por que handler de IPC precisa ser função exportada (não closure), a armadilha de importar 'electron' por valor em código testável, os limites do jsdom (não implementa `<dialog>`, nem tempo real), e a verificação real do que vai para dentro do `app.asar`. Use ao escrever um teste, decidir se algo precisa de mock, se um comportamento exige o app real, escrever um spec E2E, ou julgar se vale perseguir cobertura em renderer/main.
+description: Estratégia de teste do crivo — a pirâmide de cinco níveis, por que handler de IPC precisa ser função exportada (não closure), a armadilha de importar 'electron' por valor em código testável, os limites do jsdom (não implementa `<dialog>`, nem tempo real), e a verificação real do que vai para dentro do `app.asar`. Use ao escrever um teste, decidir se algo precisa de mock, se um comportamento exige o app real, escrever um spec E2E, ou julgar se vale perseguir cobertura em renderer/main. Não cobre política de Result vs exceção (skill ipc) nem regra de importação (skill architecture).
 ---
 
 # Testes — crivo
 
-> Escrito nas fases [04](../../../docs/plan/implemented/04-testes-rapidos.md) e [07](../../../docs/plan/implemented/07-e2e-e-empacotamento.md) do plano de fundação. Fonte completa, com o porquê de cada decisão: os dois documentos linkados acima.
+> Escrito nas fases [04](../../../docs/plan/implemented/04-testes-rapidos.md) e [07](../../../docs/plan/implemented/07-e2e-e-empacotamento.md) do plano de fundação. **Estendida na fase 08** (hook de edição chamando `check:fast`), **na fase 14** (o que persiste testado contra banco real, nunca fake) **e em R-2** (`check:fast` remedido). Fonte completa, com o porquê de cada decisão: os dois documentos linkados acima, mais [`docs/HISTORY.md`](../../../docs/HISTORY.md) para o que veio depois.
 
 ## A pirâmide tem cinco níveis, não três
 
@@ -25,7 +25,7 @@ Vitest usa `test.projects` **dentro de** `vitest.config.ts` (a API atual — `vi
 
 Handler de IPC como closure (`ipcMain.handle('x', async (_e, args) => { /* lógica aqui */ })`) só é alcançável subindo o Electron inteiro — nasce direto no nível 4, cem vezes mais lento, e na prática fica sem teste nenhum.
 
-Handler como **função exportada**, registrada por um `handle()` genérico (ver skill `architecture`), é chamável como função comum em Node puro. É a propriedade que mais paga do contrato tipado, e não era o objetivo declarado — é consequência. Vale o argumento quando aparecer a tentação de escrever "só este aqui" como closure.
+Handler como **função exportada**, registrada por um `handle()` genérico (ver skill `ipc`), é chamável como função comum em Node puro. É a propriedade que mais paga do contrato tipado, e não era o objetivo declarado — é consequência. Vale o argumento quando aparecer a tentação de escrever "só este aqui" como closure.
 
 ## Níveis 4–5: Playwright dirige o Electron de verdade
 
@@ -37,7 +37,7 @@ Nível 5 usa `electron-playwright-helpers`: `findLatestBuild('dist')` + `parseEl
 
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
 
-## O jsdom não é um navegador — cinco limites, provados caros
+## Limites de ambiente de teste — cinco casos, provados caros
 
 Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Quando o comportamento depende de tempo real de chegada, layout ou motor de CSS, jsdom não prova nada — só a verificação ao vivo prova. Cada um já citável por título em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § Armadilhas:
 

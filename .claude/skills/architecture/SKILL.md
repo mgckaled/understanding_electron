@@ -5,7 +5,7 @@ description: Decisões estruturais do crivo — fronteira de processo, regra de 
 
 # Arquitetura — crivo
 
-> Escrito nas fases [00](../../../docs/plan/implemented/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md), [02](../../../docs/plan/implemented/02-contrato-ipc.md), [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação, o contrato IPC, a fronteira de segurança do sandbox e o registro de jobs canceláveis, já em vigor. Fonte completa, com o porquê de cada decisão: os cinco documentos linkados acima, mais [`docs/HISTORY.md`](../../../docs/HISTORY.md) para as armadilhas de runtime que a fase 06 diagnosticou.
+> Escrito nas fases [00](../../../docs/plan/implemented/00-visao-geral.md), [01](../../../docs/plan/implemented/01-camadas-e-fronteiras.md), [02](../../../docs/plan/implemented/02-contrato-ipc.md), [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) do plano de fundação — decisões que atravessam todas as fases, mais a estrutura real de pastas, a regra de importação, o contrato IPC, a fronteira de segurança do sandbox e o registro de jobs canceláveis, já em vigor. **Estendida na fase 13** (pasta `app/`, D13.1) **e na fase 14** (`main/db/`, `registerAll()` fechando o ciclo de vida do banco), **e pelos planos 16–18** (o padrão tipo-sem-canal de `MessagePart`, o gatilho do `shamefullyHoist` cumprido no 18-A). Fonte completa, com o porquê de cada decisão: os cinco documentos linkados acima, mais [`docs/HISTORY.md`](../../../docs/HISTORY.md) para as armadilhas de runtime que a fase 06 diagnosticou.
 
 ## O critério: o que é caro de desfazer
 
@@ -15,7 +15,7 @@ A pergunta que decide se algo é resolvido agora ou adiado não é "isto é impo
 
 **Caro de adiar (decida agora):** contrato IPC tipado · `Result` em vez de exceção na fronteira · cancelamento e progresso já no contrato · `sandbox: true` · tokens em fonte única · estrutura de camadas e regra de importação · `build:win` verde desde cedo.
 
-**Barato de adiar (não decida agora):** Storybook, testes de componente exaustivos, estado global, i18n, sistema de plugins, atualização automática, virtualização de tabela — e, deliberadamente, o próprio DuckDB.
+**Barato de adiar (não decida agora):** Storybook, testes de componente exaustivos, estado global, i18n, sistema de plugins, atualização automática. Virtualização de tabela e o motor DuckDB **saíram desta lista** ao entrarem em produção (planos 18-A a 18-F): o [`ESCOPO.md`](../../../docs/ESCOPO.md) hoje ordena que nenhuma etapa materialize o resultado completo em JavaScript — toda pré-visualização é página ou amostra —, o que torna os dois consequência direta da regra, não mais adiável.
 
 ## Fronteira de processo é a arquitetura
 
@@ -27,10 +27,12 @@ src/
 ├── core/       lógica pura. Sem electron, sem react.
 ├── main/       ciclo de vida, janelas, roteamento de IPC. Fino.
 │   └── db/     node:sqlite: abertura, escada de migração, transação (fase 14)
-├── workers/    entrypoints de utilityProcess. Vazia até o DuckDB.
+├── workers/    entrypoints de utilityProcess. Hoje: DuckDB (skill data).
 ├── preload/    a única superfície exposta ao renderer.
 └── renderer/   React.
 ```
+
+`workers/duckdb/` é hoje o único entrypoint: motor, contrato interno e o veredito Arrow-vs-JSON são donos da skill [`data`](../data/SKILL.md), que aponta de volta para cá quanto a camadas e regra de importação.
 
 `main/db/` não importa `electron`: `openDatabase()` recebe o caminho por parâmetro, e quem resolve `app.getPath('userData')` é o composition root. É a mesma aplicação de DIP que torna os handlers testáveis — todo o armazenamento roda contra `:memory:` em Node puro. Desde a fase 14 `registerAll()` **retorna o `close` do banco**, e `main/index.ts` o liga em `will-quit`: o registro cuida da costura, o índice cuida do ciclo de vida, e fechar limpo é o que consolida `-wal`/`-shm` de volta no arquivo.
 
@@ -58,15 +60,15 @@ src/
 ```
 app/AppShell.tsx        grid de regiões — recebe sidebar e main por slot
 app/Sidebar.tsx         chrome: recolher, nav · conteúdo · rodapé
-features/<assunto>/     conversation, attachment, settings
+features/<assunto>/     uma por assunto
 App.tsx                 só composição — quem entra em qual slot
 ```
 
-> **`app/` nunca importa de `features/`.** Quem compõe é o `App.tsx`. É a regra que faz a casca sobreviver ao arco: tela de configurações, bloco de passos revisáveis e o que vier entram por composição, sem tocar o fonte da casca — e a régua de 250 linhas do [`CLAUDE.md`](../../../CLAUDE.md) nunca é gasta com ela.
+> **`app/` nunca importa de `features/`.** Quem compõe é o `App.tsx`. É a regra que faz a casca sobreviver ao arco: tela de configurações, bloco de passos revisáveis e o que vier entram por composição, sem tocar o fonte da casca — e a régua de tamanho de componente do [`CLAUDE.md`](../../../CLAUDE.md) nunca é gasta com ela.
 
 **Slot não é ponto de extensão.** Um `AppShell` que recebe `main` como prop tem exatamente o mesmo número de linhas que um que renderiza a conversa direto — é o mesmo código, menos acoplado. A distinção que impede isto de virar OCP disfarçado está em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*: **slot é a recusa a fixar**, não um recurso a demonstrar. Não invente uma segunda tela para provar que o slot funciona.
 
-**Entre `features/` a importação é livre**, e acontece: `conversation` lê `useSettings()` de `features/settings/` porque a chamada ao modelo precisa do teto de threads da máquina. O que a tabela acima restringe é travessia de **processo**, não vizinhança dentro do renderer. Gatilho de revisão em [`ROADMAP § 2`](../../../docs/ROADMAP.md): a sexta fatia em `features/` troca o `no-restricted-imports` por `eslint-plugin-boundaries` (hoje são três).
+**Entre `features/` a importação é livre**, e acontece: `conversation` lê `useSettings()` de `features/settings/` porque a chamada ao modelo precisa do teto de threads da máquina. O que a tabela acima restringe é travessia de **processo**, não vizinhança dentro do renderer. Gatilho de revisão em [`ROADMAP § 2`](../../../docs/ROADMAP.md): a sexta fatia em `features/` troca o `no-restricted-imports` por `eslint-plugin-boundaries`.
 
 ## Aliases, nunca caminho relativo entre camadas
 
@@ -112,7 +114,7 @@ Com o sandbox ligado, o preload perde o `require` completo — sobra um polyfill
 
 Navegação para fora da origem do app é negada por padrão (`will-navigate`, ao lado do `setWindowOpenHandler` que já negava janela nova), com uma única exceção em desenvolvimento: o HMR do Vite precisa navegar dentro da própria origem do servidor.
 
-`shamefullyHoist: true` no `pnpm-workspace.yaml` segue registrado como pendência deliberada, não esquecimento — gatilho de revisão é a instalação do primeiro módulo nativo, o DuckDB. Estado completo da fronteira: tabela em [`CLAUDE.md`](../../../CLAUDE.md).
+`shamefullyHoist: false` no `pnpm-workspace.yaml` — o gatilho de revisão (instalação do primeiro módulo nativo, o DuckDB) disparou e foi cumprido no plano [`18-A`](../../../docs/plan/implemented/18-A-motor-e-worker.md): desligar expôs uma dependência fantasma (`@types/hast`, hoisted sem estar declarada), corrigida na mesma sessão. Estado completo da fronteira: tabela em [`CLAUDE.md`](../../../CLAUDE.md).
 
 ## Convenção de idioma
 
@@ -120,13 +122,15 @@ Identificadores, comentários, docstrings e logs em inglês, sem exceção de es
 
 ## Dependência nova pede justificativa registrada, nunca em silêncio
 
-Toda dependência nova entra na fase que a introduz, com a alternativa descartada e o porquê. Não entram por padrão: Tailwind, biblioteca de componentes, container de DI, gerenciador de estado global. Registro das já decididas: [`docs/HISTORY.md`](../../../docs/HISTORY.md).
+Toda dependência nova entra na fase que a introduz, com a alternativa descartada e o porquê. Não entram por padrão: biblioteca de componentes, container de DI, gerenciador de estado global. Tailwind seguiu essa mesma regra até a trilha DS decidir por ele em ago/2026 — hoje é stack fixada, registrada no [`CLAUDE.md`](../../../CLAUDE.md). Registro das já decididas: [`docs/HISTORY.md`](../../../docs/HISTORY.md).
 
 ## `src/main/index.ts` não cresce
 
 É ciclo de vida e criação de janela — nada além disso. Handler de IPC vive em `src/main/features/<x>/handlers.ts`, registrado por `src/main/ipc/register-all.ts` via o wrapper `handle()` de `src/main/ipc/registry.ts`. Lógica de negócio dentro de `index.ts` fica intestável e imóvel, e mover para `utilityProcess` depois vira reescrita, não refatoração. Régua de tamanho: [`CLAUDE.md`](../../../CLAUDE.md).
 
 ## Mapa de dependência entre fases
+
+> Registro histórico — as fases 01–08 estão concluídas; o mapa documenta a ordem que orientou a execução, não uma orientação ativa.
 
 ```
 01 camadas ──► 02 contrato ──┬─► 03 sandbox ─────────────┐

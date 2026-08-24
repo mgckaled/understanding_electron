@@ -1,11 +1,11 @@
 ---
 name: ipc
-description: O contrato IPC do crivo — src/shared/ipc.ts como fonte única de canal→{args,result}, a superfície de domínio window.api, os seis lugares que um canal novo toca, Result vs exceção, e a armadilha de zod vazando para o bundle do preload. Use ao criar ou mudar um canal, decidir se algo retorna Result, escolher entre canal e evento, ou mandar payload binário entre processos.
+description: O contrato IPC do crivo — src/shared/ipc.ts como fonte única de canal→{args,result}, a superfície de domínio window.api, os seis lugares que um canal novo toca, Result vs exceção, e a armadilha de zod vazando para o bundle do preload. Use ao criar ou mudar um canal, decidir se algo retorna Result, escolher entre canal e evento, ou mandar payload binário entre processos. Não cobre camadas/importação (skill architecture), testes de handler (skill testing) nem motor DuckDB (skill data).
 ---
 
 # IPC — crivo
 
-> Nascida na fase [02](../../../docs/plan/implemented/02-contrato-ipc.md), crescida nas fases [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) e nos planos 14–15. **Separada da skill `architecture` em ago/2026**, quando o vigésimo canal disparou o gatilho que o [`ROADMAP § 2`](../../../docs/ROADMAP.md) tinha declarado; os planos 16 e 17 mudaram o contrato de novo — domínios `document` e `image` novos, `ai:chat` trocou `ChatMessage[]` por `Message[]`. A `architecture` continua dona das camadas, da regra de importação e do sandbox, e aponta para cá.
+> Nascida na fase [02](../../../docs/plan/implemented/02-contrato-ipc.md), crescida nas fases [03](../../../docs/plan/implemented/03-sandbox-e-seguranca.md) e [06](../../../docs/plan/implemented/06-primeira-feature.md) e nos planos 14–15. **Separada da skill `architecture` em ago/2026**, quando o vigésimo canal disparou o gatilho que o [`ROADMAP § 2`](../../../docs/ROADMAP.md) tinha declarado; os planos 16 e 17 mudaram o contrato de novo — domínios `document` e `image` novos, `ai:chat` trocou `ChatMessage[]` por `Message[]`; o **18-B** mediu o veredito Arrow-vs-JSON que decide o canal `dataset:query` até hoje. A `architecture` continua dona das camadas, da regra de importação e do sandbox, e aponta para cá.
 
 ## O contrato é um mapa, e ele tem dois consumidores
 
@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 **A pergunta já tem resposta prática, e não é um canal:** bytes de imagem viajam do disco ao `<img>` do renderer pelo protocolo customizado `attachment://` (`src/main/attachments/protocol.ts`, `protocol.handle` + `registerSchemesAsPrivileged`, D17.6, plano 17) — nunca por `invoke`/JSON. É o caminho a seguir para qualquer payload binário futuro que precise chegar ao DOM.
 
-## Os 29 canais de hoje
+## Canais de hoje
 
 | Domínio | Canais | `Result`? |
 |---|---|---|

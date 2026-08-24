@@ -80,7 +80,7 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 
 **Instaladas na trilha do DuckDB (planos 18-A/18-B):** `@duckdb/node-api` — DuckDB via N-API, roda em `utilityProcess`, **nunca** no renderer; `apache-arrow` — monta e serializa Arrow em JS (o binding **não** exporta Arrow nativo, ver `docs/HISTORY.md` § Plano 18-B), usado tanto no worker quanto no renderer (`tableFromIPC` em `DatasetQueryPanel`).
 
-**Binário vendorizado, não pacote npm (plano 18-F):** `resources/duckdb-extensions/excel.duckdb_extension` (22.704.662 bytes) — a extensão `excel`, core do DuckDB, obtida uma vez por `scripts/fetch-duckdb-excel-extension.mjs` e carregada por `LOAD` de caminho local (`enable_external_access = false` impede `INSTALL` em runtime). **Travada à versão exata de `@duckdb/node-api` que a gerou** — um `pnpm add @duckdb/node-api@<nova versão>` futuro não quebra `pnpm typecheck`/`pnpm check:fast` (nada que o compilador ou o teste enxergue num arquivo binário), só falharia em runtime; rerodar o script e recommitar o binário faz parte do bump de versão, ver [`ROADMAP § 2`](docs/ROADMAP.md).
+**Binário vendorizado, não pacote npm (plano 18-F):** `resources/duckdb-extensions/excel.duckdb_extension` — a extensão `excel`, core do DuckDB, obtida uma vez por `scripts/fetch-duckdb-excel-extension.mjs` e carregada por `LOAD` de caminho local (`enable_external_access = false` impede `INSTALL` em runtime); tamanho exato do binário é dono da skill [`data`](.claude/skills/data/SKILL.md). **Travada à versão exata de `@duckdb/node-api` que a gerou** — um `pnpm add @duckdb/node-api@<nova versão>` futuro não quebra `pnpm typecheck`/`pnpm check:fast` (nada que o compilador ou o teste enxergue num arquivo binário), só falharia em runtime; rerodar o script e recommitar o binário faz parte do bump de versão, ver [`ROADMAP § 2`](docs/ROADMAP.md).
 
 `unpdf` já foi instalado, no plano 17 passo 3 — extração da camada de texto de PDF. **Zero dependências** extra (confirmado pelo `pnpm add`), sem módulo nativo. O `peerDependency` `@napi-rs/canvas` serve só para **renderizar** página como imagem e **não entra** — o que mantém fechado o gatilho do `shamefullyHoist` até o DuckDB.
 
@@ -232,7 +232,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 | Navegação e janela nova | negadas por padrão |
 | CSP | `default-src 'self'` no `index.html` |
 | Segredos | regra fixada (mão única, `safeStorage`, `userData`); **nenhum segredo existe ainda** |
-| `shamefullyHoist` | **pendente** — gatilho de revisão: instalação do DuckDB |
+| `shamefullyHoist` | **desligado** (`false`) — gatilho cumprido no plano `18-A` |
 
 ### Arquitetura de dados
 

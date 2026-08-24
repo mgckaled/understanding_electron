@@ -1,6 +1,6 @@
 ---
 name: comments
-description: Convenção de comentário e docstring do crivo — duas perguntas em ordem (comentar? e, se docstring, em que forma?), o veto à narrativa de decisão dentro do .ts (dono é o HISTORY.md, citado por id), e a forma TSDoc curada (sem `@remarks`/`@example`, que convidam de volta a narrativa banida). Use ao escrever ou editar qualquer código, adicionar um comentário, documentar função exportada/handler/tipo/hook, ou decidir se um símbolo precisa de doc-comment.
+description: Convenção de comentário e docstring do crivo — duas perguntas em ordem (comentar? e, se docstring, em que forma?), o veto à narrativa de decisão dentro do .ts (dono é o HISTORY.md, citado por id), e a forma TSDoc curada (sem `@remarks`/`@example`, que convidam de volta a narrativa banida). Use ao escrever ou editar qualquer código, adicionar um comentário, documentar função exportada/handler/tipo/hook, ou decidir se um símbolo precisa de doc-comment. Não cobre estrutura de camadas (skill architecture) nem formato de erro em runtime (skill ipc).
 ---
 
 # Comentário e docstring — crivo
@@ -17,7 +17,7 @@ Ao tocar uma linha de comentário, decida em duas etapas. A primeira já elimina
 
 **O que NÃO entra, porque tem dono e o dono não é o `.ts`:** narrativa do que mudou, alternativa tentada e descartada, razão longa. Isso mora no [`HISTORY.md`](../../../docs/HISTORY.md) (ou no plano), e o fonte **aponta pela sigla da decisão** — `(D15.2)`, não o parágrafo. Um comentário longo dentro do `.ts` é a mesma dívida da regra de fonte única, agravada por envelhecer onde ninguém releva.
 
-⚠️ **Bloco `/* */` de narrativa é o sintoma número um.** O de 14 linhas no topo de `conversationsContext.ts` e os de 6 linhas em `useConversationChat.ts` são exatamente o que sai: cada um é um ensaio de decisão que pertence ao `HISTORY.md`. Substitua pela sigla.
+⚠️ **Bloco `/* */` de narrativa é o sintoma número um.** Exemplos reais já diagnosticados e corrigidos estão no [`HISTORY.md`](../../../docs/HISTORY.md) (ex.: D14.4) — cada um era um ensaio de decisão que pertencia lá, não ao `.ts`. Ao encontrar um bloco assim, substitua pela sigla.
 
 ### 2. Se sobrou um doc-comment, qual forma? — TSDoc
 
@@ -42,7 +42,7 @@ Regras da forma, cada uma um erro que o parser oficial marca:
 - **Um conjunto curado, não todas as tags.** `@remarks` e `@example` — mesmo sendo padrão — ficam **fora**: são o convite de volta à narrativa banida na pergunta 1; razão longa vai ao `HISTORY.md`, citada por sigla. As tags que este projeto usa estão logo abaixo.
 - **O bloco vai ACIMA do símbolo**, não `/** */` no meio da assinatura, um por parâmetro — corrija esse padrão ao tocar (`useConversationChat` o tem hoje).
 
-Ordem dentro do bloco: **sumário → `@remarks` (se houver — e raramente há) → block tags (`@param`, `@returns`, …) → modifiers no fim.** **Não há tag de cabeçalho de arquivo** no TSDoc (`@file`/`@module`/`@fileOverview` não existem no padrão); contexto de arquivo, quando indispensável, é `//` comum sob a pergunta 1.
+Ordem dentro do bloco: **sumário → block tags (`@param`, `@returns`, …) → modifiers no fim.** **Não há tag de cabeçalho de arquivo** no TSDoc (`@file`/`@module`/`@fileOverview` não existem no padrão); contexto de arquivo, quando indispensável, é `//` comum sob a pergunta 1.
 
 ### As demais tags — cada uma com o "não serve para"
 

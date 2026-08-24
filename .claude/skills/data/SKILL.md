@@ -1,6 +1,6 @@
 ---
 name: data
-description: A camada de dados do crivo — motor DuckDB restrito em `utilityProcess`, a ordem exigida dos `SET` de segurança, `memory_limit`, a extensão `excel` vendorizada, e o veredito medido Arrow-vs-JSON (JSON venceu, o binding não exporta Arrow nativo). Use ao tocar `core/duckdb/`, `main/duckdb/`, `workers/duckdb/`, mexer no motor restrito, ou decidir entre Arrow e JSON num canal.
+description: A camada de dados do crivo — motor DuckDB restrito em `utilityProcess`, a ordem exigida dos `SET` de segurança, `memory_limit`, a extensão `excel` vendorizada, e o veredito medido Arrow-vs-JSON (JSON venceu, o binding não exporta Arrow nativo). Use ao tocar `core/duckdb/`, `main/duckdb/`, `workers/duckdb/`, mexer no motor restrito, ou decidir entre Arrow e JSON num canal. Não cobre contrato IPC dos canais dataset:* (skill ipc) nem camadas (skill architecture).
 ---
 
 # Camada de dados — crivo
