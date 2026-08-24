@@ -29,15 +29,15 @@
  *      Redundant with ESLint by design: this fires on every edit, whereas
  *      lint only runs when invoked.
  *
- *   6. HARDCODED DESIGN VALUE — hex colour in a *.module.css or in the Tailwind
- *      theme layer. ESLint does not lint CSS, so the token rule has no
- *      automated enforcement otherwise.
+ *   6. HARDCODED DESIGN VALUE — hex colour in a *.module.css, in the Tailwind
+ *      theme layer, or in base.css (DS-6). ESLint does not lint CSS, so the
+ *      token rule has no automated enforcement otherwise.
  *
  *   7. UNKNOWN TOKEN — `var(--x)` with no matching declaration in tokens.css.
  *      Catches the typo that renders as "no style at all" and is invisible
  *      until someone looks at that exact component. Since DS-1 it also covers
- *      assets/tailwind.css, where the blast radius is the whole app: one wrong
- *      name in `@theme inline` silently kills a utility family everywhere.
+ *      assets/tailwind.css, where one wrong name in `@theme inline` silently
+ *      kills a utility family everywhere; since DS-6, also base.css.
  *
  *   8. LITERAL COLOUR OR PRIMITIVE IN JSX — arbitrary colour value
  *      (`bg-[#0d5bd9]`, `text-[rgb(…)]`), a primitive reached through the v4
@@ -136,6 +136,9 @@ const isModuleCss = file.endsWith('.module.css')
 // The Tailwind theme layer: not a module, but the file where a wrong token name
 // costs the most — `@theme inline` maps one name to every utility built on it.
 const isThemeCss = rel === 'src/renderer/src/assets/tailwind.css'
+// The global reset (DS-6): not a module either, but it now carries var()
+// references (color-scheme, ::selection, autofill) the same rule should cover.
+const isBaseCss = rel === 'src/renderer/src/assets/base.css'
 const isRendererTsx = rel.startsWith('src/renderer/') && file.endsWith('.tsx')
 const isTest = /\.(test|spec)\./.test(path.basename(file))
 const code = stripComments(raw, { lineComments: !isCss })
@@ -207,8 +210,9 @@ if ((rel.startsWith('src/core/') || rel.startsWith('src/shared/')) && ELECTRON_I
 }
 
 // 6 and 7. Design-system rules over CSS the components own — the module files
-// plus the Tailwind theme layer, which is not a module but obeys the same rule.
-if (isModuleCss || isThemeCss) {
+// plus the Tailwind theme layer and the global reset, neither a module but
+// both obeying the same rule.
+if (isModuleCss || isThemeCss || isBaseCss) {
   const hexes = [...new Set([...code.matchAll(HEX_COLOR)].map((m) => m[0]))]
   if (hexes.length > 0) {
     violations.push(
