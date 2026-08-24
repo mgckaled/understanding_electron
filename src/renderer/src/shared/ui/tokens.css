@@ -1,12 +1,12 @@
 /*
- * Design tokens — two layers only.
- * Components read semantic tokens (--color-surface), never primitives
- * (--gray-3) and never a literal (#1f2023). See docs/plan/implemented/05-design-tokens.md.
+ * Design tokens — two layers only. Components read semantic tokens
+ * (--color-surface), never primitives (--gray-3) and never a literal
+ * (#1f2023). Rationale for every value and convention below lives in the
+ * design-system skill (.claude/skills/design-system/SKILL.md).
  */
 
 :root {
-  /* Primitives — neutral cold scale, dark-first (1 darkest, higher = lighter).
-     1–12 are the base scale; 13 is pure white, the top the light theme elevates to. */
+  /* Primitives — neutral, dark-first */
   --gray-1: #0b0c0e;
   --gray-2: #16171a;
   --gray-3: #1e2023;
@@ -21,11 +21,7 @@
   --gray-12: #f5f6f7;
   --gray-13: #ffffff;
 
-  /* Primitives — colour, solid fill vs. text (D10.1). A colour dark enough to
-     carry white text as a fill and one legible as text over a surface are two
-     different colours: 9/10 are the solid fills, 11 is the text form. The
-     -dark/-light suffix is the text form legible over the dark theme's surface
-     vs. over white. Blue is the one taste choice; the rest are conventional. */
+  /* Primitives — colour, solid fill vs. text (D10.1) */
   --blue-9: #0d5bd9;
   --blue-10: #1d4ed8;
   --blue-11-dark: #4c8dff;
@@ -41,21 +37,15 @@
   --green-11-light: #1a7f4f;
 
   /* Semantic — dark theme (default) */
-  /* --color-bg must match backgroundColor in src/main/index.ts — the one
-     color in this project that has to be written in two places. */
-  --color-bg: var(--gray-2);
+  --color-bg: var(--gray-2); /* must match backgroundColor in src/main/index.ts (DS4.2) */
   --color-surface: var(--gray-3);
   --color-surface-raised: var(--gray-4);
   --color-surface-sunken: var(--gray-1);
   --color-border: var(--gray-5);
   --color-border-strong: var(--gray-7);
-  /* Three text levels, all legible over surface; the hierarchy reads by weight,
-     not by one of them being too faint to read (text-faint carries the chat's
-     authorship label and the Field hint — information, not decoration). */
   --color-text: var(--gray-12);
   --color-text-muted: var(--gray-11);
   --color-text-faint: var(--gray-10);
-  /* Each colour: solid fill, its white-ish label, and its text form over surface. */
   --color-accent: var(--blue-9);
   --color-accent-hover: var(--blue-10);
   --color-on-accent: var(--gray-12);
@@ -67,20 +57,9 @@
   --color-warn-text: var(--amber-11-dark);
   --color-ok: var(--green-9);
   --color-ok-text: var(--green-11-dark);
-  /* The modal scrim. Single layer, like --syntax-*: one consumer, one meaning,
-     and a primitive underneath would buy no option. It carries alpha on purpose
-     — a scrim is the surface below, dimmed; an opaque value would be a second
-     background rather than a veil. No row in tokens.contrast.test.ts because
-     nothing sits on top of it: there is no pair to measure. */
   --color-backdrop: rgb(0 0 0 / 55%);
 
-  /* Syntax highlighting — imported as a set from @primer/primitives (GitHub),
-     values current in ago/2026. Single layer on purpose (D12.4): no primitive
-     underneath, because the palette arrives already calibrated as a whole, and
-     seven primitives with one consumer each buy no option. Each name says what
-     it colours in the highlight.js grammar, NOT what Primer calls it — Primer's
-     `variable` colours built_in/symbol here, while .hljs-variable falls in the
-     constant group, so inheriting that name would point at the wrong class. */
+  /* Syntax highlighting — @primer/primitives (GitHub), dark */
   --syntax-keyword: #ff7b72;
   --syntax-entity: #d2a8ff;
   --syntax-constant: #79c0ff;
@@ -106,12 +85,7 @@
   --radius-lg: 10px;
   --radius-full: 9999px;
 
-  /* Type — sizes calibrated for desktop, body is 14 (DS5, item 6: the
-     bottom four steps moved up by 1px — 2xs/xs/sm/md, never lg up — after a
-     live audit found chrome reading small next to the 18px reading surface.
-     Verified against Button's SIZE map before committing: sm (24px control,
-     now 13px text) and md (28px control, now 15px text) both keep several px
-     of margin, line-height: normal considered. --control-height-* untouched. */
+  /* Type */
   --font-size-2xs: 12px;
   --font-size-xs: 13px;
   --font-size-sm: 14px;
@@ -119,12 +93,6 @@
   --font-size-lg: 16px;
   --font-size-xl: 20px;
   --font-size-2xl: 28px;
-  /* Off the t-shirt scale on purpose. That scale sizes UI chrome, which is
-     scanned; this sizes a reading surface — a model's answer is read for a
-     minute straight, and 13 is tiring at that length. Forcing 18 in between
-     --font-size-lg and -xl would have renamed every step above it for one
-     consumer. Its own token also means "make the chat bigger" stays one number
-     instead of a sweep through the feature CSS. */
   --font-size-reading: 18px;
 
   /* Control and table row heights */
@@ -133,9 +101,7 @@
   --control-height-lg: 34px;
   --table-row-height: 28px;
 
-  /* Shell layout. Tokens rather than two numbers inside one CSS file because
-     three consumers read the same pair: the sidebar's own width, the collapse
-     transition, and the width plano 14 will persist. */
+  /* Shell layout */
   --sidebar-width: 264px;
   --sidebar-width-collapsed: 44px;
 
@@ -143,16 +109,9 @@
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
-  /* The one continuous, attention-calling loop in the system (F-1) — every
-     other duration above is for hover/focus/collapse, under a second. */
   --duration-thinking-cycle: 2400ms;
 
-  /* ThinkingMark (F-1) per-dot animation channel — not a primitive nor a
-     semantic value like the rest of this file: the one shared @keyframes it
-     drives (assets/tailwind.css) needs a name for each per-dot value, and
-     ThinkingMark.tsx always overrides every one of these inline, per dot.
-     Declared here with inert defaults so a real typo in the pair still
-     fails loud instead of rendering nothing (guard.mjs rule 7). */
+  /* ThinkingMark per-dot animation channel */
   --thinking-r: 0;
   --thinking-rest-x: 0px;
   --thinking-rest-y: 0px;
@@ -165,20 +124,10 @@
   /* Fonts */
   --font-ui:
     'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  /* JetBrains Mono, self-hosted via @fontsource (DS5.2) — reverses the "no
-     bundled webfont" decision (skill design-system) for every monospace
-     consumer, not just code: host:porta, model names, hashes. The system
-     stack survives as fallback if the font file fails to load, never removed. */
   --font-mono:
     'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
 }
 
-/* Light theme redefines only the semantic layer — primitives stay fixed. It
-   maps by intent, not by mirroring the dark scale (D10.3): elevation goes toward
-   white (surface and raised are both --gray-13, distinguished by border), and
-   each state -text token picks the -light primitive legible over white.
-   Accepted: --color-bg and --color-surface-sunken share #f5f6f7 — contexts that
-   never sit adjacent without a border (window ground vs. field interior). */
 @media (prefers-color-scheme: light) {
   :root {
     --color-bg: var(--gray-12);
@@ -196,18 +145,9 @@
     --color-ok-text: var(--green-11-light);
     --color-on-accent: var(--gray-13);
     --color-on-danger: var(--gray-13);
-    /* Lighter over a white ground: the same 55% that reads as a veil over the
-       dark theme reads as a blackout here. */
     --color-backdrop: rgb(0 0 0 / 35%);
 
-    /* Syntax: Primer's light values, with one deliberate divergence (D12.4).
-       Primer collapses entityTag onto constant in light (both #0550ae) while
-       keeping them apart in dark. highlight.js does not collapse: it puts
-       name/selector-tag in a different group from attr/selector-class. Following
-       Primer literally would render `<div class="x">` with div and class in the
-       same colour in light and different colours in dark. --syntax-tag takes
-       Primer's stringRegexp green instead, which keeps the pair distinct in
-       both themes without leaving the palette. */
+    /* Syntax — @primer/primitives, light */
     --syntax-keyword: #cf222e;
     --syntax-entity: #6639ba;
     --syntax-constant: #0550ae;
