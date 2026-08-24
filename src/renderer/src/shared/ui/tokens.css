@@ -22,27 +22,29 @@
   --gray-13: #ffffff;
 
   /* Primitives — colour, solid fill vs. text (D10.1) */
-  --blue-9: #0d5bd9;
-  --blue-10: #1d4ed8;
-  --blue-11-dark: #4c8dff;
-  --blue-11-light: #0d74ce;
-  --red-9: #c62a2f;
-  --red-11-dark: #ff6369;
-  --red-11-light: #ce2c31;
-  --amber-9: #f5a524;
-  --amber-11-dark: #f5a524;
-  --amber-11-light: #946800;
-  --green-9: #30a46c;
-  --green-11-dark: #30a46c;
-  --green-11-light: #1a7f4f;
+  --blue-9: #0e5ad3;
+  --blue-10: #1f58dd;
+  --blue-11-dark: #5690ff;
+  --blue-11-light: #0b6cc9;
+  --red-9: #c22b30;
+  --red-11-dark: #ff6a70;
+  --red-11-light: #c52a31;
+  --amber-9: #eda21f;
+  --amber-10-light: #b45309;
+  --amber-11-dark: #f7a92b;
+  --amber-11-light: #8f6500;
+  --green-9: #2c9f68;
+  --green-10-light: #1a7a4c;
+  --green-11-dark: #37b377;
+  --green-11-light: #197a4c;
 
   /* Semantic — dark theme (default) */
   --color-bg: var(--gray-2); /* must match backgroundColor in src/main/index.ts (DS4.2) */
   --color-surface: var(--gray-3);
   --color-surface-raised: var(--gray-4);
   --color-surface-sunken: var(--gray-1);
-  --color-border: var(--gray-5);
-  --color-border-strong: var(--gray-7);
+  --color-border: var(--gray-6);
+  --color-border-strong: var(--gray-9);
   --color-text: var(--gray-12);
   --color-text-muted: var(--gray-11);
   --color-text-faint: var(--gray-10);
@@ -81,16 +83,16 @@
 
   /* Radius */
   --radius-sm: 4px;
-  --radius-md: 6px;
+  --radius-md: 8px;
   --radius-lg: 10px;
   --radius-full: 9999px;
 
   /* Type */
-  --font-size-2xs: 12px;
-  --font-size-xs: 13px;
-  --font-size-sm: 14px;
-  --font-size-md: 15px;
-  --font-size-lg: 16px;
+  --font-size-2xs: 13px;
+  --font-size-xs: 14px;
+  --font-size-sm: 15px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
   --font-size-xl: 20px;
   --font-size-2xl: 28px;
   --font-size-reading: 18px;
@@ -134,14 +136,16 @@
     --color-surface: var(--gray-13);
     --color-surface-raised: var(--gray-13);
     --color-surface-sunken: var(--gray-12);
-    --color-border: var(--gray-11);
-    --color-border-strong: var(--gray-9);
+    --color-border: var(--gray-10);
+    --color-border-strong: var(--gray-8);
     --color-text: var(--gray-1);
     --color-text-muted: var(--gray-6);
     --color-text-faint: var(--gray-8);
     --color-accent-text: var(--blue-11-light);
     --color-danger-text: var(--red-11-light);
+    --color-warn: var(--amber-10-light);
     --color-warn-text: var(--amber-11-light);
+    --color-ok: var(--green-10-light);
     --color-ok-text: var(--green-11-light);
     --color-on-accent: var(--gray-13);
     --color-on-danger: var(--gray-13);
