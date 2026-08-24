@@ -32,12 +32,14 @@ A superfície de leitura chegou com o chat e tomou, em silêncio, uma decisão d
 
 | | Densidade | Quem |
 |---|---|---|
-| **Chrome** | compacta — a escala de desktop da fase 05 (`--font-size-sm` é o corpo, 14px) | sidebar, nav, rodapé, cabeçalho da conversa, controles do composer, toolbar, modal |
+| **Chrome** | compacta — a escala de desktop, recalibrada na DS5 (`--font-size-sm` é o corpo, 14px) | sidebar, nav, rodapé, cabeçalho da conversa, controles do composer, toolbar, modal |
 | **Leitura** | generosa — `--font-size-reading` (18px) | mensagem do usuário, resposta do assistente, artefatos, o texto que se digita no composer |
 
 O critério não é "é importante?", é **quanto tempo o olho fica ali**: chrome se escaneia, resposta de modelo se lê por um minuto seguido, e 13px cansa nessa duração.
 
-**Título de superfície de leitura é proporcional ao tamanho de leitura, não à escala de chrome.** Os títulos do markdown são `em` dentro de `.markdown` (`1.4em`/`1.2em`/`1.05em`), que resolvem contra `--font-size-reading` no pai — mude o tamanho de leitura e eles acompanham sozinhos. Acrescentar um degrau de 18 à escala em camiseta renomearia todo degrau acima dele por causa de **um** consumidor; a escala dimensiona chrome, e são dois sistemas diferentes.
+**A recalibração da DS5:** os quatro degraus de baixo (`2xs`/`xs`/`sm`/`md`) subiram 1px cada, `lg` para cima nunca mexeu, depois de uma auditoria ao vivo constatar chrome lendo pequeno perto da superfície de leitura a 18px. Verificado contra o mapa `SIZE` do `Button` antes de commitar: `sm` (controle de 24px, texto agora 13px) e `md` (controle de 28px, texto agora 15px) mantêm folga de vários px, `line-height: normal` considerado — `--control-height-*` não mudou.
+
+**Título de superfície de leitura é proporcional ao tamanho de leitura, não à escala de chrome.** Os títulos do markdown são `em` dentro de `.markdown` (`1.4em`/`1.2em`/`1.05em`), que resolvem contra `--font-size-reading` no pai — mude o tamanho de leitura e eles acompanham sozinhos. Acrescentar um degrau de 18 à escala em camiseta renomearia todo degrau acima dele por causa de **um** consumidor; a escala dimensiona chrome, e são dois sistemas diferentes. Ter o próprio token também significa que "aumentar a leitura do chat" fica sendo um número só, não uma varredura pelo CSS de feature afora.
 
 ## Dois níveis de token, componente só toca o segundo
 
@@ -59,6 +61,8 @@ Um token de cor de estado serve a **duas** funções físicas opostas, e um úni
 --color-on-accent     /* rótulo sobre esse fundo sólido */
 --color-accent-text   /* texto e foco sobre superfície (anel, borda, link) */
 ```
+
+Um degrau abaixo, no primitivo, a mesma separação aparece como sufixo: `--blue-11-dark`/`--blue-11-light` (e o par equivalente em `red`/`amber`/`green`) são a forma texto, legível sobre a superfície escura ou sobre branco — `blue` é a única escolha de gosto do conjunto, o resto segue convenção. Uma quinta cor de estado nasce com o mesmo par de sufixos, não com um primitivo só.
 
 E o mesmo para `danger`, `warn`, `ok`. **Regra de primeira linha:** ao pintar `color:`, `border-color:` ou `outline:` com uma cor de estado, use a variante `-text`; o sólido (`--color-accent`, `--color-danger`) é só para `background`/`accent-color`. O rótulo sobre um fundo sólido é o terceiro caso: `--color-on-accent`/`--color-on-danger`.
 
@@ -170,6 +174,10 @@ Origem: relatório externo (`notes/reports/r_tokens-css.md`), 21 itens avaliados
 ### Hover e seleção já têm convenção — nenhum token de tint é necessário
 
 Hover de superfície **sobe um degrau na escada existente**, nunca tint: `bg-surface` → `hover:bg-surface-raised` (`ConversationList`, `AttachButton`), e o inverso onde o item já parte de `bg-surface-raised` (itens de popover sobre painel elevado). Seleção/estado ativo (`ConversationList`, a barra de acento da DS-3) é a composição de três coisas, não um fundo: borda esquerda de 2px na cor de acento (`border-l-2`, largura **sempre reservada**, mesmo inativa, para o texto não deslocar ao ativar) + o mesmo `bg-surface-raised` do hover + peso de fonte (`font-semibold`). Um token como `--color-accent-subtle` resolveria um problema que o app já não tem — e, se entrasse em `@theme inline` sob `--color-*`, cunharia `text-accent-subtle` de graça, o mesmo bug que a D10.1 matou (seção acima). Se um dia um estado selecionado precisar de tint de fundo em vez de borda (ex.: linha de tabela), decide-se então, contra este precedente — não é lacuna hoje.
+
+### Os três níveis de texto separam por peso, nunca por um deles ficar difícil de ler
+
+`--color-text`/`-text-muted`/`-text-faint` formam hierarquia por **peso visual**, não porque o mais fraco dos três é fraco demais para ler — os três precisam bater AA sobre `--color-surface` (`tokens.contrast.test.ts` mede os três). `--color-text-faint` carrega o rótulo de autoria do chat e a dica do `Field`: informação, não decoração — reduzir seu contraste "porque é o nível mais fraco" quebraria um caso de uso real, não só uma escala visual.
 
 ### Radius: default é `md`, `lg` é o contêiner primário (correção contra o uso real)
 
