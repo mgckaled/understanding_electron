@@ -34,7 +34,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 20 | F-2 | composer, modelo e sidebar | ✅ concluída |
 | 21 | 18-A..18-F | motor DuckDB completo (CSV/JSON/Excel) | ✅ concluída |
 | 22 | — | revisão de escopo: exportação e nuvem (4ª) | ✅ concluída |
-| 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ▶ em andamento — N-1-A (segredo) e N-1-B (GLM ponta a ponta) concluídos, N-1-C (Gemini + cota/limite de taxa) é o próximo |
+| 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ▶ em andamento — N-1-A (segredo) e N-1-B (GLM ponta a ponta) concluídos, [N-1-C](plan/active/N-1-C-gemini-e-catalogo-de-nuvem.md) (Gemini, catálogo de nuvem no seletor, janela de contexto cloud-aware) escrito em 25/08/2026, é o próximo a executar — e **fecha a trilha N-1** (decisão de 25/08/2026: N-1 é "arquitetura mínima", Gemini + cota é o que completa essa carta). Provedor terceirizado (Groq/Cerebras/SambaNova, Peça F do guia de nuvem) não entra em N-1-D — nasce como trilha **N-2**, sem arquivo ainda, quando alguém escrever o primeiro plano dela |
 | 24 | **R-3** | sincronização de docs pós-18/N-1 e nascimento da skill `data` | ✅ concluída |
 | 25 | 19 | propor: consulta e passos | planejado |
 | 26 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
