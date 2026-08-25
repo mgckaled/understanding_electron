@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react'
+import { useEffect, useRef, type InputHTMLAttributes } from 'react'
 
 export type SliderTick = { value: number; label: string }
 
@@ -52,13 +52,33 @@ function Slider({
   className,
   ...props
 }: SliderProps): React.JSX.Element {
-  const commit = (event: React.SyntheticEvent<HTMLInputElement>): void =>
-    onChangeCommitted?.(Number(event.currentTarget.value))
+  const ref = useRef<HTMLInputElement>(null)
   const percent = (tick: number): number => (min === max ? 0 : ((tick - min) / (max - min)) * 100)
+  // Ticks carry human labels (e.g. "8k"); the input alone exposes only the
+  // raw number, so a value that lands on a known tick gets that label
+  // instead. No match (a value between marks) leaves aria-valuetext unset —
+  // the native number announcement is still correct there.
+  const valueText = ticks.find((tick) => tick.value === value)?.label
+
+  // The native `change` event — not exposed by React's onChange, which maps
+  // to `input` — is the one signal that fires exactly once per commit
+  // (mouseup, touchend, or a keyup that actually changed the value), so it
+  // replaces four separate React handlers that could double-fire (e.g. Tab
+  // away used to trigger both keyup and blur).
+  useEffect(() => {
+    const node = ref.current
+    if (node === null || onChangeCommitted === undefined) return
+    const onChangeNative = (event: Event): void => {
+      onChangeCommitted(Number((event.target as HTMLInputElement).value))
+    }
+    node.addEventListener('change', onChangeNative)
+    return () => node.removeEventListener('change', onChangeNative)
+  }, [onChangeCommitted])
 
   return (
     <div className={['flex w-full flex-col gap-3', className].filter(Boolean).join(' ')}>
       <input
+        ref={ref}
         type="range"
         className={TRACK}
         min={min}
@@ -66,11 +86,8 @@ function Slider({
         step={step}
         value={value}
         disabled={disabled}
+        aria-valuetext={valueText}
         onChange={(event) => onChange(Number(event.target.value))}
-        onMouseUp={commit}
-        onTouchEnd={commit}
-        onKeyUp={commit}
-        onBlur={commit}
         {...props}
       />
       {/* overflow-x-hidden: the first/last label's OWN centring would
