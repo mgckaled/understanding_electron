@@ -219,7 +219,7 @@ Código em inglês, sempre — identificador, comentário, docstring e log, sem 
 - Tipos do contrato IPC ficam declarados em `src/shared/ipc.ts`, e todo canal novo passa por lá
 - Decisão de segurança que dois processos precisam tomar nasce em `core/`, nunca ao lado de um dos chamadores — validação colocada junto de um deles vira bypass no segundo, ver [`docs/HISTORY.md`](docs/HISTORY.md)
 - Segredo é de mão única: o renderer grava e consulta se existe, **nunca lê** — ver [`docs/HISTORY.md`](docs/HISTORY.md)
-- O que a IA vê do dado tem **três níveis** — esquema · perfil agregado · amostra de linhas. Os níveis 1 e 2 são livres; o nível 3 é opt-in por anexo e **bloqueado na nuvem**. A montagem do contexto mora em `core/`, com teste que falha se um valor do arquivo vazar nos níveis 1 e 2. Dono: [`docs/ESCOPO.md`](docs/ESCOPO.md)
+- O que a IA vê do dado tem **três níveis** — esquema · perfil agregado · amostra de linhas. Os três são **opt-in por anexo**, em qualquer provedor (local ou nuvem) — nível 3 não tem bloqueio a mais na nuvem desde a revisão de escopo (5ª, ago/2026): o usuário decide caso a caso o que anexa. A montagem do contexto mora em `core/`, com teste que falha se um valor do arquivo vazar nos níveis 1 e 2. Dono: [`docs/ESCOPO.md`](docs/ESCOPO.md)
 - SQL gerado por modelo roda com o **motor restringido** (`allowed_directories`, `enable_external_access = false`, `lock_configuration = true`), nunca com o texto inspecionado por expressão regular — ver [`docs/HISTORY.md`](docs/HISTORY.md)
 
 Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented/03-sandbox-e-seguranca.md):

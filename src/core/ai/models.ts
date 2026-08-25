@@ -29,9 +29,8 @@ export const GLM_MODELS: AiModel[] = [
  * reasoning as `GLM_MODELS`: no `/api/show` to sonde, hand-written from
  * `cloud-optin.md`. Both models are natively multimodal with a configurable
  * `thinkingLevel` (confirmed via Context7 against each model's own doc page,
- * `ai.google.dev/gemini-api/docs/models/<name>`) — the Peça D tension
- * (visão declarada, anexo bloqueado por nível 3) now applies to the whole
- * family, not just `gemini-2.5-flash` as the guide previously said.
+ * `ai.google.dev/gemini-api/docs/models/<name>`), true for the whole family,
+ * not just `gemini-2.5-flash` as the guide originally said.
  */
 export const GEMINI_MODELS: AiModel[] = [
   {

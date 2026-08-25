@@ -144,14 +144,14 @@ O modelo precisa saber o bastante para ser útil e o mínimo para ser seguro. S�
 O nível 2 é o `SUMMARIZE` do DuckDB, e é o que produz uma avaliação de qualidade digna do nome. As regras:
 
 - **Top-N só para coluna de baixa cardinalidade.** Os cinco valores mais frequentes de `cidade` são estatística; os cinco mais frequentes de `cpf` são vazamento com outro nome. O limiar é relativo à contagem de linhas, e a decisão mora em `core/`, nunca ao lado de um chamador — ver [`HISTORY.md`](HISTORY.md) § Armadilhas.
-- **O nível 3 é opt-in por anexo, e o padrão depende do provedor.** Local (Ollama, na sua máquina) pode liberá-lo a um clique. Nuvem tem o nível 3 **bloqueado**, com a mesma dica acionável do gate de disponibilidade.
+- **O nível 3 é opt-in por anexo, em qualquer provedor.** Local (Ollama, na sua máquina) libera a um clique; nuvem pede o mesmo opt-in, sem bloqueio adicional — quem decide o que sai da máquina, anexo por anexo, é o usuário (revisão de escopo, 5ª, ago/2026).
 - **Um cartão de dados só.** `core/ai/dataCard.ts` produz um objeto, consumido por todos os caminhos — conversa, consulta, passos, busca. Contexto montado por feature é como se produzem duas qualidades de resposta sobre o mesmo arquivo.
 
 ### Documento e imagem são nível 3 por construção
 
 Os três níveis funcionam porque dado tabular **pode ser agregado**: existe uma descrição do arquivo que é útil e não expõe valor nenhum. Documento e imagem não têm esse meio-termo — não existe "perfil agregado" de um `.md`, e ou o modelo vê os pixels ou não vê.
 
-Logo, **todo anexo de documento ou imagem herda a regra do nível 3**: opt-in explícito, liberado no provedor local, **bloqueado na nuvem**, com a mesma dica acionável do gate de disponibilidade. Nenhum mecanismo novo — a mesma porta.
+Logo, **todo anexo de documento ou imagem herda a regra do nível 3**: opt-in explícito, em qualquer provedor — local ou nuvem, sem distinção. Nenhum mecanismo novo — a mesma porta.
 
 ### O gate de capacidade é correção, não cortesia
 
