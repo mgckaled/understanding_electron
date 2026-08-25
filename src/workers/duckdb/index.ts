@@ -123,8 +123,13 @@ async function main(): Promise<void> {
 
   // SUMMARIZE's own min/max/avg columns are cast to VARCHAR by the engine
   // (uniform typing across a table's heterogeneous columns) — read as
-  // strings and parsed here, not received already numeric.
-  async function profileScratchTable(): Promise<ColumnProfile[]> {
+  // strings and parsed here, not received already numeric. `includeTopValues`
+  // defaults true for dataset:profile's own use (the level-2 card wants it);
+  // dataset:transform's before/after (D19.6) passes false — it only compares
+  // nullPercentage, and paying for a top-N GROUP BY per qualifying column,
+  // TWICE per Aplicar click, bought nothing that comparison uses (advisor
+  // finding, ago/2026).
+  async function profileScratchTable(includeTopValues = true): Promise<ColumnProfile[]> {
     const countReader = await connection.runAndReadAll(buildCountSql(SCRATCH_TABLE))
     const [countRow] = countReader.getRowObjectsJS() as [{ row_count: bigint | number }]
     const rowCount = Number(countRow.row_count)
@@ -152,7 +157,7 @@ async function main(): Promise<void> {
           return Number.isFinite(parsed) ? parsed : null
         })()
       }
-      if (qualifiesForTopValues(approxUnique, rowCount)) {
+      if (includeTopValues && qualifiesForTopValues(approxUnique, rowCount)) {
         const topReader = await connection.runAndReadAll(
           buildTopValuesSql(SCRATCH_TABLE, entry.column)
         )
@@ -196,14 +201,14 @@ async function main(): Promise<void> {
       await connection.run(buildMaterializeSql('dataset', SCRATCH_TABLE))
       let before: ColumnProfile[]
       try {
-        before = await profileScratchTable()
+        before = await profileScratchTable(false)
       } finally {
         await connection.run(buildDropScratchSql(SCRATCH_TABLE))
       }
 
       await connection.run(buildMaterializeQuerySql(sql, SCRATCH_TABLE))
       try {
-        const after = await profileScratchTable()
+        const after = await profileScratchTable(false)
         const previewReader = await connection.runAndReadAll(
           `SELECT * FROM "${SCRATCH_TABLE}" LIMIT ${TRANSFORM_PREVIEW_ROWS}`
         )
