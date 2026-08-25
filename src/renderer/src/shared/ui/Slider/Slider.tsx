@@ -1,4 +1,5 @@
 import { useEffect, useRef, type InputHTMLAttributes } from 'react'
+import { cx } from '../cx'
 
 export type SliderTick = { value: number; label: string }
 
@@ -76,7 +77,7 @@ function Slider({
   }, [onChangeCommitted])
 
   return (
-    <div className={['flex w-full flex-col gap-3', className].filter(Boolean).join(' ')}>
+    <div className={cx('flex w-full flex-col gap-3', className)}>
       <input
         ref={ref}
         type="range"

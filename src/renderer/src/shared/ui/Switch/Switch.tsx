@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react'
+import { cx } from '../cx'
 
 type SwitchProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -37,7 +38,7 @@ function Switch({
       role="switch"
       aria-checked={checked}
       disabled={disabled}
-      className={[TRACK_BASE, track, className].filter(Boolean).join(' ')}
+      className={cx(TRACK_BASE, track, className)}
       onClick={() => onChange(!checked)}
       {...props}
     >

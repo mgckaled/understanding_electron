@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { cx } from '../cx'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger'
 type ButtonSize = 'sm' | 'md' | 'lg'
@@ -67,9 +68,7 @@ function Button({
   children,
   ...props
 }: ButtonProps): React.JSX.Element {
-  const classes = [BASE, VARIANT[variant], SIZE[size], SHAPE[shape], className]
-    .filter(Boolean)
-    .join(' ')
+  const classes = cx(BASE, VARIANT[variant], SIZE[size], SHAPE[shape], className)
 
   // `invisible` (visibility:hidden, not a transparent colour, so the spinner
   // still inherits currentColor) also drops the label from the accessible
