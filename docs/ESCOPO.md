@@ -28,6 +28,8 @@ Um chat multiuso corre um risco que uma bancada de dados sozinha não corre: tod
 
 É o teste que já respondia "salvar o PDF anotado" e "painel com filtros cruzados": os dois pedem um artefato que sobrevive fora da conversa e uma tela própria para gerenciá-lo. Continua respondendo à mesma pergunta agora que o motivo deixou de ser "isso não é chat" — o motivo é "isso não vive dentro de uma conversa".
 
+> **Caso em aberto, ainda sem veredito:** agrupar conversas num "projeto" com prompt de sistema e busca semântica dedicados — o padrão de "Projects" do Claude Desktop/ChatGPT — foi levantado e cruza este teste de um jeito que ainda não fechou. Prompt de sistema e documento anexado por projeto caem do lado permitido (contexto consumido, artefato que o app já sabe persistir); o que decide é quanto da superfície de gerência (biblioteca de documentos, status de reindexação, seletor de embedder) de fato exige tela própria, e quanto é extensão do que já existe. Sem compromisso de construir — levantamento completo em [`reference/projetos-e-rag-por-projeto.md`](reference/projetos-e-rag-por-projeto.md).
+
 ---
 
 ## Duas classes de arquivo, e a linha entre elas

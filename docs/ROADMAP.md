@@ -36,7 +36,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 22 | — | revisão de escopo: exportação e nuvem (4ª) | ✅ concluída |
 | 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ✅ concluída em 25/08/2026 — N-1-A (segredo), N-1-B (GLM ponta a ponta) e [N-1-C](plan/implemented/N-1-C-gemini-e-catalogo-de-nuvem.md) (Gemini, catálogo de nuvem no seletor, janela de contexto cloud-aware). Provedor terceirizado (Groq/Cerebras/SambaNova, Peça F do guia de nuvem) não entra como N-1-D — abre a trilha **N-2**, sem arquivo ainda, quando alguém escrever o primeiro plano dela |
 | 24 | **R-3** | sincronização de docs pós-18/N-1 e nascimento da skill `data` | ✅ concluída |
-| 25 | 19 | propor: consulta e passos | planejado |
+| 25 | [19](plan/active/19-propor-consulta-e-passos.md) | propor: consulta e passos | planejado — esboço de 7 passos escrito, nenhum executado |
 | 26 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
 | 27 | 20 | gráfico como artefato | planejado |
 | 28 | **E-2** | motor `.pptx` (aproveita imagens de gráfico do 20) | planejado |
@@ -155,6 +155,9 @@ O `CLAUDE.md` já lista código ao lado de documento, imagem, busca web, MCP e r
 
 ### Duas menções desatualizadas no `CLAUDE.md`, achadas pelo R-4 mas fora do escopo dele
 Seção "Instaladas na trilha do DuckDB", a linha do binário do Excel: "mantém fechado o gatilho do `shamefullyHoist` até o DuckDB" é framing histórico correto no contexto em que foi escrito (plano 17, antes do DuckDB chegar), mas lida isolada — depois que a tabela de segurança da mesma página passou a dizer "desligado" (R-4) — sugere ao leitor rápido que o gate ainda está aberto. Tabela de segurança, linha "Segredos": "**nenhum segredo existe ainda**" está desatualizada desde N-1-A/N-1-B (o segredo de nuvem do GLM já existe). Nenhuma das duas estava nos 22 itens que motivaram o R-4 (`notes/reports/r-skills.md`); registradas aqui para não expandir escopo em execução e para não se perderem.
+
+### Subproduto "Projetos" — proposta levantada, sem prioridade definida
+Agrupar conversas, prompt de sistema e busca semântica (RAG) por `project_id`, no padrão de "Projects" do Claude Desktop/ChatGPT — ideia trazida pelo usuário, sem compromisso de construir. Levantamento completo — decomposição por custo, independência entre a trilha de cartão/receita e a de "projeto", mensuração de busca particionada vs. global, achados sobre persistência de índice vetorial no DuckDB e sobre *tool calling* no Ollama — em [`reference/projetos-e-rag-por-projeto.md`](reference/projetos-e-rag-por-projeto.md); nota do cruzamento com o teste de escopo em [`ESCOPO.md § O teste que separa pilar de produto novo`](ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo). Sem plano numerado, sem data-gatilho — registrado para a análise não precisar ser refeita quando (e se) a decisão de priorizar chegar.
 
 ---
 
