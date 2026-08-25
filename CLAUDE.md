@@ -28,6 +28,7 @@ docs/
 ├── README.md        # mapa, ciclo de vida do plano, convenção de fonte única
 ├── ESCOPO.md        # o que o app faz e não faz
 ├── HISTORY.md       # decisões e entregas (cronológico inverso)
+├── DECISOES.md      # índice tabular das decisões dentro de cada plano — derivado
 ├── ROADMAP.md       # o que ainda falta
 ├── study/           # cadernos didáticos
 ├── reference/       # consulta técnica estável
@@ -52,6 +53,7 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | IA local e de nuvem, ML, RAG | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
 | Peso/cache KV por modelo Ollama (por faixa de contexto) e ficha técnica dos modelos de nuvem opt-in, elegíveis, inviáveis, descartados | [`docs/reference/models/`](docs/reference/models/README.md) — a frota **instalada** continua dona deste arquivo |
 | Decisões, alternativas descartadas, armadilhas | [`docs/HISTORY.md`](docs/HISTORY.md) |
+| Índice tabular por decisão individual (trilha, sigla, título — sem narrativa) | [`docs/DECISOES.md`](docs/DECISOES.md) |
 | Pendências e gatilhos de revisão | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Fundamentos do Electron, anatomia, medições | [`docs/study/`](docs/study/README.md) |
 

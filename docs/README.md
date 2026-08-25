@@ -14,6 +14,7 @@ docs/
 ├── ESCOPO.md        # o que o app faz e não faz — definição de produto
 ├── HISTORY.md       # changelog de decisões e entregas (cronológico inverso)
 ├── HISTORY-archive.md  # trilhas encerradas (fundação, DS, R, F), comprimidas — só leitura
+├── DECISOES.md      # índice tabular das decisões dentro de cada plano — derivado, não narra
 ├── ROADMAP.md       # o que ainda falta — pendências e gatilhos de revisão
 ├── study/           # cadernos didáticos: Electron, stack, anatomia, diário de bordo
 ├── reference/       # referência técnica: nem plano, nem história, nem tutorial
@@ -29,7 +30,7 @@ docs/
 
 1. Nasce em [`plan/active/`](plan/active/), com passos, critérios de aceite e um **diário de execução** vazio.
 2. Enquanto está sendo executado, cada sessão de trabalho acrescenta **uma linha** ao diário daquele plano.
-3. Ao concluir, o arquivo **move** para [`plan/implemented/`](plan/implemented/) e ganha **uma entrada curta** em [`HISTORY.md`](HISTORY.md), com link.
+3. Ao concluir, o arquivo **move** para [`plan/implemented/`](plan/implemented/) e ganha **uma entrada curta** em [`HISTORY.md`](HISTORY.md), com link — e, se o plano tiver algum heading `### D<id> — <título>`, essas linhas entram em [`DECISOES.md`](DECISOES.md); se não tiver nenhum, o próprio plano ganha uma linha lá, com a descrição igual ao título do marco recém-escrito em `HISTORY.md`.
 4. Plano abandonado ou superado por outro vai para [`plan/archive/`](plan/archive/), com uma linha em `HISTORY.md` dizendo **por que** foi abandonado. Isso importa: plano descartado em silêncio é reinventado seis meses depois.
 
 > ⚠️ `archive/` é **só leitura histórica**. Seus links internos podem apodrecer, e **não se conserta referência dentro do archive** — o custo é real e o benefício, nenhum.
@@ -87,6 +88,7 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Stack fixada, versões, regras invioláveis | [`CLAUDE.md`](../CLAUDE.md) | apontam |
 | Armadilhas diagnosticadas | [`HISTORY.md`](HISTORY.md) + `study/04-diario-de-bordo.md` | apontam |
 | Histórico, decisões, alternativas descartadas | [`HISTORY.md`](HISTORY.md) | apontam |
+| Índice tabular por decisão individual (trilha, sigla, título) | [`DECISOES.md`](DECISOES.md) | derivado — sem narrativa própria, nunca duplica `HISTORY.md` |
 | Trilhas encerradas (fundação, DS, R, F), comprimidas | [`HISTORY-archive.md`](HISTORY-archive.md) | apontam — nunca se conserta link interno lá dentro |
 | Pendências e gatilhos de revisão | [`ROADMAP.md`](ROADMAP.md) | apontam |
 | Fundamentos do Electron, anatomia, medições | [`study/`](study/README.md) | apontam |
