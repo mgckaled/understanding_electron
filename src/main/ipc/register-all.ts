@@ -45,6 +45,13 @@ import {
   makeGlmProbe
 } from '../features/ai/providers/glm'
 import {
+  geminiLoaded,
+  geminiModels,
+  geminiUnload,
+  makeGeminiChat,
+  makeGeminiProbe
+} from '../features/ai/providers/gemini'
+import {
   appendMessage,
   createConversation,
   listConversations,
@@ -192,10 +199,20 @@ export async function registerAll(): Promise<() => void> {
     unload: glmUnload,
     chat: makeGlmChat(() => readSecretForUse('glm', db, decryptSecret))
   }
+  const geminiAdapter: ProviderAdapter = {
+    probe: makeGeminiProbe(() => hasSecret({ provider: 'gemini' }, db)),
+    models: geminiModels,
+    loaded: geminiLoaded,
+    unload: geminiUnload,
+    chat: makeGeminiChat(() => readSecretForUse('gemini', db, decryptSecret))
+  }
   // N-1-B: what step 1 (N-1-A) left as a single fixed adapter is now a
   // service→provider resolver — nothing else in this file changes shape.
+  // N-1-C adds the third branch the same way.
   function resolveProvider(service: AiService): ProviderAdapter {
-    return service === 'glm' ? glmAdapter : ollamaAdapter
+    if (service === 'glm') return glmAdapter
+    if (service === 'gemini') return geminiAdapter
+    return ollamaAdapter
   }
 
   handle('ai:isAvailable', (args) => {
