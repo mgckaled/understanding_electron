@@ -213,3 +213,13 @@ O par `--sidebar-width`/`--sidebar-width-collapsed` tem hoje **um** consumidor: 
 ### `ThinkingMark`: canais de animação, não tokens de design
 
 As 8 variáveis `--thinking-*` (`--thinking-r`, `--thinking-rest-x` etc.) são exceção deliberada à regra "token é valor visual com nome semântico": existem porque o `@utility thinking-dot`/`dotThinking` de `tailwind.css` precisa de um nome para cada valor por ponto que `ThinkingMark.tsx` sobrescreve inline, e ficam em `tokens.css` com default inerte só para que um typo no par falhe alto (`guard.mjs` guarda 7) em vez de renderizar nada.
+
+## Medidas de controle fora do token — inventário (DS-8)
+
+Relatório externo sobre os primitivos (`notes/reports/r_primitive-components.md`) apontou px ad hoc em `Switch`, `Slider` e `Dialog` fora de `tokens.css`. Inventariado item a item contra o precedente do DS-6/DS-7 — nenhum promovido a token, mesmo critério de sempre: um único consumidor não justifica um terceiro nível.
+
+- **`Switch`** (`18px`/`32px` de trilho, `14px` de thumb). Único consumidor do componente (`AttachButton`, três instâncias do mesmo desenho). `--control-height-*` não serve — é para controle de formulário com rótulo ao lado, não para a geometria interna trilho/thumb. One-off documentado.
+- **`Slider`** (`4px`/`16px` de trilho/thumb, `-6px` de margem do thumb via pseudo-elemento cross-browser). Único consumidor (`ContextSlider`). Mesma razão do `Switch` — geometria interna de um controle, não altura de linha de formulário.
+- **`Dialog`** (`420px` de largura, `min(640px, 85vh)` de altura máxima, DS-8). Já documentado no próprio `Dialog.module.css`, mesmo raciocínio da largura original (fase 13): um valor sem token para um único consumidor é o que os dois níveis do token layer existem para evitar cunhar.
+
+Se um segundo consumidor real de qualquer um desses três aparecer com a mesma medida, é esse o gatilho para promover — não a existência do valor em si.
