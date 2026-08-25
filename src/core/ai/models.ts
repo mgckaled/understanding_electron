@@ -24,6 +24,43 @@ export const GLM_MODELS: AiModel[] = [
   }
 ]
 
+/**
+ * The pinned catalog for the Gemini cloud provider (N-1-C, Peça C) — same
+ * reasoning as `GLM_MODELS`: no `/api/show` to sonde, hand-written from
+ * `cloud-optin.md`. Both models are natively multimodal with a configurable
+ * `thinkingLevel` (confirmed via Context7 against each model's own doc page,
+ * `ai.google.dev/gemini-api/docs/models/<name>`) — the Peça D tension
+ * (visão declarada, anexo bloqueado por nível 3) now applies to the whole
+ * family, not just `gemini-2.5-flash` as the guide previously said.
+ */
+export const GEMINI_MODELS: AiModel[] = [
+  {
+    provider: 'gemini',
+    name: 'gemini-3.5-flash-lite',
+    parameterSize: '',
+    sizeBytes: 0,
+    capabilities: ['completion', 'tools', 'vision', 'thinking'],
+    contextLength: 1_048_576,
+    attention: null,
+    variantOf: null,
+    // Conferido pelo usuário no console do Google AI Studio, 25/08/2026
+    // (notes/nuvem/gemini.md) — proveniência "medido", mais forte que os
+    // agregadores de terceiro que cloud-optin.md hoje cita.
+    rateLimit: { kind: 'rate', rpm: 15, tpm: 250_000, rpd: 500 }
+  },
+  {
+    provider: 'gemini',
+    name: 'gemini-3.7-flash',
+    parameterSize: '',
+    sizeBytes: 0,
+    capabilities: ['completion', 'tools', 'vision', 'thinking'],
+    contextLength: 1_048_576,
+    attention: null,
+    variantOf: null,
+    rateLimit: { kind: 'rate', rpm: 5, tpm: 250_000, rpd: 20 }
+  }
+]
+
 // The two raw shapes this module normalizes. Declared loose on purpose: they
 // belong to Ollama, not to us, and every field the app depends on is read
 // defensively below. A missing field yields null, never a throw — the catalog

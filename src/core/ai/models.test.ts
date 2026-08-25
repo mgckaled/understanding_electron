@@ -1,4 +1,5 @@
 import {
+  GEMINI_MODELS,
   GLM_MODELS,
   hasCapability,
   normalizeOllamaModel,
@@ -283,5 +284,38 @@ describe('GLM_MODELS', () => {
     expect(model?.provider).toBe('glm')
     expect(model?.sizeBytes).toBe(0)
     expect(model?.attention).toBeNull()
+  })
+
+  it('publishes a concurrency limit, not RPM/TPM/RPD (Z.ai does not document those)', () => {
+    expect(GLM_MODELS[0]?.rateLimit).toEqual({ kind: 'concurrency', max: 1 })
+  })
+})
+
+describe('GEMINI_MODELS', () => {
+  it('declares completion on both entries', () => {
+    for (const model of GEMINI_MODELS) {
+      expect(model.capabilities).toContain('completion')
+    }
+  })
+
+  it('carries provider: gemini and no local RAM cost', () => {
+    for (const model of GEMINI_MODELS) {
+      expect(model.provider).toBe('gemini')
+      expect(model.sizeBytes).toBe(0)
+      expect(model.attention).toBeNull()
+    }
+  })
+
+  it('publishes a rate limit (RPM/TPM/RPD), the shape Google documents', () => {
+    for (const model of GEMINI_MODELS) {
+      expect(model.rateLimit?.kind).toBe('rate')
+    }
+  })
+
+  it('picks the flash-lite entry as the higher-RPD, daily-use model', () => {
+    const lite = GEMINI_MODELS.find((m) => m.name === 'gemini-3.5-flash-lite')
+    const flash = GEMINI_MODELS.find((m) => m.name === 'gemini-3.7-flash')
+    expect(lite?.rateLimit).toMatchObject({ rpd: 500 })
+    expect(flash?.rateLimit).toMatchObject({ rpd: 20 })
   })
 })
