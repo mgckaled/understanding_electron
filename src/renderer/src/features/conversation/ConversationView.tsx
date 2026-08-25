@@ -111,12 +111,20 @@ function ConversationView(): React.JSX.Element {
   // unlocked GLM pick back to the first local model.
   const model = resolveModel(chosen.model, allModels, locked)
 
-  // min(trained ceiling, what this machine can hold) — see contextCeiling. The
-  // second bound is what matters (phi4-mini's 131072 = 16 GB cache), and it is
-  // defined once here and passed down so the margin applies in one place.
+  // min(trained ceiling, what this machine can hold) for Ollama — see
+  // contextCeiling. For a cloud model (attention: null, N-1-C, DN1C.2) there
+  // is no RAM to bound against, so the ceiling is the model's own trained
+  // window: `contextCeiling` already returns null for that case (right for
+  // "does not cost RAM", wrong for "what should the slider offer"), and this
+  // is the one place that turns null into the real number instead of leaving
+  // the window stuck at DEFAULT_NUM_CTX with no control to change it.
   const { memory, reload: reloadMemory } = useSystemMemory()
   const ceilingOf = (entry: AiModel): number | null =>
-    memory === undefined ? null : contextCeiling(entry, memory.freeBytes, RAM_MARGIN_BYTES)
+    entry.attention === null
+      ? entry.contextLength
+      : memory === undefined
+        ? null
+        : contextCeiling(entry, memory.freeBytes, RAM_MARGIN_BYTES)
 
   const current = allModels.find((entry) => entry.name === model)
   const ceiling = current === undefined ? null : ceilingOf(current)
@@ -124,6 +132,10 @@ function ConversationView(): React.JSX.Element {
   // models installed, GLM auto-selected"); chosen.service covers the frame
   // before either catalog has loaded; 'ollama' is the last-resort default.
   const service: AiService = current?.provider ?? chosen.service ?? 'ollama'
+  // Whether the window costs local RAM (Ollama, can become unaffordable
+  // later) or is a client-side budget bound only (cloud, N-1-C, DN1C.2) —
+  // decides whether conversationWindow ever freezes it.
+  const costed = current?.attention !== null
 
   // One writer for both settings: hold it locally so a choice made before any
   // conversation exists is not dropped in silence, and persist it as soon as
@@ -136,7 +148,7 @@ function ConversationView(): React.JSX.Element {
   // The window actually in force. Sent explicitly on every call, because NOT
   // sending it is what leaves Ollama's own 4096 in charge — a number nobody
   // chose and one that a single document overflows in silence.
-  const contextWindow = conversationWindow({ locked, reserved: chosen.numCtx, ceiling })
+  const contextWindow = conversationWindow({ locked, reserved: chosen.numCtx, ceiling, costed })
   const numCtx =
     contextWindow.status === 'open' || contextWindow.status === 'locked'
       ? contextWindow.numCtx

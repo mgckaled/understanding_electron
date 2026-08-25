@@ -117,20 +117,31 @@ export function conversationWindow(input: {
   /** What the conversation recorded for itself; absent before its first send. */
   reserved: number | undefined
   ceiling: number | null
+  /**
+   * Whether this window is a real local RAM reservation (Ollama) that can
+   * become unaffordable later, or a client-side budget bound only, never sent
+   * to the provider (cloud, N-1-C) — `num_ctx` reaches no cloud adapter's
+   * request body. The lock protects against the first; the second has
+   * nothing to protect against, so it always re-derives instead of freezing
+   * — including a conversation already locked at a stale value from before
+   * this parameter existed.
+   */
+  costed: boolean
 }): ConversationWindow {
-  const { locked, reserved, ceiling } = input
+  const { locked, reserved, ceiling, costed } = input
 
-  if (locked && reserved !== undefined) {
+  if (costed && locked && reserved !== undefined) {
     return ceiling === null || reserved <= ceiling
       ? { status: 'locked', numCtx: reserved }
       : { status: 'unaffordable', numCtx: reserved }
   }
 
   // Everything else derives — including a conversation from before the lock
-  // existed, which has turns but no recorded window until its next send.
+  // existed, which has turns but no recorded window until its next send, and
+  // (for cloud) any conversation at all, locked or not.
   const derived = effectiveNumCtx(reserved, ceiling)
   if (derived === null) return { status: 'too-large' }
-  return { status: locked ? 'locked' : 'open', numCtx: derived }
+  return { status: locked && costed ? 'locked' : 'open', numCtx: derived }
 }
 
 export type Budget = {

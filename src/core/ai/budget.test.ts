@@ -154,14 +154,18 @@ describe('budgetFor', () => {
  */
 describe('conversationWindow', () => {
   it('derives the window while the conversation is still open', () => {
-    expect(conversationWindow({ locked: false, reserved: undefined, ceiling: 32_768 })).toEqual({
+    expect(
+      conversationWindow({ locked: false, reserved: undefined, ceiling: 32_768, costed: true })
+    ).toEqual({
       status: 'open',
       numCtx: 32_768
     })
   })
 
   it('clamps an open conversation to what the machine can hold', () => {
-    expect(conversationWindow({ locked: false, reserved: 32_768, ceiling: 6006 })).toEqual({
+    expect(
+      conversationWindow({ locked: false, reserved: 32_768, ceiling: 6006, costed: true })
+    ).toEqual({
       status: 'open',
       numCtx: 6006
     })
@@ -171,7 +175,9 @@ describe('conversationWindow', () => {
     // The point of the lock, and the direction that is easy to get wrong: a
     // ceiling that grew must not silently raise a reservation the model was
     // already loaded with.
-    expect(conversationWindow({ locked: true, reserved: 8192, ceiling: 131_072 })).toEqual({
+    expect(
+      conversationWindow({ locked: true, reserved: 8192, ceiling: 131_072, costed: true })
+    ).toEqual({
       status: 'locked',
       numCtx: 8192
     })
@@ -181,7 +187,9 @@ describe('conversationWindow', () => {
     // The asymmetric failure mode: the reservation is remade on every load, and
     // free RAM varies by 3 GB on this machine. Shrinking in silence would undo
     // the guarantee the lock exists to give.
-    expect(conversationWindow({ locked: true, reserved: 32_768, ceiling: 6006 })).toEqual({
+    expect(
+      conversationWindow({ locked: true, reserved: 32_768, ceiling: 6006, costed: true })
+    ).toEqual({
       status: 'unaffordable',
       numCtx: 32_768
     })
@@ -190,7 +198,9 @@ describe('conversationWindow', () => {
   it('locks a conversation from before the lock at what it can afford now', () => {
     // Its turns predate the pair being recorded, so there is nothing written
     // down to honour — it derives one, and its next send writes it.
-    expect(conversationWindow({ locked: true, reserved: undefined, ceiling: 6006 })).toEqual({
+    expect(
+      conversationWindow({ locked: true, reserved: undefined, ceiling: 6006, costed: true })
+    ).toEqual({
       status: 'locked',
       numCtx: 6006
     })
@@ -199,16 +209,57 @@ describe('conversationWindow', () => {
   it('reports too-large when the model does not fit at all', () => {
     // `contextCeiling` returning 0 is the true answer; treating it as a window
     // is what produced "até 0k" and a clamp to zero (D15.10).
-    expect(conversationWindow({ locked: false, reserved: undefined, ceiling: 0 })).toEqual({
+    expect(
+      conversationWindow({ locked: false, reserved: undefined, ceiling: 0, costed: true })
+    ).toEqual({
       status: 'too-large'
     })
   })
 
-  it('honours a locked window for a model that could not be costed', () => {
-    // A null ceiling means "no basis to refuse", never "free".
-    expect(conversationWindow({ locked: true, reserved: 16_384, ceiling: null })).toEqual({
+  it('honours a locked window for an Ollama model whose RAM cost could not be computed', () => {
+    // A null ceiling means "no basis to refuse", never "free" — distinct from
+    // `costed: false` (cloud, N-1-C), which means there was never a RAM cost
+    // to begin with, not that this particular model's cost is unknown.
+    expect(
+      conversationWindow({ locked: true, reserved: 16_384, ceiling: null, costed: true })
+    ).toEqual({
       status: 'locked',
       numCtx: 16_384
+    })
+  })
+
+  // N-1-C, DN1C.2: num_ctx never reaches a cloud provider — nothing is
+  // allocated, so nothing can become unaffordable later, and the lock has
+  // nothing to protect. `costed: false` always re-derives, even `locked`.
+  describe('costed: false (cloud, N-1-C)', () => {
+    it('never locks, even once the conversation has turns', () => {
+      expect(
+        conversationWindow({ locked: true, reserved: 32_768, ceiling: 1_048_576, costed: false })
+      ).toEqual({
+        status: 'open',
+        numCtx: 32_768
+      })
+    })
+
+    it('repairs a conversation already locked at a stale value from before this fix', () => {
+      // The exact shape of the bug this plan fixes: an old conversation whose
+      // `reserved` was written while `ceiling` was wrongly null (DEFAULT_NUM_CTX,
+      // unclamped). Re-derived against the real ceiling, not frozen.
+      expect(
+        conversationWindow({ locked: true, reserved: 32_768, ceiling: 200_000, costed: false })
+      ).toEqual({
+        status: 'open',
+        numCtx: 32_768
+      })
+    })
+
+    it('is never unaffordable, no matter how large the reserved value', () => {
+      expect(
+        conversationWindow({ locked: true, reserved: 999_999, ceiling: 200_000, costed: false })
+      ).toEqual({
+        status: 'open',
+        numCtx: 200_000
+      })
     })
   })
 })
