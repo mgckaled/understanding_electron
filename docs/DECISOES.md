@@ -269,6 +269,14 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 
 ---
 
+## Revisão de escopo (5ª)
+
+| trilha | sigla | descrição |
+|---|---|---|
+| — | [revisão 5ª](plan/implemented/revisao-escopo-nivel-3-nuvem.md) | nível 3 liberado na nuvem — supersede DN1B.6, a recusa que este plano remove |
+
+---
+
 ## Plano ainda ativo
 
 Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, até `active/09-camada-de-ia.md` mover para `implemented/`.

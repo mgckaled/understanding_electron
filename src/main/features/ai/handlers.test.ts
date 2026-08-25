@@ -295,6 +295,45 @@ describe('chat', () => {
     ])
   })
 
+  it('resolves an image part on a cloud service too — nível 3 unblocked (revisão de escopo, 5ª)', async () => {
+    let received: ChatMessage[] | undefined
+    const chatFn: ChatFn = async (sentMessages) => {
+      received = sentMessages
+      return { content: 'ok' }
+    }
+    const withImage: Message[] = [
+      {
+        id: 'm1',
+        role: 'user',
+        parts: [
+          { kind: 'image', hash: 'h1', fileName: 'grafico.png', mimeType: 'image/png' },
+          { kind: 'text', text: 'o que é isso?' }
+        ],
+        createdAt: 1
+      }
+    ]
+    const resolveThisImage = async (hash: string): Promise<Buffer> => {
+      expect(hash).toBe('h1')
+      return Buffer.from('fake png bytes')
+    }
+
+    const result = await chat(
+      { service: 'glm', model: 'glm-4.7-flash', messages: withImage, jobId: 'j12' },
+      chatFn,
+      () => {},
+      resolveThisImage
+    )
+
+    expect(result).toEqual({ ok: true, value: { content: 'ok' } })
+    expect(received).toEqual([
+      {
+        role: 'user',
+        content: 'o que é isso?',
+        images: [Buffer.from('fake png bytes').toString('base64')]
+      }
+    ])
+  })
+
   it('reports timeout when the deadline fires before the reply', async () => {
     vi.useFakeTimers()
     const chatFn: ChatFn = (_messages, opts) =>
