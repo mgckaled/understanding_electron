@@ -22,6 +22,19 @@ type GeminiChunk = {
   usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }
 }
 
+// ESCOPO.md normalizes every image to PNG or JPEG, so the first bytes suffice.
+function imageMimeType(base64: string): 'image/png' | 'image/jpeg' {
+  const [first, second] = Buffer.from(base64.slice(0, 4), 'base64')
+  return first === 0x89 && second === 0x50 ? 'image/png' : 'image/jpeg'
+}
+
+function partsOf(message: ChatMessage): unknown[] {
+  const imageParts = (message.images ?? []).map((data) => ({
+    inlineData: { mimeType: imageMimeType(data), data }
+  }))
+  return [...imageParts, { text: message.content }]
+}
+
 // Gemini uses role 'model', not 'assistant', and has no 'system' role inside
 // `contents` — a system message goes in the separate `systemInstruction`
 // field. The two real differences from GLM's OpenAI-compatible shape.
@@ -30,7 +43,7 @@ function toGeminiContents(messages: ChatMessage[]): unknown[] {
     .filter((message) => message.role !== 'system')
     .map((message) => ({
       role: message.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: message.content }]
+      parts: partsOf(message)
     }))
 }
 

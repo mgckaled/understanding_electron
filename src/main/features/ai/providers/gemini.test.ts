@@ -115,6 +115,38 @@ describe('makeGeminiChat', () => {
     ])
   })
 
+  it('sends an image part as inlineData, sniffing PNG from the base64 bytes', async () => {
+    const fetchMock = stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
+    ])
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).toString('base64')
+    const withImage: ChatMessage[] = [{ role: 'user', content: 'o que é isso?', images: [png] }]
+
+    await chat(withImage, { model: 'gemini-3.7-flash' })
+
+    expect(requestBody(fetchMock).contents).toEqual([
+      {
+        role: 'user',
+        parts: [{ inlineData: { mimeType: 'image/png', data: png } }, { text: 'o que é isso?' }]
+      }
+    ])
+  })
+
+  it('sniffs JPEG from the base64 bytes too, not just PNG', async () => {
+    const fetchMock = stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
+    ])
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0]).toString('base64')
+    const withImage: ChatMessage[] = [{ role: 'user', content: 'e essa?', images: [jpeg] }]
+
+    await chat(withImage, { model: 'gemini-3.7-flash' })
+
+    const parts = requestBody(fetchMock).contents as {
+      parts: { inlineData?: { mimeType: string } }[]
+    }[]
+    expect(parts[0]?.parts[0]?.inlineData?.mimeType).toBe('image/jpeg')
+  })
+
   it('omits systemInstruction when there is no system message', async () => {
     const fetchMock = stubStream([
       'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
