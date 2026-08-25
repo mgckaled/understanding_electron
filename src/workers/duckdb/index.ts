@@ -8,6 +8,7 @@ import { columnsToArrowBytes } from '@core/duckdb/arrow'
 import {
   buildSummarizeSql,
   buildMaterializeSql,
+  buildMaterializeQuerySql,
   buildDropScratchSql,
   buildCountSql,
   buildTopValuesSql,
@@ -42,8 +43,15 @@ const tempDir = join(userDataPath, 'duckdb-tmp')
 // Never accumulates across requests (D18D.2/D18D.3): CREATE OR REPLACE at
 // the start of every profile, DROP in a finally at the end, so a profile
 // request for one hash never sees another hash's leftovers even if a prior
-// request threw mid-sequence.
+// request threw mid-sequence. Shared with 'transform' (D19.4) — safe because
+// createEnqueue (main/duckdb/spawnWorker.ts) serializes every request onto
+// one tail promise, so two profiling passes never run at once.
 const SCRATCH_TABLE = 'dataset_profile_scratch'
+
+// The DOM row cap (CLAUDE.md § Arquitetura de dados) — dataset:transform's
+// before/after profile already reports the true row count, so unlike
+// dataset:query's 201-row N+1 trick, no "there is more" signal is needed here.
+const TRANSFORM_PREVIEW_ROWS = 200
 
 async function main(): Promise<void> {
   const instance = await DuckDBInstance.create(':memory:')
@@ -174,6 +182,42 @@ async function main(): Promise<void> {
   }
 
   /**
+   * Runs the compiled steps (D19.1/D19.4): profiles the dataset before and
+   * after, then previews the transformed result capped at
+   * TRANSFORM_PREVIEW_ROWS. `sql` materializes in full for the after-profile
+   * (its true row count and null percentages), and the preview reads back
+   * from that same materialized copy instead of re-running `sql` a second
+   * time.
+   */
+  async function handleTransform(hash: string, sql: string): Promise<WorkerResponse> {
+    try {
+      await ensureView(hash)
+
+      await connection.run(buildMaterializeSql('dataset', SCRATCH_TABLE))
+      let before: ColumnProfile[]
+      try {
+        before = await profileScratchTable()
+      } finally {
+        await connection.run(buildDropScratchSql(SCRATCH_TABLE))
+      }
+
+      await connection.run(buildMaterializeQuerySql(sql, SCRATCH_TABLE))
+      try {
+        const after = await profileScratchTable()
+        const previewReader = await connection.runAndReadAll(
+          `SELECT * FROM "${SCRATCH_TABLE}" LIMIT ${TRANSFORM_PREVIEW_ROWS}`
+        )
+        const bytes = columnsToArrowBytes(normalizeColumns(previewReader.getColumnsObject()))
+        return { kind: 'transform', ok: true, bytes, before, after }
+      } finally {
+        await connection.run(buildDropScratchSql(SCRATCH_TABLE))
+      }
+    } catch (error) {
+      return { kind: 'transform', ok: false, message: (error as Error).message }
+    }
+  }
+
+  /**
    * Resolves the schema for a JSON attach (D18E.3) — the source of
    * `columns`/`rowCount` is the engine's own `DESCRIBE`, never a hand-rolled
    * parser: writing one would duplicate the inference `read_json_auto`
@@ -223,6 +267,8 @@ async function main(): Promise<void> {
         return handleProfile(request.hash)
       case 'schema':
         return handleSchema(request.hash)
+      case 'transform':
+        return handleTransform(request.hash, request.sql)
     }
   }
 

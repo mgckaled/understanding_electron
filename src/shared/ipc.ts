@@ -245,6 +245,21 @@ export interface ColumnProfile {
 }
 
 /**
+ * A dataset:transform reply (plano 19, D19.4/D19.6) — a preview of the
+ * compiled steps applied to the dataset, plus the full-table profile from
+ * before and after: comparing `nullPercentage` per column across the two
+ * catches a step's silent damage (a type conversion turning a mostly-filled
+ * column mostly-null) that an empty `bytes` preview or a bare row count
+ * would not. `bytes` is Arrow IPC, capped at 200 rows — same reasoning as
+ * `dataset:query` — while `before`/`after` run over the whole table.
+ */
+export interface DatasetTransformResult {
+  bytes: Uint8Array
+  before: ColumnProfile[]
+  after: ColumnProfile[]
+}
+
+/**
  * A document attached to a message (plano 17, D17.2) — `text` carries the
  * whole extraction inline, produced once by `document:attach`: the chat is
  * stateless and resends the transcript every turn, so what must not repeat is
@@ -397,6 +412,103 @@ export const CLOUD_PROVIDERS = ['gemini', 'glm'] as const
 export type CloudProvider = (typeof CLOUD_PROVIDERS)[number]
 export const cloudProviderSchema = z.enum(CLOUD_PROVIDERS)
 
+// Pipeline steps (plano 19, D19.1) — the six operations a model may propose
+// against an attached dataset's schema, never its rows. Live here, not in
+// core/pipeline/, because dataset:transform's args need them as a zod
+// schema at the IPC boundary, and shared/ imports nothing but zod (the
+// layer rule core/pipeline/steps.ts re-exports these from, same pattern as
+// ColumnProfile in core/duckdb/profile.ts).
+export const filterOperatorSchema = z.enum([
+  'eq',
+  'neq',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'contains',
+  'isNull',
+  'isNotNull'
+])
+export type FilterOperator = z.infer<typeof filterOperatorSchema>
+
+// `value` is absent for isNull/isNotNull and required for the rest — left
+// unenforced here on purpose: a zod refinement would not survive
+// z.toJSONSchema() (D19.3), so core/pipeline/compile.ts is where a missing
+// value for an operator that needs one gets rejected.
+export const filterStepSchema = z.object({
+  kind: z.literal('filter'),
+  column: z.string().min(1),
+  operator: filterOperatorSchema,
+  value: z.union([z.string(), z.number(), z.boolean()]).optional()
+})
+export type FilterStep = z.infer<typeof filterStepSchema>
+
+export const sortStepSchema = z.object({
+  kind: z.literal('sort'),
+  column: z.string().min(1),
+  direction: z.enum(['asc', 'desc'])
+})
+export type SortStep = z.infer<typeof sortStepSchema>
+
+export const limitStepSchema = z.object({
+  kind: z.literal('limit'),
+  count: z.number().int().positive()
+})
+export type LimitStep = z.infer<typeof limitStepSchema>
+
+export const dropColumnsStepSchema = z.object({
+  kind: z.literal('dropColumns'),
+  columns: z.array(z.string().min(1)).min(1)
+})
+export type DropColumnsStep = z.infer<typeof dropColumnsStepSchema>
+
+export const renameColumnStepSchema = z.object({
+  kind: z.literal('renameColumn'),
+  from: z.string().min(1),
+  to: z.string().min(1)
+})
+export type RenameColumnStep = z.infer<typeof renameColumnStepSchema>
+
+export const fillMissingStrategySchema = z.enum(['value', 'zero', 'empty'])
+export type FillMissingStrategy = z.infer<typeof fillMissingStrategySchema>
+
+// `value` only applies to the 'value' strategy — same non-enforcement
+// reasoning as FilterStep above.
+export const fillMissingStepSchema = z.object({
+  kind: z.literal('fillMissing'),
+  column: z.string().min(1),
+  strategy: fillMissingStrategySchema,
+  value: z.union([z.string(), z.number()]).optional()
+})
+export type FillMissingStep = z.infer<typeof fillMissingStepSchema>
+
+export const stepSchema = z.discriminatedUnion('kind', [
+  filterStepSchema,
+  sortStepSchema,
+  limitStepSchema,
+  dropColumnsStepSchema,
+  renameColumnStepSchema,
+  fillMissingStepSchema
+])
+export type Step = z.infer<typeof stepSchema>
+
+/**
+ * A model's proposal for what to do with the attached dataset (D9.4). `kind`
+ * only changes presentation — an immediate answer versus a reapplicable
+ * pipeline — never the vocabulary a step can express (D19.2): both variants
+ * share the exact same `steps` shape.
+ */
+export const stepProposalSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('query'), steps: z.array(stepSchema).min(1) }),
+  z.object({ kind: z.literal('steps'), steps: z.array(stepSchema).min(1) })
+])
+export type StepProposal = z.infer<typeof stepProposalSchema>
+
+// D19.3: one schema feeds both Ollama's `format` (constrains generation) and
+// `.parse()` (validates the reply) — see core/ai/types.ts's ChatFn and
+// core/ai/proposal.ts.
+export const stepProposalJsonSchema = z.toJSONSchema(stepProposalSchema)
+
 export const argsSchema = {
   'app:info': z.void(),
   'app:memory': z.void(),
@@ -408,6 +520,11 @@ export const argsSchema = {
   // checked before any SQL string is built.
   'dataset:query': z.object({ hash: z.string().min(1), sql: z.string().min(1) }),
   'dataset:profile': z.object({ hash: z.string().min(1) }),
+  // steps, not a raw SQL string (D19.4): each of the six operations is
+  // individually zod-validated, so the renderer never builds SQL by hand —
+  // the compiler (core/pipeline/compile.ts) runs on the main side, over a
+  // payload with no free-text SQL surface to inject through.
+  'dataset:transform': z.object({ hash: z.string().min(1), steps: z.array(stepSchema).min(1) }),
   // Its own pair (D17.1): dataset:pick's file filter (csv/tsv/txt) does not
   // serve a document dialog, so a shared channel would need an internal
   // dispatch register-all.ts already gets for free by picking the function.
@@ -509,6 +626,10 @@ export type IpcContract = {
   'dataset:profile': {
     args: z.infer<(typeof argsSchema)['dataset:profile']>
     result: Result<ColumnProfile[]>
+  }
+  'dataset:transform': {
+    args: z.infer<(typeof argsSchema)['dataset:transform']>
+    result: Result<DatasetTransformResult>
   }
   'document:pick': {
     args: z.infer<(typeof argsSchema)['document:pick']>
@@ -616,6 +737,8 @@ export type Api = {
     query(hash: string, sql: string): Promise<Result<Uint8Array>>
     /** Computes the level-2 profile — SUMMARIZE plus cardinality-gated top-N — for the attached dataset (D18D.2). */
     profile(hash: string): Promise<Result<ColumnProfile[]>>
+    /** Compiles `steps` (D19.1) and previews the result, capped at 200 rows, alongside the before/after column profile (D19.6). */
+    transform(hash: string, steps: Step[]): Promise<Result<DatasetTransformResult>>
   }
   document: {
     pick(): Promise<Result<DatasetRef | null>>

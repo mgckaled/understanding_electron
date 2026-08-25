@@ -9,7 +9,12 @@ import { DATABASE_FILE, openDatabase } from '../db/open'
 import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
-import { attachDataset, queryDataset, profileDataset } from '../features/dataset/handlers'
+import {
+  attachDataset,
+  queryDataset,
+  profileDataset,
+  transformDataset
+} from '../features/dataset/handlers'
 import { pickDataset } from '../features/dataset/pick'
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage } from '../features/image/handlers'
@@ -165,6 +170,9 @@ export async function registerAll(): Promise<() => void> {
   )
   handle('dataset:query', (args) => queryDataset(args, duckdbClient.runQuery))
   handle('dataset:profile', (args) => profileDataset(args, duckdbClient.runProfile))
+  handle('dataset:transform', (args) =>
+    transformDataset(args, duckdbClient.runSchema, duckdbClient.runTransform)
+  )
   handle('document:pick', (args) => pickDocument(args, dialog.showOpenDialog, statDocumentSize))
   handle('document:attach', (args) =>
     attachDocument(args, readDocumentFile, attachmentsDir, ensureAttachment, broadcastJobEvent)

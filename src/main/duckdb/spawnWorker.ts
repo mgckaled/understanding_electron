@@ -82,6 +82,10 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
   runQuery: (hash: string, sql: string) => Promise<Uint8Array>
   runProfile: (hash: string) => Promise<ColumnProfile[]>
   runSchema: (hash: string) => Promise<{ columns: string[]; rowCount: number }>
+  runTransform: (
+    hash: string,
+    sql: string
+  ) => Promise<{ bytes: Uint8Array; before: ColumnProfile[]; after: ColumnProfile[] }>
 } {
   const enqueue = createEnqueue(worker)
 
@@ -109,6 +113,14 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
       }
       if (!response.ok) throw new Error(response.message)
       return { columns: response.columns, rowCount: response.rowCount }
+    },
+    async runTransform(hash, sql) {
+      const response = await enqueue({ kind: 'transform', hash, sql })
+      if (response.kind !== 'transform') {
+        throw new Error(`DuckDB worker replied with kind "${response.kind}", expected "transform"`)
+      }
+      if (!response.ok) throw new Error(response.message)
+      return { bytes: response.bytes, before: response.before, after: response.after }
     }
   }
 }

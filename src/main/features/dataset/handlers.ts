@@ -1,7 +1,16 @@
 import type { DatasetFormat } from '@core/dataset/format'
-import type { ColumnProfile, DatasetPart, JobEvent, JobId, Result } from '@shared/ipc'
+import type {
+  ColumnProfile,
+  DatasetPart,
+  DatasetTransformResult,
+  JobEvent,
+  JobId,
+  Result,
+  Step
+} from '@shared/ipc'
 import { ok, err } from '@core/result'
 import { isValidHash, isReadOnlyQuery, buildFinalSql } from '@core/duckdb/query'
+import { compileSteps } from '@core/pipeline/compile'
 import { attachJsonDataset } from './attachJson'
 import { attachDelimitedDataset } from './attachDelimited'
 import { attachExcelDataset } from './attachExcel'
@@ -96,6 +105,40 @@ export async function queryDataset(
   try {
     const bytes = await runQuery(hash, buildFinalSql(sql, QUERY_ROW_LIMIT))
     return ok(bytes)
+  } catch (error) {
+    return err({ kind: 'invalidQuery', message: (error as Error).message })
+  }
+}
+
+/**
+ * Compiles `steps` (D19.1) over the attached dataset's own schema and
+ * previews the result (D19.4). `runSchema` supplies the column list
+ * `compileSteps` validates against — the same schema the model was shown,
+ * refetched here rather than trusted from the renderer, since a compile
+ * error naming an unknown column is the signal a hallucinated proposal
+ * looks like.
+ *
+ * @param runTransform - Sends `(hash, sql)` to the DuckDB worker and
+ *   resolves with a preview plus the before/after column profile; rejects
+ *   with the engine's own error text.
+ */
+export async function transformDataset(
+  { hash, steps }: { hash: string; steps: Step[] },
+  runSchema: (hash: string) => Promise<{ columns: string[]; rowCount: number }>,
+  runTransform: (
+    hash: string,
+    sql: string
+  ) => Promise<{ bytes: Uint8Array; before: ColumnProfile[]; after: ColumnProfile[] }>
+): Promise<Result<DatasetTransformResult>> {
+  if (!isValidHash(hash)) {
+    return err({ kind: 'invalidQuery', message: 'Identificador de anexo inválido.' })
+  }
+
+  try {
+    const { columns } = await runSchema(hash)
+    const sql = compileSteps(steps, columns)
+    const { bytes, before, after } = await runTransform(hash, sql)
+    return ok({ bytes, before, after })
   } catch (error) {
     return err({ kind: 'invalidQuery', message: (error as Error).message })
   }

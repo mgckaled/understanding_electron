@@ -9,6 +9,9 @@ export type WorkerRequest =
   | { kind: 'query'; hash: string; sql: string }
   | { kind: 'profile'; hash: string }
   | { kind: 'schema'; hash: string }
+  // sql is the compiled steps body (D19.4), unwrapped — the worker both
+  // materializes it in full (for the after-profile) and previews it capped.
+  | { kind: 'transform'; hash: string; sql: string }
 
 export type WorkerResponse =
   | { kind: 'query'; ok: true; bytes: Uint8Array }
@@ -17,3 +20,11 @@ export type WorkerResponse =
   | { kind: 'profile'; ok: false; message: string }
   | { kind: 'schema'; ok: true; columns: string[]; rowCount: number }
   | { kind: 'schema'; ok: false; message: string }
+  | {
+      kind: 'transform'
+      ok: true
+      bytes: Uint8Array
+      before: ColumnProfile[]
+      after: ColumnProfile[]
+    }
+  | { kind: 'transform'; ok: false; message: string }

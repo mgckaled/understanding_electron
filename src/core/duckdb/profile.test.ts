@@ -2,6 +2,7 @@ import {
   sqlIdentifier,
   buildSummarizeSql,
   buildMaterializeSql,
+  buildMaterializeQuerySql,
   buildDropScratchSql,
   buildCountSql,
   qualifiesForTopValues,
@@ -28,6 +29,20 @@ describe('buildMaterializeSql', () => {
   it('creates or replaces a temp table from the source view', () => {
     expect(buildMaterializeSql('dataset', 'dataset_profile_scratch')).toBe(
       'CREATE OR REPLACE TEMP TABLE "dataset_profile_scratch" AS SELECT * FROM "dataset"'
+    )
+  })
+})
+
+describe('buildMaterializeQuerySql', () => {
+  it('materializes an arbitrary query, not a named view', () => {
+    expect(buildMaterializeQuerySql('SELECT * FROM "dataset" LIMIT 10', 'scratch')).toBe(
+      'CREATE OR REPLACE TEMP TABLE "scratch" AS SELECT * FROM "dataset" LIMIT 10'
+    )
+  })
+
+  it('strips a trailing semicolon', () => {
+    expect(buildMaterializeQuerySql('SELECT 1;', 'scratch')).toBe(
+      'CREATE OR REPLACE TEMP TABLE "scratch" AS SELECT 1'
     )
   })
 })

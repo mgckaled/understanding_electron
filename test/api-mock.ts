@@ -56,7 +56,10 @@ export function createApiMock(): Api {
       // Unlike query, nothing fires this on mount — the profile section only
       // queries when its own disclosure opens (D18D.6) — so a bare vi.fn()
       // is safe here, same as pick/attach above.
-      profile: vi.fn()
+      profile: vi.fn(),
+      // Same reasoning as profile — nothing fires this on mount, it only runs
+      // when a proposal is applied (plano 19).
+      transform: vi.fn()
     },
     document: { pick: vi.fn(), attach: vi.fn() },
     image: { pick: vi.fn(), attach: vi.fn() },

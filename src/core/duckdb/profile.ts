@@ -24,6 +24,18 @@ export function buildMaterializeSql(viewName: string, scratchTable: string): str
   return `CREATE OR REPLACE TEMP TABLE "${sqlIdentifier(scratchTable)}" AS SELECT * FROM "${sqlIdentifier(viewName)}"`
 }
 
+/**
+ * Materializes an arbitrary query (D19.4) — not a named view, unlike
+ * {@link buildMaterializeSql}: `core/pipeline/compile.ts`'s output is
+ * already a full `SELECT`, so this drops it straight into the scratch table
+ * without a second wrapping `SELECT * FROM`. A trailing `;` is stripped
+ * first, or it would land inside the statement as invalid SQL.
+ */
+export function buildMaterializeQuerySql(sql: string, scratchTable: string): string {
+  const body = sql.trim().replace(/;\s*$/, '')
+  return `CREATE OR REPLACE TEMP TABLE "${sqlIdentifier(scratchTable)}" AS ${body}`
+}
+
 export function buildDropScratchSql(scratchTable: string): string {
   return `DROP TABLE IF EXISTS "${sqlIdentifier(scratchTable)}"`
 }
