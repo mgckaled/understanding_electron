@@ -15,15 +15,20 @@ type SliderProps = Omit<
    *  a range input maps to the native `input` event, not `change`. Drive the
    *  visible thumb/label from this. */
   onChange: (value: number) => void
-  /** Fires once the value settles (mouse/touch release, key release, blur) —
-   *  the native `change` event React does not expose directly. Optional:
-   *  callers that do not care about mid-drag frequency (no side effect behind
-   *  `onChange`) can omit it and read every step from `onChange` alone. */
+  /** Fires once, on the native `change` event (release, or a keypress that
+   *  actually moved the value) — the commit signal React's `onChange` does
+   *  not expose, since that maps to `input`. Optional: callers that do not
+   *  care about mid-drag frequency (no side effect behind `onChange`) can
+   *  omit it and read every step from `onChange` alone. */
   onChangeCommitted?: (value: number) => void
   /** Rendered as labels below the track, each positioned at its true share of
    *  `min..max` — never flex-distributed evenly, which would misplace every
    *  mark but the first/last for a non-linear sequence like context-window
-   *  doublings (1k, 2k, 4k, 8k…). */
+   *  doublings (1k, 2k, 4k, 8k…). Also the source for `aria-valuetext`: when
+   *  a caller passes an already-thinned list (e.g. `thinLabels()` in
+   *  ContextControl, pruned to avoid label crowding), most reachable values
+   *  have no matching tick and fall back to the plain number — this is a
+   *  narrower list than "every value has a label," not a bug. */
   ticks: SliderTick[]
 }
 
