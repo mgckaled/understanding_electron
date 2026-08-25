@@ -98,6 +98,17 @@ export type ChatRequest = {
   numCtx?: number
 }
 
+/** Args for `ai.propose` (D19.5) — its own shape, not ChatRequest: no `messages`, since the prompt is built server-side from `card`/`request` (core/ai/proposal.ts), never the conversation transcript. */
+export type ProposalRequest = {
+  service: AiService
+  model: string
+  hash: string
+  card: DatasetPart
+  request: string
+  numThread?: number
+  numCtx?: number
+}
+
 /**
  * The final, authoritative reply. Live tokens arrive first as JobEvent 'chunk'
  * payloads; this is the assembled whole.
@@ -561,6 +572,22 @@ export const argsSchema = {
     numCtx: z.number().int().positive().optional(),
     jobId: z.string()
   }),
+  // D19.5: its own channel, not a flag on ai:chat — a second model call per
+  // turn would double the latency of every dataset message, felt on 4 CPU
+  // cores (D9.4). `card` rides along because only the renderer holds it
+  // (a message part, not something main tracks by hash); the handler
+  // refetches `profile` itself from the same hash (D19.6's before/after
+  // already does this), never trusting a renderer-supplied one.
+  'ai:propose': z.object({
+    service: aiServiceSchema,
+    model: z.string().min(1),
+    hash: z.string().min(1),
+    card: datasetPartSchema,
+    request: z.string().min(1),
+    numThread: z.number().int().positive().optional(),
+    numCtx: z.number().int().positive().optional(),
+    jobId: z.string()
+  }),
   // Conversation storage (plano 14). The renderer mints `id` and stamps
   // `createdAt` (D14.5) — identity generated on the side that acts, like JobId,
   // so no handler here generates identity or time; it inserts what it receives.
@@ -676,6 +703,10 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['ai:chat']>
     result: Result<ChatReply>
   }
+  'ai:propose': {
+    args: z.infer<(typeof argsSchema)['ai:propose']>
+    result: Result<StepProposal>
+  }
   // No conversation channel returns Result, by decision: Result is for failures
   // the UI must REACT to (file missing, service down, cancelled). An indexed
   // insert into a local SQLite file has none — what is left is programming
@@ -770,6 +801,8 @@ export type Api = {
     // Live tokens stream through job.onEvent as 'chunk' events keyed by jobId;
     // the resolved Result carries the assembled whole.
     chat(request: ChatRequest, jobId: JobId): Promise<Result<ChatReply>>
+    /** Turns a Portuguese request over an attached dataset into a typed StepProposal (D9.4/D19.5) — no streaming, its own model call. */
+    propose(request: ProposalRequest, jobId: JobId): Promise<Result<StepProposal>>
   }
   conversation: {
     /** Newest first — `ORDER BY updated_at DESC`, the sidebar's own order. */

@@ -148,9 +148,9 @@ export async function chat(
   }
 }
 
-// Shared by chat and the catalog: both talk to the same provider over the same
-// transport, so both fail in the same two ways.
-function mapProviderError(error: unknown, service: AiService): AppError {
+// Shared by chat, propose and the catalog: all talk to the same provider
+// over the same transport, so all fail in the same two ways.
+export function mapProviderError(error: unknown, service: AiService): AppError {
   if (error instanceof UpstreamError) {
     return { kind: 'upstream', service, status: error.status, message: error.message }
   }

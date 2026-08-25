@@ -34,6 +34,7 @@ import {
   models as aiModels,
   unload as aiUnload
 } from '../features/ai/handlers'
+import { propose as aiPropose } from '../features/ai/propose'
 import {
   ollamaChat,
   ollamaDisplayHost,
@@ -237,6 +238,9 @@ export async function registerAll(): Promise<() => void> {
       broadcastJobEvent,
       resolveAttachmentBytes(attachmentsDir)
     )
+  )
+  handle('ai:propose', (args) =>
+    aiPropose(args, resolveProvider(args.service).chat, duckdbClient.runProfile)
   )
 
   handle('conversation:list', (args) => listConversations(args, db))

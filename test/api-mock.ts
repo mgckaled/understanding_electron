@@ -79,7 +79,8 @@ export function createApiMock(): Api {
       // Configurações from claiming the machine is holding weights it is not.
       loaded: vi.fn().mockResolvedValue({ ok: true, value: [] }),
       unload: vi.fn().mockResolvedValue({ ok: true, value: undefined }),
-      chat: vi.fn()
+      chat: vi.fn(),
+      propose: vi.fn()
     },
     // Not bare vi.fn()s: these two are the surfaces the renderer READS BACK
     // after writing, so a mock that forgets everything would make every test
