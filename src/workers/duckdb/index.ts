@@ -171,12 +171,12 @@ async function main(): Promise<void> {
     return profile
   }
 
-  async function handleProfile(hash: string): Promise<WorkerResponse> {
+  async function handleProfile(hash: string, includeTopValues = true): Promise<WorkerResponse> {
     try {
       await ensureView(hash)
       await connection.run(buildMaterializeSql('dataset', SCRATCH_TABLE))
       try {
-        const profile = await profileScratchTable()
+        const profile = await profileScratchTable(includeTopValues)
         return { kind: 'profile', ok: true, profile }
       } finally {
         await connection.run(buildDropScratchSql(SCRATCH_TABLE))
@@ -269,7 +269,7 @@ async function main(): Promise<void> {
       case 'query':
         return handleQuery(request.hash, request.sql)
       case 'profile':
-        return handleProfile(request.hash)
+        return handleProfile(request.hash, request.includeTopValues)
       case 'schema':
         return handleSchema(request.hash)
       case 'transform':

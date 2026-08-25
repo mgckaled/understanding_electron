@@ -32,8 +32,15 @@ function ensureKnownColumn(known: Set<string>, column: string): void {
 // the D19.1 six-operation cut; not a case any of the six ops needs today.
 function buildFilterCondition(step: FilterStep): string {
   const column = quotedColumn(step.column)
-  if (step.operator === 'isNull') return `${column} IS NULL`
-  if (step.operator === 'isNotNull') return `${column} IS NOT NULL`
+  // A value alongside isNull/isNotNull means the model likely meant a
+  // comparison operator instead — silently dropping it would leave the
+  // filter compiling to something the model never asked for (D19.7).
+  if (step.operator === 'isNull' || step.operator === 'isNotNull') {
+    if (step.value !== undefined) {
+      throw new Error(`Step "filter" on "${step.column}" (${step.operator}) must not carry a value`)
+    }
+    return step.operator === 'isNull' ? `${column} IS NULL` : `${column} IS NOT NULL`
+  }
   if (step.value === undefined) {
     throw new Error(`Step "filter" on "${step.column}" (${step.operator}) needs a value`)
   }

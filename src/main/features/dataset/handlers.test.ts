@@ -263,6 +263,29 @@ describe('transformDataset', () => {
     expect(runTransform).not.toHaveBeenCalled()
   })
 
+  it('wraps a compile error (isNotNull carrying a value) as invalidQuery, without calling runTransform', async () => {
+    const runSchema = vi.fn().mockResolvedValue({ columns: ['idade'], rowCount: 100 })
+    const runTransform = vi.fn()
+    const inconsistentSteps: Step[] = [
+      { kind: 'filter', column: 'idade', operator: 'isNotNull', value: 18 }
+    ]
+
+    const result = await transformDataset(
+      { hash: VALID_HASH, steps: inconsistentSteps },
+      runSchema,
+      runTransform
+    )
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        kind: 'invalidQuery',
+        message: 'Step "filter" on "idade" (isNotNull) must not carry a value'
+      }
+    })
+    expect(runTransform).not.toHaveBeenCalled()
+  })
+
   it('wraps a real engine error as invalidQuery, with the engine text preserved', async () => {
     const runSchema = vi.fn().mockResolvedValue({ columns: ['idade'], rowCount: 100 })
     const runTransform = vi.fn().mockRejectedValue(new Error('Out of Memory Error'))

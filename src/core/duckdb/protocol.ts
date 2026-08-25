@@ -7,7 +7,10 @@ import type { ColumnProfile } from './profile'
 
 export type WorkerRequest =
   | { kind: 'query'; hash: string; sql: string }
-  | { kind: 'profile'; hash: string }
+  // includeTopValues defaults true in the worker — omitted by dataset:profile
+  // (the level-2 card needs it), passed false by ai:propose, which is
+  // forbidden from seeing cell values at all (D19.7-4).
+  | { kind: 'profile'; hash: string; includeTopValues?: boolean }
   | { kind: 'schema'; hash: string }
   // sql is the compiled steps body (D19.4), unwrapped — the worker both
   // materializes it in full (for the after-profile) and previews it capped.

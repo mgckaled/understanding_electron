@@ -80,7 +80,7 @@ function createEnqueue(
  */
 export function createDuckdbWorkerClient(worker: UtilityProcess): {
   runQuery: (hash: string, sql: string) => Promise<Uint8Array>
-  runProfile: (hash: string) => Promise<ColumnProfile[]>
+  runProfile: (hash: string, includeTopValues?: boolean) => Promise<ColumnProfile[]>
   runSchema: (hash: string) => Promise<{ columns: string[]; rowCount: number }>
   runTransform: (
     hash: string,
@@ -98,8 +98,8 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
       if (!response.ok) throw new Error(response.message)
       return response.bytes
     },
-    async runProfile(hash) {
-      const response = await enqueue({ kind: 'profile', hash })
+    async runProfile(hash, includeTopValues) {
+      const response = await enqueue({ kind: 'profile', hash, includeTopValues })
       if (response.kind !== 'profile') {
         throw new Error(`DuckDB worker replied with kind "${response.kind}", expected "profile"`)
       }

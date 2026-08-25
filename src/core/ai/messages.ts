@@ -37,7 +37,11 @@ export function messageText(message: Message): string {
 
 /** The attachment on a message, if any — the card the conversation draws (D16.4 Passo 4, generalized D17.4). */
 export function attachmentPartOf(message: Message): AttachmentPart | null {
-  return message.parts.find((part): part is AttachmentPart => part.kind !== 'text') ?? null
+  return (
+    message.parts.find(
+      (part): part is AttachmentPart => part.kind !== 'text' && part.kind !== 'stepProposal'
+    ) ?? null
+  )
 }
 
 /** The step proposal on an assistant message, if any (plano 19) — the card ConversationView swaps in for the plain text bubble. */

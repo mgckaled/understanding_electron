@@ -23,6 +23,20 @@ describe('compileSteps', () => {
       )
     })
 
+    it('rejects isNull carrying a value', () => {
+      const steps: Step[] = [{ kind: 'filter', column: 'email', operator: 'isNull', value: 18 }]
+      expect(() => compileSteps(steps, COLUMNS)).toThrow(
+        'Step "filter" on "email" (isNull) must not carry a value'
+      )
+    })
+
+    it('rejects isNotNull carrying a value', () => {
+      const steps: Step[] = [{ kind: 'filter', column: 'idade', operator: 'isNotNull', value: 18 }]
+      expect(() => compileSteps(steps, COLUMNS)).toThrow(
+        'Step "filter" on "idade" (isNotNull) must not carry a value'
+      )
+    })
+
     it('compiles contains as a wildcarded LIKE', () => {
       const steps: Step[] = [
         { kind: 'filter', column: 'cidade', operator: 'contains', value: 'Paulo' }

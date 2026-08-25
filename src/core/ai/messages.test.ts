@@ -1,4 +1,4 @@
-import type { DatasetPart, DocumentPart, ImagePart, Message } from '@shared/ipc'
+import type { DatasetPart, DocumentPart, ImagePart, Message, StepProposalPart } from '@shared/ipc'
 import {
   attachmentPartOf,
   imageCountOf,
@@ -40,6 +40,13 @@ const imagePart: ImagePart = {
   hash: 'ghi789',
   fileName: 'grafico.png',
   mimeType: 'image/png'
+}
+
+const stepProposalPart: StepProposalPart = {
+  kind: 'stepProposal',
+  hash: 'abc123',
+  proposalKind: 'steps',
+  steps: [{ kind: 'filter', column: 'idade', operator: 'gt', value: 18 }]
 }
 
 describe('messageText', () => {
@@ -88,6 +95,14 @@ describe('attachmentPartOf', () => {
       parts: [imagePart, { kind: 'text', text: 'texto' }]
     }
     expect(attachmentPartOf(withAttachment)).toEqual(imagePart)
+  })
+
+  it('does not mistake a stepProposal part for an attachment (D19.7-2)', () => {
+    const withProposal: Message = {
+      ...message('assistant', 'aqui está a proposta'),
+      parts: [stepProposalPart, { kind: 'text', text: 'aqui está a proposta' }]
+    }
+    expect(attachmentPartOf(withProposal)).toBeNull()
   })
 })
 

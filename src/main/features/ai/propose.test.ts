@@ -57,7 +57,7 @@ describe('propose', () => {
         steps: [{ kind: 'filter', column: 'idade', operator: 'gt', value: 18 }]
       }
     })
-    expect(runProfile).toHaveBeenCalledWith(card.hash)
+    expect(runProfile).toHaveBeenCalledWith(card.hash, false)
   })
 
   it('finishes the job even on success (no leaked AbortController)', async () => {

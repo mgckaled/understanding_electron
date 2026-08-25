@@ -38,7 +38,7 @@ type ProposeArgs = {
 export async function propose(
   { service, model, hash, card, request, numThread, numCtx, jobId }: ProposeArgs,
   chatFn: ChatFn,
-  runProfile: (hash: string) => Promise<ColumnProfile[]>
+  runProfile: (hash: string, includeTopValues?: boolean) => Promise<ColumnProfile[]>
 ): Promise<Result<StepProposal>> {
   const controller = jobs.create(jobId)
   let timedOut = false
@@ -50,7 +50,10 @@ export async function propose(
   try {
     let profile: ColumnProfile[]
     try {
-      profile = await runProfile(hash)
+      // false: formatColumnProfile never reads topValues (D19.5's privacy
+      // boundary) — computing the top-N GROUP BY here would cost the exact
+      // cell values the boundary exists to keep out of the prompt (D19.7-4).
+      profile = await runProfile(hash, false)
     } catch (error) {
       return err({ kind: 'invalidQuery', message: (error as Error).message })
     }

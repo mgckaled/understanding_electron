@@ -3,6 +3,7 @@ import type { DatasetPart } from '@shared/ipc'
 import { errorMessage } from '../../shared/ui/messages'
 import { useSettings } from '../settings/settingsContext'
 import { useActiveConversation, useConversations } from '../conversation/conversationsContext'
+import { useResolvedContextWindow } from '../conversation/useResolvedContextWindow'
 
 type ProposalState =
   { status: 'idle' } | { status: 'loading' } | { status: 'error'; message: string }
@@ -23,6 +24,17 @@ export function useStepProposal(card: DatasetPart): {
   const { settings } = useSettings()
   const [state, setState] = useState<ProposalState>({ status: 'idle' })
 
+  // A conversation reaching this hook already has the dataset attached as a
+  // message, so it is locked in practice (D15.13) — computed the same way as
+  // ConversationView rather than assumed, to match a fresh, unread history.
+  const locked =
+    conversation !== null && (!conversation.messagesLoaded || conversation.messages.length > 0)
+  const numCtx = useResolvedContextWindow({
+    modelName: conversation?.settings.model ?? null,
+    storedNumCtx: conversation?.settings.numCtx,
+    locked
+  })
+
   async function propose(request: string): Promise<void> {
     if (conversation === null || conversation.settings.model === undefined) {
       setState({
@@ -41,7 +53,7 @@ export function useStepProposal(card: DatasetPart): {
         card,
         request,
         numThread: settings.numThread,
-        numCtx: conversation.settings.numCtx
+        numCtx
       },
       crypto.randomUUID()
     )

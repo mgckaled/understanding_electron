@@ -8,9 +8,10 @@ import Button from '../../shared/ui/Button/Button'
 import { errorMessage } from '../../shared/ui/messages'
 import DatasetTable from './DatasetTable'
 
-// A jump this small is normal sampling noise across a transform, not the
-// silent damage D19.6 exists to catch (a type conversion turning a
-// mostly-filled column mostly-null).
+// Judgment, not measurement (same label as qualifiesForTopValues,
+// RAM_MARGIN_BYTES) — below this, a jump reads as normal sampling noise
+// across a transform, not the silent damage D19.6 exists to catch (a type
+// conversion turning a mostly-filled column mostly-null).
 const NULL_JUMP_THRESHOLD = 10
 
 interface ApplyResult {
