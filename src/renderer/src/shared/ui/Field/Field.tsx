@@ -3,6 +3,7 @@ import { useId, cloneElement, isValidElement, type ReactElement } from 'react'
 export type FieldControlProps = {
   id?: string
   'aria-describedby'?: string
+  'aria-invalid'?: boolean
 }
 
 type FieldProps = {
@@ -29,7 +30,11 @@ function Field({ label, hint, error, children, inline = false }: FieldProps): Re
   // Cloning is what keeps this agnostic to the control's type: the real input
   // gets the id and aria-describedby without Field knowing what it is.
   const control = isValidElement<FieldControlProps>(children)
-    ? cloneElement(children, { id: inputId, 'aria-describedby': describedBy })
+    ? cloneElement(children, {
+        id: inputId,
+        'aria-describedby': describedBy,
+        'aria-invalid': error ? true : undefined
+      })
     : children
 
   return (

@@ -7,6 +7,9 @@ type ButtonShape = 'default' | 'circle' | 'square'
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant
   size?: ButtonSize
+  /** `'circle'`/`'square'` render icon-only — the caller must pass
+   *  `aria-label` or `aria-labelledby`, since there is no visible text to
+   *  fall back to. */
   shape?: ButtonShape
   loading?: boolean
   children: ReactNode
@@ -68,15 +71,21 @@ function Button({
     .filter(Boolean)
     .join(' ')
 
+  // `invisible` (visibility:hidden, not a transparent colour, so the spinner
+  // still inherits currentColor) also drops the label from the accessible
+  // name. Restore it as aria-label when the label is plain text — an
+  // explicit aria-label from the caller still wins, since `...props` spreads
+  // after this.
+  const loadingLabel = loading && typeof children === 'string' ? children : undefined
+
   return (
     <button
       className={classes}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
+      aria-label={loadingLabel}
       {...props}
     >
-      {/* `invisible`, never a transparent colour: the spinner inherits
-          currentColor, so it lands on the variant's colour for free. */}
       <span className={loading ? 'invisible' : undefined}>{children}</span>
       {loading && (
         <span
