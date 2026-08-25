@@ -39,8 +39,9 @@ function Dialog({ open, title, onClose, describedBy, children }: DialogProps): R
     <dialog
       ref={ref}
       // The module carries only what a class cannot reach — ::backdrop, the
-      // @starting-style fade, the width/max-height the fade's rule targets.
-      className={`${styles.dialog} flex flex-col rounded-lg border border-border bg-surface p-0 font-ui text-sm text-text`}
+      // @starting-style fade, the width/max-height the fade's rule targets,
+      // and display (must stay [open]-scoped, see Dialog.module.css).
+      className={`${styles.dialog} rounded-lg border border-border bg-surface p-0 font-ui text-sm text-text`}
       closedby="any"
       aria-labelledby={titleId}
       aria-describedby={describedBy}

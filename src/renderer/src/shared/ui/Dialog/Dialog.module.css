@@ -13,14 +13,28 @@
  * argument: a cap on the whole dialog is what lets the content area below
  * scroll instead of growing past the viewport (DS-8).
  *
- * Everything else — surface, border, radius, font, padding, the flex column
- * that lets only the content area scroll — is a utility on the element. See
- * Dialog.tsx.
+ * Everything else — surface, border, radius, font, padding — is a utility on
+ * the element. See Dialog.tsx.
+ *
+ * ⚠️ display is NOT a utility here, on purpose (DS-8): an unscoped `flex`
+ * class on the <dialog> itself would beat the UA stylesheet's
+ * `dialog:not([open]) { display: none }` the same way a `className` on
+ * Popover's root once beat its own hide-when-closed rule (HISTORY-archive.md
+ * § um className no Popover — author origin always wins over UA origin,
+ * specificity never enters it) — a CLOSED dialog would render as a flex box
+ * and intercept clicks meant for whatever sits behind it. Scoping the rule to
+ * `[open]`, the same attribute the UA rule keys on, is what keeps a closed
+ * dialog closed.
  */
 
 .dialog {
   width: min(420px, 90vw);
   max-height: min(640px, 85vh);
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
 }
 
 .dialog::backdrop {
