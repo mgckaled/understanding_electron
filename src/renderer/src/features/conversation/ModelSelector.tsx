@@ -221,10 +221,8 @@ function ModelPicker({
               className="group flex cursor-pointer flex-col gap-1 rounded-md border border-transparent px-4 py-2 text-left text-text hover:border-border hover:bg-surface-raised disabled:cursor-not-allowed disabled:text-text-faint disabled:hover:border-transparent disabled:hover:bg-transparent"
             >
               <span className="font-ui text-md">{model.name}</span>
-              {/* opacity, not color, on the detail line — CapabilityChip carries
-                  its own border/background/color (design-system skill), so only
-                  fading the whole line uniformly keeps a disabled row reading as
-                  faint instead of a dim name next to full-strength chips. */}
+              {/* CapabilityChip sets its own color/background, so disabled:text-*
+                  can't reach it — group-disabled:opacity fades the line instead. */}
               <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted group-disabled:opacity-40">
                 {model.contextLength !== null && (
                   <span>{formatContext(model.contextLength)} de contexto</span>
