@@ -9,14 +9,18 @@
  *
  * The width sits here because it belongs to the same rule the fade targets, and
  * because 420px is not a token — inventing one for a single consumer is what
- * the token layer's two levels exist to avoid.
+ * the token layer's two levels exist to avoid. max-height is the same
+ * argument: a cap on the whole dialog is what lets the content area below
+ * scroll instead of growing past the viewport (DS-8).
  *
- * Everything else — surface, border, radius, font, padding — is a utility on
- * the element. See Dialog.tsx.
+ * Everything else — surface, border, radius, font, padding, the flex column
+ * that lets only the content area scroll — is a utility on the element. See
+ * Dialog.tsx.
  */
 
 .dialog {
   width: min(420px, 90vw);
+  max-height: min(640px, 85vh);
 }
 
 .dialog::backdrop {

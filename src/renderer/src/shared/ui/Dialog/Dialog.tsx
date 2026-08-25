@@ -15,10 +15,13 @@ type DialogProps = {
   open: boolean
   title: string
   onClose: () => void
+  /** Id of an element (typically the caller's own intro paragraph) that
+   *  describes the dialog's purpose beyond its title. */
+  describedBy?: string
   children: ReactNode
 }
 
-function Dialog({ open, title, onClose, children }: DialogProps): React.JSX.Element {
+function Dialog({ open, title, onClose, describedBy, children }: DialogProps): React.JSX.Element {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -36,15 +39,16 @@ function Dialog({ open, title, onClose, children }: DialogProps): React.JSX.Elem
     <dialog
       ref={ref}
       // The module carries only what a class cannot reach — ::backdrop, the
-      // @starting-style fade, the width the fade's rule targets.
-      className={`${styles.dialog} rounded-lg border border-border bg-surface p-0 font-ui text-sm text-text`}
+      // @starting-style fade, the width/max-height the fade's rule targets.
+      className={`${styles.dialog} flex flex-col rounded-lg border border-border bg-surface p-0 font-ui text-sm text-text`}
       closedby="any"
       aria-labelledby={titleId}
+      aria-describedby={describedBy}
       // Fires for every way out — Esc, the backdrop, close(). Without it the
       // state would stay `open` after Esc and the trigger would look dead.
       onClose={onClose}
     >
-      <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-5">
+      <div className="flex flex-none items-center justify-between gap-4 border-b border-border px-6 py-5">
         <h2 className="text-md font-semibold" id={titleId}>
           {title}
         </h2>
@@ -52,7 +56,9 @@ function Dialog({ open, title, onClose, children }: DialogProps): React.JSX.Elem
           <X size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
         </Button>
       </div>
-      <div className="p-6">{children}</div>
+      {/* flex-1 + overflow-y-auto is what keeps the header fixed and lets only
+          long content scroll, capped by the module's own max-height. */}
+      <div className="flex-1 overflow-y-auto p-6">{children}</div>
     </dialog>
   )
 }

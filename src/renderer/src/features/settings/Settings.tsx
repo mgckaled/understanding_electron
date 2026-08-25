@@ -102,6 +102,7 @@ function ThreadsField(): React.JSX.Element {
 function Settings(): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const { loaded } = useSettings()
+  const descriptionId = useId()
 
   return (
     <>
@@ -120,8 +121,13 @@ function Settings(): React.JSX.Element {
       >
         <SettingsIcon size={ICON_SIZE.lg} strokeWidth={ICON_STROKE} />
       </Button>
-      <Dialog open={open} title="Configurações" onClose={() => setOpen(false)}>
-        <p className="mb-6 text-xs text-text-muted">
+      <Dialog
+        open={open}
+        title="Configurações"
+        onClose={() => setOpen(false)}
+        describedBy={descriptionId}
+      >
+        <p className="mb-6 text-xs text-text-muted" id={descriptionId}>
           Ajustes desta máquina. Valem para todas as conversas e não mudam o que o modelo responde.
         </p>
         {/* Both conditions load-bearing: `open`, because <dialog> keeps children
