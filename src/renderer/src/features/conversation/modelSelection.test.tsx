@@ -40,11 +40,18 @@ function providers(children: ReactNode): React.JSX.Element {
   )
 }
 
-function mount(): Api {
+/**
+ * `geminiReady` must be applied BEFORE render: useCloudCatalog's
+ * useCloudSecret('gemini') fires its query as part of the initial mount, so
+ * overriding `secrets.has` after `mount()` returns is already too late — the
+ * query already captured the default `false` (N-1-C).
+ */
+function mount(geminiReady = false): Api {
   const api = installApiMock()
   vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
   vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [TEST_MODEL, CODER] })
   vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'pronto' } })
+  if (geminiReady) vi.mocked(api.secrets.has).mockImplementation(async (p) => p === 'gemini')
   render(
     providers(
       <>
@@ -152,6 +159,61 @@ describe('ModelSelector', () => {
 
     // Still on the local model — a disabled button swallows the click.
     expect(await modelTrigger()).toHaveTextContent('gemma3:4b')
+  })
+
+  it('shows both cloud providers, each gated by its own key (N-1-C)', async () => {
+    const user = userEvent.setup()
+    mount(true)
+    await user.click(await modelTrigger())
+
+    const glm = await screen.findByRole('button', { name: /glm-4\.7-flash/, hidden: true })
+    const flashLite = screen.getByRole('button', { name: /gemini-3\.5-flash-lite/, hidden: true })
+    const flash = screen.getByRole('button', { name: /gemini-3\.7-flash/, hidden: true })
+    // GLM has no key in this test — still disabled; the two Gemini rows do.
+    expect(glm).toBeDisabled()
+    expect(flashLite).toBeEnabled()
+    expect(flash).toBeEnabled()
+    expect(flashLite).toHaveTextContent('15 RPM')
+    expect(flash).toHaveTextContent('20 RPD')
+  })
+
+  it('selecting a Gemini model before the first send does not revert to the first Ollama model (N-1-C, same regression N-1-B proved for GLM)', async () => {
+    const user = userEvent.setup()
+    mount(true)
+    await user.click(await modelTrigger())
+
+    const flashLite = await screen.findByRole('button', {
+      name: /gemini-3\.5-flash-lite/,
+      hidden: true
+    })
+    await user.click(flashLite)
+
+    expect(await modelTrigger()).toHaveTextContent('gemini-3.5-flash-lite')
+  })
+
+  it('sends and locks on a Gemini model, and resolves it normally on reload (N-1-C)', async () => {
+    const user = userEvent.setup()
+    const api = mount(true)
+    await user.click(await modelTrigger())
+    await user.click(await screen.findByRole('button', { name: /gemini-3\.7-flash/, hidden: true }))
+    await waitFor(async () => expect(await modelTrigger()).toHaveTextContent('gemini-3.7-flash'))
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    await waitFor(() =>
+      expect(api.ai.chat).toHaveBeenCalledWith(
+        expect.objectContaining({ service: 'gemini', model: 'gemini-3.7-flash' }),
+        expect.any(String)
+      )
+    )
+
+    // A locked cloud conversation still resolves its model on reload — the
+    // same regression N-1-B's advisor review caught for GLM, generalized by
+    // feeding `allModels` (Ollama + GLM + Gemini) to resolveModel, not just
+    // the local catalog.
+    await user.click(screen.getByRole('button', { name: 'Recarregar a lista de modelos' }))
+    expect(await modelTrigger()).toHaveTextContent('gemini-3.7-flash')
+    expect(await modelTrigger()).toBeDisabled()
   })
 
   it('sends the chosen model, not the default one', async () => {

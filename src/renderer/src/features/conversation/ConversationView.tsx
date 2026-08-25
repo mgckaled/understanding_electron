@@ -10,19 +10,18 @@ import type {
 import { attachmentPartOf, imageCountOf, messageText, toChatMessages } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
-import { GLM_MODELS } from '@core/ai/models'
 import { errorMessage } from '../../shared/ui/messages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
-import { useCloudSecret } from '../settings/useCloudSecret'
 import AttachmentCard from '../attachment/AttachmentCard'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
 import { useAiModels } from './useAiModels'
 import { useAiAvailability } from './useAiAvailability'
+import { useCloudCatalog } from './useCloudCatalog'
 import { resolveModel } from './conversations'
 import { useStickToBottom } from './useStickToBottom'
 import ContextControl from './ContextControl'
@@ -67,19 +66,9 @@ function ConversationView(): React.JSX.Element {
   const { updateSettings } = useConversations()
   const { settings } = useSettings()
   const { state: catalog, reload } = useAiModels('ollama')
-  // A pinned table (Peça C), not a fetch — GLM_MODELS is the same constant
-  // core/ai/models.ts already gives the main process, imported directly
-  // instead of round-tripping through ai:models for data that never changes
-  // at runtime (N-1-B).
-  const cloudModels = GLM_MODELS
-  // Whether a GLM key is stored — decoupled from ai:isAvailable/`service`
-  // below on purpose: this gates the Nuvem ROW regardless of which model is
-  // currently selected, and reuses the query useCloudSecret (N-1-A) already
-  // runs for Configurações, instead of adding a second always-on probe.
-  // Partial<Record<AiService, ...>> (N-1-C, DN1C.4): one entry per cloud
-  // provider that actually has a row in cloudModels — Gemini's own key joins
-  // this map once its catalog exists (passo 7).
-  const { hasKey: glmReady } = useCloudSecret('glm')
+  // Split into its own hook once this file crossed the design system's
+  // 400-line cap (N-1-C, passo 7) — see useCloudCatalog.ts.
+  const { cloudModels, cloudReadyFor, cloudHintFor } = useCloudCatalog()
 
   // Held ONLY for the window in which no conversation exists yet — on a fresh
   // database there is no row to write a setting into, and dropping the choice
@@ -167,13 +156,6 @@ function ConversationView(): React.JSX.Element {
   // Ollama's (N-1-B) — else picking GLM with Ollama down would leave the
   // composer disabled for a reason that has nothing to do with GLM.
   const { state: availability, retry: retryAvailability } = useAiAvailability(service)
-  // Same hint text HINTS.glm gives on the main side (main/features/ai/handlers.ts)
-  // — duplicated here because useCloudSecret answers only hasKey, not an
-  // AppError with a hint; this is UI copy, not the mão-única secret itself.
-  const cloudReadyFor: Partial<Record<AiService, boolean>> = { glm: glmReady }
-  const cloudHintFor: Partial<Record<AiService, string | undefined>> = {
-    glm: glmReady ? undefined : 'Configure a chave da Z.ai em Configurações para usar o GLM.'
-  }
 
   // What the next send would carry: the whole transcript, since the provider
   // is stateless and every turn resends everything. Routed through
