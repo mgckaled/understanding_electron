@@ -63,4 +63,17 @@ describe('Popover', () => {
   it('toAnchorName strips characters invalid in a CSS dashed-ident', () => {
     expect(toAnchorName(':r0:')).toBe('--popover-r0')
   })
+
+  it('applies className to an inner wrapper, never to the [popover] root', () => {
+    render(
+      <Popover open onClose={() => {}} anchorName="--x" className="flex w-[300px] flex-col">
+        Content
+      </Popover>
+    )
+    const wrapper = screen.getByText('Content')
+    const root = wrapper.closest('[popover]')
+
+    expect(root).not.toHaveClass('flex')
+    expect(wrapper).toHaveClass('flex', 'w-[300px]', 'flex-col')
+  })
 })

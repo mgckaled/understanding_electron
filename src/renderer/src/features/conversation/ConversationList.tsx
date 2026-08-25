@@ -105,43 +105,47 @@ function ConversationRow({
         style={{ anchorName }}
         aria-label={`Mais ações para ${conversation.title}`}
         aria-haspopup="true"
+        aria-expanded={menuOpen}
         onClick={() => setMenuOpen((current) => !current)}
       >
         <MoreVertical size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
       </Button>
-      <Popover open={menuOpen} onClose={() => setMenuOpen(false)} anchorName={anchorName}>
+      <Popover
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        anchorName={anchorName}
+        className="flex min-w-[180px] flex-col gap-1"
+      >
         {/* Titled per item VIA aria-label, not visible text (DS-5 fixup): the
             row's own title can be long, and repeating it inside every menu
             item wrapped the popover far past the target's width. A screen
             reader landing directly on one still gets which conversation it
             acts on — just from the label, not the label the sighted user sees. */}
-        <div className="flex min-w-[180px] flex-col gap-1">
-          <button
-            type="button"
-            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-text hover:bg-surface"
-            aria-label={`Editar título de ${conversation.title}`}
-            onClick={() => {
-              setMenuOpen(false)
-              onStartRename()
-            }}
-          >
-            <Pencil size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            Editar título
-          </button>
-          {/* danger-text, never the solid danger fill, as text (D10.1). */}
-          <button
-            type="button"
-            className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-danger-text hover:bg-surface"
-            aria-label={`Excluir ${conversation.title}`}
-            onClick={() => {
-              setMenuOpen(false)
-              onRemove()
-            }}
-          >
-            <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            Excluir
-          </button>
-        </div>
+        <button
+          type="button"
+          className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-text hover:bg-surface"
+          aria-label={`Editar título de ${conversation.title}`}
+          onClick={() => {
+            setMenuOpen(false)
+            onStartRename()
+          }}
+        >
+          <Pencil size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          Editar título
+        </button>
+        {/* danger-text, never the solid danger fill, as text (D10.1). */}
+        <button
+          type="button"
+          className="flex cursor-pointer items-center gap-3 rounded-md px-4 py-3 text-left font-ui text-xs text-danger-text hover:bg-surface"
+          aria-label={`Excluir ${conversation.title}`}
+          onClick={() => {
+            setMenuOpen(false)
+            onRemove()
+          }}
+        >
+          <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          Excluir
+        </button>
       </Popover>
     </li>
   )

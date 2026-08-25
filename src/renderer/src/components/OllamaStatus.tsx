@@ -21,17 +21,22 @@ function OllamaStatus(): React.JSX.Element {
           type="button"
           className="cursor-pointer bg-transparent p-[0px] font-ui text-text"
           style={{ anchorName }}
+          aria-haspopup="true"
+          aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
         >
           Ollama v{availability.data.version}
         </button>
-        <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
-          <div className="flex flex-col gap-1 px-2 py-1">
-            <span className="text-2xs text-text-faint">Conectado</span>
-            {availability.data.host !== undefined && (
-              <span className="font-mono text-xs text-text">{availability.data.host}</span>
-            )}
-          </div>
+        <Popover
+          open={open}
+          onClose={() => setOpen(false)}
+          anchorName={anchorName}
+          className="flex flex-col gap-1 px-2 py-1"
+        >
+          <span className="text-2xs text-text-faint">Conectado</span>
+          {availability.data.host !== undefined && (
+            <span className="font-mono text-xs text-text">{availability.data.host}</span>
+          )}
         </Popover>
       </div>
     )

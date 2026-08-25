@@ -116,6 +116,7 @@ function ModelPicker({
           style={{ anchorName }}
           disabled={disabled || locked}
           aria-haspopup="listbox"
+          aria-expanded={open}
           onClick={() => (open ? setOpen(false) : openMenu())}
         >
           <span className="min-w-[0px] overflow-hidden text-ellipsis whitespace-nowrap">
@@ -124,105 +125,105 @@ function ModelPicker({
           <ChevronDown size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
         </button>
       </Field>
-      <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
-        {/* The layout class lives on THIS inner div, never on Popover's own root
-            (its `display` would beat the UA stylesheet's `[popover]:not(:popover-open)`
-            hide rule — see Popover.tsx). */}
-        <div className="flex w-[300px] flex-col gap-1">
-          <p className={GROUP_LABEL}>
-            <HardDrive size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            Locais
-          </p>
-          {state.status !== 'ready' ? (
-            <StateView state={state} emptyMessage="Nenhum modelo instalado." render={() => null} />
-          ) : (
-            <div
-              ref={listboxRef}
-              role="listbox"
-              id={listboxId}
-              aria-label="Modelo"
-              tabIndex={0}
-              onKeyDown={onListKeyDown}
-              aria-activedescendant={
-                models[highlighted] !== undefined ? `${listboxId}-option-${highlighted}` : undefined
-              }
-              className="flex flex-col gap-1 focus-visible:outline-none"
-            >
-              {/* Two lines (F2.2): name alone on top; size, the machine's real
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorName={anchorName}
+        className="flex w-[300px] flex-col gap-1"
+      >
+        <p className={GROUP_LABEL}>
+          <HardDrive size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          Locais
+        </p>
+        {state.status !== 'ready' ? (
+          <StateView state={state} emptyMessage="Nenhum modelo instalado." render={() => null} />
+        ) : (
+          <div
+            ref={listboxRef}
+            role="listbox"
+            id={listboxId}
+            aria-label="Modelo"
+            tabIndex={0}
+            onKeyDown={onListKeyDown}
+            aria-activedescendant={
+              models[highlighted] !== undefined ? `${listboxId}-option-${highlighted}` : undefined
+            }
+            className="flex flex-col gap-1 focus-visible:outline-none"
+          >
+            {/* Two lines (F2.2): name alone on top; size, the machine's real
                   ceiling ("memória" — the practical limit, not a per-token
                   cost) and capability chips below. Every row, not just the
                   selected one — a scope change from the old single-line
                   `optionLabel` + capabilities shown only for `current`. */}
-              {models.map((model, index) => {
-                const ceiling = ceilingOf(model)
-                const chips = capabilityChips(model)
-                return (
-                  <div
-                    key={model.name}
-                    id={`${listboxId}-option-${index}`}
-                    role="option"
-                    aria-selected={model.name === selected}
-                    onClick={() => {
-                      onSelect(model.name)
-                      setOpen(false)
-                    }}
-                    onMouseEnter={() => setHighlighted(index)}
-                    className={`flex cursor-pointer flex-col gap-1 rounded-md border px-4 py-2 ${
-                      index === highlighted ? 'border-border-strong bg-surface' : 'border-border'
-                    }`}
-                  >
-                    <span className="font-ui text-md text-text">{model.name}</span>
-                    <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted">
-                      <span>{formatSize(model.sizeBytes)}</span>
-                      {ceiling !== null && <span>até {formatContext(ceiling)}</span>}
-                      {!fitsInMemory(ceiling) && <span className="text-warn-text">não cabe</span>}
-                      {chips.map((chip) => (
-                        <CapabilityChip key={chip.capability} {...chip} />
-                      ))}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+            {models.map((model, index) => {
+              const ceiling = ceilingOf(model)
+              const chips = capabilityChips(model)
+              return (
+                <div
+                  key={model.name}
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  aria-selected={model.name === selected}
+                  onClick={() => {
+                    onSelect(model.name)
+                    setOpen(false)
+                  }}
+                  onMouseEnter={() => setHighlighted(index)}
+                  className={`flex cursor-pointer flex-col gap-1 rounded-md border px-4 py-2 ${
+                    index === highlighted ? 'border-border-strong bg-surface' : 'border-border'
+                  }`}
+                >
+                  <span className="font-ui text-md text-text">{model.name}</span>
+                  <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted">
+                    <span>{formatSize(model.sizeBytes)}</span>
+                    {ceiling !== null && <span>até {formatContext(ceiling)}</span>}
+                    {!fitsInMemory(ceiling) && <span className="text-warn-text">não cabe</span>}
+                    {chips.map((chip) => (
+                      <CapabilityChip key={chip.capability} {...chip} />
+                    ))}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
-          <div className="my-2 border-t border-border-strong" />
-          <p className={GROUP_LABEL}>
-            <Cloud size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            Nuvem (Opt-in)
-          </p>
-          {/* A real option now (N-1-B) — no size/ceiling row like Locais gets:
+        <div className="my-2 border-t border-border-strong" />
+        <p className={GROUP_LABEL}>
+          <Cloud size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          Nuvem (Opt-in)
+        </p>
+        {/* A real option now (N-1-B) — no size/ceiling row like Locais gets:
               a cloud entry costs no local RAM, and "0 B" would be true data
               read as a wrong signal (DN1B.2). `cloudReady` gates the click,
               never the row itself — the model always shows, same "correção,
               não cortesia" reasoning as the nível-3 refusal in chat(). */}
-          {cloudModels.map((model) => (
-            <button
-              key={model.name}
-              type="button"
-              disabled={!cloudReady}
-              title={cloudReady ? undefined : cloudHint}
-              onClick={() => {
-                onSelect(model.name)
-                setOpen(false)
-              }}
-              className="flex items-center rounded-md px-4 py-2 text-left font-ui text-md text-text disabled:cursor-not-allowed disabled:text-text-faint"
-            >
-              {model.name}
-            </button>
-          ))}
-          {/* Still locked, via N-1-C — same shape as AttachButton's "Código" item. */}
-          {CLOUD_PLACEHOLDERS.map((name) => (
-            <button
-              key={name}
-              type="button"
-              disabled
-              className="flex cursor-not-allowed items-center rounded-md px-4 py-2 text-left font-ui text-md text-text-faint"
-            >
-              {name}
-            </button>
-          ))}
-        </div>
+        {cloudModels.map((model) => (
+          <button
+            key={model.name}
+            type="button"
+            disabled={!cloudReady}
+            title={cloudReady ? undefined : cloudHint}
+            onClick={() => {
+              onSelect(model.name)
+              setOpen(false)
+            }}
+            className="flex items-center rounded-md px-4 py-2 text-left font-ui text-md text-text disabled:cursor-not-allowed disabled:text-text-faint"
+          >
+            {model.name}
+          </button>
+        ))}
+        {/* Still locked, via N-1-C — same shape as AttachButton's "Código" item. */}
+        {CLOUD_PLACEHOLDERS.map((name) => (
+          <button
+            key={name}
+            type="button"
+            disabled
+            className="flex cursor-not-allowed items-center rounded-md px-4 py-2 text-left font-ui text-md text-text-faint"
+          >
+            {name}
+          </button>
+        ))}
       </Popover>
     </>
   )

@@ -159,64 +159,69 @@ function ContextControl({
           style={{ anchorName }}
           disabled={disabled}
           aria-haspopup="dialog"
+          aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
           <span>{label}</span>
           <ChevronDown size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />
         </button>
       </Field>
-      <Popover open={open} onClose={() => setOpen(false)} anchorName={anchorName}>
-        {/* Wider than the other three branches need (240px) — the slider's tick
-            labels (F2.5) are what asks for it; the rascunho itself flagged that
-            the Ollama reference would need resizing to fit here. Widened again
-            past the first pass (300px) on user direction after live QA: more
-            room lets `thinLabels` keep more marks instead of dropping them. */}
-        <div className="flex w-[360px] flex-col gap-1">
-          {/* No window at all: offering the control here is what produced "até 0k"
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorName={anchorName}
+        // Wider than the other three branches need (240px) — the slider's
+        // tick labels (F2.5) are what asks for it; the rascunho itself
+        // flagged that the Ollama reference would need resizing to fit here.
+        // Widened again past the first pass (300px) on user direction after
+        // live QA: more room lets `thinLabels` keep more marks instead of
+        // dropping them.
+        className="flex w-[360px] flex-col gap-1"
+      >
+        {/* No window at all: offering the control here is what produced "até 0k"
               and a clamp to zero, which the IPC schema then rejected (D15.2). */}
-          {current !== undefined && contextWindow.status === 'too-large' && (
-            <p className={`mt-2 px-2 ${TOO_BIG}`} role="alert">
-              Não cabe na memória livre: {formatSize(current.sizeBytes)} de pesos, mais o cache.
-              Feche aplicativos e recarregue
-              {locked ? ', ou comece uma conversa nova.' : ', ou escolha um modelo menor.'}
-            </p>
-          )}
+        {current !== undefined && contextWindow.status === 'too-large' && (
+          <p className={`mt-2 px-2 ${TOO_BIG}`} role="alert">
+            Não cabe na memória livre: {formatSize(current.sizeBytes)} de pesos, mais o cache. Feche
+            aplicativos e recarregue
+            {locked ? ', ou comece uma conversa nova.' : ', ou escolha um modelo menor.'}
+          </p>
+        )}
 
-          {/* The lock's asymmetric second failure mode: the reservation is remade on
+        {/* The lock's asymmetric second failure mode: the reservation is remade on
               every load and free RAM varies by 3 GB here, so refusing is the point —
               shrinking in silence would undo the lock's guarantee (D15.13). */}
-          {contextWindow.status === 'unaffordable' && (
-            <p className={`mt-2 px-2 ${TOO_BIG}`} role="alert">
-              Esta conversa reservou {contextWindow.numCtx.toLocaleString('pt-BR')} tokens, e a
-              memória livre agora não comporta. Feche aplicativos e recarregue.
-            </p>
-          )}
+        {contextWindow.status === 'unaffordable' && (
+          <p className={`mt-2 px-2 ${TOO_BIG}`} role="alert">
+            Esta conversa reservou {contextWindow.numCtx.toLocaleString('pt-BR')} tokens, e a
+            memória livre agora não comporta. Feche aplicativos e recarregue.
+          </p>
+        )}
 
-          {contextWindow.status === 'locked' && (
-            // A stated number, not a control (D15.13).
-            <p className="mt-2 px-2 text-xs whitespace-nowrap text-text-muted">
-              Contexto: {contextWindow.numCtx.toLocaleString('pt-BR')} tokens · travado
-            </p>
-          )}
+        {contextWindow.status === 'locked' && (
+          // A stated number, not a control (D15.13).
+          <p className="mt-2 px-2 text-xs whitespace-nowrap text-text-muted">
+            Contexto: {contextWindow.numCtx.toLocaleString('pt-BR')} tokens · travado
+          </p>
+        )}
 
-          {contextWindow.status === 'open' && fits && ceiling !== null && (
-            <div className="mt-2 px-2">
-              <Field label="Contexto" hint={`até ${formatContext(ceiling)}`}>
-                {/* Remounted on scope/value change, same reason the old input was
+        {contextWindow.status === 'open' && fits && ceiling !== null && (
+          <div className="mt-2 px-2">
+            <Field label="Contexto" hint={`até ${formatContext(ceiling)}`}>
+              {/* Remounted on scope/value change, same reason the old input was
                     re-keyed rather than made controlled from `useState(stored)`:
                     that would copy the value on the first render, before the
                     conversation read returns (fase 14). */}
-                <ContextSlider
-                  key={`${scopeKey}:${contextWindow.numCtx}`}
-                  initial={contextWindow.numCtx}
-                  ceiling={ceiling}
-                  disabled={disabled}
-                  onCommit={onNumCtx}
-                />
-              </Field>
-            </div>
-          )}
-        </div>
+              <ContextSlider
+                key={`${scopeKey}:${contextWindow.numCtx}`}
+                initial={contextWindow.numCtx}
+                ceiling={ceiling}
+                disabled={disabled}
+                onCommit={onNumCtx}
+              />
+            </Field>
+          </div>
+        )}
       </Popover>
     </>
   )

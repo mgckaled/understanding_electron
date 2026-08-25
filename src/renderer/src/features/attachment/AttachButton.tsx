@@ -106,6 +106,7 @@ function AttachButton({
         disabled={disabled}
         aria-label="Adicionar anexo"
         aria-haspopup="true"
+        aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
         <Plus size={ICON_SIZE.md} strokeWidth={ICON_STROKE} />

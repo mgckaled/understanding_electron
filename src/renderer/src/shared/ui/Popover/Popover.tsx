@@ -4,10 +4,11 @@ import styles from './Popover.module.css'
 // Native `[popover]` + CSS anchor positioning, control fully imperative (DS4.4):
 // no click-outside listener, no position:fixed measured by hand.
 
-// ⚠️ No `className` prop, on purpose: an author `display` class on this root
-// (even Tailwind's `flex`) beats the UA stylesheet's hide-when-closed rule
-// regardless of specificity. Consumers wrap their content in their own inner
-// `<div className="flex …">` instead — see HISTORY.md § um className no Popover.
+// ⚠️ No `className` on the `[popover]` root itself, on purpose: an author
+// `display` class there (even Tailwind's `flex`) beats the UA stylesheet's
+// hide-when-closed rule regardless of specificity (HISTORY-archive.md § um
+// className no Popover). `className` below applies to an INNER div instead —
+// safe, since that div is never the one the UA stylesheet hides.
 
 type PopoverProps = {
   open: boolean
@@ -15,10 +16,21 @@ type PopoverProps = {
   /** From `toAnchorName(useId())` in the consumer, matching the trigger's own
    *  `style={{ anchorName }}` — Popover only knows the panel side of the pair. */
   anchorName: string
+  /** Layout class for the content wrapper (e.g. `flex w-[300px] flex-col
+   *  gap-1`) — five of today's consumers each hand-rolled this same inner
+   *  `<div>`. Optional: a consumer with more than one top-level shape (e.g.
+   *  AttachButton's two branches) still wraps its own children instead. */
+  className?: string
   children: ReactNode
 }
 
-function Popover({ open, onClose, anchorName, children }: PopoverProps): React.JSX.Element {
+function Popover({
+  open,
+  onClose,
+  anchorName,
+  className,
+  children
+}: PopoverProps): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
 
   // Synchronising a prop to an imperative DOM API — same shape as Dialog's own
@@ -51,7 +63,7 @@ function Popover({ open, onClose, anchorName, children }: PopoverProps): React.J
       className={`${styles.popover} rounded-lg border border-border-strong bg-surface-raised p-2 font-ui text-sm text-text`}
       style={{ positionAnchor: anchorName }}
     >
-      {children}
+      {className === undefined ? children : <div className={className}>{children}</div>}
     </div>
   )
 }
