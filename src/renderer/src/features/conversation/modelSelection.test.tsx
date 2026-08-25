@@ -119,25 +119,39 @@ describe('ModelSelector', () => {
     expect(within(coder).queryByTitle('Imagem — entende imagens anexadas')).not.toBeInTheDocument()
   })
 
-  it('shows GLM as a real option (disabled without a key) and Gemini as a locked placeholder (N-1-B)', async () => {
+  it('shows GLM as a real, disabled-without-a-key option, with its second line (N-1-C)', async () => {
     const user = userEvent.setup()
     mount()
     await user.click(await modelTrigger())
 
     // mount() never configures a GLM key (api-mock's secrets.has defaults to
     // false) — the button exists and shows the real model name, but is not
-    // clickable, same "correção, não cortesia" the nível-3 gate uses.
-    const glm = await screen.findByRole('button', { name: 'glm-4.7-flash', hidden: true })
+    // clickable, same "correção, não cortesia" the nível-3 gate uses. Matched
+    // by a regex, not an exact name: the accessible name now includes the
+    // second line's content too (context, rate limit, chips).
+    const glm = await screen.findByRole('button', { name: /glm-4\.7-flash/, hidden: true })
     expect(glm).toBeDisabled()
+    // formatContext divides by 1024 (binary thousands), same as every other
+    // row — 200.000 trained tokens reads "195k", not a round "200k".
+    expect(glm).toHaveTextContent('195k de contexto')
+    expect(glm).toHaveTextContent('1 simultânea')
 
-    const gemini = screen.getByRole('button', { name: 'Gemini', hidden: true })
-    expect(gemini).toBeDisabled()
-
-    // Neither is a selectable option: the arrow-key listbox is scoped to Locais.
+    // Not a selectable option: the arrow-key listbox is scoped to Locais.
     expect(
-      screen.queryByRole('option', { name: 'glm-4.7-flash', hidden: true })
+      screen.queryByRole('option', { name: /glm-4\.7-flash/, hidden: true })
     ).not.toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: 'Gemini', hidden: true })).not.toBeInTheDocument()
+  })
+
+  it('does not fire onSelect when clicking a cloud row with no key stored', async () => {
+    const user = userEvent.setup()
+    mount()
+    await user.click(await modelTrigger())
+
+    const glm = await screen.findByRole('button', { name: /glm-4\.7-flash/, hidden: true })
+    await user.click(glm)
+
+    // Still on the local model — a disabled button swallows the click.
+    expect(await modelTrigger()).toHaveTextContent('gemma3:4b')
   })
 
   it('sends the chosen model, not the default one', async () => {

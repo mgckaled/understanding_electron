@@ -76,7 +76,10 @@ function ConversationView(): React.JSX.Element {
   // below on purpose: this gates the Nuvem ROW regardless of which model is
   // currently selected, and reuses the query useCloudSecret (N-1-A) already
   // runs for Configurações, instead of adding a second always-on probe.
-  const { hasKey: cloudReady } = useCloudSecret('glm')
+  // Partial<Record<AiService, ...>> (N-1-C, DN1C.4): one entry per cloud
+  // provider that actually has a row in cloudModels — Gemini's own key joins
+  // this map once its catalog exists (passo 7).
+  const { hasKey: glmReady } = useCloudSecret('glm')
 
   // Held ONLY for the window in which no conversation exists yet — on a fresh
   // database there is no row to write a setting into, and dropping the choice
@@ -167,9 +170,10 @@ function ConversationView(): React.JSX.Element {
   // Same hint text HINTS.glm gives on the main side (main/features/ai/handlers.ts)
   // — duplicated here because useCloudSecret answers only hasKey, not an
   // AppError with a hint; this is UI copy, not the mão-única secret itself.
-  const cloudHint = cloudReady
-    ? undefined
-    : 'Configure a chave da Z.ai em Configurações para usar o GLM.'
+  const cloudReadyFor: Partial<Record<AiService, boolean>> = { glm: glmReady }
+  const cloudHintFor: Partial<Record<AiService, string | undefined>> = {
+    glm: glmReady ? undefined : 'Configure a chave da Z.ai em Configurações para usar o GLM.'
+  }
 
   // What the next send would carry: the whole transcript, since the provider
   // is stateless and every turn resends everything. Routed through
@@ -336,8 +340,8 @@ function ConversationView(): React.JSX.Element {
             <ModelPicker
               state={catalog}
               cloudModels={cloudModels}
-              cloudReady={cloudReady}
-              cloudHint={cloudHint}
+              cloudReadyFor={cloudReadyFor}
+              cloudHintFor={cloudHintFor}
               selected={model}
               // Two different reasons to be inert: busy, which passes, and
               // locked, which does not (D15.13).

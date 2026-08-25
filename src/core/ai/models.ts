@@ -17,7 +17,10 @@ export const GLM_MODELS: AiModel[] = [
     capabilities: ['completion', 'tools', 'thinking'],
     contextLength: 200_000,
     attention: null,
-    variantOf: null
+    variantOf: null,
+    // Z.ai publishes concurrency-1, never RPM/TPM/RPD (cloud-optin.md,
+    // "terceiro" provenance — the docs.z.ai pricing page does not list it).
+    rateLimit: { kind: 'concurrency', max: 1 }
   }
 ]
 

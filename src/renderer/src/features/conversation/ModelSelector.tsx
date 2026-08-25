@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { ChevronDown, Cloud, HardDrive } from 'lucide-react'
-import type { AiModel } from '@shared/ipc'
+import type { AiModel, AiService } from '@shared/ipc'
 import { fitsInMemory, type Budget } from '@core/ai/budget'
 import Field from '../../shared/ui/Field/Field'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -10,7 +10,7 @@ import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
 import CapabilityChip from './CapabilityChip'
 import { capabilityChips } from './capabilities'
-import { formatContext, formatSize } from './modelFormat'
+import { formatContext, formatRateLimit, formatSize } from './modelFormat'
 
 // ModelPicker (this file) and ContextControl (own file, F2.7) replaced a
 // single popover that mixed model choice with context-window admin (DS5.6,
@@ -18,21 +18,17 @@ import { formatContext, formatSize } from './modelFormat'
 // the SAME render-prop Composer already calls (DS4.8) — the prop's type
 // never changes.
 
-// Still-locked, via N-1-C (Gemini + cota) — same disabled shape AttachButton's
-// "Código" item uses. GLM left this list in N-1-B, when it became a real option.
-const CLOUD_PLACEHOLDERS = ['Gemini']
-
 const GROUP_LABEL =
   'flex items-center gap-2 px-4 text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase'
 
 type ModelPickerProps = {
   state: ViewState<AiModel[]>
-  /** The GLM catalog (N-1-B) — a pinned table (Peça C), so this rarely differs from a single-entry ready list. */
+  /** The pinned cloud catalogs (GLM since N-1-B, Gemini since N-1-C), concatenated by the caller — Peça C, so this rarely changes shape at runtime. */
   cloudModels: AiModel[]
-  /** Whether a GLM key is stored (Peça 9) — gates the click, never the row's visibility. */
-  cloudReady: boolean
-  /** The same hint `ai:isAvailable` returns, shown when `cloudReady` is false. */
-  cloudHint: string | undefined
+  /** Whether a key is stored per cloud provider (Peça 9) — gates the click, never the row's visibility. Only cloud keys are ever populated; `ollama` is never looked up here. */
+  cloudReadyFor: Partial<Record<AiService, boolean>>
+  /** The same hint `ai:isAvailable` returns per provider, shown when that provider's `cloudReadyFor` entry is false. */
+  cloudHintFor: Partial<Record<AiService, string | undefined>>
   /** Already resolved: the conversation's model, or the first installed one. */
   selected: string | null
   disabled: boolean
@@ -40,9 +36,11 @@ type ModelPickerProps = {
   locked: boolean
   onSelect: (name: string) => void
   /**
-   * `min(trained ceiling, what this machine can hold)`, for any model in the
-   * list. A function, not one number for the selection, because the list needs
-   * it too — and passing the rule keeps it defined in ONE place with its margin.
+   * `min(trained ceiling, what this machine can hold)` for Ollama, or the
+   * model's own trained window for cloud (N-1-C, DN1C.2) — for any model in
+   * the list. A function, not one number for the selection, because the list
+   * needs it too — and passing the rule keeps it defined in ONE place with
+   * its margin.
    */
   ceilingOf: (model: AiModel) => number | null
 }
@@ -51,8 +49,8 @@ type ModelPickerProps = {
 function ModelPicker({
   state,
   cloudModels,
-  cloudReady,
-  cloudHint,
+  cloudReadyFor,
+  cloudHintFor,
   selected,
   disabled,
   locked,
@@ -129,7 +127,10 @@ function ModelPicker({
         open={open}
         onClose={() => setOpen(false)}
         anchorName={anchorName}
-        className="flex w-[300px] flex-col gap-1"
+        // Widened from 300px (N-1-C): the Nuvem rows now carry a second line
+        // (context + rate limit + capability chips), same content density the
+        // Locais rows already had.
+        className="flex w-[380px] flex-col gap-1"
       >
         <p className={GROUP_LABEL}>
           <HardDrive size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
@@ -193,37 +194,45 @@ function ModelPicker({
           <Cloud size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           Nuvem (Opt-in)
         </p>
-        {/* A real option now (N-1-B) — no size/ceiling row like Locais gets:
-              a cloud entry costs no local RAM, and "0 B" would be true data
-              read as a wrong signal (DN1B.2). `cloudReady` gates the click,
-              never the row itself — the model always shows, same "correção,
-              não cortesia" reasoning as the nível-3 refusal in chat(). */}
-        {cloudModels.map((model) => (
-          <button
-            key={model.name}
-            type="button"
-            disabled={!cloudReady}
-            title={cloudReady ? undefined : cloudHint}
-            onClick={() => {
-              onSelect(model.name)
-              setOpen(false)
-            }}
-            className="flex items-center rounded-md px-4 py-2 text-left font-ui text-md text-text disabled:cursor-not-allowed disabled:text-text-faint"
-          >
-            {model.name}
-          </button>
-        ))}
-        {/* Still locked, via N-1-C — same shape as AttachButton's "Código" item. */}
-        {CLOUD_PLACEHOLDERS.map((name) => (
-          <button
-            key={name}
-            type="button"
-            disabled
-            className="flex cursor-not-allowed items-center rounded-md px-4 py-2 text-left font-ui text-md text-text-faint"
-          >
-            {name}
-          </button>
-        ))}
+        {/* A real option since N-1-B — no size/RAM-ceiling row like Locais
+              gets: a cloud entry costs no local RAM (DN1B.2). Since N-1-C it
+              carries its own second line instead — trained context, the
+              documented free-tier limit, capability chips — same visual
+              density as Locais, adapted to what a cloud row actually has.
+              `cloudReadyFor` gates the click per provider, never the row
+              itself — the model always shows, same "correção, não cortesia"
+              reasoning as the nível-3 refusal in chat(). Colour and
+              `disabled:*` live on the BUTTON, not a child span: `disabled:*`
+              compiles to `&:disabled`, which only ever matches the element
+              that can actually be disabled. */}
+        {cloudModels.map((model) => {
+          const ready = cloudReadyFor[model.provider] ?? false
+          const chips = capabilityChips(model)
+          return (
+            <button
+              key={model.name}
+              type="button"
+              disabled={!ready}
+              title={ready ? undefined : cloudHintFor[model.provider]}
+              onClick={() => {
+                onSelect(model.name)
+                setOpen(false)
+              }}
+              className="flex cursor-pointer flex-col gap-1 rounded-md border border-transparent px-4 py-2 text-left text-text hover:border-border hover:bg-surface-raised disabled:cursor-not-allowed disabled:text-text-faint disabled:hover:border-transparent disabled:hover:bg-transparent"
+            >
+              <span className="font-ui text-md">{model.name}</span>
+              <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted">
+                {model.contextLength !== null && (
+                  <span>{formatContext(model.contextLength)} de contexto</span>
+                )}
+                {model.rateLimit !== undefined && <span>{formatRateLimit(model.rateLimit)}</span>}
+                {chips.map((chip) => (
+                  <CapabilityChip key={chip.capability} {...chip} />
+                ))}
+              </span>
+            </button>
+          )
+        })}
       </Popover>
     </>
   )
