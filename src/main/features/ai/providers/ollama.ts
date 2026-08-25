@@ -111,11 +111,53 @@ function chatOptions(numThread?: number, numCtx?: number): Record<string, number
   return Object.keys(options).length === 0 ? undefined : options
 }
 
+// A schema-constrained reply is not usefully consumed a token at a time —
+// it is not valid JSON until complete — so `format` takes the plain
+// `stream: false` path instead of the NDJSON loop below (D19.5). Ollama's
+// non-streaming body has the exact same shape as the streaming loop's final
+// line, so OllamaChatLine covers both.
+async function requestStructuredChat(
+  model: string,
+  messages: Parameters<ChatFn>[0],
+  format: Record<string, unknown>,
+  options: Record<string, number> | undefined,
+  signal: AbortSignal | undefined
+): Promise<{ content: string; promptTokens?: number; evalTokens?: number }> {
+  const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: false,
+      think: false,
+      format,
+      ...(options === undefined ? {} : { options })
+    }),
+    signal
+  })
+
+  if (!response.ok) throw await upstreamErrorFor(response)
+  const body = (await response.json()) as OllamaChatLine
+  if (body.error !== undefined) throw new UpstreamError(null, body.error)
+
+  return {
+    content: body.message?.content ?? '',
+    ...(body.prompt_eval_count === undefined ? {} : { promptTokens: body.prompt_eval_count }),
+    ...(body.eval_count === undefined ? {} : { evalTokens: body.eval_count })
+  }
+}
+
 export const ollamaChat: ChatFn = async (
   messages,
-  { model, numThread, numCtx, signal, onChunk }
+  { model, numThread, numCtx, signal, onChunk, format }
 ) => {
   const options = chatOptions(numThread, numCtx)
+
+  if (format !== undefined) {
+    return requestStructuredChat(model, messages, format, options, signal)
+  }
+
   const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

@@ -11,6 +11,11 @@ export type AppError =
   // Covers both the read-only guard rejecting a query (D18B.2) and a real
   // DuckDB error (bad column, syntax) — message is the engine's own text.
   | { kind: 'invalidQuery'; message: string }
+  // A model's structured reply (D19.3) that was not valid JSON, or did not
+  // match stepProposalSchema — distinct from invalidQuery (dataset/SQL) and
+  // unknown (no diagnosis at all): this one is fully diagnosed, just not a
+  // query problem.
+  | { kind: 'invalidProposal'; message: string }
   | { kind: 'unknown'; message: string }
 
 export type Result<T, E = AppError> = { ok: true; value: T } | { ok: false; error: E }

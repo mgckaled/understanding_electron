@@ -35,6 +35,22 @@ function requestBody(fetchMock: ReturnType<typeof vi.fn>): Record<string, unknow
   return JSON.parse(init.body)
 }
 
+// format's stream:false path (D19.5) never reads a body stream — it awaits
+// one JSON object, the same shape as a streaming reply's final line.
+function stubChatJson(
+  payload: Record<string, unknown>,
+  init?: { ok?: boolean; status?: number }
+): ReturnType<typeof vi.fn> {
+  const fetchMock = vi.fn(async () => ({
+    ok: init?.ok ?? true,
+    status: init?.status ?? 200,
+    json: async () => payload,
+    text: async () => ''
+  }))
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
 afterEach(() => vi.unstubAllGlobals())
 
 describe('ollamaModels', () => {
@@ -206,6 +222,50 @@ describe('ollamaChat', () => {
     stubChatStream(['ignored'], { ok: false, status: 404 })
 
     await expect(ollamaChat(messages, { model: 'ghost' })).rejects.toBeInstanceOf(UpstreamError)
+  })
+
+  describe('with format (D19.3/D19.5)', () => {
+    const format = { type: 'object', properties: { ok: { type: 'boolean' } } }
+
+    it('sends stream: false and the schema under format, never options.onChunk', async () => {
+      const fetchMock = stubChatJson({ message: { content: '{"ok":true}' }, done: true })
+
+      const result = await ollamaChat(messages, { model: 'gemma3:4b', format })
+
+      expect(result).toEqual({ content: '{"ok":true}' })
+      expect(requestBody(fetchMock)).toMatchObject({ stream: false, format, think: false })
+    })
+
+    it('carries the token counters from the single JSON body', async () => {
+      stubChatJson({
+        message: { content: '{"ok":true}' },
+        done: true,
+        prompt_eval_count: 10,
+        eval_count: 5
+      })
+
+      const result = await ollamaChat(messages, { model: 'gemma3:4b', format })
+
+      expect(result).toEqual({ content: '{"ok":true}', promptTokens: 10, evalTokens: 5 })
+    })
+
+    it('throws UpstreamError on a mid-body error, same as the streaming path', async () => {
+      stubChatJson({ error: 'model runner crashed' })
+
+      await expect(ollamaChat(messages, { model: 'gemma3:4b', format })).rejects.toMatchObject({
+        name: 'UpstreamError',
+        status: null,
+        message: 'model runner crashed'
+      })
+    })
+
+    it('throws UpstreamError with the HTTP status on a non-ok response', async () => {
+      stubChatJson({}, { ok: false, status: 500 })
+
+      await expect(ollamaChat(messages, { model: 'gemma3:4b', format })).rejects.toBeInstanceOf(
+        UpstreamError
+      )
+    })
   })
 })
 

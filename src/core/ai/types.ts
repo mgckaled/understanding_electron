@@ -12,6 +12,14 @@ export type ChatFn = (
     numCtx?: number
     signal?: AbortSignal
     onChunk?: (text: string) => void
+    /**
+     * A JSON Schema that constrains decoding (D19.3/D19.5) — the same schema
+     * `core/ai/proposal.ts` later `.parse()`s the reply with. Ollama's own
+     * `stream: false` path answers with one complete JSON body, since a
+     * schema-constrained reply is not usefully consumed a token at a time;
+     * an adapter given `format` ignores `onChunk`.
+     */
+    format?: Record<string, unknown>
   }
   // Resolves to ChatReply, not a bare string: the stream's final line carries
   // the token counters, the only exact count that exists (nothing tokenizes
