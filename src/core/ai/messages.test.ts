@@ -172,6 +172,26 @@ describe('toChatMessages', () => {
     expect(toChatMessages([withImage])).toEqual([{ role: 'user', content: 'o que é isso?' }])
   })
 
+  it('materializes a stepProposal part as its Portuguese description (plano 19) — the transcript is resent whole every turn', () => {
+    const withProposal: Message = {
+      id: 'm1',
+      role: 'assistant',
+      parts: [
+        {
+          kind: 'stepProposal',
+          hash: 'abc123',
+          proposalKind: 'steps',
+          steps: [{ kind: 'filter', column: 'idade', operator: 'gt', value: 18 }]
+        }
+      ],
+      createdAt: 0
+    }
+
+    const [{ content }] = toChatMessages([withProposal])
+
+    expect(content).toContain('filtrar idade maior que 18')
+  })
+
   it('filters an empty contribution instead of leaving a dangling separator (D17.5)', () => {
     // The real case this guards: an interrupted or genuinely empty assistant
     // reply, appended today with no guard against an empty `content`.

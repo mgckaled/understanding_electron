@@ -7,7 +7,13 @@ import type {
   ConversationSettings,
   MessageStopped
 } from '@shared/ipc'
-import { attachmentPartOf, imageCountOf, messageText, toChatMessages } from '@core/ai/messages'
+import {
+  attachmentPartOf,
+  imageCountOf,
+  messageText,
+  stepProposalPartOf,
+  toChatMessages
+} from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
@@ -17,6 +23,7 @@ import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
 import AttachmentCard from '../attachment/AttachmentCard'
+import StepProposalCard from '../attachment/StepProposalCard'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
 import { useAiModels } from './useAiModels'
@@ -252,8 +259,17 @@ function ConversationView(): React.JSX.Element {
                 </li>
               ) : (
                 // Assistant turn: plain text on the left, no bubble, no label.
+                // A step proposal (plano 19) replaces the text entirely — the
+                // reply IS the card, not prose alongside it.
                 <li key={message.id} className="flex flex-col gap-2">
-                  <MarkdownMessage text={messageText(message)} />
+                  {(() => {
+                    const proposal = stepProposalPartOf(message)
+                    return proposal !== null ? (
+                      <StepProposalCard part={proposal} />
+                    ) : (
+                      <MarkdownMessage text={messageText(message)} />
+                    )
+                  })()}
                   {message.stopped !== undefined && (
                     // Why a reply stopped (D14.3). It used to sit beside the author
                     // label the target removed; `stopped` is only ever on an

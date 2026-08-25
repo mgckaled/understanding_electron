@@ -13,7 +13,8 @@ export {
   fillMissingStepSchema,
   stepSchema,
   stepProposalSchema,
-  stepProposalJsonSchema
+  stepProposalJsonSchema,
+  stepProposalPartSchema
 } from '@shared/ipc'
 export type {
   FilterOperator,
@@ -25,5 +26,6 @@ export type {
   FillMissingStrategy,
   FillMissingStep,
   Step,
-  StepProposal
+  StepProposal,
+  StepProposalPart
 } from '@shared/ipc'

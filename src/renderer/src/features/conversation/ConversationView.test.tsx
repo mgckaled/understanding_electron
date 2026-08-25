@@ -833,3 +833,32 @@ describe('ConversationView — os três tipos de anexo numa conversa', () => {
     expect(thread.getAllByText('ok')).toHaveLength(3)
   })
 })
+
+describe('ConversationView — proposta de passos (plano 19)', () => {
+  it('renders a stepProposal part as its editable card, not as markdown text', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    const conversationId = 'c-proposal'
+    await api.conversation.create({ id: conversationId, title: 'Vendas', createdAt: 1 })
+    await api.conversation.updateSettings(conversationId, { model: 'gemma3:4b' })
+    await api.conversation.append(conversationId, {
+      id: 'm1',
+      role: 'assistant',
+      parts: [
+        {
+          kind: 'stepProposal',
+          hash: 'h1',
+          proposalKind: 'steps',
+          steps: [{ kind: 'limit', count: 10 }]
+        }
+      ],
+      createdAt: 1
+    })
+
+    renderView()
+    await whenReady()
+
+    expect(await screen.findByText('limitar a 10 linhas')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeInTheDocument()
+  })
+})

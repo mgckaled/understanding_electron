@@ -5,6 +5,7 @@ import type { DatasetPart } from '@shared/ipc'
 import { columnsToArrowBytes } from '@core/duckdb/arrow'
 import { installApiMock } from '@test/api-mock'
 import { createQueryClient } from '../../shared/queryClient'
+import ConversationsProvider from '../conversation/ConversationsProvider'
 import DatasetCard from './DatasetCard'
 
 const PART: DatasetPart = {
@@ -20,7 +21,9 @@ const PART: DatasetPart = {
 function mount(): void {
   render(
     <QueryClientProvider client={createQueryClient()}>
-      <DatasetCard part={PART} />
+      <ConversationsProvider>
+        <DatasetCard part={PART} />
+      </ConversationsProvider>
     </QueryClientProvider>
   )
 }
@@ -58,5 +61,59 @@ describe('DatasetCard', () => {
 
     expect(await screen.findByText('1')).toBeVisible()
     expect(screen.queryByLabelText('Consulta SQL')).not.toBeInTheDocument()
+  })
+
+  describe('Propor passos (plano 19)', () => {
+    it('shows a guidance error when the conversation has no model chosen', async () => {
+      installApiMock()
+      const user = userEvent.setup()
+
+      mount()
+      await user.click(screen.getByRole('button', { name: 'Propor passos' }))
+      await user.type(screen.getByLabelText('Pedido em português'), 'filtre idade maior que 18')
+      await user.click(screen.getByRole('button', { name: 'Enviar pedido' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Escolha um modelo')
+    })
+
+    it('requests a proposal and appends it as a new assistant message', async () => {
+      const api = installApiMock()
+      const conversationId = 'c1'
+      await api.conversation.create({ id: conversationId, title: 'Vendas', createdAt: 1 })
+      await api.conversation.updateSettings(conversationId, { model: 'gemma3:4b' })
+      vi.mocked(api.ai.propose).mockResolvedValue({
+        ok: true,
+        value: {
+          kind: 'steps',
+          steps: [{ kind: 'filter', column: 'idade', operator: 'gt', value: 18 }]
+        }
+      })
+      const user = userEvent.setup()
+
+      mount()
+      await user.click(screen.getByRole('button', { name: 'Propor passos' }))
+      await user.type(screen.getByLabelText('Pedido em português'), 'filtre idade maior que 18')
+      await user.click(screen.getByRole('button', { name: 'Enviar pedido' }))
+
+      expect(api.ai.propose).toHaveBeenCalledWith(
+        expect.objectContaining({
+          service: 'ollama',
+          model: 'gemma3:4b',
+          hash: 'h1',
+          request: 'filtre idade maior que 18'
+        }),
+        expect.any(String)
+      )
+      const messages = await api.conversation.messages(conversationId)
+      const appended = messages.find((message) => message.role === 'assistant')
+      expect(appended?.parts).toEqual([
+        {
+          kind: 'stepProposal',
+          hash: 'h1',
+          proposalKind: 'steps',
+          steps: [{ kind: 'filter', column: 'idade', operator: 'gt', value: 18 }]
+        }
+      ])
+    })
   })
 })

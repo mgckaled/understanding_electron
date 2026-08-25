@@ -1,20 +1,12 @@
 import type { DatasetPart } from '@shared/ipc'
 import { errorMessage } from '../../shared/ui/messages'
 import { useDatasetPreview } from './useDatasetPreview'
+import DatasetTable from './DatasetTable'
 
 // Mirrors the LIMIT baked into useDatasetPreview's SQL (D18C.2) — kept as a
 // second constant, not imported, because the hook's cap is SQL text and this
 // one is a display threshold; the two happen to share a value, not an owner.
 const PREVIEW_ROW_CAP = 50
-
-// Second occurrence of "format an Arrow cell for display" (D18C.6) — copied
-// from DatasetQueryPanel.formatCell, not extracted: régua dos três reserves
-// extraction for a third occurrence.
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) return '∅'
-  if (typeof value === 'bigint') return value.toString()
-  return String(value)
-}
 
 /**
  * The dataset's first 50 rows, rendered by default inside DatasetCard — no
@@ -73,36 +65,7 @@ function DatasetPreview({ part }: { part: DatasetPart }): React.JSX.Element {
           linhas.
         </p>
       )}
-      <div className="max-h-[400px] overflow-auto rounded-md border border-border">
-        <table className="w-full border-collapse text-xs selectable">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column}
-                  className="sticky top-0 border-b border-border bg-surface-raised px-2 py-1 text-left font-semibold whitespace-nowrap"
-                >
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                    className="border-b border-border px-2 py-1 whitespace-nowrap"
-                  >
-                    {formatCell(cell)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DatasetTable columns={columns} rows={rows} />
     </div>
   )
 }

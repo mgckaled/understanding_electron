@@ -4,8 +4,10 @@ import type {
   ChatMessage,
   ImagePart,
   Message,
-  MessagePart
+  MessagePart,
+  StepProposalPart
 } from '@shared/ipc'
+import { describeSteps } from '../pipeline/describe'
 import { formatDataCard } from './dataCard'
 import { formatDocumentCard } from './documentCard'
 
@@ -38,6 +40,13 @@ export function attachmentPartOf(message: Message): AttachmentPart | null {
   return message.parts.find((part): part is AttachmentPart => part.kind !== 'text') ?? null
 }
 
+/** The step proposal on an assistant message, if any (plano 19) — the card ConversationView swaps in for the plain text bubble. */
+export function stepProposalPartOf(message: Message): StepProposalPart | null {
+  return (
+    message.parts.find((part): part is StepProposalPart => part.kind === 'stepProposal') ?? null
+  )
+}
+
 /** How many image parts a turn carries — the flat token cost the budget adds is this times `IMAGE_TOKEN_ESTIMATE` (D17.12). */
 export function imageCountOf(messages: Message[]): number {
   return messages.reduce(
@@ -63,6 +72,11 @@ export function partForProvider(part: MessagePart): string {
       // Contributes nothing to `content` — an image rides on ChatMessage.images
       // instead (D17.5), a separate field in the provider's own wire shape.
       return ''
+    case 'stepProposal':
+      // The transcript is resent whole every turn (stateless provider) — a
+      // proposal from an earlier turn needs a textual form here too, or the
+      // model loses track of what it already proposed.
+      return `[Proposta de passos]\n${describeSteps(part.steps)}`
   }
 }
 

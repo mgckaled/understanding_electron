@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { tableFromIPC } from 'apache-arrow'
 import Button from '../../shared/ui/Button/Button'
 import { errorMessage } from '../../shared/ui/messages'
+import DatasetTable from './DatasetTable'
 
 // Mirrors the app-wide DOM row cap (CLAUDE.md) — the channel already caps at
 // 201 (D18B.4, the N+1 truncation trick), so this only ever drops the extra
@@ -26,12 +27,6 @@ function arrowBytesToResult(bytes: Uint8Array): QueryResult {
   }
   const truncated = rows.length > ROW_LIMIT
   return { columns, rows: truncated ? rows.slice(0, ROW_LIMIT) : rows, truncated }
-}
-
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) return '∅'
-  if (typeof value === 'bigint') return value.toString()
-  return String(value)
 }
 
 // The raw-SQL diagnostic tool D18B.5 describes — one input, one button, one
@@ -87,36 +82,7 @@ function DatasetQueryPanel({ hash }: { hash: string }): React.JSX.Element {
               Mostrando as primeiras {ROW_LIMIT.toLocaleString('pt-BR')} linhas.
             </p>
           )}
-          <div className="max-h-[400px] overflow-auto rounded-md border border-border">
-            <table className="w-full border-collapse text-xs selectable">
-              <thead>
-                <tr>
-                  {result.columns.map((column) => (
-                    <th
-                      key={column}
-                      className="sticky top-0 border-b border-border bg-surface-raised px-2 py-1 text-left font-semibold whitespace-nowrap"
-                    >
-                      {column}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {result.rows.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="border-b border-border px-2 py-1 whitespace-nowrap"
-                      >
-                        {formatCell(cell)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DatasetTable columns={result.columns} rows={result.rows} />
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import Button from '../../shared/ui/Button/Button'
 import DatasetPreview from './DatasetPreview'
 import DatasetQueryPanel from './DatasetQueryPanel'
 import DatasetProfile from './DatasetProfile'
+import { useStepProposal } from './useStepProposal'
 
 // What plano 16 draws in the transcript for a dataset attachment (D16.4 Passo
 // 4) — schema and row count only, the same fields the model itself reads
@@ -22,6 +23,15 @@ import DatasetProfile from './DatasetProfile'
 // content (aggregate stats, not rows), so it renders alongside either one.
 function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
+  const [proposing, setProposing] = useState(false)
+  const [request, setRequest] = useState('')
+  const { state: proposalState, propose } = useStepProposal(part)
+
+  async function handleSubmitProposal(): Promise<void> {
+    if (request.trim() === '') return
+    await propose(request.trim())
+    setRequest('')
+  }
 
   return (
     <div className="flex max-w-[80%] flex-col gap-3 rounded-lg border border-border bg-surface-raised px-5 py-4 text-text">
@@ -43,6 +53,15 @@ function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
           variant="outline"
           size="sm"
           className="flex-none"
+          onClick={() => setProposing((value) => !value)}
+          aria-pressed={proposing}
+        >
+          Propor passos
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-none"
           onClick={() => setExpanded((value) => !value)}
           aria-pressed={expanded}
         >
@@ -56,6 +75,36 @@ function DatasetCard({ part }: { part: DatasetPart }): React.JSX.Element {
           </span>
         </Button>
       </div>
+      {proposing && (
+        // Minimal by design (D19's own scope note) — a single request field,
+        // no history and no saved prompts. The proposal itself lands as a
+        // new assistant message (useStepProposal), not inline here.
+        <div className="flex flex-col gap-2 border-t border-border pt-3">
+          <textarea
+            className="min-h-[56px] resize-y rounded-md border border-border bg-surface px-3 py-2 text-xs text-text selectable"
+            value={request}
+            onChange={(event) => setRequest(event.target.value)}
+            placeholder="Como tratar esse arquivo? Ex.: filtrar idade maior que 18"
+            aria-label="Pedido em português"
+          />
+          <div>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={proposalState.status === 'loading'}
+              disabled={request.trim() === ''}
+              onClick={() => void handleSubmitProposal()}
+            >
+              Enviar pedido
+            </Button>
+          </div>
+          {proposalState.status === 'error' && (
+            <p className="text-xs text-danger-text selectable" role="alert">
+              {proposalState.message}
+            </p>
+          )}
+        </div>
+      )}
       {expanded ? <DatasetQueryPanel hash={part.hash} /> : <DatasetPreview part={part} />}
       <DatasetProfile hash={part.hash} />
     </div>
