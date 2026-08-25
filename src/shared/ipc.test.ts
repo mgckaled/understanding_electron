@@ -52,12 +52,17 @@ describe('argsSchema', () => {
   })
 
   it('rejects an unknown service for ai:isAvailable', () => {
-    const result = argsSchema['ai:isAvailable'].safeParse({ service: 'gemini' })
+    const result = argsSchema['ai:isAvailable'].safeParse({ service: 'chatgpt' })
     expect(result.success).toBe(false)
   })
 
   it('accepts glm as a second ai:isAvailable service (N-1-B)', () => {
     const result = argsSchema['ai:isAvailable'].safeParse({ service: 'glm' })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts gemini as a third ai:isAvailable service (N-1-C)', () => {
+    const result = argsSchema['ai:isAvailable'].safeParse({ service: 'gemini' })
     expect(result.success).toBe(true)
   })
 

@@ -50,7 +50,8 @@ function availabilityText(error: AppError): string {
 // addressing (N-1-B) — it used to say "o Ollama" unconditionally.
 const SERVICE_LABEL: Record<AiService, string> = {
   ollama: 'o Ollama',
-  glm: 'o GLM'
+  glm: 'o GLM',
+  gemini: 'o Gemini'
 }
 
 // Reading a saved conversation, "there is no answer here" and "the answer was

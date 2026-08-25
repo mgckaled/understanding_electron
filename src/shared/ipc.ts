@@ -64,9 +64,9 @@ export type DatasetRef = {
 
 // AI layer (plano 09, fatia 1). aiServiceSchema is the single source for the
 // set of providers — z.infer keeps the type from being written in parallel.
-// 'glm' joined in N-1-B; 'gemini' stays a CloudProvider (has a secret slot)
-// without being an AiService yet — N-1-C is what promotes it.
-export const aiServiceSchema = z.enum(['ollama', 'glm'])
+// 'glm' joined in N-1-B; 'gemini' joined in N-1-C, promoted from CloudProvider
+// (which it already was, since N-1-A — a secret slot without a live adapter).
+export const aiServiceSchema = z.enum(['ollama', 'glm', 'gemini'])
 export type AiService = z.infer<typeof aiServiceSchema>
 
 export const chatMessageSchema = z.object({
@@ -148,6 +148,16 @@ export type AiModelAttention = {
  * today (D15.9); it exists now because adding it later would touch every layer
  * and every settings blob on disk.
  */
+/**
+ * A cloud provider's documented free-tier limit, display only (N-1-C) — not
+ * every provider publishes the same SHAPE of limit. GLM publishes a single
+ * concurrency cap, never RPM/TPM/RPD; forcing one shape on both would mean
+ * inventing numbers Z.ai does not publish, exactly what the provenance
+ * legend in `cloud-optin.md` exists to prevent.
+ */
+export type CloudRateLimit =
+  { kind: 'rate'; rpm: number; tpm: number; rpd: number } | { kind: 'concurrency'; max: number }
+
 export type AiModel = {
   provider: AiService
   name: string
@@ -164,6 +174,8 @@ export type AiModel = {
    * installed: with it gone, the variant is the only way to run those weights.
    */
   variantOf: string | null
+  /** Documented free-tier limit, display only — undefined for Ollama, which has no account-wide quota concept (N-1-C). */
+  rateLimit?: CloudRateLimit
 }
 
 /**
