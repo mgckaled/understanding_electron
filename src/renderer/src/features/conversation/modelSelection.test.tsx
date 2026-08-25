@@ -133,9 +133,9 @@ describe('ModelSelector', () => {
 
     // mount() never configures a GLM key (api-mock's secrets.has defaults to
     // false) — the button exists and shows the real model name, but is not
-    // clickable, same "correção, não cortesia" the nível-3 gate uses. Matched
-    // by a regex, not an exact name: the accessible name now includes the
-    // second line's content too (context, rate limit, chips).
+    // clickable: disabled with a reason, never hidden ("correção, não
+    // cortesia"). Matched by a regex, not an exact name: the accessible name
+    // now includes the second line's content too (context, rate limit, chips).
     const glm = await screen.findByRole('button', { name: /glm-4\.7-flash/, hidden: true })
     expect(glm).toBeDisabled()
     // formatContext divides by 1024 (binary thousands), same as every other

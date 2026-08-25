@@ -1,6 +1,5 @@
 import type {
   AiService,
-  AppError,
   AttachmentPart,
   ChatMessage,
   ImagePart,
@@ -18,26 +17,6 @@ import { formatDocumentCard } from './documentCard'
 /** Whether `service` is a cloud provider — every non-'ollama' value is (N-1-B). */
 export function isCloudService(service: AiService): boolean {
   return service !== 'ollama'
-}
-
-/**
- * The nível-3 refusal (`ESCOPO.md`): document and image are nível 3 by
- * construction, and the cloud blocks nível 3 outright. Reuses
- * `AppError.kind: 'blocked'` — the same shape a scanned PDF or an
- * unrecognized image format already returns — rather than a new kind.
- */
-export function checkLevel3(messages: Message[], service: AiService): AppError | null {
-  if (!isCloudService(service)) return null
-  const hasRestrictedPart = messages.some((message) =>
-    message.parts.some((part) => part.kind === 'document' || part.kind === 'image')
-  )
-  return hasRestrictedPart
-    ? {
-        kind: 'blocked',
-        reason:
-          'Documento e imagem são nível 3 — bloqueados em modelos de nuvem. Use um modelo local para este anexo.'
-      }
-    : null
 }
 
 /**

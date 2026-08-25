@@ -200,11 +200,11 @@ function ModelPicker({
               documented free-tier limit, capability chips — same visual
               density as Locais, adapted to what a cloud row actually has.
               `cloudReadyFor` gates the click per provider, never the row
-              itself — the model always shows, same "correção, não cortesia"
-              reasoning as the nível-3 refusal in chat(). Colour and
-              `disabled:*` live on the BUTTON, not a child span: `disabled:*`
-              compiles to `&:disabled`, which only ever matches the element
-              that can actually be disabled. */}
+              itself — the model always shows, disabled with a reason
+              ("no key configured"), rather than hidden ("correção, não
+              cortesia"). Colour and `disabled:*` live on the BUTTON, not a
+              child span: `disabled:*` compiles to `&:disabled`, which only
+              ever matches the element that can actually be disabled. */}
         {cloudModels.map((model) => {
           const ready = cloudReadyFor[model.provider] ?? false
           const chips = capabilityChips(model)

@@ -1,7 +1,6 @@
 import type { DatasetPart, DocumentPart, ImagePart, Message } from '@shared/ipc'
 import {
   attachmentPartOf,
-  checkLevel3,
   imageCountOf,
   isCloudService,
   messageText,
@@ -244,52 +243,5 @@ describe('isCloudService', () => {
   it('treats every non-ollama value as cloud', () => {
     expect(isCloudService('ollama')).toBe(false)
     expect(isCloudService('glm')).toBe(true)
-  })
-})
-
-describe('checkLevel3', () => {
-  it('lets text and dataset parts through on the cloud — only document/image are nível 3', () => {
-    const history: Message[] = [
-      message('user', 'texto simples'),
-      {
-        id: 'm2',
-        role: 'user',
-        parts: [datasetPart, { kind: 'text', text: 'e essa tabela?' }],
-        createdAt: 0
-      }
-    ]
-    expect(checkLevel3(history, 'glm')).toBeNull()
-  })
-
-  it('blocks a document part on the cloud', () => {
-    const history: Message[] = [
-      {
-        id: 'm1',
-        role: 'user',
-        parts: [documentPart, { kind: 'text', text: 'resuma' }],
-        createdAt: 0
-      }
-    ]
-    const error = checkLevel3(history, 'glm')
-    expect(error?.kind).toBe('blocked')
-  })
-
-  it('blocks an image part on the cloud', () => {
-    const history: Message[] = [
-      {
-        id: 'm1',
-        role: 'user',
-        parts: [imagePart, { kind: 'text', text: 'o que é isso?' }],
-        createdAt: 0
-      }
-    ]
-    expect(checkLevel3(history, 'glm')?.kind).toBe('blocked')
-  })
-
-  it('never blocks on ollama, even with a document or image part', () => {
-    const history: Message[] = [
-      { id: 'm1', role: 'user', parts: [documentPart, imagePart], createdAt: 0 }
-    ]
-    expect(checkLevel3(history, 'ollama')).toBeNull()
   })
 })

@@ -13,7 +13,7 @@ import type {
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { runChat } from '@core/ai/chat'
-import { checkLevel3, toChatMessagesWithImages } from '@core/ai/messages'
+import { toChatMessagesWithImages } from '@core/ai/messages'
 import { ok, err } from '@core/result'
 import * as jobs from '../../jobs'
 
@@ -117,11 +117,6 @@ export async function chat(
   emit: (event: JobEvent) => void,
   resolveImageBytes: (hash: string) => Promise<Buffer>
 ): Promise<Result<ChatReply>> {
-  // Nível 3 refusal (N-1-B, DN1B.6) — checked before a job exists, so a
-  // refused send opens no controller, no timeout, no runChat.
-  const levelError = checkLevel3(messages, service)
-  if (levelError !== null) return err(levelError)
-
   const controller = jobs.create(jobId)
   // Two abort sources feed one controller; `timedOut` tells them apart in the
   // catch — the user's cancel and the deadline must map to different AppErrors.
