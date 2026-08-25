@@ -2,7 +2,7 @@
 
 **Data:** 20/08/2026. **Motivo:** ao pesquisar candidatos de nuvem além dos dois já documentados (`gemini-2.5-flash`, `glm-4.7-flash`), a varredura se ampliou para "todas as grandes e médias empresas da indústria de IA, inclusive as chinesas" e depois para uma pergunta mais funda — qual é a lógica sustentável por trás de oferecer inferência de graça, existe risco de segurança nisso, e quem treina com o dado enviado. Este documento registra esse levantamento **na íntegra**, mesmo sem virar referência direta de desenvolvimento agora — é conhecimento caro de reconstruir (dúzias de buscas, políticas de privacidade lidas uma a uma) e barato de perder se não escrito.
 
-**Isto não é o dono da ficha técnica dos candidatos.** Os dois modelos já em consideração para o app (`gemini-2.5-flash`, `glm-4.7-flash`) e os quatro elegíveis via provedor terceirizado continuam em [`cloud-optin.md`](cloud-optin.md) — este arquivo é o panorama que explica *por trás* daquelas fichas, não substitui nenhuma. Mapa da pasta: [`README.md`](README.md).
+**Isto não é o dono da ficha técnica dos candidatos.** Os três modelos integrados ao app (`gemini-3.5-flash-lite`, `gemini-3.7-flash`, `glm-4.7-flash`) e os quatro elegíveis via provedor terceirizado continuam em [`cloud-optin.md`](cloud-optin.md) — este arquivo é o panorama que explica *por trás* daquelas fichas, não substitui nenhuma. Mapa da pasta: [`README.md`](README.md).
 
 ---
 
@@ -37,7 +37,7 @@ Pesquisado em 20/08/2026. Cobre grandes e médias empresas ocidentais e chinesas
 
 | Provedor | Tier grátis recorrente? | Detalhe |
 |---|---|---|
-| **Google (Gemini)** | ✅ — ver [`cloud-optin.md`](cloud-optin.md#gemini-25-flash) | O mais generoso desta categoria — `gemini-2.5-flash`, 1M de contexto |
+| **Google (Gemini)** | ✅ — ver [`cloud-optin.md`](cloud-optin.md#gemini-35-flash-lite) | O mais generoso desta categoria — `gemini-3.5-flash-lite`/`gemini-3.7-flash`, 1M de contexto |
 | **Z.ai (GLM)** | ✅ — ver [`cloud-optin.md`](cloud-optin.md#glm-47-flash) | `glm-4.7-flash` completamente grátis, mas 1 concorrência |
 | **Mistral AI** | ⚠️ parcial | Tier "Experiment" com cap de ~1B tokens/mês, mas explicitamente "para avaliação, não produção"; rate limits exatos não publicados publicamente (só no console) |
 | **Alibaba Qwen (DashScope)** | ❌ enfraqueceu | O tier grátis recorrente **foi descontinuado em abr/2026**. Hoje é só uma cota de 90 dias, 1M tokens por modelo, restrita ao endpoint de Singapura — o endpoint chinês (Pequim) não tem cota grátis nenhuma |
@@ -90,7 +90,7 @@ A pergunta que decide se um destes provedores é sequer cogitável para um app q
 
 Duas camadas, e a segunda é a que a maioria dos comparativos de free tier não menciona.
 
-**Camada 1 — a regra que o `ESCOPO.md` já tem não muda com o provedor.** Nível 3 (documento/imagem, conteúdo integral) já é bloqueado na nuvem, qualquer nuvem — a razão registrada é o dado **sair da máquina**, não quem especificamente o recebe do outro lado. Nível 1/2 (esquema, agregado) continua sendo o teto de exposição em qualquer um destes provedores, exatamente como já vale hoje para `gemini-2.5-flash`/`glm-4.7-flash`. Trocar de provedor não move essa fronteira.
+**Camada 1 — a regra que o `ESCOPO.md` já tem não muda com o provedor.** Nível 3 (documento/imagem, conteúdo integral) já é bloqueado na nuvem, qualquer nuvem — a razão registrada é o dado **sair da máquina**, não quem especificamente o recebe do outro lado. Nível 1/2 (esquema, agregado) continua sendo o teto de exposição em qualquer um destes provedores, exatamente como já vale hoje para `gemini-3.5-flash-lite`/`gemini-3.7-flash`/`glm-4.7-flash`. Trocar de provedor não move essa fronteira.
 
 **Camada 2 — usar um provedor terceirizado significa confiar em duas partes, não uma.** Com Gemini ou GLM, o mesmo fabricante responde pelo dado *e* pelo modelo — uma única cadeia de responsabilidade. Com, por exemplo, DeepSeek rodando na infraestrutura da SambaNova, o usuário confia na SambaNova para o tratamento do dado (política verificada: não coleta) **e**, separadamente, confia no que a DeepSeek colocou dentro do próprio modelo — proveniência dos dados de treino, viés, escolhas de ajuste de segurança — sem que a política de dado do hospedeiro diga qualquer coisa sobre isso. São duas responsabilidades diferentes, empilhadas uma sobre a outra, e a política de privacidade de quem hospeda nunca cobre a segunda.
 

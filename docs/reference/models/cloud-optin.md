@@ -4,23 +4,24 @@
 
 Companheiro deste arquivo: [`ollama-qualified.md`](ollama-qualified.md) e [`ollama-disqualified.md`](ollama-disqualified.md) (modelos locais), [`cloud-optin-free-tier-analysis.md`](cloud-optin-free-tier-analysis.md) (panorama de provedores, fora do escopo de ficha técnica). Mapa da pasta: [`README.md`](README.md).
 
-⚠️ **Nenhum dos seis modelos está integrado ao app hoje.** A fatia 3 do [plano de IA](../../plan/active/09-camada-de-ia.md) (nuvem opt-in) segue no backlog pelas quatro razões do D15.9 — sem sistema de segredo (regra em [`CLAUDE.md § Segurança`](../../../CLAUDE.md#segurança): mão única, `safeStorage`, "nenhum segredo existe ainda"), sem consumidor além do valor único `'ollama'` em `AiModel.provider`, e bloqueado pelo nível 3 do [`ESCOPO.md`](../../ESCOPO.md#documento-e-imagem-são-nível-3-por-construção) até os planos 16/17 fecharem documento e imagem localmente. Este documento é só a ficha técnica para quando a fatia 3 sair do papel — não uma integração pronta.
+✅ **GLM e Gemini estão integrados desde N-1-B/N-1-C** — o texto abaixo, que dizia "nenhum dos seis modelos está integrado", ficou desatualizado assim que as duas trilhas fecharam; corrigido em N-1-C. Os quatro elegíveis via provedor terceirizado (Groq/Cerebras/SambaNova) continuam fora do app — essa é a trilha **N-2**, sem arquivo ainda (`ROADMAP § 1`).
 
-⚠️ **Os dois primeiros, por paridade com o mill.tools — não por teste de domínio.** `gemini-2.5-flash` e `glm-4.7-flash` são os mesmos já em uso no projeto irmão — não passaram pelo equivalente em nuvem do teste de domínio da D15.8 (candidato só entra se vencer o incumbente do mesmo papel), porque não há um "incumbente" de nuvem a vencer, é a primeira dupla. Os quatro elegíveis abaixo vieram de outro critério — uma varredura de indústria, não paridade com o mill.tools — e também não passaram pelo teste de domínio, pelo mesmo motivo. E a pesquisa desta sessão encontrou sinais de que **nenhum dos dois primeiros é a geração corrente do próprio provedor**: um resultado do GLM Coding Plan já cita `GLM-5.2` como carro-chefe e `GLM-4.7` como legado ainda mantido; um resultado de pricing do Gemini foi indexado sob o título "Gemini 3.6 Flash, 3.5 Flash-Lite & Pro". Não investigado a fundo porque estava fora do pedido desta rodada — **gatilho de revisão:** antes de integrar a fatia 3, checar se `glm-5.x-flash` ou um `gemini-3.x-flash` têm tier grátis igual ou melhor.
+✅ **Gatilho de revisão já cumprido para o Gemini, ainda aberto para o GLM.** Esta ficha avisava, na pesquisa original: *"antes de integrar a fatia 3, checar se `glm-5.x-flash` ou um `gemini-3.x-flash` têm tier grátis igual ou melhor"* — um resultado de pricing do Gemini já tinha sido indexado sob o título "Gemini 3.6 Flash, 3.5 Flash-Lite & Pro", e a pesquisa não tinha ido a fundo. N-1-C foi essa checagem para o Gemini: a família 3.x existe, tem tier grátis medido (RPD 20–500 a depender do modelo, `notes/nuvem/gemini.md`, 25/08/2026) e substituiu `gemini-2.5-flash` por completo — ver `gemini-3.5-flash-lite`/`gemini-3.7-flash` abaixo. O GLM continua em `glm-4.7-flash`: o sinal de que `GLM-5.2` é o carro-chefe corrente (GLM Coding Plan) não foi reconferido nesta sessão — gatilho de revisão permanece aberto só para esse lado.
 
 ---
 
 ## Índice
 
-1. [`gemini-2.5-flash`](#gemini-25-flash) (Google)
-2. [`glm-4.7-flash`](#glm-47-flash) (Zai)
+1. [`gemini-3.5-flash-lite`](#gemini-35-flash-lite) (Google)
+2. [`gemini-3.7-flash`](#gemini-37-flash) (Google)
+3. [`glm-4.7-flash`](#glm-47-flash) (Zai)
 
 **Elegíveis, via provedor terceirizado**
 
-3. [Kimi K2 (via Groq)](#kimi-k2-via-groq)
-4. [Qwen3 32B (via Groq)](#qwen3-32b-via-groq)
-5. [DeepSeek-V3.2 (via SambaNova)](#deepseek-v32-via-sambanova)
-6. [GPT-OSS-120B (via Cerebras)](#gpt-oss-120b-via-cerebras)
+4. [Kimi K2 (via Groq)](#kimi-k2-via-groq)
+5. [Qwen3 32B (via Groq)](#qwen3-32b-via-groq)
+6. [DeepSeek-V3.2 (via SambaNova)](#deepseek-v32-via-sambanova)
+7. [GPT-OSS-120B (via Cerebras)](#gpt-oss-120b-via-cerebras)
 
 ---
 
@@ -28,7 +29,7 @@ Companheiro deste arquivo: [`ollama-qualified.md`](ollama-qualified.md) e [`olla
 
 Nuvem não tem `/api/show`: não há modelo para baixar, sondar e devolver `model_info`. Todo número aqui vem da documentação oficial de cada provedor, buscada nesta data — e, ao contrário da tabela de KV cache (aritmética fixa sobre um `model_info` real), preço e teto de taxa são **decisão comercial do fornecedor**, que muda sem aviso e sem relação com o hardware de ninguém. A mesma ressalva já registrada no D15.9 vale aqui: *"buscar em runtime traria rede numa camada que a D9.2 mantém pura, e uma resposta de terceiro decidindo um portão de segurança"* — esta tabela é para **escrever o código com o número certo no dia em que a fatia 3 for construída**, não para o app consultar sozinho.
 
-**Legenda de proveniência:** **oficial** (documentação do próprio provedor — `ai.google.dev`, `docs.z.ai`) · **terceiro** (agregador de preços/limites, usado só quando o provedor não publica o número, ou para conferir um número oficial ambíguo) · **medido** (chamada real contra a API, com resposta ou fatura registrada) — nenhuma entrada é "medido" ainda, porque nenhum dos dois modelos foi chamado pelo app.
+**Legenda de proveniência:** **oficial** (documentação do próprio provedor — `ai.google.dev`, `docs.z.ai`) · **terceiro** (agregador de preços/limites, usado só quando o provedor não publica o número, ou para conferir um número oficial ambíguo) · **medido** (chamada real contra a API, com resposta ou fatura registrada) — as duas fichas do Gemini já têm entradas **medidas** desde N-1-C (RPM/TPM/RPD lidos no console pelo usuário, `thinkingLevel` testado ao vivo contra os dois modelos).
 
 ⚠️ **Onde as fontes divergem, as duas ficam registradas** — não se escolhe uma por palpite. Marcado em cada caso abaixo.
 
@@ -36,43 +37,52 @@ Nuvem não tem `/api/show`: não há modelo para baixar, sondar e devolver `mode
 
 ## Comparativo rápido
 
-Cobre só a dupla de primeira parte — os quatro elegíveis via provedor terceirizado têm tabela própria em cada subseção abaixo, não repetida aqui.
+Cobre só o trio integrado — os quatro elegíveis via provedor terceirizado têm tabela própria em cada subseção abaixo, não repetida aqui.
 
-| | `gemini-2.5-flash` | `glm-4.7-flash` |
-|---|---|---|
-| Provedor | Google (AI Studio / Gemini API) | Z.ai (portal internacional — **não** `open.bigmodel.cn`) |
-| Arquitetura | fechada, não publicada | MoE 30B-A3B (31B parâmetros totais), jan/2026, pesos publicados (open-weight) |
-| Contexto de entrada | 1.048.576 tokens | 200.000 tokens (oficial; terceiros citam 202.752–203.000) |
-| Teto de saída | 65.536 tokens | 128.000 tokens (oficial) — terceiros mostram 16.384 como teto de alguns provedores intermediários |
-| Conhecimento até | janeiro/2025 | não publicado |
-| Modalidades de entrada | texto, imagem, vídeo, áudio | texto |
-| `tools` / saída estruturada / `thinking` | sim / sim / sim | sim / sim / sim (alternável) |
-| Tier grátis | entrada e saída grátis, com teto de taxa (ver abaixo) | **completamente grátis** — 1 concorrência |
-| Tier pago | US$ 0,30 / US$ 2,50 por milhão de tokens (entrada/saída) | não se aplica ao `-flash` — variantes maiores (`glm-4.7`, `glm-5.3`) são pagas |
+| | `gemini-3.5-flash-lite` | `gemini-3.7-flash` | `glm-4.7-flash` |
+|---|---|---|---|
+| Provedor | Google (AI Studio / Gemini API) | Google (AI Studio / Gemini API) | Z.ai (portal internacional — **não** `open.bigmodel.cn`) |
+| Arquitetura | fechada, não publicada | fechada, não publicada | MoE 30B-A3B (31B parâmetros totais), jan/2026, pesos publicados (open-weight) |
+| Contexto de entrada | 1.048.576 tokens | 1.048.576 tokens | 200.000 tokens (oficial; terceiros citam 202.752–203.000) |
+| Teto de saída | 65.536 tokens | 65.536 tokens | 128.000 tokens (oficial) — terceiros mostram 16.384 como teto de alguns provedores intermediários |
+| Modalidades de entrada | texto, imagem, vídeo, áudio, PDF | texto, imagem, vídeo, áudio, PDF | texto |
+| `tools` / saída estruturada / `thinking` | sim / sim / sim (`thinkingLevel`, sem `minimal` confirmado como válido para os dois — ver N-1-C) | sim / sim / sim (`thinkingLevel`; `minimal` **rejeitado** por este modelo, medido — usar `low`) | sim / sim / sim (alternável, `enabled`/`disabled`) |
+| Tier grátis — teto de taxa | 15 RPM · 250.000 TPM · **500 RPD** | 5 RPM · 250.000 TPM · **20 RPD** | 1 concorrência (sem RPM/TPM/RPD publicados) |
+| Tier pago | US$ 0,30 / US$ 2,50 por milhão de tokens (entrada/saída) | US$ 0,30 / US$ 2,50 por milhão de tokens (entrada/saída) | não se aplica ao `-flash` — variantes maiores (`glm-4.7`, `glm-5.3`) são pagas |
 
 ---
 
-## `gemini-2.5-flash`
+## `gemini-3.5-flash-lite`
 
-Provedor Google, endpoint `gemini-2.5-flash`. Descrição oficial: "melhor relação preço-desempenho para tarefas de baixa latência e alto volume que exigem raciocínio".
+Provedor Google, endpoint `gemini-3.5-flash-lite`. Integrado em N-1-C como o modelo de **uso diário**: 500 RPD sustenta dezenas de conversas por dia (a 1 requisição por pergunta, medido lendo o código — ver `core/ai/models.ts`).
 
 | Campo | Valor | Proveniência |
 |---|---|---|
-| Contexto de entrada | 1.048.576 tokens | oficial |
-| Teto de saída | 65.536 tokens (inclui tokens de "pensamento") | oficial |
-| Conhecimento até | janeiro/2025 | oficial |
-| Arquitetura | fechada, não publicada | oficial |
-| Modalidades de entrada | texto, imagem, vídeo, áudio — saída só texto | oficial |
-| Capacidades | `tools` (function calling), saída estruturada, `thinking` (raciocínio nativo, orçável), *context caching*, execução de código, *grounding* (Google Search, Google Maps), Batch API | oficial |
-| Preço pago (por 1M tokens) | entrada US$ 0,30 (texto/imagem/vídeo) ou US$ 1,00 (áudio) · saída US$ 2,50 · *cache*: leitura US$ 0,03 (texto/imagem/vídeo) ou US$ 0,10 (áudio), armazenamento US$ 1,00/hora | oficial |
-| Tier grátis — entrada/saída | **grátis**, incluindo tokens de pensamento | oficial |
-| Tier grátis — teto de taxa | 10 RPM, 250.000 TPM; RPD **250** (D15.9 + agregador de mar/2026) **ou 500** (agregador sem data) — divergem | **terceiro** — a doc oficial (`ai.google.dev/.../rate-limits`) parou de publicar tabela fixa, direciona ao console do AI Studio |
+| Contexto de entrada | 1.048.576 tokens | oficial — página de modelo, `ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite` |
+| Teto de saída | 65.536 tokens | oficial |
+| Modalidades de entrada | texto, imagem, vídeo, áudio, PDF — saída só texto | oficial |
+| Capacidades | `tools` (function calling), saída estruturada, `thinking` (`thinkingConfig.thinkingLevel`) | oficial (Context7) |
+| Tier grátis — teto de taxa | **15 RPM · 250.000 TPM · 500 RPD** | **medido** — usuário, console do Google AI Studio, 25/08/2026 (`notes/nuvem/gemini.md`) — mais forte que a proveniência "terceiro" que este arquivo usava para a geração 2.5 |
 
-**Não confiar em nenhum dos dois números de RPD sem checar o console do AI Studio no dia em que a chave for usada de verdade** — é por projeto, não uma constante do modelo.
+**No app:** o candidato de conversa longa — RPD alto o bastante para não ser o gargalo do dia a dia. `thinkingLevel: 'low'` (não `'minimal'`, ver o adaptador Gemini) é o mais baixo confirmado ao vivo para os dois modelos 3.x integrados; não há um "desligado" real nesta família, diferente do GLM.
 
-**Uso do dado no tier grátis:** diferente do pago, prompts do tier grátis **podem ser usados pelo Google para melhorar produtos**. Nota de privacidade relevante porque a fronteira de nível 3 do app é sobre o dado **sair da máquina** — aqui ele sairia para treinamento, não só para inferência.
+---
 
-**No app:** é o único candidato de nuvem que **enxerga imagem** — e o [`ESCOPO.md`](../../ESCOPO.md#documento-e-imagem-são-nível-3-por-construção) bloqueia justamente imagem na nuvem. Tensão já registrada no D15.9, sem solução: um usuário verá um modelo capaz de ver, com o anexo recusado, até a regra do nível 3 ser revisitada (ela é sobre *sair da máquina*, não sobre *o usuário anexar conscientemente* — a leitura escrita hoje é a primeira, não a segunda). Fora de imagem, é o candidato de **contexto generoso**: 1M tokens dispensa resumo ou RAG para a maioria dos documentos que o app processa. Mas o teto de 10 RPM o torna inviável para qualquer coisa parecida com uso contínuo — serve para consulta pontual, não para uma conversa longa batendo na API a cada mensagem.
+## `gemini-3.7-flash`
+
+Provedor Google, endpoint `gemini-3.7-flash`. Integrado em N-1-C como o modelo de **raciocínio mais forte** da dupla — 20 RPD, ~4 conversas de 5 perguntas por dia.
+
+| Campo | Valor | Proveniência |
+|---|---|---|
+| Contexto de entrada | 1.048.576 tokens | oficial — página de modelo, `ai.google.dev/gemini-api/docs/models/gemini-3.7-flash` |
+| Teto de saída | 65.536 tokens | oficial |
+| Modalidades de entrada | texto, imagem, vídeo, áudio, PDF — saída só texto | oficial |
+| Capacidades | `tools`, saída estruturada, `thinking` (`thinkingLevel`: **não aceita `minimal`** — HTTP 400 "Thinking level MINIMAL is not supported for this model", medido em N-1-C; usa `low`, o mesmo nível do `gemini-3.5-flash-lite`) | oficial + medido |
+| Tier grátis — teto de taxa | **5 RPM · 250.000 TPM · 20 RPD** | **medido** — usuário, console do Google AI Studio, 25/08/2026 |
+
+**Uso do dado no tier grátis:** prompts do tier grátis **podem ser usados pelo Google para melhorar produtos** (herdado da geração 2.5, não reconferido especificamente para 3.7 nesta sessão). Nota de privacidade relevante porque a fronteira de nível 3 do app é sobre o dado **sair da máquina** — aqui ele sairia para treinamento, não só para inferência.
+
+**No app:** vê imagem — e o [`ESCOPO.md`](../../ESCOPO.md#documento-e-imagem-são-nível-3-por-construção) bloqueia justamente imagem na nuvem, sem exceção. A tensão (Peça D do guia de implementação) é a mesma que a pesquisa original registrava para `gemini-2.5-flash`, agora correta para a família 3.x inteira. **Medido em N-1-C, não suposto:** este modelo especificamente retornou HTTP 503 "high demand" duas vezes e um timeout numa terceira tentativa na mesma sessão em que `gemini-3.5-flash-lite` respondeu de primeira com a chamada idêntica — sinal de disponibilidade mais instável no momento da medição, não um defeito do adaptador (mesmo código, mesmo shape de requisição). Vale checar de novo antes de contar com ele para uma demonstração ao vivo.
 
 ---
 
@@ -170,15 +180,16 @@ Modelo da própria OpenAI (`gpt-oss-120b`), aberto sob licença Apache 2.0, serv
 
 ## Fontes
 
-Buscadas em 20/08/2026 — preço e teto de taxa de provedor de nuvem envelhecem sem aviso; reconferir antes de codificar a fatia 3.
+Buscadas em 20/08/2026 — preço e teto de taxa de provedor de nuvem envelhecem sem aviso; reconferir antes de codificar a fatia 3. As entradas do Gemini abaixo foram **reconferidas em N-1-C (25/08/2026)** contra a família 3.x, que substituiu `gemini-2.5-flash` por completo — mantidas aqui por continuarem descrevendo a plataforma (pricing, rate-limits) mesmo com o modelo trocado.
 
 - [Gemini API — Pricing](https://ai.google.dev/gemini-api/docs/pricing) (oficial)
 - [Gemini API — Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits) (oficial — sem tabela fixa, direciona ao console)
-- [Gemini API — Models (gemini-2.5-flash)](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash) (oficial)
+- [Gemini API — Models (gemini-3.5-flash-lite)](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite) (oficial, N-1-C)
+- [Gemini API — Models (gemini-3.7-flash)](https://ai.google.dev/gemini-api/docs/models/gemini-3.7-flash) (oficial, N-1-C)
+- [Gemini API — thinking, thinkingLevel](https://ai.google.dev/gemini-api/docs/generate-content/thinking) (oficial, via Context7, N-1-C)
 - [GLM-4.7 — Overview](https://docs.z.ai/guides/llm/glm-4.7) (oficial)
 - [Z.ai — Pricing](https://docs.z.ai/guides/overview/pricing) (oficial)
-- [Gemini API Free Tier Rate Limits — AI Prompt Generator Hub](https://aipromptshub.co/blog/gemini-api-free-tier-rate-limits) (terceiro, sem data — RPD 500)
-- [Gemini API Free Tier Complete Guide — AI Free API](https://www.aifreeapi.com/en/posts/gemini-api-free-tier-complete-guide) (terceiro, mar/2026 — RPD 250)
+- `notes/nuvem/gemini.md` — RPM/TPM/RPD dos oito modelos 2.x/3.x do console Google AI Studio, lidos pelo usuário em 25/08/2026 (**medido**, N-1-C)
 - [Z.ai Released GLM-4.7-Flash Weights and API — ToolNavs](https://toolnavs.com/en/article/1100-zai-released-glm-47-flash-weights-and-api-free-tier-1-concurrency-and-launched-f) (terceiro — confirma 1 concorrência)
 
 **Elegíveis (Kimi K2, Qwen3 32B, DeepSeek-V3.2, GPT-OSS-120B):**
