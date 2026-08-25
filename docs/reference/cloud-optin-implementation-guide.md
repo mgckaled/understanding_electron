@@ -38,7 +38,7 @@ Companheiros: [`models/cloud-optin.md`](models/cloud-optin.md) (ficha técnica d
 1. `num_ctx` não existe na nuvem — não há janela a reservar, só envio e cobrança/recusa.
 2. Não há `/api/show` equivalente — capacidade e teto de contexto viram tabela chumbada no código, que envelhece com o release do fornecedor, não com a máquina do usuário (é a Peça C abaixo).
 3. Não há onde guardar a chave — o subsistema de segredo inteiro falta (Peça A).
-4. A nuvem bloqueia o nível 3, e é exatamente o que os planos 16/17 constroem para o local (Peça D).
+4. Documento e imagem pedem materialização própria por provedor — mesma coisa que os planos 16/17 constroem para o local (Peça D; o bloqueio de nível 3 que esta razão descrevia em 21/08/2026 foi removido na revisão de escopo de ago/2026, ver seção 5 abaixo).
 
 As seções seguintes detalham as peças 2-4 acima, mais três que a varredura desta sessão encontrou e que o D15.9 não cobria — porque em 10/08/2026 a pesquisa ainda não tinha chegado aos quatro elegíveis via provedor terceirizado (Peças F, G) nem tinha isolado a mudança de sentido do `isAvailable` (seção 9).
 
@@ -78,9 +78,9 @@ As seções seguintes detalham as peças 2-4 acima, mais três que a varredura d
 
 ## 5. Peça D — nível 3 e a visão do Gemini, tensão já registrada
 
-✅ **Decidido, e a tensão já está documentada em dois lugares** — [`ESCOPO.md`](../ESCOPO.md#o-gate-de-capacidade-é-correção-não-cortesia) e [`cloud-optin.md`](models/cloud-optin.md): a família Gemini 3.x inteira — Flash e as variantes **Lite** — declara `vision` nas capacidades (corrigido em N-1-C; a pesquisa original, contra `gemini-2.5-flash`, cobria só um modelo da geração anterior), e o nível 3 (ESCOPO.md) bloqueia justamente anexo de imagem/documento na nuvem, sem exceção por provedor ou por modelo. Um usuário vai ver **qualquer** modelo Gemini declarando poder ver imagem, com o anexo recusado mesmo assim.
+✅ **Decidido — e a tensão que esta seção registrava está dissolvida, não só documentada.** A família Gemini 3.x inteira — Flash e as variantes **Lite** — declara `vision` nas capacidades (corrigido em N-1-C; a pesquisa original, contra `gemini-2.5-flash`, cobria só um modelo da geração anterior). Até a revisão de escopo (5ª, ago/2026), o nível 3 (ESCOPO.md) bloqueava justamente anexo de imagem/documento na nuvem, sem exceção — um usuário via qualquer modelo Gemini declarando poder ver imagem, com o anexo recusado mesmo assim. Essa revisão apagou o bloqueio: nível 3 passou a ser opt-in em qualquer provedor, sem gate a mais na nuvem. O que sobra do gate de `vision` (ESCOPO.md, ["o gate de capacidade é correção, não cortesia"](../ESCOPO.md#o-gate-de-capacidade-é-correção-não-cortesia)) é outra coisa: recusa a um modelo que **não declara** `vision`, para não deixar o app alucinar sobre uma imagem que nunca viu — nunca foi sobre privacidade.
 
-**A decisão de UI que este guia deixava em aberto foi tomada em N-1-C, sem intervenção especial:** a capacidade `vision` aparece no chip da linha do modelo no seletor (mesmo mecanismo que já mostrava `tools`/`thinking` para qualquer modelo, `capabilityChips()`) — nada foi ocultado. É a opção "mais honesta" que este guia já cogitava, escolhida por omissão: não construir um caso especial para esconder `vision` de um modelo de nuvem foi mais barato, e mais correto, que construir um para escondê-la. A recusa em si usa a mesma mensagem genérica que `checkLevel3` já dava para o GLM (que nunca tinha `vision` para começo de conversa): "Documento e imagem são nível 3 — bloqueados em modelos de nuvem. Use um modelo local para este anexo."
+**A decisão de UI que este guia deixava em aberto foi tomada em N-1-C, sem intervenção especial:** a capacidade `vision` aparece no chip da linha do modelo no seletor (mesmo mecanismo que já mostrava `tools`/`thinking` para qualquer modelo, `capabilityChips()`) — nada foi ocultado. É a opção "mais honesta" que este guia já cogitava, escolhida por omissão: não construir um caso especial para esconder `vision` de um modelo de nuvem foi mais barato, e mais correto, que construir um para escondê-la.
 
 ---
 
