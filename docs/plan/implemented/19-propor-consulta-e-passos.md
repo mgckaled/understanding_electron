@@ -1,10 +1,12 @@
 # 19 — Propor: consulta e passos
 
-**Depende de:** [18-D — Perfil e cartão aninhado](../implemented/18-D-perfil-e-cartao-aninhado.md) (o `ColumnProfile`/`nullPercentage` que a verificação pós-execução consome) e do arco 18 completo (motor DuckDB, `ensureDatasetView`) · **Entrega:** pedido em português vira lista de passos tipada e editável, aplicada sobre o dataset já anexado — a IA entra no verbo *tratar* sem ganhar caminho de execução próprio.
+**Status: implementado em ago/2026** (sete passos, `pnpm check:fast` verde, `pnpm dev` verificado). Entrada em [`HISTORY.md`](../../HISTORY.md).
 
-> Fatia 2 do [plano 09](09-camada-de-ia.md) (D9.4), absorvida pelo arco como item **25** do [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência). Esboçado em sessão de conversa (25/08/2026), validado contra o código real antes de virar arquivo — não redescoberto na hora de executar.
+**Depende de:** [18-D — Perfil e cartão aninhado](18-D-perfil-e-cartao-aninhado.md) (o `ColumnProfile`/`nullPercentage` que a verificação pós-execução consome) e do arco 18 completo (motor DuckDB, `ensureDatasetView`) · **Entrega:** pedido em português vira lista de passos tipada e editável, aplicada sobre o dataset já anexado — a IA entra no verbo *tratar* sem ganhar caminho de execução próprio.
+
+> Fatia 2 do [plano 09](../active/09-camada-de-ia.md) (D9.4), absorvida pelo arco como item **25** do [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência). Esboçado em sessão de conversa (25/08/2026), validado contra o código real antes de virar arquivo — não redescoberto na hora de executar.
 >
-> **Por que não é NL→SQL.** A versão anterior desta decisão portava o `nl2sql` do mill.tools. Não serve aqui: a composição deste app vive numa **lista de passos**, não numa consulta única, e SQL opaco gerado a partir de português contornaria o que dá valor ao modelo — passo é editável, inspecionável e reaplicável; SQL de trinta linhas não é. Texto completo da decisão em [D9.4](09-camada-de-ia.md#d94--nlpasso-antes-de-rag).
+> **Por que não é NL→SQL.** A versão anterior desta decisão portava o `nl2sql` do mill.tools. Não serve aqui: a composição deste app vive numa **lista de passos**, não numa consulta única, e SQL opaco gerado a partir de português contornaria o que dá valor ao modelo — passo é editável, inspecionável e reaplicável; SQL de trinta linhas não é. Texto completo da decisão em [D9.4](../active/09-camada-de-ia.md#d94--nlpasso-antes-de-rag).
 >
 > **O ponto de privacidade permanece inegociável:** o modelo recebe o esquema (nomes e tipos de coluna), **nunca as linhas**. Já registrado no `CLAUDE.md § Segurança`; este plano não reabre a decisão, só a exercita.
 
@@ -18,7 +20,7 @@
 
 ### D19.2 — `query` e `steps` compartilham o vocabulário de passo, até prova em contrário
 
-A união discriminada que o [`plan/active/README.md`](README.md) já nomeia como entrega deste plano é `{ kind: 'query', steps: Step[] } | { kind: 'steps', steps: Step[] }` — a diferença é de apresentação (resposta imediata vs. pipeline reaplicável), não um segundo vocabulário. **Isto é falsificável no Passo 1**: se `query` precisar de forma que passo mutável não expressa (agregação, `GROUP BY`), o Passo 1 registra a forma própria antes de os Passos 2–4 construírem em cima do vocabulário errado.
+A união discriminada que o [`plan/active/README.md`](../active/README.md) já nomeia como entrega deste plano é `{ kind: 'query', steps: Step[] } | { kind: 'steps', steps: Step[] }` — a diferença é de apresentação (resposta imediata vs. pipeline reaplicável), não um segundo vocabulário. **Isto é falsificável no Passo 1**: se `query` precisar de forma que passo mutável não expressa (agregação, `GROUP BY`), o Passo 1 registra a forma própria antes de os Passos 2–4 construírem em cima do vocabulário errado.
 
 ### D19.3 — Uma fonte só para o schema: `z.toJSONSchema()` alimenta `format` e `.parse()`
 
@@ -97,9 +99,18 @@ Registrado para não virar surpresa:
 
 - **Resto da camada 1** (dividir coluna, extrair por regex, agregação, etc.) — fast-follow, não esquecimento (D19.1).
 - **Persistir o resultado tratado como tabela nova** — D19.4 escolhe pré-visualização; materializar é decisão de armazenamento própria.
-- **"Receita salva"** (pipeline nomeado e reaplicável entre conversas) — continua sem plano numerado, fatia 5/6 do [plano 09](09-camada-de-ia.md) seguem no backlog.
+- **"Receita salva"** (pipeline nomeado e reaplicável entre conversas) — continua sem plano numerado, fatia 5/6 do [plano 09](../active/09-camada-de-ia.md) seguem no backlog.
 - **UI de montagem manual de passo** — este plano nasce a partir da proposta do modelo; um construtor manual de pipeline, se vier, é decisão separada.
 - **RAG sobre cartões/receitas** — dado de fora do escopo deste plano; ver [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto.md) para o levantamento correlato, ainda sem plano.
+- **Edição de parâmetro de um passo** — o passo 6 só permite remover; trocar `column`/`value`/`operator` de um passo proposto pede um construtor de formulário por tipo de passo, fora do corte (ver D19.7 abaixo, o motivo prático que torna essa lacuna mais sentida do que parecia no esboço).
+
+## Nota de fechamento (D19.7) — dois desvios do esboço, um achado ao vivo
+
+Registrado porque quem retomar este plano (ou copiar o padrão para o próximo) vai perguntar "por que não bate com o esboço de 7 passos original?".
+
+**Dois desvios de fiação, ambos necessários, nenhum surpreendente em retrospecto:** (1) `Step`/`StepProposal` nasceram em `core/pipeline/steps.ts` no esboço, mas tiveram que se mudar para `shared/ipc.ts` no passo 3 — `dataset:transform` precisa deles como schema zod na fronteira IPC, e `shared/` não pode importar de `core/` (regra de camada, skill `architecture`); `core/pipeline/steps.ts` virou reexportação, mesmo padrão de `ColumnProfile`. (2) O esboço não previa como a proposta chegaria à conversa — resolvido no passo 5 com um canal novo, `ai:propose`, em vez de uma opção a mais em `ai:chat`: dobrar a chamada de modelo por turno custaria a latência inteira de novo nos 4 núcleos desta máquina, e cada verbo que produz `MessagePart` já tem canal próprio (`dataset:attach`, `document:attach`, `image:attach`).
+
+**Achado ao vivo, real e não anedótico:** confirmado com `gemma3:4b` de verdade (não simulado) — o pedido em português "filtre as linhas onde idade é maior que 18" às vezes gera `{ operator: 'isNotNull', value: 18 }` em vez de `{ operator: 'gt', value: 18 }`. O passo é **válido contra o schema** (isNotNull aceita `value` ausente ou presente) e o compilador (passo 2) faz exatamente o que esse passo pede — `IS NOT NULL`, ignorando o `18` —, então a falha é inteiramente do modelo escolhendo o operador errado, não do código deste plano. O usuário só percebe revisando a lista de passos antes de Aplicar (o próprio ponto do passo 6), mas o passo 6 só permite **remover**, não corrigir o operador — editar exigiria o formulário por tipo de passo que D19's escopo já recusa. Registrado em [`HISTORY.md`](../../HISTORY.md); se a taxa de erro se mostrar alta o bastante para incomodar no uso real, é o gatilho para (a) reforçar a instrução do prompt, (b) tentar `qwen2.5-coder:3b` (tem `tools`, mais forte em tarefa estruturada) em vez de `gemma3:4b`, ou (c) adiantar a edição de parâmetro — não algo a adivinhar sem mais uso.
 
 ---
 
@@ -109,6 +120,7 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-25 | — | esboçado | Plano nasceu como esboço de 7 passos numa conversa exploratória, validado contra o código real (`core/ai/types.ts`, `src/workers/duckdb/index.ts`, `core/ai/dataCard.ts`) e revisado pelo `advisor()` antes de virar arquivo. Nenhum passo executado ainda. |
+| 2026-08-25 | — | esboçado | Plano nasceu como esboço de 7 passos numa conversa exploratória, validado contra o código real (`core/ai/types.ts`, `src/workers/duckdb/index.ts`, `core/ai/dataCard.ts`). Correção de registro (mesma sessão de fechamento, abaixo): a linha original desta entrada afirmava revisão pelo `advisor()` nesta etapa — não houve essa chamada; a única consulta ao advisor na vida deste plano aconteceu no meio do passo 3 (ver linha abaixo), não antes de o arquivo nascer. |
+| 2026-08-25 | 1–7 | **implementado** | Todos os sete passos na mesma sessão. Consulta ao `advisor()` no meio do passo 3, ANTES de escrever os passos 4–6 — apontou três coisas que mudaram o rumo: canal `ai:propose` próprio (não opção em `ai:chat`), exclusão de `topValues` do prompt (achado de privacidade, D9.4/ESCOPO.md — não estava explícito nem no esboço nem nos passos 1–3), e o risco de custo do antes/depois do transform (corrigido depois, commit próprio). Dois desvios de fiação e um achado ao vivo com `gemma3:4b` real registrados em D19.7 acima e escalonados para `HISTORY.md`. `pnpm check:fast` verde; `pnpm dev` verificado (build limpo dos três blocos); validação de fluxo completo (proposta → composição → transformação) feita com Ollama e DuckDB reais, fora da GUI (script descartável, não commitado) — a passada clique-a-clique pela janela real fica para quem rodar `pnpm dev` interativamente. |
 
 > **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.

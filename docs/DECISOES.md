@@ -99,7 +99,7 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 
 ---
 
-## Arco conversacional (planos 13–18)
+## Arco conversacional (planos 13–19)
 
 | trilha | sigla | descrição |
 |---|---|---|
@@ -191,6 +191,13 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | 18-F | [D18F.4](plan/implemented/18-F-excel.md) | Hash de arquivo binário não passa por `StringDecoder` |
 | 18-F | [D18F.5](plan/implemented/18-F-excel.md) | `read_xlsx` via o mesmo `ensureDatasetView`; `runSchema`/`hasNestedType` sem mudança |
 | 18-F | [D18F.6](plan/implemented/18-F-excel.md) | Interface e os limites explícitos do caminho simples |
+| 19 | [D19.1](plan/implemented/19-propor-consulta-e-passos.md) | Catálogo inicial: seis operações, não a camada 1 inteira |
+| 19 | [D19.2](plan/implemented/19-propor-consulta-e-passos.md) | `query` e `steps` compartilham o vocabulário de passo, até prova em contrário |
+| 19 | [D19.3](plan/implemented/19-propor-consulta-e-passos.md) | Uma fonte só para o schema: `z.toJSONSchema()` alimenta `format` e `.parse()` |
+| 19 | [D19.4](plan/implemented/19-propor-consulta-e-passos.md) | Primeiro corte é pré-visualização, não persistência |
+| 19 | [D19.5](plan/implemented/19-propor-consulta-e-passos.md) | A chamada de proposta não usa streaming |
+| 19 | [D19.6](plan/implemented/19-propor-consulta-e-passos.md) | A verificação pós-execução mede salto parcial de nulo, não contagem de linhas |
+| 19 | [D19.7](plan/implemented/19-propor-consulta-e-passos.md) | Nota de fechamento: dois desvios do esboço (Step/StepProposal para `shared/ipc.ts`, canal `ai:propose` próprio) e o achado ao vivo com `gemma3:4b` |
 
 ---
 
