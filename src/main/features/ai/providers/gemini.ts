@@ -106,7 +106,8 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
 
           const payload = line.slice('data: '.length)
           const chunk = JSON.parse(payload) as GeminiChunk
-          const piece = chunk.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+          const piece =
+            chunk.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('') ?? ''
           if (piece !== '') {
             assembled += piece
             onChunk?.(piece)

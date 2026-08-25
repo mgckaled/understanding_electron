@@ -141,6 +141,16 @@ describe('makeGeminiChat', () => {
     expect(seen).toEqual(['Olá', ', mundo'])
   })
 
+  it('joins multiple parts within a single chunk instead of taking only the first', async () => {
+    stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"Olá"},{"text":", mundo"}]}}]}\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('Olá, mundo')
+  })
+
   it('handles an SSE line split across two socket reads', async () => {
     stubStream(['data: {"candidates":[{"content":{"parts":[{"text":"Ol', 'á"}]}}]}\n\n'])
 
