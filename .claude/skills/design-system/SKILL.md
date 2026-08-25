@@ -1,6 +1,6 @@
 ---
 name: design-system
-description: Tokens de design do crivo — o design system como envelope (veste o que já existe; feature nova nasce vestida no próprio plano), os dois níveis de token (primitivo/semântico), Tailwind v4 sobre `tokens.css`, as duas densidades (chrome vs leitura), tema por `nativeTheme`, e os nove primitivos de `shared/ui/`. Use ao criar um componente, escolher cor/medida/texto, abrir modal/popover, decidir onde um estado de UI mora, ou tratar um `AppError` na interface.
+description: Tokens de design do crivo — o design system como envelope (veste o que já existe; feature nova nasce vestida no próprio plano), os dois níveis de token (primitivo/semântico), Tailwind v4 sobre `tokens.css`, as duas densidades (chrome vs leitura), tema por `nativeTheme`, e os sete primitivos de `shared/ui/`. Use ao criar um componente, escolher cor/medida/texto, abrir modal/popover, decidir onde um estado de UI mora, ou tratar um `AppError` na interface.
 ---
 
 # Design tokens — crivo
@@ -104,11 +104,13 @@ Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atr
 
 A trilha DS (DS-1 a DS-5, ago/2026) reconstruiu a camada de estilo dos componentes sobre Tailwind v4. `src/renderer/src/assets/tailwind.css` declara `@theme inline` mapeando cada token semântico de `tokens.css` para uma variável Tailwind (`--color-*`), e `@utility` para as classes que a paleta padrão não cobre (`bg-accent`, `bg-danger`, `bg-warn`, `bg-ok`, mais as `@utility` de animação). Componente escreve `className="bg-surface text-accent-text"`, nunca `var()` direto — `guard.mjs` cobre o lado JSX (seção acima).
 
-**Três componentes ficam em CSS Modules, por limite físico real, não por não terem sido migrados:** `Dialog`, `Popover` e `MarkdownMessage`. Os dois primeiros porque a plataforma (`<dialog>`, `popover="auto"`) exige seletor que o Tailwind não alcança (`::backdrop`, `[popover]:not(:popover-open)`); o terceiro porque o conteúdo é HTML gerado dinamicamente pelo `react-markdown`, sem className previsível para aplicar utilitário. `Button`, `Field`, `Panel`, `Toolbar`, `Switch` e `Slider` são 100% classes utilitárias.
+**Três componentes ficam em CSS Modules, por limite físico real, não por não terem sido migrados:** `Dialog`, `Popover` e `MarkdownMessage`. Os dois primeiros porque a plataforma (`<dialog>`, `popover="auto"`) exige seletor que o Tailwind não alcança (`::backdrop`, `[popover]:not(:popover-open)`); o terceiro porque o conteúdo é HTML gerado dinamicamente pelo `react-markdown`, sem className previsível para aplicar utilitário. `Button`, `Field`, `Switch` e `Slider` são 100% classes utilitárias.
 
-## Os nove primitivos: um diretório por componente
+## Os sete primitivos: um diretório por componente
 
-`Button`, `Field`, `Panel`, `Toolbar`, `Dialog`, `Popover`, `MarkdownMessage`, `Switch` e `Slider` em `src/renderer/src/shared/ui/<Nome>/`. Os dois últimos entraram no plano F-2 (ago/2026, `docs/plan/implemented/F-2-composer-modelo-sidebar.md`) — nenhum limite físico neles, então nenhum ganhou CSS Module.
+`Button`, `Field`, `Dialog`, `Popover`, `MarkdownMessage`, `Switch` e `Slider` em `src/renderer/src/shared/ui/<Nome>/`. Os dois últimos entraram no plano F-2 (ago/2026, `docs/plan/implemented/F-2-composer-modelo-sidebar.md`) — nenhum limite físico neles, então nenhum ganhou CSS Module.
+
+⚠️ **`Panel` e `Toolbar` existiram como primitivos até o DS-8 (ago/2026) — apagados por ficarem sem nenhum chamador.** `Toolbar` perdeu o último no DS-3 passo 7 ("desmonte da toolbar"); `Panel` perdeu o dele na fase 13 (`OpenDatasetPanel` virou seção da sidebar, "perde só o embrulho `Panel`"). Os dois sobreviveram no diretório por duas migrações inteiras sem que ninguém remedisse — o critério já estava escrito desde a fase 11: *"o quinto primitivo de `shared/ui/` não é proibido — o que decide não é a contagem, é ter mais de um chamador."* Confirmado por `git log --follow` e grep em todo o repositório antes de apagar (nenhum consumidor, nenhum teste, nenhuma referência viva fora de documento histórico). Se um layout de ações ou uma superfície com borda precisar existir de novo, nasce quando o segundo chamador aparecer — não antes.
 
 `Dialog` (fase 13, D13.8) é o `<dialog>` nativo com `showModal()`, sem dependência: camada superior, foco preso, `Esc`, foco devolvido ao gatilho e `::backdrop` estilizável vêm da plataforma. `closedby="any"` fecha ao clicar fora sem handler próprio — confirmado no Chromium 148 que o Electron 42 embute, lendo o IDL, não uma tabela de compatibilidade. **Configuração é modal, não rota:** um destino de navegação desmonta o que estava na tela; o modal é irmão na árvore, então uma resposta em fluxo continua chegando atrás. Duas armadilhas registradas: `eslint-plugin-react` ainda não conhece `closedby` (liberado em `eslint.config.mjs`, não por linha) e **o jsdom não implementa `<dialog>` de forma alguma** — há um polyfill mínimo em `test/setup-renderer.ts` que só permite montar o componente; camada superior, foco preso e `Esc` só se verificam ao vivo. CSS Modules já funciona sem configuração no Vite (arquivo terminado em `.module.css`), com nomes de classe exportados exatamente como escritos — sem conversão automática para camelCase, então as classes já nascem em camelCase no `.module.css` para acesso direto via `styles.algumaCoisa`.
 
@@ -181,7 +183,7 @@ Hover de superfície **sobe um degrau na escada existente**, nunca tint: `bg-sur
 
 ### Radius: default é `md`, `lg` é o contêiner primário (correção contra o uso real)
 
-A escala (`sm` 4px, `md` 6px, `lg` 10px, `full` circular) não segue "sm = controle, md = card". Medido: **`md` é o default** (botão, input, linha de lista, item de menu, e qualquer contêiner que não fez escolha própria); **`lg` é o contêiner de superfície primário** (`Panel`, `Dialog`, `Popover`, os três cartões de anexo, `Composer`, bolha de mensagem); **`sm` tem um único consumidor** (`CapabilityChip`) — não há lacuna para um `--radius-xs` de badge, o chip que existiria já usa `sm`; `full` é circular/pílula (`Switch`, `Slider`, dot de status, `Button` circle/spinner).
+A escala (`sm` 4px, `md` 6px, `lg` 10px, `full` circular) não segue "sm = controle, md = card". Medido: **`md` é o default** (botão, input, linha de lista, item de menu, e qualquer contêiner que não fez escolha própria); **`lg` é o contêiner de superfície primário** (`Dialog`, `Popover`, os três cartões de anexo, `Composer`, bolha de mensagem); **`sm` tem um único consumidor** (`CapabilityChip`) — não há lacuna para um `--radius-xs` de badge, o chip que existiria já usa `sm`; `full` é circular/pílula (`Switch`, `Slider`, dot de status, `Button` circle/spinner).
 
 ### Ausências registradas — verificado, sem consumidor hoje
 
