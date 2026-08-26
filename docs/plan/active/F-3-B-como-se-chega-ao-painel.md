@@ -89,7 +89,7 @@ Forma: o cabeçalho do painel deixa de ser um título estático (o F-3-A o deixo
 
 Dividir só até passar de 400 produziria um corte arbitrário que a próxima linha desfaz. O corte que o arquivo pede é a **transcrição**: a lista, a escolha entre bolha de usuário e resposta do assistente, o despacho de cartão de anexo e de proposta de passos, e a superfície que rola. O que fica é orquestração — disponibilidade do serviço, estado do chat, composer, e agora o cabeçalho com o clipe.
 
-⚠️ **O ref do `useStickToBottom` viaja com o `div` que rola.** O fonte avisa: trocar o elemento faz o hook observar o nó errado. Um teste de rolagem que passa não prova isso — o teto do plano 19 é a lembrança de que jsdom não tem layout. O que prova é o e2e do F-3-A continuar verde mais uma verificação ao vivo com a thread rolada.
+⚠️ **Revista na execução, e para melhor: o corte é mais estreito do que o planejado.** O plano dizia "a transcrição sai inteira, com o `div` que rola e o ref junto" — e o próprio fonte avisa que trocar esse elemento faz o `useStickToBottom` observar o nó errado. Executando, ficou claro que a fronteira coesa é **um nível abaixo**: sai só o `<ol>` das mensagens (`MessageList`, uma prop), e o `div` que rola **fica** com o `ConversationView`. Efeito: o risco do ref simplesmente **não existe** neste corte, e a extração leva os despachos de cartão e de proposta junto, que é o que de fato é "renderizar transcrição". 407 → 341 linhas, `MessageList` com 68, **zero asserção de teste alterada** — que era o contrato.
 
 ---
 
@@ -101,7 +101,7 @@ Dividir só até passar de 400 produziria um corte arbitrário que a próxima li
 
 ### 2. `ConversationView` se divide (DF3B.6)
 
-A transcrição sai para componente próprio, com o ref do `useStickToBottom` junto. Zero mudança de comportamento — as 62 asserções de `ConversationView.test.tsx` e `modelSelection.test.tsx` são o contrato, e nenhuma delas deve precisar mudar. Se alguma precisar, a extração passou do ponto.
+A lista de mensagens sai para `MessageList.tsx`, com uma prop. Zero mudança de comportamento — as asserções de `ConversationView.test.tsx` e `modelSelection.test.tsx` são o contrato, e nenhuma deve precisar mudar. Se alguma precisar, a extração passou do ponto. ✅ Nenhuma precisou.
 
 ### 3. O clipe contador no cabeçalho (DF3B.1, DF3B.2)
 

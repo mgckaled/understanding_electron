@@ -1,19 +1,7 @@
 import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import type {
-  AiModel,
-  AiService,
-  AppError,
-  ConversationSettings,
-  MessageStopped
-} from '@shared/ipc'
-import {
-  attachmentPartOf,
-  imageCountOf,
-  messageText,
-  stepProposalPartOf,
-  toChatMessages
-} from '@core/ai/messages'
+import type { AiModel, AiService, AppError, ConversationSettings } from '@shared/ipc'
+import { imageCountOf, toChatMessages } from '@core/ai/messages'
 import { calibrateRatio, conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
@@ -22,8 +10,6 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useSettings } from '../settings/settingsContext'
-import AttachmentCard from '../attachment/AttachmentCard'
-import StepProposalCard from '../attachment/StepProposalCard'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
 import { useAiModels } from './useAiModels'
@@ -35,7 +21,7 @@ import ContextControl from './ContextControl'
 import { ModelPicker, BudgetMeter } from './ModelSelector'
 import Composer from './Composer'
 import ThinkingMark from './ThinkingMark'
-import TurnActions from './TurnActions'
+import MessageList from './MessageList'
 import { completePartial } from './completePartial'
 
 /** Stable identity, so a catalog that is loading does not re-run memos. */
@@ -58,14 +44,6 @@ const SERVICE_LABEL: Record<AiService, string> = {
   ollama: 'o Ollama',
   glm: 'o GLM',
   gemini: 'o Gemini'
-}
-
-// Reading a saved conversation, "there is no answer here" and "the answer was
-// cut short" look identical without this (D14.3). The two reasons are told
-// apart because the user's own cancel and a deadline are different facts.
-const STOPPED_LABEL: Record<MessageStopped, string> = {
-  cancelled: 'interrompida por você',
-  timeout: 'interrompida por tempo esgotado'
 }
 
 function ConversationView(): React.JSX.Element {
@@ -240,51 +218,7 @@ function ConversationView(): React.JSX.Element {
           </p>
         )}
 
-        {messages.length > 0 && (
-          <ol className="flex flex-col gap-7">
-            {messages.map((message) => {
-              const attachment = attachmentPartOf(message)
-              return message.role === 'user' ? (
-                // User turn: a bubble on the right. Alignment and fill carry the
-                // authorship, so the "Você" label the target drops is gone.
-                // Reading density (D13.6); select-text opts back into selection
-                // that base.css turns off at the root. The dataset card (D16.4
-                // Passo 4), when present, is its own element above the bubble —
-                // never inlined into the text the model reads.
-                <li key={message.id} className="flex flex-col items-end gap-2">
-                  {attachment !== null && <AttachmentCard part={attachment} />}
-                  <p className="max-w-[80%] rounded-lg bg-surface-raised px-5 py-4 text-reading leading-normal whitespace-pre-wrap text-text select-text">
-                    {messageText(message)}
-                  </p>
-                </li>
-              ) : (
-                // Assistant turn: plain text on the left, no bubble, no label.
-                // A step proposal (plano 19) replaces the text entirely — the
-                // reply IS the card, not prose alongside it.
-                <li key={message.id} className="flex flex-col gap-2">
-                  {(() => {
-                    const proposal = stepProposalPartOf(message)
-                    return proposal !== null ? (
-                      <StepProposalCard part={proposal} messageId={message.id} />
-                    ) : (
-                      <MarkdownMessage text={messageText(message)} />
-                    )
-                  })()}
-                  {message.stopped !== undefined && (
-                    // Why a reply stopped (D14.3). It used to sit beside the author
-                    // label the target removed; `stopped` is only ever on an
-                    // assistant message, so its home is here, under the text. Warn,
-                    // not danger — a cut answer says less, it is not an error.
-                    <span className="text-2xs text-warn-text">
-                      {STOPPED_LABEL[message.stopped]}
-                    </span>
-                  )}
-                  <TurnActions text={messageText(message)} />
-                </li>
-              )
-            })}
-          </ol>
-        )}
+        {messages.length > 0 && <MessageList messages={messages} />}
 
         {belongsHere && isLoading && streaming !== '' && (
           // whitespace-pre-wrap does NOT belong here (F-1 fixup, item 2): unlike
