@@ -198,6 +198,7 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | 19 | [D19.5](plan/implemented/19-propor-consulta-e-passos.md) | A chamada de proposta não usa streaming |
 | 19 | [D19.6](plan/implemented/19-propor-consulta-e-passos.md) | A verificação pós-execução mede salto parcial de nulo, não contagem de linhas |
 | 19 | [D19.7](plan/implemented/19-propor-consulta-e-passos.md) | Nota de fechamento: dois desvios do esboço (Step/StepProposal para `shared/ipc.ts`, canal `ai:propose` próprio) e o achado ao vivo com `gemma3:4b` |
+| 19 | [D19.8](plan/implemented/19-propor-consulta-e-passos.md) | Rodada de clique manual: escopo do diálogo de confirmação, `conversation:removeMessage` novo, bug de schema em resultado vazio, vocabulário de filtro deixado em aberto |
 
 ---
 
