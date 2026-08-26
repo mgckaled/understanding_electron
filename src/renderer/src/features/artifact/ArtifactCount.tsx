@@ -11,13 +11,12 @@ import { useArtifact } from './artifactContext'
 // `aria-pressed`, not `aria-current`: this is a toggle, while a card's
 // `aria-current` claims something else ("I am the one on screen").
 function ArtifactCount(): React.JSX.Element | null {
-  const { current, artifacts, toggle } = useArtifact()
+  const { current, artifacts, togglePanel } = useArtifact()
 
   // Absent, not disabled: a greyed button promises a capability this
   // conversation does not have (DF3B.2).
   if (artifacts.length === 0) return null
 
-  const newest = artifacts[artifacts.length - 1]
   const open = current !== null
 
   return (
@@ -25,7 +24,7 @@ function ArtifactCount(): React.JSX.Element | null {
       variant="ghost"
       size="sm"
       className="ml-auto flex-none"
-      onClick={(event) => toggle(open ? current : newest, event.currentTarget)}
+      onClick={(event) => togglePanel(event.currentTarget)}
       aria-pressed={open}
       aria-label={`${open ? 'Fechar' : 'Abrir'} anexos da conversa (${artifacts.length})`}
     >

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DocumentPart, ImagePart, DatasetPart, Message } from '@shared/ipc'
-import { ArtifactContext, type ArtifactApi, type ArtifactRef } from './artifactContext'
+import { ArtifactContext, type ArtifactRef } from './artifactContext'
+import { fakeArtifactApi } from '@test/artifact-api'
 import ArtifactCount from './ArtifactCount'
 import { artifactsOf, toArtifactRef } from './artifactsOf'
 
@@ -40,8 +41,11 @@ function turn(id: string, part?: DocumentPart | ImagePart | DatasetPart): Messag
 const DOC_REF: ArtifactRef = { kind: 'document', id: 'h-doc', part: DOC }
 const IMG_REF: ArtifactRef = { kind: 'image', id: 'h-img', part: IMG }
 
-function mount(artifacts: ArtifactRef[], current: ArtifactRef | null = null): ArtifactApi {
-  const api: ArtifactApi = { current, artifacts, toggle: vi.fn(), close: vi.fn() }
+function mount(
+  artifacts: ArtifactRef[],
+  current: ArtifactRef | null = null
+): ReturnType<typeof fakeArtifactApi> {
+  const api = fakeArtifactApi(current, artifacts)
   render(
     <ArtifactContext value={api}>
       <ArtifactCount />
@@ -80,23 +84,21 @@ describe('ArtifactCount', () => {
     expect(screen.getByRole('button', { name: /Abrir anexos da conversa \(2\)/ })).toBeVisible()
   })
 
-  it('opens the most recent one, not the first', async () => {
+  it('asks the panel to toggle, and does not decide WHICH artifact opens', async () => {
+    // That rule has two callers that must never disagree — this button and
+    // Ctrl+B — so it lives in the provider (DF3B.1) and is proven there,
+    // against the real one, in artifact.test.tsx.
     const api = mount([DOC_REF, IMG_REF])
 
     await userEvent.click(screen.getByRole('button'))
 
-    expect(api.toggle).toHaveBeenCalledWith(IMG_REF, expect.anything())
+    expect(api.togglePanel).toHaveBeenCalledOnce()
+    expect(api.toggle).not.toHaveBeenCalled()
   })
 
-  it('closes the panel that is already open, whichever artifact it holds', async () => {
-    const api = mount([DOC_REF, IMG_REF], DOC_REF)
-    const button = screen.getByRole('button', { name: /Fechar/ })
+  it('says it is pressed while the panel is open', () => {
+    mount([DOC_REF, IMG_REF], DOC_REF)
 
-    expect(button).toHaveAttribute('aria-pressed', 'true')
-    await userEvent.click(button)
-
-    // The one being closed, never the newest — closing the panel by handing it
-    // a different artifact would swap instead of close.
-    expect(api.toggle).toHaveBeenCalledWith(DOC_REF, expect.anything())
+    expect(screen.getByRole('button', { name: /Fechar/ })).toHaveAttribute('aria-pressed', 'true')
   })
 })

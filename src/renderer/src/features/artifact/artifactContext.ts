@@ -34,6 +34,14 @@ export type ArtifactApi = {
    *   close (DF3A.8). `null` when nothing should be focused back.
    */
   toggle: (ref: ArtifactRef, trigger: HTMLElement | null) => void
+  /**
+   * Opens the newest artifact, or closes whatever is open (DF3B.1).
+   *
+   * Lives here because it has two callers that must never disagree — the
+   * header clip and `Ctrl+B` — and "which one does the panel open" is a rule,
+   * not a line of markup.
+   */
+  togglePanel: (trigger: HTMLElement | null) => void
   close: () => void
 }
 

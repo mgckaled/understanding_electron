@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DocumentPart, ImagePart } from '@shared/ipc'
-import { ArtifactContext, type ArtifactApi, type ArtifactRef } from './artifactContext'
+import { ArtifactContext, type ArtifactRef } from './artifactContext'
+import { fakeArtifactApi } from '@test/artifact-api'
 import ArtifactPicker from './ArtifactPicker'
 
 const DOC: DocumentPart = {
@@ -20,8 +21,8 @@ const IMG: ImagePart = {
 const DOC_REF: ArtifactRef = { kind: 'document', id: 'h-doc', part: DOC }
 const IMG_REF: ArtifactRef = { kind: 'image', id: 'h-img', part: IMG }
 
-function mount(artifacts: ArtifactRef[], current: ArtifactRef): ArtifactApi {
-  const api: ArtifactApi = { current, artifacts, toggle: vi.fn(), close: vi.fn() }
+function mount(artifacts: ArtifactRef[], current: ArtifactRef): ReturnType<typeof fakeArtifactApi> {
+  const api = fakeArtifactApi(current, artifacts)
   render(
     <ArtifactContext value={api}>
       <ArtifactPicker current={current} />

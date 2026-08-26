@@ -44,6 +44,8 @@ A regra vale em todos os cinco níveis, e é mais fácil de violar do que parece
 - Um teste de "modelo com visão" passava contra uma implementação **errada** (buscar chave por sufixo `.context_length`), só porque o Ollama calhava de devolver as chaves numa ordem favorável. O caso certo não provava a regra; provava a ordem.
 - Um teste "não escreve `numCtx` quando não há janela" passava porque o campo nem é renderizado nesse estado, logo nada dispara `blur` — **o código antigo também passaria**. Nasceu vacuoso e foi removido.
 
+- Um teste de "o atalho **não** dispara com `Ctrl+Shift+B`" passava com a guarda de modificador **removida**. Asserção síncrona de **ausência** logo depois do evento é vacuosa por construção: o estado mudaria no tique seguinte e a consulta já teria respondido "não há nada". **A forma que prova** é afirmar o **estado final** de algo que o efeito indesejado teria invertido — aqui, disparar o atalho de verdade em seguida e exigir que o painel abra, já que um disparo espúrio o teria deixado fechado.
+
 **O procedimento que fecha isso:** veja o teste **vermelho** antes de deixá-lo verde — removendo a correção, sabotando a entrada, ou escrevendo-o antes do conserto. Se você não viu falhar, não sabe o que ele mede.
 
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.

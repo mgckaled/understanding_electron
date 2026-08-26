@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DocumentPart, ImagePart } from '@shared/ipc'
-import { ArtifactContext, type ArtifactApi, type ArtifactRef } from '../artifact/artifactContext'
+import { ArtifactContext, type ArtifactRef } from '../artifact/artifactContext'
+import { fakeArtifactApi } from '@test/artifact-api'
 import DocumentCard from './DocumentCard'
 import ImageCard from './ImageCard'
 
@@ -19,13 +20,8 @@ const IMG: ImagePart = {
   mimeType: 'image/png'
 }
 
-function mount(node: React.JSX.Element, current: ArtifactRef | null = null): ArtifactApi {
-  const api: ArtifactApi = {
-    current,
-    artifacts: current === null ? [] : [current],
-    toggle: vi.fn(),
-    close: vi.fn()
-  }
+function mount(node: React.JSX.Element, current: ArtifactRef | null = null): ReturnType<typeof fakeArtifactApi> {
+  const api = fakeArtifactApi(current)
   render(<ArtifactContext value={api}>{node}</ArtifactContext>)
   return api
 }

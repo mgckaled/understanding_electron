@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DocumentPart, ImagePart } from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
@@ -36,13 +36,29 @@ function Probe(): React.JSX.Element {
       <button onClick={(event) => toggle(DOC_REF, event.currentTarget)}>abrir doc</button>
       <button onClick={(event) => toggle(IMG_REF, event.currentTarget)}>abrir img</button>
       <button onClick={() => select('outra')}>trocar de conversa</button>
+      <textarea aria-label="composer de mentira" />
     </>
   )
 }
 
+// The provider derives `artifacts` from the real transcript, so the shortcut
+// can only be proven with real messages in a real conversation — the mock's
+// handlers run against an in-memory database (skill testing).
+async function seed(): Promise<void> {
+  const api = installApiMock()
+  const id = 'c-artifacts'
+  await api.conversation.create({ id, title: 'Anexos', createdAt: 1 })
+  await api.conversation.append(id, { id: 'm1', role: 'user', parts: [DOC], createdAt: 1 })
+  await api.conversation.append(id, { id: 'm2', role: 'user', parts: [IMG], createdAt: 2 })
+}
+
 function mount(): void {
   installApiMock()
-  render(
+  render(harness())
+}
+
+function harness(): React.JSX.Element {
+  return (
     <QueryClientProvider client={createQueryClient()}>
       <ConversationsProvider>
         <ArtifactProvider>
@@ -103,6 +119,71 @@ describe('ArtifactProvider', () => {
 
     expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
     expect(trigger).toHaveFocus()
+  })
+
+  it('opens the newest artifact, not the first, when nothing is open', async () => {
+    await seed()
+    render(harness())
+    await screen.findByRole('button', { name: 'abrir doc' })
+
+    await userEvent.keyboard('{Control>}b{/Control}')
+
+    const panel = await screen.findByRole('complementary', { name: PANEL })
+    // Scoped to the panel's own title: with two artifacts the picker's popover
+    // lists both names, so a bare getByText matches twice.
+    expect(within(panel).getByRole('button', { name: /grafico\.png/ })).toBeVisible()
+  })
+
+  it('Ctrl+B closes whatever is open, whichever artifact that is', async () => {
+    await seed()
+    render(harness())
+
+    await userEvent.click(screen.getByRole('button', { name: 'abrir doc' }))
+    const panel = screen.getByRole('complementary', { name: PANEL })
+    expect(within(panel).getByRole('button', { name: /notas\.md/ })).toBeVisible()
+
+    await userEvent.keyboard('{Control>}b{/Control}')
+
+    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
+  })
+
+  it('never fires while the user is typing', async () => {
+    await seed()
+    render(harness())
+
+    await userEvent.click(screen.getByRole('textbox'))
+    await userEvent.keyboard('{Control>}b{/Control}')
+
+    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
+  })
+
+  // ⚠️ These two are written as "the combo did nothing, and the NEXT plain
+  // Ctrl+B opens" on purpose. Asserting absence right after the event is
+  // vacuous — the panel would open on a later tick and the synchronous query
+  // would still find nothing. Caught by provocation: removing the modifier
+  // guard failed ZERO tests in the first version of this file. Because Ctrl+B
+  // toggles, one stray fire flips the final state, so the last assertion is
+  // what carries the proof.
+  it('leaves Ctrl+Shift+B alone', async () => {
+    await seed()
+    render(harness())
+    await screen.findByRole('button', { name: 'abrir doc' })
+
+    await userEvent.keyboard('{Control>}{Shift>}b{/Shift}{/Control}')
+    await userEvent.keyboard('{Control>}b{/Control}')
+
+    expect(await screen.findByRole('complementary', { name: PANEL })).toBeVisible()
+  })
+
+  it('leaves Ctrl+Alt+B alone', async () => {
+    await seed()
+    render(harness())
+    await screen.findByRole('button', { name: 'abrir doc' })
+
+    await userEvent.keyboard('{Control>}{Alt>}b{/Alt}{/Control}')
+    await userEvent.keyboard('{Control>}b{/Control}')
+
+    expect(await screen.findByRole('complementary', { name: PANEL })).toBeVisible()
   })
 
   it('closes when the conversation changes', async () => {

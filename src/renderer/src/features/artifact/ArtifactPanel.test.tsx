@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event'
 import type { DocumentPart, ImagePart } from '@shared/ipc'
 import ArtifactPanel from './ArtifactPanel'
 import { copyArtifact } from './copyArtifact'
-import { ArtifactContext, type ArtifactApi, type ArtifactRef } from './artifactContext'
+import { ArtifactContext, type ArtifactRef } from './artifactContext'
+import { fakeArtifactApi } from '@test/artifact-api'
 
 // The clipboard itself is mocked, not jsdom's `navigator`: what `copyArtifact`
 // really does — fetch through `attachment://`, ClipboardItem — has no meaning
@@ -31,13 +32,8 @@ const IMG: ImagePart = {
 
 // The panel reads the context and nothing else, so a hand-made value is the
 // whole environment it needs — no provider, no conversation, no query client.
-function mount(current: ArtifactRef | null): ArtifactApi {
-  const api: ArtifactApi = {
-    current,
-    artifacts: current === null ? [] : [current],
-    toggle: vi.fn(),
-    close: vi.fn()
-  }
+function mount(current: ArtifactRef | null): ReturnType<typeof fakeArtifactApi> {
+  const api = fakeArtifactApi(current)
   render(
     <ArtifactContext value={api}>
       <ArtifactPanel />
