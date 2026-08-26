@@ -36,13 +36,29 @@ describe('StepProposalCard', () => {
     expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
   })
 
-  it('removes a step from the list without calling transform', async () => {
+  it('asks for confirmation before removing a step, then removes it on Remover', async () => {
     const user = userEvent.setup()
     render(<StepProposalCard part={PART} />)
 
-    await user.click(screen.getAllByRole('button', { name: 'Remover passo' })[0])
+    await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
+    expect(screen.getByText('Deseja remover o passo de forma definitiva?')).toBeVisible()
+    // Both steps are still there — the dialog only asks, it does not act yet.
+    expect(screen.getByText('filtrar idade maior que 18')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Remover' }))
 
     expect(screen.queryByText('filtrar idade maior que 18')).not.toBeInTheDocument()
+    expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
+  })
+
+  it('keeps the step when the removal is cancelled', async () => {
+    const user = userEvent.setup()
+    render(<StepProposalCard part={PART} />)
+
+    await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(screen.getByText('filtrar idade maior que 18')).toBeVisible()
     expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
   })
 
@@ -76,7 +92,8 @@ describe('StepProposalCard', () => {
     const user = userEvent.setup()
 
     render(<StepProposalCard part={PART} />)
-    await user.click(screen.getAllByRole('button', { name: 'Remover passo' })[0])
+    await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
+    await user.click(screen.getByRole('button', { name: 'Remover' }))
     await user.click(screen.getByRole('button', { name: 'Aplicar' }))
 
     expect(api.dataset.transform).toHaveBeenCalledWith('h1', [{ kind: 'limit', count: 10 }])

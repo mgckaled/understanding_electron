@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { tableFromIPC } from 'apache-arrow'
-import { X } from 'lucide-react'
+import { Trash2, Undo2 } from 'lucide-react'
 import type { ColumnProfile, Step, StepProposalPart } from '@shared/ipc'
 import { describeStep } from '@core/pipeline/describe'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Button from '../../shared/ui/Button/Button'
+import Dialog from '../../shared/ui/Dialog/Dialog'
 import { errorMessage } from '../../shared/ui/messages'
 import DatasetTable from './DatasetTable'
 
@@ -58,6 +59,11 @@ function nullJumps(before: ColumnProfile[], after: ColumnProfile[]): NullJump[] 
 function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Element {
   const [steps, setSteps] = useState<Step[]>(part.steps)
   const [state, setState] = useState<ApplyState>({ status: 'idle' })
+  // Removing a step cannot be undone once Aplicar runs on what remains — the
+  // user asked for a confirm step here after finding the plain click too easy
+  // to trigger by accident, with no way back.
+  const [pendingRemoval, setPendingRemoval] = useState<number | null>(null)
+  const removalDescriptionId = useId()
 
   async function handleApply(): Promise<void> {
     setState({ status: 'loading' })
@@ -82,6 +88,12 @@ function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Eleme
     setSteps((current) => current.filter((_, position) => position !== index))
   }
 
+  function confirmRemoval(): void {
+    if (pendingRemoval === null) return
+    removeStep(pendingRemoval)
+    setPendingRemoval(null)
+  }
+
   const jumps = state.status === 'ready' ? nullJumps(state.result.before, state.result.after) : []
 
   return (
@@ -93,15 +105,22 @@ function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Eleme
           {steps.map((step, index) => (
             <li key={index} className="flex items-center gap-2">
               <span className="flex-1 text-sm">{describeStep(step)}</span>
+              {/* text-danger-text, never the solid danger fill, as an icon on a
+                  transparent button (D10.1) — the fill is for Remover below,
+                  the actual destructive action, not this trigger. */}
               <Button
                 variant="outline"
                 size="sm"
                 shape="circle"
                 className="flex-none"
-                onClick={() => removeStep(index)}
-                aria-label="Remover passo"
+                onClick={() => setPendingRemoval(index)}
+                aria-label={`Remover passo ${index + 1}`}
               >
-                <X size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                <Trash2
+                  className="text-danger-text"
+                  size={ICON_SIZE.sm}
+                  strokeWidth={ICON_STROKE}
+                />
               </Button>
             </li>
           ))}
@@ -140,6 +159,30 @@ function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Eleme
           <DatasetTable columns={state.result.columns} rows={state.result.rows} />
         </div>
       )}
+      <Dialog
+        open={pendingRemoval !== null}
+        title="Remover passo"
+        onClose={() => setPendingRemoval(null)}
+        describedBy={removalDescriptionId}
+      >
+        <p className="mb-6 text-sm" id={removalDescriptionId}>
+          Deseja remover o passo de forma definitiva?
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" size="sm" onClick={() => setPendingRemoval(null)}>
+            <span className="flex items-center gap-2">
+              <Undo2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+              Cancelar
+            </span>
+          </Button>
+          <Button variant="danger" size="sm" onClick={confirmRemoval}>
+            <span className="flex items-center gap-2">
+              <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+              Remover
+            </span>
+          </Button>
+        </div>
+      </Dialog>
     </div>
   )
 }
