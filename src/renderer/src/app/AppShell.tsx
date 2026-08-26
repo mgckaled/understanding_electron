@@ -10,6 +10,13 @@ import type { ReactNode } from 'react'
 type AppShellProps = {
   sidebar: ReactNode
   main: ReactNode
+  /**
+   * The right-hand region (plano F-3-A). Renders raw, unlike `main`: only the
+   * panel knows whether it is open, so it brings its own `<aside>` or nothing —
+   * a wrapper here would draw an empty region with a border every time it is
+   * closed. The shell still owns the track; it just does not own the element.
+   */
+  artifact?: ReactNode
 }
 
 // Structural scroll (D13.5): the grid fills the height:100% root and clips its
@@ -19,11 +26,14 @@ type AppShellProps = {
 // inside it instead of stretching the grid track past the window.
 // `min-w-[0px]`, not `min-w-0`: this project turns off Tailwind's --spacing
 // base, so the numeric form emits nothing (measured); the arbitrary value does.
-function AppShell({ sidebar, main }: AppShellProps): React.JSX.Element {
+// The third track is `auto`, so the shell never learns the panel's width — the
+// panel sizes itself (DF3A.4), and a closed one collapses the track to zero.
+function AppShell({ sidebar, main, artifact }: AppShellProps): React.JSX.Element {
   return (
-    <div className="grid h-full grid-cols-[auto_minmax(0,1fr)] overflow-hidden bg-bg">
+    <div className="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden bg-bg">
       {sidebar}
       <main className="flex h-full min-w-[0px] flex-col overflow-hidden">{main}</main>
+      {artifact}
     </div>
   )
 }

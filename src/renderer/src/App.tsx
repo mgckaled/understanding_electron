@@ -5,6 +5,8 @@ import Sidebar from './app/Sidebar'
 import OllamaStatus from './components/OllamaStatus'
 import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
+import ArtifactPanel from './features/artifact/ArtifactPanel'
+import ArtifactProvider from './features/artifact/ArtifactProvider'
 import ConversationsProvider from './features/conversation/ConversationsProvider'
 import NewConversationButton from './features/conversation/NewConversationButton'
 import Settings from './features/settings/Settings'
@@ -25,57 +27,60 @@ function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
       <ConversationsProvider>
-        <AppShell
-          sidebar={
-            <Sidebar
-              nav={<NewConversationButton />}
-              // The "Abrir arquivo" section moved into the composer as the
-              // clip (DS5, item 7) — the sidebar's content slot is
-              // ConversationList alone now.
-              content={<ConversationList />}
-              footer={
-                <div className="flex items-center justify-between gap-3">
-                  <OllamaStatus />
-                  <Settings />
-                </div>
-              }
-              // The rail: direct action where one exists ("+" creates now,
-              // Configurações opens now — a second `Settings` instance, fully
-              // self-contained, so no state is lifted); Busca/Conversas only
-              // expand, since 44px has no room to show what they would open
-              // (F2.4). Configurações sits at the bottom (`mt-auto`), mirroring
-              // its footer position in the expanded sidebar — the other three
-              // are top actions, not siblings of a settings gear.
-              collapsedRail={(expand) => (
-                <>
-                  <NewConversationButton compact />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    shape="square"
-                    onClick={expand}
-                    aria-label="Buscar conversas"
-                  >
-                    <Search size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    shape="square"
-                    onClick={expand}
-                    aria-label="Ver conversas"
-                  >
-                    <MessageSquare size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-                  </Button>
-                  <div className="mt-auto">
+        <ArtifactProvider>
+          <AppShell
+            sidebar={
+              <Sidebar
+                nav={<NewConversationButton />}
+                // The "Abrir arquivo" section moved into the composer as the
+                // clip (DS5, item 7) — the sidebar's content slot is
+                // ConversationList alone now.
+                content={<ConversationList />}
+                footer={
+                  <div className="flex items-center justify-between gap-3">
+                    <OllamaStatus />
                     <Settings />
                   </div>
-                </>
-              )}
-            />
-          }
-          main={<ConversationView />}
-        />
+                }
+                // The rail: direct action where one exists ("+" creates now,
+                // Configurações opens now — a second `Settings` instance, fully
+                // self-contained, so no state is lifted); Busca/Conversas only
+                // expand, since 44px has no room to show what they would open
+                // (F2.4). Configurações sits at the bottom (`mt-auto`), mirroring
+                // its footer position in the expanded sidebar — the other three
+                // are top actions, not siblings of a settings gear.
+                collapsedRail={(expand) => (
+                  <>
+                    <NewConversationButton compact />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      shape="square"
+                      onClick={expand}
+                      aria-label="Buscar conversas"
+                    >
+                      <Search size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      shape="square"
+                      onClick={expand}
+                      aria-label="Ver conversas"
+                    >
+                      <MessageSquare size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                    </Button>
+                    <div className="mt-auto">
+                      <Settings />
+                    </div>
+                  </>
+                )}
+              />
+            }
+            main={<ConversationView />}
+            artifact={<ArtifactPanel />}
+          />
+        </ArtifactProvider>
       </ConversationsProvider>
     </QueryClientProvider>
   )
