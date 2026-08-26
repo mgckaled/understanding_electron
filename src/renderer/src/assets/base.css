@@ -1,6 +1,6 @@
 /*
  * Desktop app behavior, not web page behavior. Rationale for every rule below
- * lives in the design-system skill (.claude/skills/design-system/SKILL.md).
+ * lives in the design-system skill (.claude/skills/design-system/reference.md).
  *
  * ⚠️ tokens.css must stay OUTSIDE every @layer — wrap it and every colour in
  * the app disappears at once (DS1.5). This file's own @layer base does not

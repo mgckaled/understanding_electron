@@ -5,19 +5,17 @@ description: Convenção de comentário e docstring do crivo — duas perguntas 
 
 # Comentário e docstring — crivo
 
-> Dona única da convenção de comentário. A regra de **quando** comentar nasceu em ago/2026 (§ *Três defeitos do plano 15*); a forma **TSDoc** foi adotada depois, quando o fonte acumulou narrativa de decisão dentro do `.ts`. O porquê de cada uma mora no [`HISTORY.md`](../../../docs/HISTORY.md); aqui fica a regra aplicável. O [`CLAUDE.md`](../../../CLAUDE.md) traz só a essência e aponta para cá.
-
 ## Duas perguntas, nesta ordem
 
-Ao tocar uma linha de comentário, decida em duas etapas. A primeira já elimina a maior parte do que hoje inunda o fonte; a segunda só se aplica ao que sobrou.
+Ao tocar uma linha de comentário, decida em duas etapas. A primeira já elimina a maior parte do que inunda o fonte; a segunda só se aplica ao que sobrou.
 
 ### 1. Comentar? — vale para `//` e para `/** */`
 
 **O comentário diz o que o código não consegue dizer, em até ~3 linhas.** Restrição externa que o próximo leitor violaria sem saber (`capabilities` vem do `/api/show` porque o `/api/tags` omite `vision`), número medido, armadilha diagnosticada — isso fica. **Nome bom vence docstring:** um `selectableModels` bem nomeado não pede comentário.
 
-**O que NÃO entra, porque tem dono e o dono não é o `.ts`:** narrativa do que mudou, alternativa tentada e descartada, razão longa. Isso mora no [`HISTORY.md`](../../../docs/HISTORY.md) (ou no plano), e o fonte **aponta pela sigla da decisão** — `(D15.2)`, não o parágrafo. Um comentário longo dentro do `.ts` é a mesma dívida da regra de fonte única, agravada por envelhecer onde ninguém releva.
+**O que NÃO entra, porque tem dono e o dono não é o `.ts`:** narrativa do que mudou, alternativa tentada e descartada, razão longa. Isso mora no [`HISTORY.md`](../../../docs/HISTORY.md) (ou em [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md), ou no plano), e o fonte **aponta pela sigla da decisão** — `(D15.2)`, não o parágrafo. Um comentário longo dentro do `.ts` é a mesma dívida da regra de fonte única, agravada por envelhecer onde ninguém relê.
 
-⚠️ **Bloco `/* */` de narrativa é o sintoma número um.** Exemplos reais já diagnosticados e corrigidos estão no [`HISTORY.md`](../../../docs/HISTORY.md) (ex.: D14.4) — cada um era um ensaio de decisão que pertencia lá, não ao `.ts`. Ao encontrar um bloco assim, substitua pela sigla.
+⚠️ **Bloco `/* */` de narrativa é o sintoma número um.** Ao encontrar um, substitua pela sigla. Exemplos reais já diagnosticados e corrigidos (ex.: D14.4) estão no `HISTORY.md` — cada um era um ensaio de decisão que pertencia lá.
 
 ### 2. Se sobrou um doc-comment, qual forma? — TSDoc
 
@@ -39,10 +37,12 @@ Regras da forma, cada uma um erro que o parser oficial marca:
 - **`/** */`**, nunca `/* */`, para doc-comment. Sumário numa linha, em **terceira pessoa** (`Sends…`, não `Send…`).
 - **`@param nome - descrição`** — o hífen é obrigatório. **`@returns`** com o `s` (não `@return`).
 - **Sem tipo entre chaves** (`@param {string} name`): o TypeScript já tipa; repetir é ruído que envelhece.
-- **Um conjunto curado, não todas as tags.** `@remarks` e `@example` — mesmo sendo padrão — ficam **fora**: são o convite de volta à narrativa banida na pergunta 1; razão longa vai ao `HISTORY.md`, citada por sigla. As tags que este projeto usa estão logo abaixo.
+- **Um conjunto curado, não todas as tags.** `@remarks` e `@example` — mesmo sendo padrão — ficam **fora**: são o convite de volta à narrativa banida na pergunta 1.
 - **O bloco vai ACIMA do símbolo**, não `/** */` no meio da assinatura, um por parâmetro — corrija esse padrão ao tocar (`useConversationChat` o tem hoje).
 
 Ordem dentro do bloco: **sumário → block tags (`@param`, `@returns`, …) → modifiers no fim.** **Não há tag de cabeçalho de arquivo** no TSDoc (`@file`/`@module`/`@fileOverview` não existem no padrão); contexto de arquivo, quando indispensável, é `//` comum sob a pergunta 1.
+
+> **As duas regras não brigam.** TSDoc é a **gramática**; o veto à narrativa é o **conteúdo**. `@param model - null when no model is installed (D15.2)` diz o contrato mecânico e aponta a decisão pela sigla — não reescreve o ensaio da D15.2. Adotar TSDoc **não** abre espaço para `@remarks` de 20 linhas; dá forma padrão ao pouco que sobra.
 
 ### As demais tags — cada uma com o "não serve para"
 
@@ -71,14 +71,8 @@ O TSDoc tem tags que existem para **pacote publicado** lido pelo API Extractor �
 
 Local de função, getter óbvio, componente cujo nome e props já dizem tudo, teste. Docstring em símbolo óbvio é a mesma inundação por outro caractere. Uma linha só (`/** Stable identity, so an empty list does not re-run every downstream memo. */`) é doc-comment TSDoc válido e muitas vezes o certo — sumário sem tag.
 
-## A reconciliação, para não reverter ago/2026
+## Idioma e alcance
 
-TSDoc é a **gramática** do doc-comment; o veto à narrativa é o **conteúdo**. Os dois não brigam: `@param model - null when no model is installed (D15.2)` diz o **contrato mecânico** e aponta a decisão pela sigla — não reescreve o ensaio da D15.2. Aplicar TSDoc **não** é abrir espaço para `@remarks` de 20 linhas; é dar forma padrão ao pouco que sobra.
+Docstring e comentário em **inglês**, sem exceção — é a regra de idioma da skill [`architecture`](../architecture/SKILL.md) aplicada ao doc-comment.
 
-## Idioma
-
-Docstring e comentário em **inglês**, sem exceção — é a regra de idioma do projeto (skill [`architecture`](../architecture/SKILL.md)) aplicada ao doc-comment. Português fica no texto visível ao usuário e na documentação.
-
-## Alcance: divide-se ao tocar
-
-Vale **no que você tocar** — arquivo editado sai no padrão. **Não varra a base** atrás de comentário fora de forma; é o mesmo princípio da régua de tamanho. A limpeza retroativa, se um dia valer a pena, é um plano próprio.
+A convenção vale **no que você tocar**: arquivo editado sai no padrão. **Não varra a base** atrás de comentário fora de forma; é o mesmo princípio da régua de tamanho. A limpeza retroativa, se um dia valer a pena, é um plano próprio.

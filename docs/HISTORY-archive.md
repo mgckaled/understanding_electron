@@ -173,6 +173,16 @@ Origem: primeira fase executável do plano de fundação. Entrega: seis pastas e
 ### Escopo e plano de fundação definidos (ago/2026)
 Origem: quatro commits no repositório, três de documentação e um o scaffold intocado — a posição mais barata para decisões estruturais. Entrega: `ESCOPO.md` fecha o produto inicial (bancada local de limpeza/transformação por pipeline de passos compilando para SQL do DuckDB); plano de fundação com oito fases, 33 passos, cada um com critério de aceite; a camada de IA registrada para não exigir replanejamento depois. Critério que ordenou tudo: **se eu adiar isto, quantos arquivos vou tocar quando finalmente fizer?**
 
+**Mapa de dependência que orientou a execução** (migrado da skill `architecture` em 26/08/2026, ao enxugá-la — era registro histórico ocupando espaço numa skill que se lê para decidir código):
+
+```
+01 camadas ──► 02 contrato ──┬─► 03 sandbox ─────────────┐
+                             │                           │
+                             └─► 04 testes ──► 05 tokens ─┴─► 06 feature ──► 07 e2e ──► 08 automação
+```
+
+A fase 05 (tokens) era a de posição mais flexível — estruturalmente só precisa da 01, e podia ser antecipada para logo depois dela, adiando apenas a verificação contra a 04.
+
 ---
 
 ## Armadilhas diagnosticadas
