@@ -12,8 +12,9 @@ Esta pasta é a documentação versionada do projeto, organizada **por finalidad
 docs/
 ├── README.md        # este arquivo — mapa, ciclo de vida e convenção de fonte única
 ├── ESCOPO.md        # o que o app faz e não faz — definição de produto
-├── HISTORY.md       # changelog de decisões e entregas (cronológico inverso)
-├── HISTORY-archive.md  # trilhas encerradas (fundação, DS, R, F), comprimidas — só leitura
+├── HISTORY.md       # changelog: os 10 marcos mais recentes + decisões arquiteturais
+├── HISTORY-archive.md  # marcos além dos 10 — fila de saída, só leitura
+├── ARMADILHAS.md    # erro diagnosticado — buscável por sintoma, não por data
 ├── DECISOES.md      # índice tabular das decisões dentro de cada plano — derivado, não narra
 ├── ROADMAP.md       # o que ainda falta — pendências e gatilhos de revisão
 ├── study/           # cadernos didáticos: Electron, stack, anatomia, diário de bordo
@@ -30,7 +31,7 @@ docs/
 
 1. Nasce em [`plan/active/`](plan/active/), com passos, critérios de aceite e um **diário de execução** vazio.
 2. Enquanto está sendo executado, cada sessão de trabalho acrescenta **uma linha** ao diário daquele plano.
-3. Ao concluir, o arquivo **move** para [`plan/implemented/`](plan/implemented/) e ganha **uma entrada curta** em [`HISTORY.md`](HISTORY.md), com link — e, se o plano tiver algum heading `### D<id> — <título>`, essas linhas entram em [`DECISOES.md`](DECISOES.md); se não tiver nenhum, o próprio plano ganha uma linha lá, com a descrição igual ao título do marco recém-escrito em `HISTORY.md`.
+3. Ao concluir, o arquivo **move** para [`plan/implemented/`](plan/implemented/) e ganha **uma entrada curta** em [`HISTORY.md`](HISTORY.md), com link — e, se o plano tiver algum heading `### D<id> — <título>`, essas linhas entram em [`DECISOES.md`](DECISOES.md); se não tiver nenhum, o próprio plano ganha uma linha lá, com a descrição igual ao título do marco recém-escrito em `HISTORY.md`. **Se essa entrada for a 11ª**, a mais antiga desce para [`HISTORY-archive.md`](HISTORY-archive.md) na mesma edição — ver [régua de tamanho de documento](#régua-de-tamanho-de-documento).
 4. Plano abandonado ou superado por outro vai para [`plan/archive/`](plan/archive/), com uma linha em `HISTORY.md` dizendo **por que** foi abandonado. Isso importa: plano descartado em silêncio é reinventado seis meses depois.
 
 > ⚠️ `archive/` é **só leitura histórica**. Seus links internos podem apodrecer, e **não se conserta referência dentro do archive** — o custo é real e o benefício, nenhum.
@@ -62,11 +63,32 @@ Toda observação nasce no diário. Quando ela vale **além daquele plano**, sob
 |---|---|---|
 | "terminei o passo 3, falta o 4" | não | morre com o plano |
 | "o `pnpm typecheck` levou 40s hoje" | não | ruído |
-| "descobri que X quebra quando Y — perdi duas horas" | **sim** | `HISTORY.md` → armadilha |
+| "descobri que X quebra quando Y — perdi duas horas" | **sim** | [`ARMADILHAS.md`](ARMADILHAS.md) |
 | "tentei A, não funcionou por Z, fui de B" | **sim** | `HISTORY.md` → decisão |
 | "medi 1,2 GB de CSV em 8s" | **sim** | `HISTORY.md` ou `study/04-diario-de-bordo.md` |
 
 A regra prática: **subiu se for custar tempo de novo.** Erro que já custou horas uma vez e não foi registrado custa as mesmas horas na segunda.
+
+---
+
+## Régua de tamanho de documento
+
+A régua de tamanho do [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) mede código porque arquivo grande é sintoma. Documento tem o mesmo problema com uma vítima diferente: **quem paga não é quem escreve, é quem lê** — e num projeto operado por conversa, ler custa tokens de contexto, que é o recurso mais escasso da sessão.
+
+O gatilho é ago/2026, medido: os arquivos soltos de `docs/` somavam **~326 KB / ~100k tokens**, e `HISTORY.md` sozinho, **182 KB**. Duas leituras integrais estouravam o orçamento de uma sessão inteira e disparavam autocompactação — que apaga justamente o trabalho em curso.
+
+| Arquivo | Teto | Quando estoura |
+|---|---|---|
+| `HISTORY.md` | **10 marcos** | a mais antiga desce para `HISTORY-archive.md`, na mesma edição |
+| `ARMADILHAS.md` | ~80 KB | comprimir as mais antigas (número + mecanismo + conserto; a narrativa sai) |
+| `HISTORY-archive.md` | — | sem teto: é fila de saída, nunca lido inteiro |
+| `ESCOPO.md`, `ROADMAP.md`, `DECISOES.md` | ~45 KB | desmembrar por assunto em `reference/`, com ponteiro |
+| `CLAUDE.md` | **~25 KB** | é lido em **toda** sessão — o que tem outro dono sai e vira ponteiro |
+| skill (`SKILL.md`) | ~40 KB | dividir em arquivo auxiliar na pasta da skill |
+
+**A regra que sustenta o teto** não é o número: é que **nenhum arquivo de `docs/` se lê na íntegra**. O teto só limita o dano quando alguém escorrega. O protocolo de leitura — `Grep` pelo termo, `Read` com `offset`/`limit` na linha achada — mora no [`CLAUDE.md`](../CLAUDE.md#protocolo-de-leitura-da-documentação), porque é lá que ele é lido antes de a primeira leitura acontecer.
+
+> **Por que arquivar em vez de resumir:** resumo perde a alternativa descartada, que é o único conteúdo irrecuperável. O archive mantém o texto inteiro e buscável por `Grep`; o que ele tira é a obrigação de manter, não a informação.
 
 ---
 
@@ -84,12 +106,12 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Convenção de comentário e docstring (TSDoc) | skill `comments` | apontam |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow, motor restrito) | skill `data` | apontam |
 | Ferramentas do chat (busca web, MCP, raciocínio visível) | [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md) | apontam |
-| Peso/cache KV por modelo Ollama e ficha técnica dos modelos de nuvem opt-in, elegibilidade, inviáveis e descartados | [`reference/models/`](reference/models/README.md) | apontam — a frota **instalada** continua com dono no `CLAUDE.md` |
-| Stack fixada, versões, regras invioláveis | [`CLAUDE.md`](../CLAUDE.md) | apontam |
-| Armadilhas diagnosticadas | [`HISTORY.md`](HISTORY.md) + `study/04-diario-de-bordo.md` | apontam |
+| Frota Ollama instalada, peso/cache KV, ficha técnica dos modelos de nuvem opt-in, elegibilidade, inviáveis e descartados | [`reference/models/`](reference/models/README.md) | apontam — **inclusive a frota instalada**, desde ago/2026 |
+| Stack fixada, versões, regras invioláveis, protocolo de leitura | [`CLAUDE.md`](../CLAUDE.md) | apontam |
+| Armadilhas diagnosticadas | [`ARMADILHAS.md`](ARMADILHAS.md) + `study/04-diario-de-bordo.md` | apontam — saiu do `HISTORY.md` em ago/2026 |
 | Histórico, decisões, alternativas descartadas | [`HISTORY.md`](HISTORY.md) | apontam |
 | Índice tabular por decisão individual (trilha, sigla, título) | [`DECISOES.md`](DECISOES.md) | derivado — sem narrativa própria, nunca duplica `HISTORY.md` |
-| Trilhas encerradas (fundação, DS, R, F), comprimidas | [`HISTORY-archive.md`](HISTORY-archive.md) | apontam — nunca se conserta link interno lá dentro |
+| Marcos além dos 10 mais recentes, comprimidos | [`HISTORY-archive.md`](HISTORY-archive.md) | apontam — nunca se conserta link interno lá dentro |
 | Pendências e gatilhos de revisão | [`ROADMAP.md`](ROADMAP.md) | apontam |
 | Fundamentos do Electron, anatomia, medições | [`study/`](study/README.md) | apontam |
 
@@ -105,6 +127,7 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | explica um conceito para aprender | `study/` |
 | é consulta técnica estável — comparativo, medição, especificação externa | `reference/` |
 | registra o que já foi feito e por quê | `HISTORY.md` |
+| registra um erro que custou tempo, para não custar de novo | `ARMADILHAS.md` |
 | lista o que falta | `ROADMAP.md` |
 | define o produto | `ESCOPO.md` |
 

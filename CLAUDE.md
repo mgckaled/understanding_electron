@@ -13,9 +13,15 @@ Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**
 | **Diário de execução** | tabela no fim do plano em `docs/plan/active/` | uma sessão | antes de encerrar **toda** sessão |
 | **Entrada de histórico** | [`docs/HISTORY.md`](docs/HISTORY.md) | um marco concluído | ao mover um plano para `implemented/` |
 
-**Escalonamento — a regra que faz o sistema funcionar:** observação do diário que valha **além daquele plano** sobe para o `HISTORY.md` **na mesma sessão**. O teste é *"isto vai custar tempo de novo?"* — armadilha diagnosticada, alternativa tentada e descartada, número medido: sobe. "Terminei o passo 3": morre com o plano.
+**Escalonamento — a regra que faz o sistema funcionar:** observação do diário que valha **além daquele plano** sobe para o `HISTORY.md` **na mesma sessão** (ou para o [`ARMADILHAS.md`](docs/ARMADILHAS.md), se for erro diagnosticado). O teste é *"isto vai custar tempo de novo?"* — armadilha diagnosticada, alternativa tentada e descartada, número medido: sobe. "Terminei o passo 3": morre com o plano.
 
-**Auto-conservação — o mesmo cuidado, voltado para fora do plano.** Ao encerrar um plano ou uma tarefa pontual, dois tipos de deriva, tratados diferente porque um se previne e o outro só se corrige: **(a) nome ou caminho que mudou** — ao renomear/mover algo, `grep` o nome antigo em `.claude/skills/` e `docs/` **antes** de commitar; se aparecer, é referência a atualizar junto, não depois. **(b) contagem que envelheceu** (canais IPC, número de teste, linhas de skill) — não é greppável por natureza, então remedir é o próprio ato de conservar: nunca copiar um número de um documento para outro sem reconferir a fonte (código, `pnpm test`) na hora. Se a mudança tocou um fato citável em mais de um lugar e nenhuma das duas se aplicou, o próximo a ler paga sem saber que está pagando. É o motivo declarado da trilha R-2 (ver `HISTORY.md`), e o objetivo é não precisar de uma R-3.
+**Auto-conservação — o mesmo cuidado, voltado para fora do plano.** Ao encerrar um plano ou uma tarefa pontual, **três** tipos de deriva, tratados diferente porque cada um falha de um jeito:
+
+- **(a) nome ou caminho que mudou** — ao renomear/mover algo, `grep` o nome antigo em `.claude/skills/` e `docs/` **antes** de commitar; se aparecer, é referência a atualizar junto, não depois.
+- **(b) contagem que envelheceu** (canais IPC, número de teste, linhas de skill) — não é greppável por natureza, então remedir é o próprio ato de conservar: nunca copiar um número de um documento para outro sem reconferir a fonte (código, `pnpm test`) na hora.
+- **(c) documento que estourou o teto** — ao escrever a 11ª entrada de marco em `HISTORY.md`, a mais antiga desce para o `HISTORY-archive.md` na mesma edição. Teto por arquivo e o que fazer quando estoura: [`docs/README.md`](docs/README.md#régua-de-tamanho-de-documento). Documento que cresce sem teto não avisa — ele cobra em tokens de leitura, na sessão de outra pessoa.
+
+Se a mudança tocou um fato citável em mais de um lugar e nenhuma das três se aplicou, o próximo a ler paga sem saber que está pagando. É o motivo declarado da trilha R-2 (ver `HISTORY.md`), e o objetivo é não precisar de uma R-3.
 
 Regra completa e formato em [`docs/README.md`](docs/README.md#os-dois-registros-e-por-que-são-dois).
 
@@ -27,7 +33,9 @@ Regra completa e formato em [`docs/README.md`](docs/README.md#os-dois-registros-
 docs/
 ├── README.md        # mapa, ciclo de vida do plano, convenção de fonte única
 ├── ESCOPO.md        # o que o app faz e não faz
-├── HISTORY.md       # decisões e entregas (cronológico inverso)
+├── HISTORY.md       # os 10 marcos mais recentes + decisões arquiteturais
+├── HISTORY-archive.md  # marcos além dos 10 — fila, só leitura
+├── ARMADILHAS.md    # erro diagnosticado, buscável por sintoma
 ├── DECISOES.md      # índice tabular das decisões dentro de cada plano — derivado
 ├── ROADMAP.md       # o que ainda falta
 ├── study/           # cadernos didáticos
@@ -36,6 +44,26 @@ docs/
 ```
 
 Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao diário dele → ao concluir, **move** para `implemented/` e ganha uma entrada em `HISTORY.md`. Plano abandonado vai para `archive/` **com o motivo** registrado no histórico.
+
+### Protocolo de leitura da documentação
+
+**Nenhum arquivo de `docs/` se lê na íntegra.** Os oito arquivos soltos de `docs/` somam **~330 KB / ~100k tokens**. Ler dois deles inteiros já é mais contexto do que a maior parte das sessões precisa — e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
+
+| Arquivo | ~tokens | Como consultar |
+|---|---|---|
+| `HISTORY-archive.md` | ~24k | `Grep` no nome do plano/fase. **Nunca** `Read` |
+| `ARMADILHAS.md` | ~23k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
+| `HISTORY.md` | ~17k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
+| `ESCOPO.md` | ~13k | `Grep` no pilar ou na operação |
+| `ROADMAP.md` | ~12k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
+| `DECISOES.md` | ~10k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
+| `README.md` | ~2k | único que cabe inteiro |
+
+**Como fazer certo, em ordem:** (1) `Grep -n` pelo termo → devolve linha e arquivo; (2) `Read` com `offset` = linha achada menos 5, `limit` 40–60; (3) se a seção continuar além, estenda o `limit`, não releia do zero. Um `Grep` com `-C 3` resolve a maioria das perguntas **sem nenhum `Read`**.
+
+**As três exceções que se leem inteiras:** este `CLAUDE.md`, `docs/README.md` e o plano ativo em que se está trabalhando. Mais nada.
+
+⚠️ **Isto vale também para você mesmo daqui a vinte turnos.** A tentação aparece como *"agora preciso do contexto completo"* — não precisa: a pergunta que motivou a leitura tem um termo, e o termo é grepável. Se realmente não houver termo, a pergunta ainda não está formada.
 
 ### Fonte única por assunto
 
@@ -51,8 +79,9 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | Convenção de comentário e docstring (TSDoc) | skill [`comments`](.claude/skills/comments/SKILL.md) |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow, motor restrito) | skill [`data`](.claude/skills/data/SKILL.md) |
 | IA local e de nuvem, ML, RAG | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
-| Peso/cache KV por modelo Ollama (por faixa de contexto) e ficha técnica dos modelos de nuvem opt-in, elegíveis, inviáveis, descartados | [`docs/reference/models/`](docs/reference/models/README.md) — a frota **instalada** continua dona deste arquivo |
-| Decisões, alternativas descartadas, armadilhas | [`docs/HISTORY.md`](docs/HISTORY.md) |
+| Frota Ollama instalada, peso/cache KV por faixa de contexto, ficha técnica dos modelos de nuvem opt-in, elegíveis, inviáveis, descartados | [`docs/reference/models/`](docs/reference/models/README.md) — **inclusive a frota instalada**, desde ago/2026 |
+| Decisões, alternativas descartadas, marcos entregues | [`docs/HISTORY.md`](docs/HISTORY.md) (10 mais recentes) + [`HISTORY-archive.md`](docs/HISTORY-archive.md) |
+| Armadilha diagnosticada — erro que já custou tempo uma vez | [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md) — busca **por sintoma**, não por data |
 | Índice tabular por decisão individual (trilha, sigla, título — sem narrativa) | [`docs/DECISOES.md`](docs/DECISOES.md) |
 | Pendências e gatilhos de revisão | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Fundamentos do Electron, anatomia, medições | [`docs/study/`](docs/study/README.md) |
@@ -78,13 +107,15 @@ Estas versões foram escolhidas deliberadamente, não por padrão do template. O
 | TypeScript | 5.9.3 | migração para 6 planejada, ver abaixo |
 | electron-builder | 26.x | empacotamento e instaladores |
 
-**Dentro do binário, sem pacote:** `node:sqlite` (SQLite 3.53.1 no Electron 42.8.0) guarda conversas e configurações de máquina em `app.getPath('userData')/crivo.db`, com escada de migração por `PRAGMA user_version`. Zero dependência npm, zero módulo nativo — e por isso **não** dispara o gatilho do `shamefullyHoist`.
+O que não é pacote npm comum, e a restrição que cada um impõe:
 
-**Instaladas na trilha do DuckDB (planos 18-A/18-B):** `@duckdb/node-api` — DuckDB via N-API, roda em `utilityProcess`, **nunca** no renderer; `apache-arrow` — monta e serializa Arrow em JS (o binding **não** exporta Arrow nativo, ver `docs/HISTORY.md` § Plano 18-B), usado tanto no worker quanto no renderer (`tableFromIPC` em `DatasetQueryPanel`).
-
-**Binário vendorizado, não pacote npm (plano 18-F):** `resources/duckdb-extensions/excel.duckdb_extension` — a extensão `excel`, core do DuckDB, obtida uma vez por `scripts/fetch-duckdb-excel-extension.mjs` e carregada por `LOAD` de caminho local (`enable_external_access = false` impede `INSTALL` em runtime); tamanho exato do binário é dono da skill [`data`](.claude/skills/data/SKILL.md). **Travada à versão exata de `@duckdb/node-api` que a gerou** — um `pnpm add @duckdb/node-api@<nova versão>` futuro não quebra `pnpm typecheck`/`pnpm check:fast` (nada que o compilador ou o teste enxergue num arquivo binário), só falharia em runtime; rerodar o script e recommitar o binário faz parte do bump de versão, ver [`ROADMAP § 2`](docs/ROADMAP.md).
-
-`unpdf` já foi instalado, no plano 17 passo 3 — extração da camada de texto de PDF. **Zero dependências** extra (confirmado pelo `pnpm add`), sem módulo nativo. O `peerDependency` `@napi-rs/canvas` serve só para **renderizar** página como imagem e **não entra** — o que mantém fechado o gatilho do `shamefullyHoist` até o DuckDB.
+| | Restrição que decide código |
+|---|---|
+| `node:sqlite` (SQLite 3.53.1) | dentro do binário do Electron, sem pacote. Conversas e config de máquina em `userData/crivo.db`, escada de migração por `PRAGMA user_version` |
+| `@duckdb/node-api` | roda em `utilityProcess`, **nunca** no renderer — skill [`data`](.claude/skills/data/SKILL.md) |
+| `apache-arrow` | o binding **não** exporta Arrow nativo: monta-se em JS, no worker e no renderer — skill [`ipc`](.claude/skills/ipc/SKILL.md) |
+| `resources/duckdb-extensions/excel.duckdb_extension` | binário vendorizado, **travado à versão exata de `@duckdb/node-api` que o gerou**. Um bump não quebra `typecheck` nem teste — só runtime: rerodar `scripts/fetch-duckdb-excel-extension.mjs` faz parte do bump ([`ROADMAP § 2`](docs/ROADMAP.md)) |
+| `unpdf` | zero dependências; o `peerDependency` `@napi-rs/canvas` **não entra** |
 
 ---
 
@@ -142,30 +173,15 @@ Add-MpPreference -ExclusionProcess "node.exe"
 | GPU | NVIDIA MX150, 2 GB VRAM, CUDA configurado (herança do mill.tools, que a reserva para o Whisper) — mas o app roda **CPU-only por decisão testada, não por ausência de hardware**: `num_gpu` forçado no `gemma3:1b` foi medido e descartado para geração, penalidade já presente em contexto comum (não só extremo), sem estouro de VRAM — números e protocolo em [`docs/reference/models/ollama-models-gpu-analysis.md`](docs/reference/models/ollama-models-gpu-analysis.md) |
 | Ollama | 0.32.14 (atualizado fora do app, 18/08/2026 — era 0.32.6), servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
 
-Frota de **13 entradas** no `/api/tags` em 18/08/2026, das quais 5 são variantes `-custom` por Modelfile, com os mesmos pesos e teto das originais. As 8 distintas:
+**Frota Ollama: 8 modelos distintos** (13 entradas no `/api/tags`, 5 delas variantes `-custom`). O que decide escolha, em uma linha cada: `gemma3:4b` é o **default** e o único com visão · `gemma3:1b` é o fallback de baixa RAM · `qwen2.5-coder:3b` é o candidato a default do NL→SQL (único que junta código e folga de RAM) · `qwen3:4b` é o único com `thinking`, e o cache mais caro da frota.
 
-| Modelo | Tamanho | Teto treinado | KV/token | `capabilities` | Papel |
-|---|---|---|---|---|---|
-| `gemma3:4b` | 3,3 GB | 131.072 | ~4,3 KB | `completion`, `vision` | **default** — janela deslizante de 1024, o único com visão |
-| `gemma3:1b` | 815 MB | 32.768 | ~1 KB | `completion` | fallback de baixa RAM, fraco em síntese |
-| `qwen2.5-coder:3b` | 1,9 GB | 32.768 | 36 KB | `completion`, `tools`, `insert` | **o único que combina especialização em código com folga de RAM** — candidato a default do NL→SQL |
-| `phi4-mini` | 2,5 GB | 131.072 | 128 KB | `completion`, **`tools`** | pesos leves e cache caro — a 32k custa quase o mesmo que o `qwen2.5:7b`, que pesa o dobro |
-| `qwen3:4b` | 2,5 GB | 262.144 | **152,6 KB** | `completion`, `tools`, `thinking` | instalado 18/08/2026 (`ollama pull`, fora do app) — **agora o cache mais caro da frota**, e o maior teto treinado; a 32k já soma ~7,6 GB residentes, medido: 3,5 GB reais contra 3,43 GB previstos pela fórmula a 4.096. Único com raciocínio explícito — o app hoje descarta a fase com `think: false` (ver `HISTORY.md` § Armadilhas) |
-| `qwen2.5:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, **`tools`** | qualidade máxima de uso geral |
-| `qwen2.5-coder:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, `tools`, `insert` | teto de qualidade em código; escolha deliberada, não default |
-| `nomic-embed-text` | 274 MB | 2.048 | — | `embedding` | 768 dims — o embedder da D9.5 já está instalado |
+📖 **Tabela completa** — peso, teto treinado, KV/token, `capabilities`, papel, desinstalados e o porquê de o teto de contexto ser da máquina: [`docs/reference/models/README.md`](docs/reference/models/README.md#frota-instalada). O dono mudou de lugar em ago/2026 justamente porque este arquivo é lido em **toda** sessão, inclusive nas que não tocam IA. **Ao instalar ou remover um modelo, é lá que se atualiza.**
 
-**Desinstalados em 10/08/2026**, medidos antes e registrados para não serem reinstalados por impulso: `mistral:7b` (dominado — mesmo porte e teto do `qwen2.5:7b`, sem especialização, com o dobro do cache) e `llama3.1:8b` (o teto de 131.072 que o tornava interessante pede 16 GB de cache; sem ele, é um `qwen2.5:7b` mais pesado). Motivos completos na D15.8 do [`plan/active/15`](docs/plan/implemented/15-orcamento-de-contexto-e-modelo.md).
+⚠️ **Ao sondar o Ollama, um modelo residente por vez.** `keep_alive` de no máximo 1, e descarregar explicitamente com `keep_alive: 0` entre medidas — o default é 5 minutos, então modelos se acumulam em silêncio ao longo de sondas sucessivas, e dois residentes nesta máquina é *swap*. `ollama ps` vazio antes de começar e ao terminar. `/api/tags` e `/api/show` são metadados e **não** carregam nada, então catálogo é sempre seguro; o que exige o protocolo é inferência.
 
-⚠️ **O teto de contexto não é do Ollama nem do modelo — é da máquina, e o custo depende da arquitetura de atenção.** O `gemma3:4b` declara 131.072; o default de 4k é do Ollama (`< 24 GiB VRAM`). Medido em ago/2026 ao planejar a fase 15: subir `num_ctx` de 4.096 para **32.768 custa 120 MB** (2,91 → 3,03 GB residentes) e não muda o tempo de carga.
+⚠️ **`capabilities` vem do `/api/show`, nunca do `/api/tags`** — o `/api/tags` traz o campo e omite `vision`. Carregar o `gemma3:4b` do disco frio custa **~50 s**, o preço real de trocar de modelo.
 
-**Essa medida vale para o `gemma3:4b` e não se generaliza** — correção de 10/08/2026, feita ao instalar quatro modelos novos. Ele é o único da frota com **janela deslizante** (`sliding_window: 1024`). Medido depois, na mesma sessão: o Ollama conta o crescimento do cache como se **uma única camada, não as ~6 que a proporção 5:1 sugeriria**, escalasse com o `num_ctx` — o `gemma3:4b` mede **~4,3 KB por token**, não os ~24 KB da estimativa por proporção (correção que a tabela acima já usa). Um modelo sem janela cresce em todas as camadas: o `phi4-mini` custa **128 KB por token** contra os ~4,3 KB do `gemma3:4b` — **~30×** — e, no teto de 131.072 que ele próprio declara, pediria **16 GB só de cache**, sete vezes o próprio peso de 2,5 GB. **Tamanho de modelo não prediz custo de contexto**, e nenhuma coluna do `ollama list` deixa isso visível. Reservar a janela continua barato *comparado a enchê-la* (o prefill segue dominante, e uma janela deslizante custa **30×** por invalidar o cache de prefixo — coincidência de valor com o ×30 acima, não a mesma medida), mas *"`num_ctx` não é um botão de consumo de RAM"* era uma frase sobre uma arquitetura, não sobre todas. A fórmula (derivável do `/api/show`, sem carregar modelo) e o orçamento por modelo estão em [`plan/active/15`](docs/plan/implemented/15-orcamento-de-contexto-e-modelo.md); o que decorre disso, em [`docs/HISTORY.md`](docs/HISTORY.md). **Tabela de peso/KV por faixa de contexto, por modelo da frota:** [`docs/reference/models/ollama-qualified.md`](docs/reference/models/ollama-qualified.md).
-
-⚠️ **Ao sondar o Ollama, um modelo residente por vez.** `keep_alive` de no máximo 1, e descarregar explicitamente com `keep_alive: 0` entre medidas — o default é 5 minutos, então modelos se acumulam em silêncio ao longo de sondas sucessivas, e dois residentes nesta máquina é *swap*. `ollama ps` vazio antes de começar e ao terminar. `/api/tags` e `/api/show` são metadados e **não** carregam nada (confirmado com 14 chamadas seguidas), então catálogo é sempre seguro; o que exige o protocolo é inferência.
-
-⚠️ **As `capabilities` da tabela acima vêm do `/api/show`.** O `/api/tags` também traz o campo e **omite `vision`** — armadilha medida e registrada no [`HISTORY.md`](docs/HISTORY.md). Carregar o `gemma3:4b` do disco frio custa **~50 s**, o que é o preço real de trocar de modelo.
-
-Estes números decidiram o default de `num_thread`, o modelo padrão e a recusa de *tool calling* (ver [`docs/HISTORY.md`](docs/HISTORY.md)). **Ao trocar de máquina, refazer a medição antes de reaproveitar qualquer uma dessas decisões.**
+**Ao trocar de máquina, refazer a medição** antes de reaproveitar qualquer decisão que dependa destes números (default de `num_thread`, modelo padrão, recusa de *tool calling*).
 
 ### Pendente
 
@@ -258,7 +274,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo, com o que as fases 03–07 descobriram, é dono de [`docs/HISTORY.md`](docs/HISTORY.md) § Armadilhas e de [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo, com o que as fases 03–07 descobriram, é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md) e de [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|

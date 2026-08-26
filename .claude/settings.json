@@ -6,8 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [".claude/hooks/no_ai_coauthor.mjs"],
+            "command": "node .claude/hooks/no_ai_coauthor.mjs",
             "timeout": 10
           }
         ]
@@ -19,20 +18,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": [".claude/hooks/format_fix.mjs"],
+            "command": "node .claude/hooks/format_fix.mjs",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "node",
-            "args": [".claude/hooks/guard.mjs"],
+            "command": "node .claude/hooks/guard.mjs",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "node",
-            "args": [".claude/hooks/test_related.mjs"],
+            "command": "node .claude/hooks/test_related.mjs",
             "timeout": 120
           }
         ]

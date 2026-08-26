@@ -39,7 +39,7 @@ Nível 5 usa `electron-playwright-helpers`: `findLatestBuild('dist')` + `parseEl
 
 ## Limites de ambiente de teste — cinco casos, provados caros
 
-Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Quando o comportamento depende de tempo real de chegada, layout ou motor de CSS, jsdom não prova nada — só a verificação ao vivo prova. Cada um já citável por título em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § Armadilhas:
+Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Quando o comportamento depende de tempo real de chegada, layout ou motor de CSS, jsdom não prova nada — só a verificação ao vivo prova. Cada um já citável por título em [`docs/ARMADILHAS.md`](../../../docs/ARMADILHAS.md):
 
 - `scroll` é assíncrono — jsdom não tem cadência de token nem layout, nenhum teste de nível 2 poderia ter pego. § *O evento `scroll` é assíncrono*.
 - `<dialog>` não é implementado — `HTMLDialogElement` é subclasse vazia. § *O jsdom não implementa `<dialog>`*.
@@ -61,7 +61,7 @@ Os handlers de `conversation:*` e `settings:*` recebem o banco por parâmetro, e
 - **`electron` importado por valor quebra em teste, mesmo só como default de parâmetro** — handler testável nunca importa o pacote real; só o composition root (`register-all.ts`) importa. § *Import de `electron` no arquivo do handler quebra em teste Node puro*.
 - **Glob de `coverage.include` sem `/` inicial não é ancorado à raiz** — mesmo segmento de nome compartilhado (`shared/`) captura a pasta errada. § *Glob de `coverage.include` sem `/` inicial*.
 
-Todas em [`docs/HISTORY.md`](../../../docs/HISTORY.md) § Armadilhas.
+Todas em [`docs/ARMADILHAS.md`](../../../docs/ARMADILHAS.md).
 
 ## O mock de `window.api` é derivado do tipo do contrato
 

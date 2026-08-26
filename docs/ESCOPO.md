@@ -66,7 +66,7 @@ Toda pergunta dirigida a um arquivo **de dado tabular** cai em um de dois verbos
 
 O aplicativo produz os dois, e **o roteamento entre eles é decisão do modelo, validada pelo app**: uma proposta é uma união discriminada (`kind: 'query'` ou `kind: 'steps'`), nunca texto livre a interpretar.
 
-> 🔍 **A pergunta que parece de consulta mas é de tratamento.** *"Liste os tipos de produto e sua quantidade"* sobre um arquivo em que `quantidade` mistura `2`, `3` e `"dois"` **não tem resposta em SQL** — antes de agrupar é preciso converter a coluna, e isso é um passo. Uma consulta única não consegue dizer "aliás, esta coluna precisa de limpeza"; ela devolve uma tabela vazia, sem erro nenhum. É o modo de falha mais caro da ferramenta, e o motivo de os dois verbos existirem separados. A anatomia do caso está no [`HISTORY.md`](HISTORY.md) § Armadilhas.
+> 🔍 **A pergunta que parece de consulta mas é de tratamento.** *"Liste os tipos de produto e sua quantidade"* sobre um arquivo em que `quantidade` mistura `2`, `3` e `"dois"` **não tem resposta em SQL** — antes de agrupar é preciso converter a coluna, e isso é um passo. Uma consulta única não consegue dizer "aliás, esta coluna precisa de limpeza"; ela devolve uma tabela vazia, sem erro nenhum. É o modo de falha mais caro da ferramenta, e o motivo de os dois verbos existirem separados. A anatomia do caso está no [`ARMADILHAS.md`](ARMADILHAS.md).
 
 ---
 
@@ -145,7 +145,7 @@ O modelo precisa saber o bastante para ser útil e o mínimo para ser seguro. S�
 
 O nível 2 é o `SUMMARIZE` do DuckDB, e é o que produz uma avaliação de qualidade digna do nome. As regras:
 
-- **Top-N só para coluna de baixa cardinalidade.** Os cinco valores mais frequentes de `cidade` são estatística; os cinco mais frequentes de `cpf` são vazamento com outro nome. O limiar é relativo à contagem de linhas, e a decisão mora em `core/`, nunca ao lado de um chamador — ver [`HISTORY.md`](HISTORY.md) § Armadilhas.
+- **Top-N só para coluna de baixa cardinalidade.** Os cinco valores mais frequentes de `cidade` são estatística; os cinco mais frequentes de `cpf` são vazamento com outro nome. O limiar é relativo à contagem de linhas, e a decisão mora em `core/`, nunca ao lado de um chamador — ver [`ARMADILHAS.md`](ARMADILHAS.md).
 - **O nível 3 é opt-in por anexo, em qualquer provedor.** Local (Ollama, na sua máquina) libera a um clique; nuvem pede o mesmo opt-in, sem bloqueio adicional — quem decide o que sai da máquina, anexo por anexo, é o usuário (revisão de escopo, 5ª, ago/2026).
 - **Um cartão de dados só.** `core/ai/dataCard.ts` produz um objeto, consumido por todos os caminhos — conversa, consulta, passos, busca. Contexto montado por feature é como se produzem duas qualidades de resposta sobre o mesmo arquivo.
 
@@ -173,7 +173,7 @@ Três capacidades — busca web, documentação e raciocínio visível — chega
 |---|---|---|
 | **Busca web** | O modelo pede uma URL; o app busca e extrai o texto principal como contexto da resposta | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
 | **Documentação (MCP)** | Um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
-| **Raciocínio visível** | Alternável por turno; o texto de raciocínio do modelo aparece separado da resposta final, recolhível | Ainda não construído — hoje o app manda `think: false` e descarta a fase de raciocínio (ago/2026, ver `HISTORY.md` § Armadilhas); a frota já tem um modelo que declara a capacidade (`qwen3:4b`, ver [`CLAUDE.md`](../CLAUDE.md)), o que faltava nunca foi o modelo |
+| **Raciocínio visível** | Alternável por turno; o texto de raciocínio do modelo aparece separado da resposta final, recolhível | Ainda não construído — hoje o app manda `think: false` e descarta a fase de raciocínio (ago/2026, ver [`ARMADILHAS.md`](ARMADILHAS.md)); a frota já tem um modelo que declara a capacidade (`qwen3:4b`, ver [`CLAUDE.md`](../CLAUDE.md)), o que faltava nunca foi o modelo |
 
 ⚠️ **Busca web, MCP e raciocínio pedem `tools`; anexo de imagem pede `vision`. Nenhum modelo desta máquina declara os dois** (ver [`CLAUDE.md`](../CLAUDE.md)) — então, hoje, usar estas ferramentas e anexar imagem são caminhos mutuamente exclusivos na mesma conversa. Trocar de modelo no meio dela resolve, ao custo do descarregamento já registrado acima.
 
