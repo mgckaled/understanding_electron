@@ -251,10 +251,13 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-06 | 1–5 | concluída | Medição real: 345,9 MB / 5.000.000 linhas em 3,23s (~107 MB/s) — ver `study/04-diario-de-bordo.md` § Fase 06. Validação interativa do usuário confirmou que o app funciona (escolher arquivo → resumo aparece), mas o escaneamento foi rápido demais (poucos segundos) para observar arrastar/redimensionar a janela ou clicar em cancelar com segurança ao vivo; a garantia de que o cancelamento para a leitura de disco vem da medição isolada (Caso 6) e do teste automatizado `scanDataset > removes the job entry on finish`, não de observação com Gerenciador de Tarefas durante um escaneamento real — aceito como evidência suficiente por decisão do usuário. Duas correções reais encontradas e commitadas nesta sessão: `stream.destroy()` ausente no cancelamento (Caso 6) e preload quebrando em silêncio por importar valor de `zod` via `shared/ipc.ts` (Caso 7) — a segunda derrubava a UI inteira sem nenhum erro visível fora do DevTools. `pnpm check:fast` segue vermelho pela falha pré-existente de `guard.mjs` (ROADMAP §4); usado o workaround `pnpm eslint <arquivos>` por fase, conforme já registrado ali. |
+| ago/2026 | todos | **concluído** | Primeira feature vertical, atravessando as seis camadas de ponta a ponta — é ela que provou o contrato IPC, o registro de jobs canceláveis e o nível 3 de teste funcionando juntos. |
 
-> **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
+**O que este plano deixou fora dele:**
 
----
-
+| Achado | Dono |
+|---|---|
+| Doc do `readline` diz que erros do stream não são propagados — na prática o `for await` lança | [`ARMADILHAS.md`](../../ARMADILHAS.md) § Arquivadas |
+| Handler é função exportada, e é isso que cria o nível 3 | skill [`testing`](../../../.claude/skills/testing/SKILL.md) |
+| Decisões D6.x | [`DECISOES.md`](../../DECISOES.md) |
 **Anterior:** [05 — Design tokens](05-design-tokens.md) · **Índice:** [README](../active/README.md) · **Próximo:** [07 — E2E e empacotamento](07-e2e-e-empacotamento.md)

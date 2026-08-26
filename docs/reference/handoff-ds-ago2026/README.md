@@ -41,7 +41,7 @@ O design system **envelopa**. A trilha DS não constrói feature nenhuma — ela
 
 Duas consequências que dissolvem falsos impasses:
 
-- O `"ABRIR ARQUIVO / Escolher arquivo"` da sidebar **não é pendência do DS-3**. Existe hoje, logo ganha o envelope; quem o remove é o [plano 16](../../plan/active/16-anexo-mecanismo-e-dataset.md), quando o clipe chegar. Não há ordem a decidir entre os dois.
+- O `"ABRIR ARQUIVO / Escolher arquivo"` da sidebar **não é pendência do DS-3**. Existe hoje, logo ganha o envelope; quem o remove é o [plano 16](../../plan/implemented/16-anexo-mecanismo-e-dataset.md), quando o clipe chegar. Não há ordem a decidir entre os dois.
 - O cartão de anexo **não é pendência do DS-3**. É o exemplo de como o plano 16 vai sair.
 
 ## A distância até o alvo, item a item
@@ -86,6 +86,6 @@ Quem abrir o `prototipo-interacao.html` vai vê-las e não deve implementá-las:
 1. **O alternador manual Claro/Escuro** em Configurações. O tema segue o sistema operacional, sem alternador — decisão mantida em ago/2026, e o `@theme inline` faz o tema claro propagar sozinho.
 2. **Threads de CPU em três botões (2/4/6)**. Esta máquina tem 8 threads (i5-8265U); a lista tornaria o máximo inalcançável. O controle contínuo fica.
 
-Também aparecem no protótipo, mas **têm outro dono**: credenciais de nuvem (Gemini/GLM) são a fatia 3 do [plano 09](../../plan/active/09-camada-de-ia.md), e o cartão de anexo é o [plano 16](../../plan/active/16-anexo-mecanismo-e-dataset.md).
+Também aparecem no protótipo, mas **têm outro dono**: credenciais de nuvem (Gemini/GLM) são a fatia 3 do [plano 09](../../plan/active/09-camada-de-ia.md), e o cartão de anexo é o [plano 16](../../plan/implemented/16-anexo-mecanismo-e-dataset.md).
 
 ⚠️ **Uma terceira estava nesta lista e saiu, em 12/08/2026.** A busca de conversas foi mandada para o gatilho FTS5 do [`ROADMAP § 2`](../../ROADMAP.md), e isso confundia duas coisas: o gatilho é sobre **busca no texto das mensagens**, que precisa de índice; o alvo mostra um campo que filtra **títulos**, e a lista de títulos já está em memória. É filtro no cliente, entra no DS-3, e não toca o gatilho.

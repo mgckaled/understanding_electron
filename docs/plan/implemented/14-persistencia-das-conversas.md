@@ -232,10 +232,15 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 09/08/2026 | 1–6 | **plano concluído** | Uma sessão, seis commits. **A D13.2 se sustentou:** o passo 3 tocou `conversations.ts`, `conversationsContext.ts` e `useConversationChat.ts` — três hooks, **zero componentes** —, e os 33 testes de nível 2 do plano 13 passaram só com o provider acrescentado ao envoltório. O que fez isso funcionar não estava escrito no plano e subiu para o `HISTORY`: `Conversation` virou a **linha** e o composto com `messages` mudou de nome no renderer, então `ConversationList` recebe um subtipo e não muda uma linha. Três achados também subiram: o mock de armazenamento delegando aos handlers reais, o botão escondido por CSS que o jsdom não vê, e o campo do modal semeado antes da leitura chegar. `check:fast` 207 testes em ~15–19 s; `test:e2e` 5/5, com o novo provado por sabotagem (`openDatabase(':memory:')` no composition root → vermelho). Fica aberto: os outros três specs de e2e continuam lançando sem `--user-data-dir` e portanto criam `crivo.db` no `%APPDATA%` real — inofensivo hoje porque nenhum deles escreve conversa, e uma armadilha armada para quem fizer o primeiro que escreva. |
+| ago/2026 | todos | **concluído** | `node:sqlite` dentro do binário, sem pacote: zero dependência npm, zero módulo nativo. TanStack Query adotado aqui, e **a promessa se cumpriu**: três hooks tocados, **zero componentes**. |
 
-> **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
+**O que este plano deixou fora dele:**
 
----
-
+| Achado | Dono |
+|---|---|
+| Persistência em `node:sqlite`, e o relacional descartado | [`HISTORY.md`](../../HISTORY.md) |
+| Um hook público sobrevive à troca de fonte quando o TIPO tem nome próprio | [`HISTORY.md`](../../HISTORY.md) |
+| O mock de armazenamento delega aos handlers reais, não a uma fake escrita à mão | skill [`testing`](../../../.claude/skills/testing/SKILL.md) |
+| Um controle que copia o valor no `mount` congela o default | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Decisões D14.1–D14.7 | [`DECISOES.md`](../../DECISOES.md) |
 **Anterior:** [13 — Casca do aplicativo](13-casca-do-aplicativo.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)

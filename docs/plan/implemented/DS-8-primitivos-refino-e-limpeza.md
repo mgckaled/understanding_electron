@@ -85,6 +85,16 @@ Nasceu de um relatório externo (`notes/reports/r_primitive-components.md`), ava
 
 ## Diário de execução
 
-| Data | Passo(s) | Estado | Observação |
+| Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
-| 24/08/2026 | 1-8 | **concluído** — os 8 passos, um commit cada, mais um commit de correção pós-verificação ao vivo | Sessão única, do parecer sobre o relatório até o fechamento. Parecer escrito primeiro e enviado ao usuário antes de qualquer código, por pedido explícito — quatro skills carregadas (`design-system`, `architecture`, `testing`, `comments`), Context7 usado para confirmar `ref` como prop comum no React 19 (sem `forwardRef`) e o padrão `addEventListener`/cleanup em `useEffect`. Verificação de consumidor de `Toolbar`/`Panel` feita em duas rodadas — grep simples primeiro, depois `git log --follow` + grep case-insensitive no repositório inteiro (`descarte/`, `notes/`, `.claude/`, `e2e/`) a pedido do usuário, antes de qualquer `git rm`. Achado que não estava no relatório nem no parecer inicial: `Panel` também tem zero consumidores (só `Toolbar` tinha sido citado pelo relatório) — achado ao verificar `Panel` com o mesmo rigor, não assumido por analogia. A verificação ao vivo (Playwright temporário contra `pnpm build` + `_electron`) achou uma regressão real antes do fechamento: o `flex` do `Dialog` sem escopo `[open]` derrotava o UA stylesheet e fazia um diálogo fechado interceptar cliques — corrigido, reconstruído, reverificado, `check:fast` rodado de novo (707 testes) antes do commit final. Screenshot manual (`page.screenshot`) confirmou visualmente o scroll do `Dialog` — só no tema escuro, que era o tema salvo da máquina; o tema claro não foi verificado ao vivo, e nada neste plano toca cor, então o risco fica baixo, mas não checado é diferente de checado. |
+| ago/2026 | — | `Toolbar` e `Panel` **apagados** por ficarem sem nenhum chamador — sobreviveram duas migrações inteiras sem que ninguém remedisse. Contrato de a11y fechado nos que ficam. | concluído |
+| ago/2026 | verificação ao vivo | **`check:fast` inteiro ficou verde com o defeito presente** — um `flex` sem escopo no `dialog` derrotava a regra de esconder do UA stylesheet, e só o Playwright clicando no botão atrás do diálogo fechado expôs. | corrigido |
+
+**O que este plano deixou fora dele:**
+
+| Achado | Dono |
+|---|---|
+| Um `flex` sem escopo no `dialog` derrota `dialog:not([open])` do UA stylesheet | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Primitivo nasce com o **segundo** chamador, não pela contagem | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| As medidas one-off de `Switch`/`Slider`/`Dialog`, e por que nenhuma virou token | skill [`design-system`](../../../.claude/skills/design-system/reference.md) |
+| Decisões DS8.1–DS8.5 | [`DECISOES.md`](../../DECISOES.md) |

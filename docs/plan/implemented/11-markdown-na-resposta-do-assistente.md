@@ -305,10 +305,13 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-08 | 1–6 + arquivamento | **concluída** | Passos 1–5 implementados; `pnpm check:fast` verde (128 testes) e `pnpm build` limpo. **Bundle** (número do passo 1): renderer JS **573,47 → 951,35 kB**, CSS **11,99 → 15,42 kB**, módulos 52 → 309 — `react-markdown` + `remark-gfm` e o ecossistema `unified`/`micromark`/`mdast`/`hast` somam ~378 kB, custo assumido pela D11.2 (segurança por não gerar HTML). **ESM:** o `react-markdown` (`type: module`) processou sob o Vitest 4 jsdom **sem** `server.deps.inline` — o plano previu que poderia precisar; não precisou, e override desnecessário no Vitest é o tipo de config que ninguém depois ousa remover. Rótulo de linguagem do bloco: renderizado no `pre` **fora** do `<pre>` (lido de `node.children[0].properties.className`) para não entrar na seleção de cópia. Passo 6 **conferido pelo usuário** (capturas de tela): resposta estruturada com títulos, listas aninhadas, negrito e **tabela GFM**; bloco de código monoespaçado com o rótulo de linguagem ("python") no topo. Frame não medido formalmente, mas o streaming rodou fluido — o limitador da D11.4 fica adiado até haver número que o peça. Conclusão nesta sessão: `ROADMAP §2` ganhou 2 gatilhos (realce fundido na linha do `--syntax-*`; subida para `shared/ui/` em linha nova), plano movido para `implemented/`, marco criado. As armadilhas de imagem/CSP e link mudo **não** foram registradas — não foram testadas (nenhuma resposta trouxe imagem remota ou link). |
+| ago/2026 | todos | **concluído** | Markdown na resposta do assistente, com parser próprio descartado em favor de `react-markdown`. `urlTransform` zera todo `src` de imagem sob o CSP `img-src 'self' data:` (D11.2) — nenhuma imagem markdown renderiza hoje. |
 
-> **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
+**O que este plano deixou fora dele:**
 
----
-
+| Achado | Dono |
+|---|---|
+| Por que o parser próprio foi descartado | [`HISTORY.md`](../../HISTORY.md) |
+| O critério do quinto primitivo (mais de um chamador, não a contagem) | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| Decisões D11.1–D11.2 | [`DECISOES.md`](../../DECISOES.md) |
 **Anterior:** [10 — Cor: contraste medido e tema claro](10-cor-contraste-e-tema-claro.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)

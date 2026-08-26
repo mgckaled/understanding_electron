@@ -292,10 +292,18 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-08 | 1–5 + docs + arquivamento | **concluída** | Passos 1–5 implementados; `pnpm check:fast` e `pnpm build` verdes, 20/20 do contraste. Achado do Passo 1: o teste nasceu com **13** falhas, não 9 — os `PAIRS` usam os nomes-alvo (`-text`, `on-danger`) que ainda não existiam, então 3 falhas medidas + 10 de token inexistente; ambos vermelho legítimo. Divergência do plano: a ilustração da D10.4 mostra `['warn-text','surface','text']`, mas o registro real (e o bloco de código do Passo 1) usa a razão mínima, `['warn-text','surface',4.5]` — o skill `design-system` segue o código. Bugs de ambiente pegos pelo `test_related` antes do vermelho pretendido: `import.meta.url` é `http:` sob jsdom (troquei por `process.cwd()`), e colisão do nome `resolve` com o de `node:path`. Botão primário: apliquei `--blue-9: #0d5bd9` (padrão do plano, 5,52:1); a alternativa `#4c8dff` + `--gray-1` (6,11:1) fica registrada para a decisão estética no item 2 da validação visual. Docs feitas: skill `design-system` (D10.1 + registro de pares, e correção da regra de espelhamento morta), `ROADMAP §2` (gatilho `--syntax-*`), e a **armadilha escalada ao `HISTORY.md` nesta sessão**. Validação visual **conferida pelo usuário**, que aceitou a prova automática (o teste mede o contraste real dos tokens enviados) como suficiente; `--blue-9: #0d5bd9` mantido como cor final do botão, a alternativa não foi adotada. Plano movido para `implemented/` e marco criado nesta mesma sessão. `--color-bg` escuro inalterado — invariante com `src/main/index.ts:27` (`#16171a`) mantido. |
+| ago/2026 | todos | **concluído** | Escopo deliberadamente estreito: **cor**. Os valores da fase 05 nunca tinham sido medidos — nove pares reprovavam AA. Nasce `tokens.contrast.test.ts`, que resolve cada `var()` até o hex e mede nos dois temas. |
 
-> **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
+| 2026-08-08 | 1–5 | **concluída** | O teste nasceu com **13** falhas, não as 9 previstas — 3 medidas de contraste mais 10 de token que ainda não existia (os `PAIRS` já usavam os nomes-alvo `-text`/`on-danger`). **Ambos vermelho legítimo**, e a diferença entre os dois tipos é o que diz se o teste está medindo ou só tropeçando. **Alternativa de cor recusada, registrada com o número:** `#4c8dff` + `--gray-1` batia 6,11:1, melhor que os 5,52:1 do `--blue-9: #0d5bd9` escolhido — a decisão foi estética e ficou com o usuário, não com a régua. |
 
+**O que este plano deixou fora dele:**
+
+| Achado | Dono |
+|---|---|
+| Cor de estado tem duas formas: sólido e texto são dois tokens (D10.1) | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| O tema claro mapeia por **intenção**, não por espelhamento da escala (D10.3) | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| `import.meta.url` é `http:` sob jsdom — caminho derivado dele aponta para lugar nenhum | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Decisões D10.1–D10.3 | [`DECISOES.md`](../../DECISOES.md) |
 ---
 
 **Índice:** [README](../active/README.md) · **Próximo:** [11 — Markdown na resposta do assistente](11-markdown-na-resposta-do-assistente.md)

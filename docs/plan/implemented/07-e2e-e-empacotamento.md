@@ -189,10 +189,13 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 2026-08-07 | 1–5 | concluída | Playwright 1.62.1 não baixa browsers no install (sem postinstall; `_electron.launch` usa o Electron do projeto) — nada a ajustar em `allowBuilds`. `findLatestBuild('dist')` funcionou sem fallback: `win-unpacked` contém o token `win`. Achado sério no passo 3: `app.asar` empacotava `.claude/settings.local.json` (chave de API pessoal do MCP Context7) junto com `coverage/`, `docs/`, `e2e/`, `scripts/`, `test/`, `test-results/`, `playwright-report/` e três configs de teste — corrigido em `electron-builder.yml`, reconferido com `@electron/asar list` (87 entradas a menos). Ciclo vermelho→verde do smoke test provado sabotando e revertendo `files`. Nomes de arquivo em `e2e/dev/` copiados em português direto do texto do plano — corrigido para inglês (`window`, `security-boundary`, `open-dataset`), recaída na mesma armadilha da fase 03. `pnpm check:fast` segue vermelho pela falha pré-existente de `guard.mjs` (ROADMAP §4, não desta fase); `test:e2e` (15,4s) e `test:e2e:packaged` verdes, ambos abaixo do limite. Executável de `dist/win-unpacked/` validado pelo usuário: abre e a feature funciona contra arquivo real. |
+| ago/2026 | todos | **concluído** | Níveis 4 e 5 nascem aqui, com o smoke test **provado por sabotagem** antes de ser confiável: quebrar o `files` do `electron-builder.yml`, ver falhar, reverter, ver passar. |
 
-> **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
+**O que este plano deixou fora dele:**
 
----
-
+| Achado | Dono |
+|---|---|
+| `electron-builder` empacota do disco, não do que o git rastreia — verifique com `asar list` | skill [`testing`](../../../.claude/skills/testing/SKILL.md) + [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Como o Playwright dirige o Electron, e os dois contextos de `evaluate` | skill [`testing`](../../../.claude/skills/testing/SKILL.md) |
+| Decisões D7.x | [`DECISOES.md`](../../DECISOES.md) |
 **Anterior:** [06 — Primeira feature vertical](06-primeira-feature.md) · **Índice:** [README](../active/README.md) · **Próximo:** [08 — Automação e registro](08-automacao-e-registro.md)

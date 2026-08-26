@@ -246,10 +246,14 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 9 ago 2026 | 1–6 | **concluído** | Plano inteiro numa sessão. `check:fast` verde (172 testes, 24 arquivos), `test:e2e` 4/4 em cada passo. Quatro achados subiram para o [`HISTORY.md`](../../HISTORY.md) na mesma sessão: a corrida do listener de `scroll` na ancoragem, o `<dialog>` ausente do jsdom, a emulação de `prefers-color-scheme` do Playwright, e o `core.autocrlf` sem `.gitattributes`. Três desvios do plano, todos deliberados: **(a)** *Nova conversa* entrou no passo 4, não no 5 — o aceite do 4 é "criar duas conversas e alternar", e sem o botão não há como chegar à segunda; **(b)** o composer ganhou Enter-para-enviar, além da letra do plano, porque um composer em que Enter não faz nada é defeito achado no primeiro minuto; **(c)** o `.gitattributes` foi feito fora do plano, em commit isolado, a pedido — 485 avisos de lint que não eram do repositório. O ponto aberto da D13.8 fechou por medição: Chromium 148.0.7778.280, `closedBy` no IDL, reflete `"any"` — nenhum tratamento manual de clique no `::backdrop`. |
+| ago/2026 | todos | **concluído** | A casca conversacional: `app/` nasce como terceira pasta do renderer, sem domínio, e **nunca importa de `features/`** (D13.1). `Dialog` sobre o `<dialog>` nativo (D13.8) — configuração é modal, não rota, para uma resposta em fluxo continuar chegando atrás. |
 
-> **Escalonamento.** Se uma observação aqui virar decisão que vale além desta fase — armadilha nova, alternativa descartada, número medido — ela sobe **na mesma sessão** para [`docs/HISTORY.md`](../../HISTORY.md). Observação que fica só aqui morre quando a fase for arquivada.
+**O que este plano deixou fora dele:**
 
----
-
+| Achado | Dono |
+|---|---|
+| `app/` não importa de `features/`; slot é recusa a fixar, não ponto de extensão | skill [`architecture`](../../../.claude/skills/architecture/SKILL.md) |
+| As duas densidades — chrome e leitura (D13.6) | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| `eslint-plugin-react` ainda não conhece `closedby` | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| Decisões D13.1–D13.9 | [`DECISOES.md`](../../DECISOES.md) |
 **Anterior:** [12 — Realce de sintaxe](../implemented/12-realce-de-sintaxe.md) · **Índice:** [README](../active/README.md) · **Camada de IA:** [09 — Camada de IA e ML](../active/09-camada-de-ia.md)

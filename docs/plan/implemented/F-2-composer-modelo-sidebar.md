@@ -97,7 +97,16 @@ O advisor esteve indisponível ("temporarily overloaded") nas duas tentativas fe
 
 ## Diário de execução
 
-| Data | Sessão | O que foi feito | Onde parei |
+| Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 18/08/2026 | 1 | Plano escrito: leitura do rascunho, 3 agentes de exploração em paralelo (composer/anexo, seletor de modelo/capabilities, sidebar/skills), validação da lista de capabilities do Ollama via web search contra o código-fonte, 4 perguntas de desambiguação respondidas pelo usuário (siglas, "memória", ações do rail, registro do gap de "Código"), advisor indisponível (decisão: validar só no fim). Execução dos passos 1-7 na mesma sessão, cada um com `check:fast` verde e commit próprio: primitivo `Switch`; seção Ferramentas no `AttachButton`; primitivo `Slider` (com `onChangeCommitted`, achado no caminho); `ContextControl` com o slider (achado: `<datalist>`/`<option>` vazava `role="option"` — trocado por posicionamento percentual; `ModelSelector.tsx` dividido em `ContextControl.tsx`+`modelFormat.ts` pela régua de tamanho); esquema de sigla+ícone das capabilities (`capabilities.ts`+`CapabilityChip.tsx`, separados pelo `react-refresh`); cards de 2 linhas + separador Locais/Nuvem; rail retraído da sidebar (`collapsedRail`, `NewConversationButton` ganhou `compact`, `App.test.tsx` novo). Linha do gap "Código" adicionada ao `ROADMAP.md` (passo 8, primeira metade) | passo 8: falta a verificação ao vivo (dois temas, Ollama real) e a chamada ao advisor antes de mover para `implemented/` |
-| 18/08/2026 | 2 | QA ao vivo rodada (Playwright + build real + Ollama real, dois temas) e advisor chamado com sucesso. Achado bloqueante: a correção por ÍNDICE de marca (sessão 1) arredondava em silêncio o `numCtx` de conversas pré-existentes — revertida para domínio contínuo + `thinLabels()` (ver "O que o plano não previu"), popover de 300px→360px. Três achados do próprio usuário sobre os screenshots, todos corrigidos e reverificados ao vivo: cards de `ModelPicker` sem borda/hover invisível (mesma cor do popover) — ganharam `border`/`hover` em tom distinto; divisor Locais/Nuvem fraco demais — subiu para `border-strong`; ícone de Configurações misturado aos outros três do rail — isolado com `mt-auto`. Achado do advisor sem imagem: aviso de visão colado a "Código" em vez de "Imagens" — reposicionado. `pnpm test:e2e` (nível 4, pedido do advisor) revelou dois specs parados desde o plano 17, sem relação com o F-2 (`attach-dataset.spec.ts`, `security-boundary.spec.ts`) — remediados. Skill `design-system` (sete→nove primitivos) e `ROADMAP.md` (gatilho `check:fast` remedido: 53 arquivos/471 testes/55s) atualizados. Sete commits desta sessão, `check:fast` e `test:e2e` verdes em todos | Falta mover o plano para `implemented/` e fechar a entrada em `HISTORY.md` |
+| ago/2026 | todos | **concluído** | Acabamento do composer, seletor de modelo e sidebar. `Switch` e `Slider` entraram como primitivos — nenhum limite físico, então nenhum ganhou CSS Module. |
+
+| 18/08/2026 | 2 | QA ao vivo | **Alternativa tentada na sessão 1 e revertida:** um slider por **índice de marca** arredondava em silêncio o `numCtx` de conversas **pré-existentes** — voltou a domínio contínuo com rótulos ralos (`thinLabels()`). O `pnpm test:e2e` pedido na revisão revelou dois specs parados desde o plano 17, **sem relação com o F-2** — remediados junto, mas registrados como achado alheio ao plano. |
+
+**O que este plano deixou fora dele:**
+
+| Achado | Dono |
+|---|---|
+| `absolute` perde para o `relative` do `BASE` de `Button` — a ordem do stylesheet decide | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Os sete primitivos e o critério do oitavo | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| Decisões F2.x | [`DECISOES.md`](../../DECISOES.md) |

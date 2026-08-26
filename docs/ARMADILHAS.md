@@ -12,6 +12,14 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### `import.meta.url` é uma URL `http:` sob jsdom, não `file:` — e o caminho derivado dela aponta para lugar nenhum (ago/2026)
+Num teste de ambiente `jsdom`, o jsdom serve o documento por HTTP, então `import.meta.url` resolve para algo como `http://localhost/...`. Todo código que deriva caminho de arquivo dali (`fileURLToPath`, `new URL('../x', import.meta.url)`) recebe um caminho inválido — o mesmo módulo funciona no ambiente `node` e falha no `jsdom`, o que faz o defeito parecer aleatório. **Conserto:** `process.cwd()` (ou um caminho injetado) em código que precisa rodar nos dois ambientes. Achado ao escrever o teste de contraste, que lê `tokens.css` do disco.
+
+### Comprimir um registro apaga a alternativa descartada antes de apagar qualquer outra coisa (ago/2026)
+Medido no R-2: ao comprimir a seção de marcos do `HISTORY.md`, **seis entradas perderam a alternativa descartada e/ou o motivo do descarte** — sem que ninguém notasse, porque o texto resultante continuava lendo bem. É o modo de falha próprio da compressão: o que sobrevive é o que aconteceu, e o que se perde é o que foi considerado e rejeitado — exatamente o único conteúdo que não se recupera lendo o código depois.
+
+**A causa não foi pressa, foi um item de verificação marcado sem ser executado.** O plano listava "a alternativa descartada sobrevive à compressão" e a linha foi **citada como feita**, não conferida. Só uma comparação entrada por entrada (`git diff <antes> <depois>`) achou as seis. **Ao comprimir qualquer registro, o diff é a verificação — reler o resultado não é**, porque o resultado comprimido nunca parece incompleto.
+
 ### Catálogo síncrono concatenado com catálogo assíncrono vence o índice 0 na janela em que o assíncrono ainda não resolveu (ago/2026)
 `[...instalados, ...nuvem]` parece inofensivo, mas as duas metades resolvem em tempos diferentes: a tabela chumbada de nuvem é síncrona, o catálogo local vem por IPC. No primeiro render `instalados` está vazio, então o primeiro modelo de nuvem ocupa o índice 0 — e qualquer fallback do tipo "use o primeiro da lista" passa a escolher **nuvem por acidente de tempo**, nunca por decisão. Não apareceu em nenhuma das duas revisões de desenho; só um teste que travou com "Cannot read properties of undefined" expôs. **Conserto:** não concatenar enquanto o lado assíncrono estiver `loading` — a lista fica vazia (ou só com o lado já resolvido) até haver com que comparar. Vale para qualquer união de fontes com latências diferentes onde a ordem signifique algo.
 

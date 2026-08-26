@@ -84,4 +84,13 @@ Portão: nenhum link relativo quebrado entre as cinco skills e o `CLAUDE.md` (ch
 
 | Data | Sessão | O que foi feito | Onde parei |
 |---|---|---|---|
-| 24/08/2026 | 1 | Plano concluído numa sessão só, nascido direto em `implemented/` por pedido do usuário. Relatório (`notes/reports/r-skills.md`, 22 itens) avaliado item a item contra o repositório real antes de aceitar qualquer um; `advisor` consultado antes da primeira edição (filtrou escopo, confirmou os 3 itens de premissa falsa) e de novo depois de todas as edições, antes do commit (achou a contagem duplicada na proveniência nova da `testing` — corrigido antes de commitar). 3 itens descartados por premissa falsa (4, 13, 14), 2 por serem enriquecimento fora de escopo (10, 11 — conteúdo do 10 preservado como justificativa dentro do Passo 1). 18 correções aplicadas nas cinco skills + 1 passo transversal (escopo negativo, dono único) + 2 ajustes pontuais no `CLAUDE.md`. Duas menções desatualizadas adicionais do `CLAUDE.md`, fora dos 22 itens, registradas no `ROADMAP § 4` em vez de corrigidas em execução. Portão: link-check das cinco skills + `CLAUDE.md` sem achado, `pnpm check:fast` verde (693 testes, 80 arquivos, `git diff --stat -- src/` vazio). | Plano concluído — nasce e fecha na mesma sessão, sem pendência de retomada. |
+| ago/2026 | — | Reconciliação factual das cinco skills técnicas contra o repositório real, a partir de um relatório externo avaliado item a item. A `architecture` era a mais afetada: tinha congelado na fase de fundação. | concluído |
+
+**O que este plano deixou fora dele:**
+
+| Achado | Dono |
+|---|---|
+| As skills, reconciliadas | [`.claude/skills/`](../../../.claude/skills/) |
+| Decisões R4.x | [`DECISOES.md`](../../DECISOES.md) |
+
+⚠️ **A reconciliação tem data de validade, e este plano é a prova.** Em 26/08/2026 uma auditoria nova achou cinco fatos podres nas mesmas skills — inclusive o `shamefullyHoist`, que **este plano corrigiu na `architecture` e deixou errado na `testing`**. Reconciliar não é um evento; é manutenção recorrente.

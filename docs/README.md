@@ -59,6 +59,8 @@ Esta é a parte que decide se o histórico sobrevive. São dois registros com **
 
 ⚠️ **Estourar essa régua é o sintoma de escalonamento que não aconteceu.** Se a frase não cabe, a pergunta certa não é "como resumo?", é **"para onde isto sobe?"** — armadilha para [`ARMADILHAS.md`](ARMADILHAS.md), alternativa descartada para [`HISTORY.md`](HISTORY.md), número medido para o dono do número. Só o que sobra depois disso fica na linha. Medido em 26/08/2026: os diários somavam **193 KB**, com células de até **7.056 caracteres** — cada uma delas um escalonamento adiado.
 
+⚠️ **Ao comprimir, o `git diff` é a verificação — reler o texto resultante não é.** O R-2 perdeu a alternativa descartada de seis marcos exatamente assim: o item de verificação existia, foi citado como feito, e o texto comprimido continuava lendo bem. Registrado em [`ARMADILHAS.md`](ARMADILHAS.md).
+
 **Por que a unidade do `HISTORY.md` é o marco e não a sessão:** um marco costuma levar várias sessões. Se cada sessão virasse entrada, o histórico teria centenas delas e deixaria de ser lido — que é a mesma perda de contexto por outro caminho. O que precisa sobreviver não é "o que fiz na terça"; é "por que ficou assim e o que já foi descartado".
 
 ### O escalonamento é o que faz o sistema funcionar
