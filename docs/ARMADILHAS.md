@@ -12,6 +12,18 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### `fetch` num esquema customizado falha por CORS, não por CSP — e o privilégio que falta é `corsEnabled` (ago/2026)
+Um esquema registrado com `{ standard, secure, supportFetchAPI }` **não** aceita `fetch` do renderer. O sintoma engana duas vezes: primeiro parece CSP (e abrir `connect-src` no `index.html` de fato muda a mensagem de erro, sem resolver), depois parece cabeçalho ausente (`access-control-allow-origin: *` no handler **também** não resolve — o Chromium rejeita antes de enviar). A causa é que esquema diferente é **origem** diferente, e o privilégio `corsEnabled` do `registerSchemesAsPrivileged` tem default `false`. **Diagnóstico em um toque:** `TypeError: Failed to fetch` é CORS; recusa de CSP diz "Refused to connect". `<img src>` continua funcionando o tempo todo, porque imagem não passa por CORS — o que faz parecer que o esquema "funciona". Achado no F-3-A ao tentar copiar bytes de imagem; a decisão de ligar `corsEnabled` foi deixada em aberto, por alargar a registração de segurança.
+
+### `role="complementary"` sem nome acessível casa com toda `<aside>` da página (ago/2026)
+Um teste de nível 2 que consulta `getByRole('complementary')` passa enquanto o arranjo renderiza **uma** `<aside>`, e quebra no app real, que tem duas — a sidebar e o painel de artefato. O teste não estava errado por sorte: estava medindo num ambiente mais simples que o aplicativo. **Conserto:** consultar sempre com `{ name: ... }`, e dar `aria-label` a todo *landmark* — dois landmarks sem nome são um só para um leitor de tela. Achado pelo e2e do F-3-A, depois de os testes de nível 2 passarem.
+
+### `react-hooks/set-state-in-effect` recusa resetar estado dentro de `useEffect` (ago/2026)
+"Zerar este estado quando aquele valor muda" escrito como `useEffect(() => setX(null), [id])` é erro de lint, não aviso — trava o `pnpm lint` e o `check:fast`. **Conserto:** ajustar durante a renderização, que é o padrão que o próprio React recomenda: guardar o valor visto (`const [seen, setSeen] = useState(id)`) e, quando divergir, corrigir os dois no corpo do componente. É também melhor: o React reexecuta a passagem antes de comitar, então a tela nunca chega a pintar com o estado velho.
+
+### Asserção em pixel num e2e mede o fator de escala do monitor (ago/2026)
+`BrowserWindow.setSize(900, 700)` não produz `window.innerWidth === 900` numa máquina com escala de tela — a diferença é silenciosa e o teste falha com um número que parece arbitrário (esperado 352, recebido 375,2). **Conserto:** afirmar **invariantes** relativas (o painel nunca passa de metade da janela; nada transborda a soma das faixas) e imprimir as medidas, em vez de fixar o pixel. Achado no e2e do painel de artefato.
+
 ### `import.meta.url` é uma URL `http:` sob jsdom, não `file:` — e o caminho derivado dela aponta para lugar nenhum (ago/2026)
 Num teste de ambiente `jsdom`, o jsdom serve o documento por HTTP, então `import.meta.url` resolve para algo como `http://localhost/...`. Todo código que deriva caminho de arquivo dali (`fileURLToPath`, `new URL('../x', import.meta.url)`) recebe um caminho inválido — o mesmo módulo funciona no ambiente `node` e falha no `jsdom`, o que faz o defeito parecer aleatório. **Conserto:** `process.cwd()` (ou um caminho injetado) em código que precisa rodar nos dois ambientes. Achado ao escrever o teste de contraste, que lê `tokens.css` do disco.
 

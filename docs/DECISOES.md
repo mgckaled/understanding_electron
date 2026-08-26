@@ -243,6 +243,14 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 |---|---|---|
 | F-1 | [F-1](plan/implemented/F-1-marca-pensando.md) | a trilha "features avulsas", e a marca "pensando" no chat |
 | F-2 | [F-2](plan/implemented/F-2-composer-modelo-sidebar.md) | acabamento do composer, seletor de modelo e sidebar |
+| F-3-A | [DF3A.1](plan/implemented/F-3-A-painel-de-artefato.md) | O artefato ganha uma lente efêmera, e continua preso à mensagem — revisão do `ESCOPO.md` |
+| F-3-A | [DF3A.2](plan/implemented/F-3-A-painel-de-artefato.md) | `ArtifactRef` é união própria, nunca `AttachmentPart` — é o que faz o gráfico do plano 20 encaixar sem cirurgia |
+| F-3-A | [DF3A.3](plan/implemented/F-3-A-painel-de-artefato.md) | O corpo do painel já nasce podendo ser assíncrono, contra o caso difícil (dataset), não contra os fáceis |
+| F-3-A | [DF3A.4](plan/implemented/F-3-A-painel-de-artefato.md) | A largura mora no estado desde já; o teto desconta `--sidebar-width`, medido depois de a conversa cair a 248px |
+| F-3-A | [DF3A.5](plan/implemented/F-3-A-painel-de-artefato.md) | Estado de janela em contexto próprio, sem persistir; reset ajustado durante a renderização, não em efeito |
+| F-3-A | [DF3A.6](plan/implemented/F-3-A-painel-de-artefato.md) | A seta do cartão vira `ChevronRight` e `aria-expanded` dá lugar a `aria-current` — nada expande mais |
+| F-3-A | [DF3A.7](plan/implemented/F-3-A-painel-de-artefato.md) | **Revista na execução:** copiar existe para documento e não para imagem; a CSP não foi aberta, porque o bloqueio é CORS (`corsEnabled`), não CSP |
+| F-3-A | [DF3A.8](plan/implemented/F-3-A-painel-de-artefato.md) | Foco de ida e de volta, e `Esc` — o painel não é modal, então não prende foco |
 
 ---
 

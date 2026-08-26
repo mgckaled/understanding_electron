@@ -1,8 +1,8 @@
 # F-3-A — Painel de artefato: a terceira região, documento e imagem
 
-> Terceiro item da **trilha F (features avulsas, fora do arco)**, e o primeiro dela a nascer dividido — `F-3-A`/`F-3-B`/`F-3-C`, na forma que o [N-1](../implemented/N-1-A-segredo-de-nuvem.md) já usou. A trilha é definida **por exclusão** (nem arco, nem envelope, nem refatoração), e este plano satisfaz a definição: é feature nova, não pertence ao arco 13–20 e nada no arco espera por ele. Peso não é critério da trilha — se fosse, o 18 não teria virado seis.
+> Terceiro item da **trilha F (features avulsas, fora do arco)**, e o primeiro dela a nascer dividido — `F-3-A`/`F-3-B`/`F-3-C`, na forma que o [N-1](N-1-A-segredo-de-nuvem.md) já usou. A trilha é definida **por exclusão** (nem arco, nem envelope, nem refatoração), e este plano satisfaz a definição: é feature nova, não pertence ao arco 13–20 e nada no arco espera por ele. Peso não é critério da trilha — se fosse, o 18 não teria virado seis.
 >
-> ⚠️ **A sigla `F-3` estava reservada para outra coisa.** O [`F-2`](../implemented/F-2-composer-modelo-sidebar.md) § *Fora do escopo deste plano* deixou "F-3" apontando para uma tabela de custo de contexto por modelo nas Configurações. Aquele trabalho passa a ser **F-4**, e a linha do F-2 é corrigida no passo 1 — numeração aqui segue a ordem em que os planos são **escritos**, como DS-1…DS-8 e 18-A…18-F já fizeram.
+> ⚠️ **A sigla `F-3` estava reservada para outra coisa.** O [`F-2`](F-2-composer-modelo-sidebar.md) § *Fora do escopo deste plano* deixou "F-3" apontando para uma tabela de custo de contexto por modelo nas Configurações. Aquele trabalho passa a ser **F-4**, e a linha do F-2 é corrigida no passo 1 — numeração aqui segue a ordem em que os planos são **escritos**, como DS-1…DS-8 e 18-A…18-F já fizeram.
 
 **Origem:** pedido do usuário (26/08/2026), com três capturas — o painel de arquivo do Claude Desktop abrindo pela direita, uma variante do mesmo padrão, e o cartão recolhido de um `.webp` que deve **sobreviver** na transcrição como histórico do chat.
 
@@ -83,7 +83,20 @@ largura = clamp(22rem, <estado>, min(50vw, 100vw - 32rem))
 
 O teto de 50% é o do usuário. **O piso e o segundo termo do `min` são o que impede o caso feio:** numa janela de 1100px, 50% deixaria a conversa em 550px e as bolhas de `max-w-[80%]` virariam tiras. A conversa nunca desce abaixo de uma coluna legível, mesmo que isso custe ao painel.
 
-⚠️ **Os quatro números são provisórios e se confirmam no passo 5, ao vivo.** `100vw` não desconta a sidebar — se o `32rem` se mostrar apertado com a sidebar expandida, o ajuste é aqui e não em outro lugar.
+⚠️ **Medido no passo 5, e o `100vw` estava errado — ele não descontava a sidebar.** Com a janela padrão (900px, 887 de viewport), a conversa ficava com **248px**. A fórmula final desconta `var(--sidebar-width)`:
+
+```
+largura = clamp(22rem, <estado>, min(50vw, 100vw - var(--sidebar-width) - 26rem))
+```
+
+Larguras medidas ao vivo, com o painel aberto:
+
+| Janela | viewport | painel | conversa |
+|---|---|---|---|
+| padrão (900×670) | 887 | 352 (no piso) | 271 |
+| **maximizada** | 1536 | 544 | **728** |
+
+Maximizada, que é como o app se usa, a proporção é saudável. Na janela padrão **não há espaço para as três regiões** — o painel já está no piso de 22rem e não tem o que ceder. A resposta (recolher a sidebar sozinha, ou sobrepor em vez de empurrar) é do **F-3-B**; o F-3-A registra o limite em vez de fingir que o resolveu.
 
 ### DF3A.5 — Estado de janela, em contexto próprio, sem persistir
 
@@ -102,15 +115,21 @@ O cartão **sobrevive** na transcrição como histórico (decisão do usuário).
 - Clicar no mesmo cartão fecha; clicar em outro **troca sem fechar** — o painel não pisca entre um anexo e outro.
 - O cartão aberto se marca com `aria-current`, não com `aria-expanded`: nada expande mais, e uma etiqueta que mente é pior que nenhuma. Visualmente, a mesma composição que a skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) já fixa para item selecionado.
 
-### DF3A.7 — `connect-src 'self' attachment:` entra na CSP, deliberadamente
+### DF3A.7 — Copiar existe para documento e **não** para imagem; a CSP não foi aberta
 
-Copiar um documento é copiar `part.text`. Copiar uma **imagem** exige os bytes, e o único caminho até eles no renderer sandboxed é `fetch('attachment://<hash>')` → `ClipboardItem`. Hoje isso é bloqueado: a CSP não declara `connect-src`, então ele herda `default-src 'self'`.
+⚠️ **Esta decisão foi revista na execução, contra medição.** O plano dizia: abrir `connect-src 'self' attachment:` e copiar bytes de imagem por `fetch`. Foi feito, e falhou ao vivo — com `TypeError: Failed to fetch`, não com a recusa de CSP que se esperava.
 
-A alternativa sem CSP — desenhar o `<img>` já renderizado num `<canvas>` e usar `toBlob()` — **não funciona**: esquema diferente é origem diferente, o canvas fica *tainted* e `toBlob` lança `SecurityError`.
+O que a medição mostrou, em ordem:
 
-A mudança é estreita e coerente com o que já está autorizado: `attachment:` já é confiável em `img-src`, serve **apenas** blobs locais de `userData` endereçados por hash, e o handler valida o hash antes de ler. Declarar `connect-src 'self' attachment:` não alarga a superfície além do que o `img-src` já concede.
+1. o `connect-src` era **necessário e insuficiente**. Antes dele a CSP recusa; depois dele o **CORS** recusa, porque `fetch` entre esquemas diferentes é requisição de outra origem;
+2. `access-control-allow-origin: *` no handler do protocolo **não resolve** — o Chromium rejeita antes de enviar;
+3. o que faltava é o privilégio **`corsEnabled`** do `registerSchemesAsPrivileged`, que tem default `false` (confirmado na doc do Electron via Context7) e **não** está na nossa registração.
 
-⚠️ **Duas consequências que não podem ficar implícitas:** a tabela de segurança do [`CLAUDE.md`](../../../CLAUDE.md) resume a CSP como `default-src 'self'` e passa a estar incompleta — atualiza junto, no mesmo commit. E se a linha se mostrar problemática no passo 5, o recuo barato é **desabilitar copiar para imagem** e manter para documento, não inventar um canal IPC para bytes que o protocolo já serve.
+Ligar `corsEnabled` é alargar a registração de segurança do esquema para uma conveniência — coisa diferente do que esta decisão autorizou. Então vale o recuo que ela própria previa: **`connect-src` foi revertido** (abertura sem consumidor é pior que nenhuma), e o botão copiar **não aparece** para imagem. Ausente, não desabilitado: botão cinza promete uma capacidade que não volta sozinha.
+
+As três portas fechadas ficam registradas no `copyArtifact.ts`, para ninguém reabrir a investigação do zero: `fetch` (CORS), canvas (*tainted*, `toBlob` lança) e canal IPC (não existe).
+
+**A escolha que sobra é do usuário, e fica para o F-3-B**, com a recomendação: um canal `image:bytes` em vez de `corsEnabled`. Custa seis pontos de contato do contrato IPC e mantém a registração do esquema mínima; os bytes são pagos duas vezes na fronteira, o que é irrelevante no tamanho de uma imagem anexada.
 
 ### DF3A.8 — Foco de ida e de volta, e `Esc`
 
@@ -183,4 +202,19 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 26/08/2026 | 1-5 | **plano concluído**, movido para `implemented/` | Cinco passos, cinco commits. Prova ao vivo virou spec permanente (`e2e/dev/artifact-panel.spec.ts`), com três tamanhos de janela. Três achados só do nível 4: a sidebar também é `complementary` (o painel a tornou ambígua); o teto de largura não descontava a sidebar (conversa em 248px na janela padrão); e copiar imagem não funciona por CORS, não por CSP. `check:fast`: 97 arquivos, 852 testes. |
 | 26/08/2026 | — | plano escrito e revisado, ainda não executado | Escrito lendo o **código** (cartões, `AppShell`, `useStickToBottom`, CSP, protocolo de anexo), não os planos anteriores. Context7 (`tailwindcss.com`) confirmou que `grid-template-columns` com variável é caso de `style` inline pela doc oficial, não de classe arbitrária. Dois achados que mudaram o plano antes de ele existir: a CSP bloqueia `fetch('attachment:')` apesar de o protocolo permitir, e o `useStickToBottom` pode ler um reflow de largura como rolagem do usuário. |
+
+**O que este plano deixou fora dele** — escalonado na conclusão, e é onde se consulta hoje:
+
+| Achado | Dono |
+|---|---|
+| `fetch` em esquema customizado precisa do privilégio `corsEnabled`, não só de `connect-src` na CSP — falha como `TypeError: Failed to fetch`, não como recusa de CSP | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Consultar `role="complementary"` sem nome acessível casa com a sidebar **e** com o painel; o teste de nível 2 passava por a sidebar não estar no arranjo | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| `react-hooks/set-state-in-effect` recusa resetar estado em `useEffect`; a forma certa é ajustar durante a renderização | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Asserção em pixel num e2e mede o fator de escala do monitor, não o CSS — asserte invariantes | skill [`testing`](../../../.claude/skills/testing/SKILL.md) |
+| Decisões DF3A.1–DF3A.8 | [`DECISOES.md`](../../DECISOES.md) |
+
+⚠️ **Aceite não observado, registrado como tal:** o risco nomeado do plano — o `useStickToBottom` ler um reflow de largura como rolagem do usuário — **não foi provado nem refutado**. A análise do fonte diz que o efeito só roda com `[contentSignal]`, que abrir o painel não muda, então o hook não observa o *resize*; o caso ruim que sobra é estreito (usuário rolado para cima, painel **fechando**, `scrollTop` sendo *clampado*, e um token chegando em seguida). Não foi construído um e2e determinístico para isso. **Correto por análise, não verificado.**
+
+⚠️ **Limite conhecido, não resolvido:** na janela padrão (887 de viewport) a conversa fica com 271px com o painel aberto. As três regiões não cabem, e o painel já está no piso. F-3-B decide entre recolher a sidebar sozinha e sobrepor em vez de empurrar.

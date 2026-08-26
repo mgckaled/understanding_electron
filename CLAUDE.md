@@ -256,7 +256,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 | Superfície do preload | apenas `window.api`, montada a partir de `src/shared/ipc.ts` |
 | Abertura de link externo | `checkExternalUrl` em `src/core/url.ts` (lista branca `http:`/`https:`), **único** caminho até `shell.openExternal` — usado pelo canal `shell:openExternal`, pelo `setWindowOpenHandler` e pelo `will-navigate` |
 | Navegação e janela nova | negadas por padrão |
-| CSP | `default-src 'self'` no `index.html`, com duas aberturas nomeadas para o esquema `attachment:` — `img-src` (D17.6) e `connect-src` (DF3A.7, para copiar bytes de imagem). Ele serve **só** blobs locais de `userData` endereçados por hash, validado antes de ler |
+| CSP | `default-src 'self'` no `index.html`, com uma abertura nomeada: `img-src` aceita `attachment:` (D17.6). ⚠️ `connect-src` **não** foi aberto — `fetch('attachment://…')` é bloqueado por CORS antes da CSP, porque o esquema não tem o privilégio `corsEnabled` (medido, DF3A.7) |
 | Segredos | regra fixada (mão única, `safeStorage`, `userData`) e **em uso desde a trilha N-1** — chaves de provedor de nuvem em `main/features/secrets/`. `secrets:read` não existe por desenho (DN1A.3) |
 | `shamefullyHoist` | **desligado** (`false`) — gatilho cumprido no plano `18-A` |
 
@@ -283,7 +283,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo — **~73 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **83 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|

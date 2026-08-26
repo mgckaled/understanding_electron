@@ -10,7 +10,10 @@ import { ArtifactContext, type ArtifactApi, type ArtifactRef } from './artifactC
 // without a CSP and a protocol handler, so a level-2 test that stubbed it would
 // be asserting against its own fake. What IS testable here is the panel's part:
 // it asks, and it confirms only when the answer is yes.
-vi.mock('./copyArtifact', () => ({ copyArtifact: vi.fn() }))
+vi.mock('./copyArtifact', async (real) => ({
+  ...(await real<typeof import('./copyArtifact')>()),
+  copyArtifact: vi.fn()
+}))
 
 const DOC: DocumentPart = {
   kind: 'document',
@@ -38,10 +41,14 @@ function mount(current: ArtifactRef | null): ArtifactApi {
   return api
 }
 
+// Named, not bare: the sidebar is a complementary region too, and querying
+// by role alone matched both in the real app while passing here (found live).
+const PANEL = 'Anexo aberto'
+
 describe('ArtifactPanel', () => {
   it('renders nothing when no artifact is open', () => {
     mount(null)
-    expect(screen.queryByRole('complementary')).toBeNull()
+    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
   })
 
   it('renders a markdown document as markdown, under its filename', () => {
@@ -83,6 +90,27 @@ describe('ArtifactPanel', () => {
     fireEvent.error(screen.getByRole('img', { name: 'grafico.png' }))
 
     expect(screen.getByText('Não foi possível carregar esta imagem.')).toBeVisible()
+  })
+
+  it('takes focus when it opens, so the keyboard does not land nowhere', () => {
+    mount({ kind: 'document', id: DOC.hash, part: DOC })
+
+    expect(screen.getByRole('complementary', { name: PANEL })).toHaveFocus()
+  })
+
+  it('closes on Esc while focus is inside it', async () => {
+    const api = mount({ kind: 'document', id: DOC.hash, part: DOC })
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(api.close).toHaveBeenCalledOnce()
+  })
+
+  it('offers no copy button for an image, because the bytes are unreachable', () => {
+    mount({ kind: 'image', id: IMG.hash, part: IMG })
+
+    expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Fechar painel' })).toBeVisible()
   })
 
   it('closes through the header button', async () => {

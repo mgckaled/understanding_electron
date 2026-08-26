@@ -4,15 +4,21 @@ import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import ArtifactBody from './ArtifactBody'
 import { useArtifact } from './artifactContext'
-import { copyArtifact } from './copyArtifact'
+import { canCopy, copyArtifact } from './copyArtifact'
 
 // The width is a value, not a class: it comes from state (DF3A.4), and
 // Tailwind's static scan cannot see a runtime number — the framework's own docs
-// send complex sizing to `style` for exactly this reason. The clamp is what
-// keeps the conversation readable: 50vw is the ceiling asked for, but on a
-// narrow window the second term of the `min` wins and the panel yields instead
-// of squeezing the thread into a strip.
-const WIDTH = 'clamp(22rem, var(--artifact-width), min(50vw, 100vw - 32rem))'
+// send complex sizing to `style` for exactly this reason.
+//
+// The clamp keeps the conversation readable: 50vw is the ceiling asked for, but
+// on a narrow window the second term of the `min` wins and the panel yields.
+// It subtracts `--sidebar-width` because measuring against the WINDOW
+// over-promised — at 900px the thread was left with 248px, measured live. The
+// expanded width is used even when the sidebar is collapsed: erring toward more
+// room for the thread is the safe direction. Below roughly 1100px the two
+// simply compete, and the panel sits at its 22rem floor.
+const WIDTH =
+  'clamp(22rem, var(--artifact-width), min(50vw, 100vw - var(--sidebar-width) - 26rem))'
 const DEFAULT_WIDTH = '34rem'
 
 /** How long the copy button stays confirmed. Long enough to be seen, short
@@ -23,6 +29,15 @@ function ArtifactPanel(): React.JSX.Element | null {
   const { current, close } = useArtifact()
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const region = useRef<HTMLElement>(null)
+
+  // Opening moves focus into the panel; `close` sends it back to the card
+  // (DF3A.8). Without the pair, keyboard navigation opens the panel and lands
+  // nowhere. Keyed on the id, so swapping artifacts re-focuses too.
+  const openId = current?.id ?? null
+  useEffect(() => {
+    if (openId !== null) region.current?.focus()
+  }, [openId])
 
   useEffect(() => () => (timer.current === null ? undefined : clearTimeout(timer.current)), [])
 
@@ -39,7 +54,16 @@ function ArtifactPanel(): React.JSX.Element | null {
 
   return (
     <aside
-      className="flex h-full flex-col overflow-hidden border-l border-border bg-surface"
+      ref={region}
+      // Not a Dialog and not a focus trap: the panel is NOT modal — clicking
+      // back into the conversation with it open has to keep working. So Esc
+      // only closes while focus is inside it, which is the platform's own
+      // behaviour for a non-modal region.
+      tabIndex={-1}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') close()
+      }}
+      className="flex h-full flex-col overflow-hidden border-l border-border bg-surface outline-none"
       style={{ '--artifact-width': DEFAULT_WIDTH, width: WIDTH } as React.CSSProperties}
       aria-label="Anexo aberto"
     >
@@ -50,20 +74,24 @@ function ArtifactPanel(): React.JSX.Element | null {
         <span className="min-w-[0px] flex-1 overflow-hidden text-sm font-medium text-ellipsis whitespace-nowrap text-text">
           {current.part.fileName}
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          shape="square"
-          className="flex-none"
-          onClick={() => void handleCopy()}
-          aria-label={copied ? 'Copiado' : 'Copiar'}
-        >
-          {copied ? (
-            <Check size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} className="text-ok-text" />
-          ) : (
-            <Copy size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-          )}
-        </Button>
+        {/* Absent, not disabled, for an image: a greyed button promises a
+            capability that is not coming back on its own (DF3A.7). */}
+        {canCopy(current) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            shape="square"
+            className="flex-none"
+            onClick={() => void handleCopy()}
+            aria-label={copied ? 'Copiado' : 'Copiar'}
+          >
+            {copied ? (
+              <Check size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} className="text-ok-text" />
+            ) : (
+              <Copy size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+            )}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

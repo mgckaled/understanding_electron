@@ -54,14 +54,18 @@ function mount(): void {
   )
 }
 
+// Named, not bare: the sidebar is a complementary region too, and querying
+// by role alone matched both in the real app while passing here (found live).
+const PANEL = 'Anexo aberto'
+
 describe('ArtifactProvider', () => {
   it('opens the panel for the clicked artifact', async () => {
     mount()
-    expect(screen.queryByRole('complementary')).toBeNull()
+    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: 'abrir doc' }))
 
-    expect(screen.getByRole('complementary')).toBeVisible()
+    expect(screen.getByRole('complementary', { name: PANEL })).toBeVisible()
     expect(screen.getByText('notas.md')).toBeVisible()
   })
 
@@ -72,7 +76,7 @@ describe('ArtifactProvider', () => {
     await userEvent.click(trigger)
     await userEvent.click(trigger)
 
-    expect(screen.queryByRole('complementary')).toBeNull()
+    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
   })
 
   it('swaps to the other artifact without closing in between', async () => {
@@ -81,9 +85,24 @@ describe('ArtifactProvider', () => {
     await userEvent.click(screen.getByRole('button', { name: 'abrir doc' }))
     await userEvent.click(screen.getByRole('button', { name: 'abrir img' }))
 
-    expect(screen.getByRole('complementary')).toBeVisible()
+    expect(screen.getByRole('complementary', { name: PANEL })).toBeVisible()
     expect(screen.getByText('grafico.png')).toBeVisible()
     expect(screen.queryByText('notas.md')).toBeNull()
+  })
+
+  it('gives focus back to the card that opened it', async () => {
+    mount()
+    const trigger = screen.getByRole('button', { name: 'abrir doc' })
+
+    await userEvent.click(trigger)
+    // The panel must hold focus first, or Esc would still be going to the card
+    // and this test would pass without a round trip having happened.
+    expect(screen.getByRole('complementary', { name: PANEL })).toHaveFocus()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
+    expect(trigger).toHaveFocus()
   })
 
   it('closes when the conversation changes', async () => {
@@ -92,6 +111,6 @@ describe('ArtifactProvider', () => {
     await userEvent.click(screen.getByRole('button', { name: 'abrir doc' }))
     await userEvent.click(screen.getByRole('button', { name: 'trocar de conversa' }))
 
-    expect(screen.queryByRole('complementary')).toBeNull()
+    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
   })
 })
