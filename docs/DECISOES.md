@@ -177,7 +177,7 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | 18-D | [D18D.2](plan/implemented/18-D-perfil-e-cartao-aninhado.md) | `core/duckdb/profile.ts`: duas consultas, uma pura, a outra gated pela primeira |
 | 18-D | [D18D.3](plan/implemented/18-D-perfil-e-cartao-aninhado.md) | A *view* nasce incondicionalmente a cada pedido de perfil; barato nos dois formatos de ciclo de vida possíveis |
 | 18-D | [D18D.4](plan/implemented/18-D-perfil-e-cartao-aninhado.md) | Transporte do perfil é JSON, não Arrow — decisão consciente, não default |
-| 18-D | [D18D.5](plan/implemented/18-D-perfil-e-cartao-aninhado.md) | `Disclosure` extraído: terceira ocorrência, a regra dos três se paga |
+| 18-D | [D18D.5](plan/implemented/18-D-perfil-e-cartao-aninhado.md) | `Disclosure` **não** extraído — a decisão foi revista na implementação: a correção pós-18-C tirou a forma de disclosure do toggle Preview/Consultar, então esta virou a **segunda** ocorrência, não a terceira |
 | 18-D | [D18D.6](plan/implemented/18-D-perfil-e-cartao-aninhado.md) | Cache por hash via TanStack Query, mesmo padrão do 18-C |
 | 18-E | [D18E.1](plan/implemented/18-E-json-ndjson.md) | Formato é detectado pelo **conteúdo**, uma função só, nunca por um parâmetro novo no canal |
 | 18-E | [D18E.2](plan/implemented/18-E-json-ndjson.md) | `DatasetPart` ganha `format`; `delimiter` vira opcional — montados em `attachDataset`, `DatasetSummary`/`scanDelimited` ficam como estão |

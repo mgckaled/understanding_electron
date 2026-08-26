@@ -12,7 +12,7 @@ O que o aplicativo faz, o que ele não faz, e as consequências arquiteturais de
 
 ## Em uma frase
 
-**Uma bancada de dados local, operada por conversa** — abrir CSV, Parquet, Excel ou JSON, perguntar sobre ele em português, e sair com uma resposta ou com o arquivo tratado. É o pilar mais maduro do aplicativo, e o que organiza os demais.
+**Uma bancada de dados local, operada por conversa** — abrir CSV, Excel ou JSON (Parquet no escopo, ainda não no seletor), perguntar sobre ele em português, e sair com uma resposta ou com o arquivo tratado. É o pilar mais maduro do aplicativo, e o que organiza os demais.
 
 Mas não é só isso, e fingir que é enfraquece o que o app já entrega: na mesma conversa entra o documento que explica o dado (`.md` da especificação, PDF do contrato, captura de tela da planilha), o trecho de código para revisar ou entender, a busca na web, a consulta a documentação de biblioteca, e o raciocínio do modelo em voz alta. **O crivo é uma ferramenta local multiuso, operada por conversa** — e dados é o pilar mais forte e mais antigo dos que ela sustenta, não o único.
 
@@ -38,7 +38,7 @@ O aplicativo abre duas coisas muito diferentes, e confundi-las corrompe os dois 
 
 | | **Dado tabular** | **Documento** |
 |---|---|---|
-| Formatos | CSV, Parquet, JSON/NDJSON, Excel | `.txt`, `.md`, `.pdf` com texto, código-fonte · `.png`, `.jpeg`, `.svg`, `.webp` |
+| Formatos | CSV, JSON/NDJSON, Excel · Parquet **no escopo, ainda não no seletor** | `.txt`, `.md`, `.pdf` com texto, código-fonte · `.png`, `.jpeg`, `.svg`, `.webp` |
 | Relação | *perguntar* e *tratar* — os dois verbos abaixo | **ler como contexto**, e nada mais |
 | Motor | DuckDB | nenhum: vai direto ao modelo |
 | Produz | consulta, passos, receita, resultado, gráfico | texto no contexto da conversa |
@@ -225,7 +225,7 @@ Todos os quatro são os dois. Três deles são quase de graça; um não é.
 | Formato | Leitura | Escrita | Observação |
 |---|---|---|---|
 | **CSV / TSV / delimitados** | nativa no DuckDB | nativa | O caso base e o mais bagunçado do mundo real |
-| **Parquet** | nativa | nativa | Colunar, tipado, comprimido — a saída natural do app |
+| **Parquet** | nativa | nativa | Colunar, tipado, comprimido — a saída natural do app. ⚠️ **Ainda não implementado:** o DuckDB lê nativamente, mas `pick.ts` não lista `.parquet`; ninguém escreveu o plano |
 | **JSON / NDJSON** | nativa | nativa | NDJSON é direto; JSON aninhado é **recusado**, com o nome da coluna (18-E, D18E.4) — o motor relacional exige linha/coluna, então não há achatamento automático |
 | **Excel (`.xlsx`)** | extensão `excel` do DuckDB, ou biblioteca à parte | idem | **Assimétrico — ver abaixo** |
 
