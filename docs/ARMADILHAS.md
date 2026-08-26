@@ -12,6 +12,12 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### O composer habilita antes de o catálogo de modelos existir — todo gate por capacidade lê `model === null` nesse intervalo (ago/2026)
+`ai:isAvailable` responde rápido (o provedor está de pé), mas `ai:models` faz um N+1 de `/api/show` para descobrir `capabilities` e leva **~5 s**. Nesse intervalo a interface já aceita interação, e qualquer coisa que decida por capacidade vê `model === null`: o gate de visão do plano 17 mostrava "Imagens" **desabilitada** mesmo com o `gemma3:4b` tendo `vision` de verdade. Não é bug do gate — é ordem de resolução. Ao verificar um gate de capacidade ao vivo, **espere o seletor de modelo aparecer**; ao escrever um, decida explicitamente o que fazer no estado "ainda não sei qual modelo" em vez de deixá-lo cair no ramo de "não tem a capacidade".
+
+### O hash de um anexo rasterizado é da saída do Chromium, não do arquivo que o usuário escolheu (ago/2026)
+SVG e WebP são convertidos para PNG antes de guardar (D17.7), e o hash gravado é o do **PNG de saída**. Duas consequências que só aparecem depois: a deduplicação não pode interromper antes de rasterizar (o hash da fonte nunca é consultado), e **trocar a versão do Electron troca o encoder** — o mesmo arquivo fonte passa a produzir um blob diferente, então o antigo vira órfão e é varrido pelo GC, sem quebrar nada, mas ocupando espaço até a próxima varredura. Vale para qualquer formato futuro que normalize bytes antes de armazenar.
+
 ### O BOM (U+FEFF) sobrevive a `trimStart()` — um JSON com BOM é lido como delimitado, em silêncio (ago/2026)
 `String.prototype.trimStart()` **não** remove o BOM: ele saiu da propriedade `White_Space` do Unicode na versão 6.3, então nunca foi tratado como espaço. Consequência num sniffer que decide formato pelo primeiro caractere (`sniffDatasetFormat`, `core/dataset/format.ts`): o `{` ou `[` de um JSON prefixado por BOM nunca é o primeiro caractere depois do trim, e o arquivo cai no leitor de CSV **sem erro nenhum** — vira uma tabela de uma coluna com o JSON inteiro dentro. Conserto: fatiar o BOM explicitamente **antes** do `trimStart()`, não confiar nele. Vale para qualquer inspeção de primeiro caractere de arquivo de origem externa, não só este sniffer. Achado pelo `advisor` na fase de desenho do 18-E, antes de existir código — o teste que o cobre tem fixture própria.
 

@@ -69,6 +69,10 @@ A formatação de célula (`∅` para `null`/`undefined`, `.toString()` para `bi
 
 ⚠️ **Parquet não** — apesar de citado no `ESCOPO.md`/README como formato do produto, `src/main/features/dataset/pick.ts` não lista `.parquet` nas extensões do seletor; ninguém escreveu um 18-G ainda.
 
+⚠️ **`read_xlsx` sem `sheet` não garante a primeira planilha.** A doc diz "a primeira por padrão"; medido ao vivo num workbook de duas abas, leu a **segunda**. A hipótese não descartada é que ele siga a planilha marcada como *ativa* pelo escritor, não a posição — o workbook do teste foi gerado pelo próprio `COPY ... TO FORMAT xlsx` do DuckDB, e um arquivo autorado no Excel pode se comportar diferente (gatilho aberto no [`ROADMAP § 2`](../../../docs/ROADMAP.md)). **Não confie no default** ao expor seleção de planilha.
+
+⚠️ **`read_xlsx` tipa por formatação de célula, não por valor.** Uma coluna `1/2/3` sem formatação de inteiro chega como `DOUBLE`, não `BIGINT` — mesma classe do caso "data vira número serial" que o [`ESCOPO.md`](../../../docs/ESCOPO.md) já registra. Não é defeito a corrigir: `DOUBLE` já é exercitado por qualquer CSV com decimal.
+
 `sniffDatasetFormat` lê bytes crus antes de decodificar texto (assinatura ZIP `50 4B 03 04` identifica `.xlsx`, que é um ZIP por dentro) — evita decodificar um binário inteiro como UTF-8 inválido.
 
 **Fallback de encoding:** `ensureDatasetView` tenta utf-8 primeiro; só se falhar com o erro específico de encoding, tenta `latin-1` (cache por hash no worker, nunca reclassifica o mesmo arquivo duas vezes). `latin-1` **não** é fallback infalível — byte `0x93`/`0x94` quebra os dois; quando ambos falham, sobe o erro **original** de utf-8, que nomeia o problema real.
