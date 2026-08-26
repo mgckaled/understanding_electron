@@ -1,5 +1,7 @@
 # Arte anterior — as skills do mill.tools
 
+> ⛔ **Documento consumido — leitura histórica, não fonte de regra.** Ele próprio já declarava a regra: *item adotado sai deste documento e vira decisão no dono*. A varredura terminou em ago/2026 e os donos estão populados — nenhuma skill nem o `ROADMAP` o citam mais. **Não `Read` inteiro** — `Grep` se quiser conferir a formulação original de alguma ideia portada.
+
 **Data:** 2026-08-09 · **Motivou:** a [virada de ago/2026](../HISTORY.md) reaproveitou várias ideias do mill.tools de forma dispersa, ao longo de uma sessão de planejamento. Este documento lê as skills dele de uma vez, com o arco 13–19 já desenhado, e separa o que converge, o que vale trazer e o que não vale — enquanto a comparação ainda está fresca.
 
 > ⚠️ **Arte anterior, não fonte de regra.** Nada aqui vale para o crivo por estar escrito aqui. Item adotado **sai deste documento e vira decisão no dono** — skill, [`ROADMAP`](../ROADMAP.md), [`HISTORY`](../HISTORY.md) ou o plano da vez. Este arquivo continua sendo o que era: notas de leitura de um projeto irmão, consultáveis quando a mesma pergunta voltar.

@@ -53,6 +53,12 @@ Esta é a parte que decide se o histórico sobrevive. São dois registros com **
 
 **Por que o diário mora dentro do plano, e não num arquivo à parte:** porque o plano já está aberto enquanto o trabalho acontece. Um `SESSOES.md` separado exige lembrar de abri-lo — e o que exige lembrar não acontece.
 
+#### A linha do diário tem uma régua, e ela é curta
+
+`| data | passos | estado | o que mudou |` — e a última coluna cabe em **~200 caracteres**. Não é estética: o que passa disso é narrativa de investigação, que tem dono fora do plano.
+
+⚠️ **Estourar essa régua é o sintoma de escalonamento que não aconteceu.** Se a frase não cabe, a pergunta certa não é "como resumo?", é **"para onde isto sobe?"** — armadilha para [`ARMADILHAS.md`](ARMADILHAS.md), alternativa descartada para [`HISTORY.md`](HISTORY.md), número medido para o dono do número. Só o que sobra depois disso fica na linha. Medido em 26/08/2026: os diários somavam **193 KB**, com células de até **7.056 caracteres** — cada uma delas um escalonamento adiado.
+
 **Por que a unidade do `HISTORY.md` é o marco e não a sessão:** um marco costuma levar várias sessões. Se cada sessão virasse entrada, o histórico teria centenas delas e deixaria de ser lido — que é a mesma perda de contexto por outro caminho. O que precisa sobreviver não é "o que fiz na terça"; é "por que ficou assim e o que já foi descartado".
 
 ### O escalonamento é o que faz o sistema funcionar
@@ -69,6 +75,14 @@ Toda observação nasce no diário. Quando ela vale **além daquele plano**, sob
 
 A regra prática: **subiu se for custar tempo de novo.** Erro que já custou horas uma vez e não foi registrado custa as mesmas horas na segunda.
 
+#### Número que se remede vira **linha de série**, nunca parágrafo concatenado
+
+Alguns números são medidos de novo a cada plano — a duração do `check:fast` é o caso vivo. O valor deles **está na série**, não no último valor: foi comparar 88s contra 57s que provou que os ~88s eram ruído de máquina suja, não um patamar novo.
+
+Por isso a forma importa: **uma linha por medição, numa tabela própria** (`data · plano · escala · resultado`). O que **não** fazer é acrescentar mais um parágrafo à mesma célula — foi o que aconteceu com o gatilho do `check:fast` no [`ROADMAP § 2`](ROADMAP.md), que chegou a **2.388 caracteres numa única célula**, ilegível e crescendo a cada plano.
+
+A regra de conservação continua valendo por cima: **remedir é o ato de conservar** — nunca copie um número de um documento para outro sem reconferir a fonte na hora.
+
 ---
 
 ## Régua de tamanho de documento
@@ -77,6 +91,8 @@ A régua de tamanho do [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) mede códig
 
 O gatilho é ago/2026, medido: os arquivos soltos de `docs/` somavam **~326 KB / ~100k tokens**, e `HISTORY.md` sozinho, **182 KB**. Duas leituras integrais estouravam o orçamento de uma sessão inteira e disparavam autocompactação — que apaga justamente o trabalho em curso.
 
+Medido de novo em 26/08/2026, agora a pasta toda: **~1,7 MB / ~520k tokens**, dos quais `plan/implemented/` responde por **58%**.
+
 | Arquivo | Teto | Quando estoura |
 |---|---|---|
 | `HISTORY.md` | **10 marcos** | a mais antiga desce para `HISTORY-archive.md`, na mesma edição |
@@ -84,6 +100,7 @@ O gatilho é ago/2026, medido: os arquivos soltos de `docs/` somavam **~326 KB /
 | `HISTORY-archive.md` | — | sem teto: é fila de saída, nunca lido inteiro |
 | `ESCOPO.md`, `ROADMAP.md`, `DECISOES.md` | ~45 KB | desmembrar por assunto em `reference/`, com ponteiro |
 | `CLAUDE.md` | **~25 KB** | é lido em **toda** sessão — o que tem outro dono sai e vira ponteiro |
+| plano individual (`plan/**`) | **~35 KB** | o excesso é quase sempre diário de execução: comprimir à régua de uma linha por sessão (abaixo). O `15` (94 KB) já nasceu violando |
 | skill (`SKILL.md`) | ~40 KB | dividir em arquivo auxiliar na pasta da skill |
 
 **A regra que sustenta o teto** não é o número: é que **nenhum arquivo de `docs/` se lê na íntegra**. O teto só limita o dano quando alguém escorrega. O protocolo de leitura — `Grep` pelo termo, `Read` com `offset`/`limit` na linha achada — mora no [`CLAUDE.md`](../CLAUDE.md#protocolo-de-leitura-da-documentação), porque é lá que ele é lido antes de a primeira leitura acontecer.

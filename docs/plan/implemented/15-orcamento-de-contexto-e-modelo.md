@@ -23,6 +23,11 @@ O item 3 é a mesma classe da [falha silenciosa do NL→SQL](../../HISTORY.md) e
 
 ## O que foi medido no Ollama desta máquina
 
+> ⚠️ **Registro da medição original (ago/2026, Ollama 0.32.6) — não é a fonte viva.** Os números **em uso** têm dono em [`reference/models/`](../../reference/models/README.md), remedidos depois: **60% dos valores desta seção já foram substituídos lá**, a frota mudou (o `qwen3:4b` entrou em 18/08 e passou a ser o cache mais caro) e o próprio Ollama subiu para 0.32.14.
+>
+> **Não copie nenhum número daqui.** Vale como proveniência — *como* a medição foi feita, com que protocolo — e é por isso que a seção continua inteira em vez de virar ponteiro: apagar o registro não é conservar, remedir é. Ver [`README § Número que se remede`](../../README.md#número-que-se-remede-vira-linha-de-série-nunca-parágrafo-concatenado).
+
+
 Sondas diretas contra o Ollama 0.32.6 servindo os modelos de `C:\ollama-models`, na máquina registrada no [`CLAUDE.md`](../../../CLAUDE.md) — CPU sem aceleração. **Cada linha abaixo decide uma linha de código**, e duas delas derrubam premissas que já estavam escritas em documento dono.
 
 ### O catálogo

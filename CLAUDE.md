@@ -47,7 +47,7 @@ Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao d
 
 ### Protocolo de leitura da documentação
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** Os oito arquivos soltos de `docs/` somam **~330 KB / ~100k tokens**. Ler dois deles inteiros já é mais contexto do que a maior parte das sessões precisa — e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,7 MB / ~520k tokens** — os oito arquivos soltos são só ~100k dela, e `plan/implemented/` sozinho é o triplo disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
@@ -58,10 +58,15 @@ Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao d
 | `ROADMAP.md` | ~12k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
 | `DECISOES.md` | ~10k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
 | `README.md` | ~2k | único que cabe inteiro |
+| **`plan/implemented/`** (43 arq.) | **~257k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
+| `plan/active/` | ~11k | o plano **em execução** se lê inteiro; os demais, `Grep` |
+| `study/`, `reference/` | ~44k / ~59k | `Grep` no conceito; `Read` com `offset` na seção achada |
 
 **Como fazer certo, em ordem:** (1) `Grep -n` pelo termo → devolve linha e arquivo; (2) `Read` com `offset` = linha achada menos 5, `limit` 40–60; (3) se a seção continuar além, estenda o `limit`, não releia do zero. Um `Grep` com `-C 3` resolve a maioria das perguntas **sem nenhum `Read`**.
 
 **As três exceções que se leem inteiras:** este `CLAUDE.md`, `docs/README.md` e o plano ativo em que se está trabalhando. Mais nada.
+
+⚠️ **Plano em `implemented/` é o caso que mais engana.** Ele parece a fonte completa — e é, mas de um trabalho já terminado. O que dele ainda vale já subiu para `HISTORY.md`, `ARMADILHAS.md` ou `DECISOES.md`; abrir o plano inteiro paga ~7 KB de média (o `15` custa 94 KB) para reler o que o dono já responde numa linha.
 
 ⚠️ **Isto vale também para você mesmo daqui a vinte turnos.** A tentação aparece como *"agora preciso do contexto completo"* — não precisa: a pergunta que motivou a leitura tem um termo, e o termo é grepável. Se realmente não houver termo, a pergunta ainda não está formada.
 

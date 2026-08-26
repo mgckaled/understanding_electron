@@ -1,5 +1,7 @@
 # Brief para o Claude Design — camada Tailwind v4 sobre o design system do crivo
 
+> ⛔ **Documento consumido — leitura histórica, não fonte de regra.** Era um prompt de uso único, para colar na ferramenta Claude Design; foi usado, e a trilha DS que ele abriu encerrou no DS-8 (ago/2026). O que valeu virou decisão no dono: skill [`design-system`](../../.claude/skills/design-system/SKILL.md) e [`HISTORY-archive.md`](../HISTORY-archive.md). **Não `Read` inteiro** — `Grep` se precisar do texto original de alguma restrição.
+
 **ago/2026.** Motivado pela decisão de adotar o Tailwind v4 sem meia migração, tomada quando os protótipos gerados pela ferramenta Claude Design tornaram concreta a pergunta que a D5.1 tinha deixado em aberto desde a fase 05.
 
 > **O que este documento é.** O texto abaixo, do `---` em diante, é para ser colado como prompt na ferramenta Claude Design. Ele contém **apenas** o que precisa chegar até lá: as restrições que os componentes e o guia entregues precisam respeitar.
