@@ -80,8 +80,7 @@ que o DS-3/DS-4 já usaram.
   handoff já consumido pelo DS-4, "muito grande e sem função para o GitHub", pedido
   explícito do usuário).
 - `docs/plan/implemented/DS-4-acabamento-final.md:6-7` tem o **único** link markdown de
-  verdade para dentro da pasta (`[...](../../DS-04/reference/Chat%20Local%20Design%20
-  System.dc.html)`) — os demais são menções em prosa (`HISTORY.md:192`,
+  verdade para dentro da pasta (o alvo era `DS-04/reference/Chat Local Design System.dc.html`) — os demais são menções em prosa (`HISTORY.md:192`,
   `plan/active/README.md:42`) que continuam legíveis sem a pasta existir e ficam como
   estão. Converter o link real em texto inerte (mesmo nome do arquivo, sem colchetes),
   com uma nota de uma linha: *"pasta removida do repositório após a DS-4 fechar —

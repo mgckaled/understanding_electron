@@ -60,6 +60,16 @@
  *      preload/index.ts was found already over its old 60-line ceiling with
  *      nothing here checking it.
  *
+ *  11. BROKEN RELATIVE LINK in a .md — the only guard that inspects
+ *      documentation, and the only one outside src/. Auto-conservação (a) of
+ *      CLAUDE.md already tells a human to grep the old name before committing;
+ *      it was written down and still failed 8 times, measured across the 92
+ *      .md files in ago/2026 — six of them the same gesture, moving a plan
+ *      from plan/active/ to plan/implemented/ and leaving ../active/ links
+ *      behind. A link is binary (the file resolves or it does not), so this
+ *      guard has no false positives, unlike the anchor and identifier checks
+ *      that were considered and rejected for that reason.
+ *
  * On violation: writes an explanation to stderr and exits 2, which feeds the
  * message back to Claude so it self-corrects. Otherwise exits 0. Any internal
  * error exits 0, so the hook never breaks the session.
@@ -117,11 +127,78 @@ function declaredTokens() {
   }
 }
 
+// Paths whose links are deliberately NOT maintained: docs/README.md states
+// that a link inside an archive is never repaired — the cost is real and the
+// benefit none. Editing an archived file must not be blocked by rot that the
+// project decided to accept.
+const LINK_EXEMPT_SOURCE = [/^docs\/plan\/archive\//, /^docs\/HISTORY-archive\.md$/]
+// `notes/` is gitignored (personal drafts): the target exists on this machine
+// and never in the repository, so its absence proves nothing.
+const LINK_EXEMPT_TARGET = /(^|\/)notes\//
+// Inline and fenced code carry example paths, not links to resolve.
+const FENCED = /```[\s\S]*?```|`[^`\n]*`/g
+const MD_LINK = /\]\(\s*<?([^)\s>]+)>?/g
+
+/**
+ * Reports every relative link in a markdown file whose target does not exist.
+ *
+ * @param file - Absolute path of the edited markdown file.
+ * @param rel - Its repo-relative POSIX path, used for the archive exemptions.
+ */
+function checkMarkdownLinks(file, rel) {
+  if (LINK_EXEMPT_SOURCE.some((re) => re.test(rel))) return
+
+  let raw
+  try {
+    raw = readFileSync(file, 'utf8')
+  } catch {
+    return
+  }
+
+  const prose = raw.replace(FENCED, '')
+  const broken = []
+  for (const [, target] of prose.matchAll(MD_LINK)) {
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(target)) continue
+    const [pathPart] = target.split('#')
+    if (!pathPart || LINK_EXEMPT_TARGET.test(pathPart)) continue
+
+    let decoded = pathPart
+    try {
+      decoded = decodeURIComponent(pathPart)
+    } catch {
+      /* keep the raw form when it is not valid percent-encoding */
+    }
+    if (!existsSync(path.resolve(path.dirname(file), decoded))) broken.push(target)
+  }
+
+  if (broken.length === 0) return
+  const lista = [...new Set(broken)].slice(0, 6).join(', ')
+  console.error(
+    `[guard] Link relativo quebrado em ${path.basename(file)}:\n  - ${lista}\n` +
+      '    O alvo não existe a partir da pasta deste arquivo. É a auto-conservação (a) do ' +
+      'CLAUDE.md: ao mover ou renomear, o ponteiro vai junto. O caso mais comum é um plano ' +
+      'que saiu de plan/active/ para plan/implemented/ — o link vira `./<plano>.md`. ' +
+      'Se o alvo ainda não existe, crie-o antes de apontar para ele.'
+  )
+  process.exit(2)
+}
+
 const file = editedFile(await readHookInput())
 if (!file) process.exit(0)
+
+const relAny = repoRelative(file)
+
+// 11. Markdown link integrity — runs before the src/-only gate below, and is
+// the only guard that leaves src/. Documentation is the project's largest
+// artefact and had no automated check at all until now.
+if (relAny && path.extname(file).toLowerCase() === '.md') {
+  checkMarkdownLinks(file, relAny)
+  process.exit(0)
+}
+
 if (!INSPECTED_EXT.has(path.extname(file).toLowerCase())) process.exit(0)
 
-const rel = repoRelative(file)
+const rel = relAny
 if (!rel || !rel.startsWith('src/')) process.exit(0)
 
 let raw
