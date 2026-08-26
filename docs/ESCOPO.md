@@ -121,7 +121,7 @@ Uma mensagem não é só texto em markdown. Ela carrega **artefatos** — blocos
 | gráfico | um resultado agregado | — |
 | **exportação** | resposta do modelo, sob pedido explícito | baixar · salvar em disco |
 
-Isso substitui as abas fixas de uma bancada tradicional: o que seria "aba de pré-visualização" é um bloco preso à mensagem em que o arquivo foi anexado, e some da vista junto com ela.
+Isso substitui as abas fixas de uma bancada tradicional: o artefato é um bloco **preso à mensagem** em que nasceu, e some da vista junto com ela. Onde ele **mora** e onde ele é **olhado**, porém, são coisas diferentes: um artefato pode ser aberto num painel lateral efêmero, que nasce de um clique, não persiste e morre ao trocar de conversa (DF3A.1, plano F-3-A). O painel é uma lente, não um destino — vale para ele o mesmo teste do gráfico: **se precisasse de estado próprio que sobrevivesse à conversa, teria virado aba fixa, e aba fixa continua fora.**
 
 Três regras decorrem, e as três existem para o aplicativo não engordar em silêncio:
 
