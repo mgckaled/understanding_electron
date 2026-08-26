@@ -18,6 +18,7 @@ import {
 import { buildDescribeSql, hasNestedType } from '@core/duckdb/schema'
 import type { WorkerRequest, WorkerResponse } from '@core/duckdb/protocol'
 import { normalizeColumns } from './normalizeColumns'
+import { columnsObjectWithSchema } from './columnsObjectWithSchema'
 
 // Enough to see past a BOM and any leading whitespace (D18E.1) — never the
 // whole file: a 2GB attachment must not be read into JS to answer "is this
@@ -114,7 +115,7 @@ async function main(): Promise<void> {
     try {
       await ensureView(hash)
       const reader = await connection.runAndReadAll(sql)
-      const bytes = columnsToArrowBytes(normalizeColumns(reader.getColumnsObject()))
+      const bytes = columnsToArrowBytes(normalizeColumns(columnsObjectWithSchema(reader)))
       return { kind: 'query', ok: true, bytes }
     } catch (error) {
       return { kind: 'query', ok: false, message: (error as Error).message }
@@ -212,7 +213,7 @@ async function main(): Promise<void> {
         const previewReader = await connection.runAndReadAll(
           `SELECT * FROM "${SCRATCH_TABLE}" LIMIT ${TRANSFORM_PREVIEW_ROWS}`
         )
-        const bytes = columnsToArrowBytes(normalizeColumns(previewReader.getColumnsObject()))
+        const bytes = columnsToArrowBytes(normalizeColumns(columnsObjectWithSchema(previewReader)))
         return { kind: 'transform', ok: true, bytes, before, after }
       } finally {
         await connection.run(buildDropScratchSql(SCRATCH_TABLE))
