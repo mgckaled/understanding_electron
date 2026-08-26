@@ -1,6 +1,6 @@
 # F-3-A — Painel de artefato: a terceira região, documento e imagem
 
-> Terceiro item da **trilha F (features avulsas, fora do arco)**, e o primeiro dela a nascer dividido — `F-3-A`/`F-3-B`/`F-3-C`, na forma que o [N-1](N-1-A-segredo-de-nuvem.md) já usou. A trilha é definida **por exclusão** (nem arco, nem envelope, nem refatoração), e este plano satisfaz a definição: é feature nova, não pertence ao arco 13–20 e nada no arco espera por ele. Peso não é critério da trilha — se fosse, o 18 não teria virado seis.
+> Terceiro item da **trilha F (features avulsas, fora do arco)**, e o primeiro dela a nascer dividido — `F-3-A`…`F-3-D`, na forma que o [N-1](N-1-A-segredo-de-nuvem.md) já usou. A trilha é definida **por exclusão** (nem arco, nem envelope, nem refatoração), e este plano satisfaz a definição: é feature nova, não pertence ao arco 13–20 e nada no arco espera por ele. Peso não é critério da trilha — se fosse, o 18 não teria virado seis.
 >
 > ⚠️ **A sigla `F-3` estava reservada para outra coisa.** O [`F-2`](F-2-composer-modelo-sidebar.md) § *Fora do escopo deste plano* deixou "F-3" apontando para uma tabela de custo de contexto por modelo nas Configurações. Aquele trabalho passa a ser **F-4**, e a linha do F-2 é corrigida no passo 1 — numeração aqui segue a ordem em que os planos são **escritos**, como DS-1…DS-8 e 18-A…18-F já fizeram.
 
@@ -16,7 +16,8 @@
 |---|---|---|
 | **F-3-A** (este) | A região, o estado, `ArtifactRef`, cabeçalho, documento e imagem, cartões viram gatilho | Casca pura, zero IPC. Termina com o painel **funcionando** |
 | **F-3-B** | Arrasto com limites, atalho de teclado, seletor de anexos no cabeçalho, transição e acabamento | Todo o dinamismo junto, sem competir com estrutura |
-| **F-3-C** | Dataset entra — pré-visualização, perfil, consulta e passos saem da bolha | Único que toca a camada de dados; único com pergunta em aberto (paginação) |
+| **F-3-C** | O painel como objeto de desktop: arrasto, janela estreita, transição, e a decisão de copiar imagem | ⚠️ o corte virou **quatro** planos no F-3-B: com o clipe contador entrando, o B chegaria a seis passos |
+| **F-3-D** | Dataset entra — pré-visualização, perfil, consulta e passos saem da bolha | Único que toca a camada de dados; único com pergunta em aberto (paginação) |
 
 **Código não entra em nenhum dos três.** O pilar não existe mecanicamente: `src/main/features/document/handlers.ts:27` filtra `['txt','md','pdf']`, nenhuma extensão de código-fonte passa pelo seletor (gap F2.8 no [`ROADMAP`](../../ROADMAP.md)). Quando nascer, entra pelo contrato que o `DF3A.2` fixa, sem tocar o painel.
 
@@ -38,7 +39,7 @@ Convenção da trilha: nada abaixo é suposição.
 | Dá para escrever `grid-cols-[…var(--w)]` no Tailwind | Valor vindo de estado não existe na varredura estática. A **própria doc do Tailwind v4** manda usar `style` para `grid-template-columns` complexo (*"Inline Styles for Complicated Arbitrary Values"*, confirmado via Context7 em 26/08/2026). `guard.mjs` só recusa **cor** literal em `style={{}}`; largura passa |
 | `min-w-0` resolve o encolhimento da faixa | Não neste projeto — a base `--spacing` está desligada e a forma numérica **não emite nada** (medido, comentado no `AppShell`). É `min-w-[0px]` |
 | Abrir o painel é inofensivo para a rolagem da conversa | **É o risco técnico do plano.** `useStickToBottom` detecta rolagem do usuário comparando `scrollTop` com onde o deixou (`MOVED_TOLERANCE = 1`), justamente porque o evento `scroll` é assíncrono. Mudar a largura reflui a thread, muda `scrollHeight`, e o navegador pode reajustar `scrollTop` — o hook leria isso como *"o usuário rolou"* e **desancoraria sozinho**. Nenhum teste de nível 2 pega: jsdom não tem layout |
-| `ConversationView` precisa ser dividido antes | Não — este plano **não o toca**. Ele está em 407 linhas contra um teto de 400, o que é real e pré-existente; a régua diz *"divide-se ao tocar"*, e o F-3-C é quem vai tocá-lo |
+| `ConversationView` precisa ser dividido antes | Não — este plano **não o toca**. Ele está em 407 linhas contra um teto de 400, o que é real e pré-existente; a régua diz *"divide-se ao tocar"*, e o F-3-B é quem vai tocá-lo |
 | Os ícones existem | Conferidos no pacote instalado (`lucide-react@1.31.0`): `copy`, `check`, `x`, `chevron-right`, `panel-right` |
 
 ---
@@ -69,7 +70,7 @@ Vive no renderer, não em `src/shared/`: é como o renderer decide desenhar, e o
 
 Documento e imagem são **síncronos** — o texto já está na parte, a imagem resolve pelo protocolo. Dataset é assíncrono, paginado e com erro possível.
 
-Se o contrato do corpo for desenhado contra o caso fácil, o F-3-C o quebra. Então o slot do corpo já aceita renderizar `StateView` desde agora, mesmo que os dois primeiros inquilinos nunca usem. **É a única concessão a um consumidor futuro neste plano** — e ela cabe porque é forma de dado, não ponto de extensão: nenhum registro de tipos, nenhuma barra de ações extensível, nenhuma segunda tela para provar que o slot funciona.
+Se o contrato do corpo for desenhado contra o caso fácil, o F-3-D o quebra. Então o slot do corpo já aceita renderizar `StateView` desde agora, mesmo que os dois primeiros inquilinos nunca usem. **É a única concessão a um consumidor futuro neste plano** — e ela cabe porque é forma de dado, não ponto de extensão: nenhum registro de tipos, nenhuma barra de ações extensível, nenhuma segunda tela para provar que o slot funciona.
 
 ### DF3A.4 — A largura mora no estado desde já, entregando valor fixo
 
@@ -163,7 +164,7 @@ Os três estados sem graça, que ninguém lembra e todo mundo encontra: document
 
 ### 4. Os cartões viram gatilho
 
-`DocumentCard` e `ImageCard` conforme DF3A.6. `DatasetCard` **não muda** neste plano — continua expandindo inline até o F-3-C. Suítes dos dois cartões reescritas: o que testava "expande o texto" passa a testar "chama `open` com o `ref` certo".
+`DocumentCard` e `ImageCard` conforme DF3A.6. `DatasetCard` **não muda** neste plano — continua expandindo inline até o F-3-D. Suítes dos dois cartões reescritas: o que testava "expande o texto" passa a testar "chama `open` com o `ref` certo".
 
 ### 5. Foco, `Esc` e a prova ao vivo
 
@@ -189,10 +190,10 @@ DF3A.8, e então `pnpm dev` com um `.md`, um `.pdf` e um `.png` reais. O que só
 | | Onde vai |
 |---|---|
 | Arrasto, atalho de teclado, seletor de anexos, transição de abertura | `F-3-B` |
-| Dataset no painel, e a pergunta da paginação | `F-3-C` |
+| Dataset no painel, e a pergunta da paginação | `F-3-D` |
 | Código como artefato | nenhum dos três — o pilar não existe (`document:pick` não aceita) |
 | Gráfico como artefato | plano 20 do arco; encaixa pelo contrato da DF3A.2 |
-| Dividir `ConversationView` (407/400) | quem tocá-lo — hoje, o `F-3-C` |
+| Dividir `ConversationView` (407/400) | quem tocá-lo — o `F-3-B` |
 
 ---
 
