@@ -1,9 +1,7 @@
 import { Paperclip } from 'lucide-react'
-import type { Message } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useArtifact } from './artifactContext'
-import { artifactsOf } from './artifactsOf'
 
 // The panel's affordance in the conversation header (DF3B.1). One click has to
 // reach content, so it opens the MOST RECENT artifact rather than a list — the
@@ -12,9 +10,8 @@ import { artifactsOf } from './artifactsOf'
 //
 // `aria-pressed`, not `aria-current`: this is a toggle, while a card's
 // `aria-current` claims something else ("I am the one on screen").
-function ArtifactCount({ messages }: { messages: Message[] }): React.JSX.Element | null {
-  const { current, toggle } = useArtifact()
-  const artifacts = artifactsOf(messages)
+function ArtifactCount(): React.JSX.Element | null {
+  const { current, artifacts, toggle } = useArtifact()
 
   // Absent, not disabled: a greyed button promises a capability this
   // conversation does not have (DF3B.2).

@@ -32,7 +32,12 @@ const IMG: ImagePart = {
 // The panel reads the context and nothing else, so a hand-made value is the
 // whole environment it needs — no provider, no conversation, no query client.
 function mount(current: ArtifactRef | null): ArtifactApi {
-  const api: ArtifactApi = { current, toggle: vi.fn(), close: vi.fn() }
+  const api: ArtifactApi = {
+    current,
+    artifacts: current === null ? [] : [current],
+    toggle: vi.fn(),
+    close: vi.fn()
+  }
   render(
     <ArtifactContext value={api}>
       <ArtifactPanel />

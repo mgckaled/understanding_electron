@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useConversations } from '../conversation/conversationsContext'
+import { useActiveConversation, useConversations } from '../conversation/conversationsContext'
 import { ArtifactContext, type ArtifactRef } from './artifactContext'
+import { artifactsOf } from './artifactsOf'
 
 // Window state, sibling of "sidebar collapsed" — never persisted (DF3A.5). It
 // cannot live in the card: the card unmounts when the conversation changes, and
@@ -8,6 +9,8 @@ import { ArtifactContext, type ArtifactRef } from './artifactContext'
 function ArtifactProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [current, setCurrent] = useState<ArtifactRef | null>(null)
   const { activeId } = useConversations()
+  const conversation = useActiveConversation()
+  const artifacts = artifactsOf(conversation?.messages ?? [])
 
   // The opener, kept out of state because focusing it renders nothing (DF3A.8).
   const trigger = useRef<HTMLElement | null>(null)
@@ -39,7 +42,10 @@ function ArtifactProvider({ children }: { children: ReactNode }): React.JSX.Elem
     setCurrent(null)
   }
 
-  const value = useMemo(() => ({ current, toggle, close }), [current, toggle, close])
+  const value = useMemo(
+    () => ({ current, artifacts, toggle, close }),
+    [current, artifacts, toggle, close]
+  )
 
   return <ArtifactContext value={value}>{children}</ArtifactContext>
 }

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Copy, FileText, Image, X } from 'lucide-react'
+import { Check, Copy, X } from 'lucide-react'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import ArtifactBody from './ArtifactBody'
+import ArtifactPicker from './ArtifactPicker'
 import { useArtifact } from './artifactContext'
 import { canCopy, copyArtifact } from './copyArtifact'
 
@@ -49,8 +50,6 @@ function ArtifactPanel(): React.JSX.Element | null {
     timer.current = setTimeout(() => setCopied(false), COPIED_MS)
   }
 
-  const Icon = current.kind === 'image' ? Image : FileText
-
   return (
     <aside
       ref={region}
@@ -69,10 +68,7 @@ function ArtifactPanel(): React.JSX.Element | null {
       {/* Chrome density (D13.6), and the same icon and name the card shows — the
           eye connects the two without having to think about it. */}
       <header className="flex flex-none items-center gap-3 border-b border-border px-5 py-4">
-        <Icon size={ICON_SIZE.md} strokeWidth={ICON_STROKE} className="flex-none text-text-muted" />
-        <span className="min-w-[0px] flex-1 overflow-hidden text-sm font-medium text-ellipsis whitespace-nowrap text-text">
-          {current.part.fileName}
-        </span>
+        <ArtifactPicker current={current} />
         {/* Absent, not disabled, for an image: a greyed button promises a
             capability that is not coming back on its own (DF3A.7). */}
         {canCopy(current) && (

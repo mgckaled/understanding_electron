@@ -20,7 +20,12 @@ const IMG: ImagePart = {
 }
 
 function mount(node: React.JSX.Element, current: ArtifactRef | null = null): ArtifactApi {
-  const api: ArtifactApi = { current, toggle: vi.fn(), close: vi.fn() }
+  const api: ArtifactApi = {
+    current,
+    artifacts: current === null ? [] : [current],
+    toggle: vi.fn(),
+    close: vi.fn()
+  }
   render(<ArtifactContext value={api}>{node}</ArtifactContext>)
   return api
 }

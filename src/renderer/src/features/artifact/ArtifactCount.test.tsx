@@ -37,11 +37,14 @@ function turn(id: string, part?: DocumentPart | ImagePart | DatasetPart): Messag
   }
 }
 
-function mount(messages: Message[], current: ArtifactRef | null = null): ArtifactApi {
-  const api: ArtifactApi = { current, toggle: vi.fn(), close: vi.fn() }
+const DOC_REF: ArtifactRef = { kind: 'document', id: 'h-doc', part: DOC }
+const IMG_REF: ArtifactRef = { kind: 'image', id: 'h-img', part: IMG }
+
+function mount(artifacts: ArtifactRef[], current: ArtifactRef | null = null): ArtifactApi {
+  const api: ArtifactApi = { current, artifacts, toggle: vi.fn(), close: vi.fn() }
   render(
     <ArtifactContext value={api}>
-      <ArtifactCount messages={messages} />
+      <ArtifactCount />
     </ArtifactContext>
   )
   return api
@@ -66,31 +69,27 @@ describe('artifactsOf', () => {
 
 describe('ArtifactCount', () => {
   it('does not exist when the conversation has no openable attachment', () => {
-    mount([turn('m1'), turn('m2', DATA)])
+    mount([])
 
     expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('shows how many there are', () => {
-    mount([turn('m1', DOC), turn('m2', IMG)])
+    mount([DOC_REF, IMG_REF])
 
     expect(screen.getByRole('button', { name: /Abrir anexos da conversa \(2\)/ })).toBeVisible()
   })
 
   it('opens the most recent one, not the first', async () => {
-    const api = mount([turn('m1', DOC), turn('m2', IMG)])
+    const api = mount([DOC_REF, IMG_REF])
 
     await userEvent.click(screen.getByRole('button'))
 
-    expect(api.toggle).toHaveBeenCalledWith(
-      { kind: 'image', id: 'h-img', part: IMG },
-      expect.anything()
-    )
+    expect(api.toggle).toHaveBeenCalledWith(IMG_REF, expect.anything())
   })
 
   it('closes the panel that is already open, whichever artifact it holds', async () => {
-    const openDoc: ArtifactRef = { kind: 'document', id: 'h-doc', part: DOC }
-    const api = mount([turn('m1', DOC), turn('m2', IMG)], openDoc)
+    const api = mount([DOC_REF, IMG_REF], DOC_REF)
     const button = screen.getByRole('button', { name: /Fechar/ })
 
     expect(button).toHaveAttribute('aria-pressed', 'true')
@@ -98,6 +97,6 @@ describe('ArtifactCount', () => {
 
     // The one being closed, never the newest — closing the panel by handing it
     // a different artifact would swap instead of close.
-    expect(api.toggle).toHaveBeenCalledWith(openDoc, expect.anything())
+    expect(api.toggle).toHaveBeenCalledWith(DOC_REF, expect.anything())
   })
 })

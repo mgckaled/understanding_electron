@@ -182,7 +182,7 @@ function ConversationView(): React.JSX.Element {
         {/* Opposite end from the title, which truncates rather than pushing it
             (DF3B.1). `min-w-[0px]` on the <h1> is what makes the truncation win
             over the clip instead of the other way round. */}
-        <ArtifactCount messages={messages} />
+        <ArtifactCount />
       </header>
 
       {/* The one scrolling surface. Its ref is measured by useStickToBottom, so

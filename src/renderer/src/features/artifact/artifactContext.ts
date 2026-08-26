@@ -19,6 +19,14 @@ export type ArtifactRef =
 export type ArtifactApi = {
   current: ArtifactRef | null
   /**
+   * Every artifact this conversation can open, oldest first.
+   *
+   * Lives here, not in each consumer: the header clip and the panel's picker
+   * both need it, and deriving it twice from two places is how the number on
+   * one and the length of the other start disagreeing.
+   */
+  artifacts: ArtifactRef[]
+  /**
    * Opens `ref` in the panel, or closes the panel when `ref` is already the
    * open one — the card stays dumb and this rule lives in one place.
    *

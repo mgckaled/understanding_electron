@@ -91,6 +91,11 @@ Ele responde uma pergunta concreta: com o painel aberto e o cartão vinte mensag
 
 Forma: o cabeçalho do painel deixa de ser um título estático (o F-3-A o deixou assim de propósito, recusando construir gatilho antes de ter consumidor) e passa a ser o gatilho de um `Popover` — o primitivo nativo que o projeto já usa, com `anchorName` vindo de `toAnchorName(useId())`. Item marcado é o aberto.
 
+**Duas coisas apareceram só na execução:**
+
+1. **A lista subiu para o contexto.** O clipe e o seletor precisavam dela, e derivá-la duas vezes, de dois lugares, é exatamente como o número de um e o comprimento do outro começam a discordar. O `ArtifactProvider` passa a expor `artifacts`, e o clipe perdeu a prop `messages` que tinha ganhado no passo 3. Efeito colateral bom: o painel volta a ter **uma** dependência, que era o que tornava seu teste de nível 2 tão barato.
+2. **Escolher o item já aberto não pode fechar o painel.** O `toggle` fecha quando recebe o artefato que já está aberto (DF3A.6) — correto para um cartão, errado para uma lista, onde escolher o item atual significa *"fico neste"*. O seletor guarda contra isso, e o teste que prova é o mais valioso do arquivo. E o `Popover` **não é renderizado** com um artefato só: menu de um item inescolhível é DOM morto que ainda responde a consulta por texto — foi assim que ele quebrou o teste do painel.
+
 ⚠️ **Sob jsdom, todo conteúdo de `Popover` computa `display:none`** — a folha padrão do próprio jsdom traz `[popover]:not(:popover-open) { display:none }`, que o shim não alcança. Consulta de nível 2 precisa de `{ hidden: true }`, como os outros consumidores já fazem.
 
 ### DF3B.6 — `ConversationView` se divide por coesão, não para caber
