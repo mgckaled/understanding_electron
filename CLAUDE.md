@@ -256,7 +256,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 | Superfície do preload | apenas `window.api`, montada a partir de `src/shared/ipc.ts` |
 | Abertura de link externo | `checkExternalUrl` em `src/core/url.ts` (lista branca `http:`/`https:`), **único** caminho até `shell.openExternal` — usado pelo canal `shell:openExternal`, pelo `setWindowOpenHandler` e pelo `will-navigate` |
 | Navegação e janela nova | negadas por padrão |
-| CSP | `default-src 'self'` no `index.html` |
+| CSP | `default-src 'self'` no `index.html`, com duas aberturas nomeadas para o esquema `attachment:` — `img-src` (D17.6) e `connect-src` (DF3A.7, para copiar bytes de imagem). Ele serve **só** blobs locais de `userData` endereçados por hash, validado antes de ler |
 | Segredos | regra fixada (mão única, `safeStorage`, `userData`) e **em uso desde a trilha N-1** — chaves de provedor de nuvem em `main/features/secrets/`. `secrets:read` não existe por desenho (DN1A.3) |
 | `shamefullyHoist` | **desligado** (`false`) — gatilho cumprido no plano `18-A` |
 
