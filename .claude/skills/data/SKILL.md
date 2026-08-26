@@ -53,6 +53,12 @@ Efeito prático em quem adiciona um formato de dataset novo: a ordem do anexo se
 
 ⚠️ **`reader.getColumnsObject()` perde o schema inteiro quando o resultado tem zero linhas** — devolve `{}`, nenhuma coluna, e a tabela sai sem cabeçalho, indistinguível de "não fez nada". Use `columnNames()`, que carrega o schema independente da contagem de linhas.
 
+⚠️ **`getColumnsObject()` não devolve valor JS plano para todo tipo.** DATE, TIMESTAMP e TIMESTAMPTZ voltam **embrulhados na classe própria do binding** (`DuckDBDateValue` — `{ days }`; `DuckDBTimestampValue`/`DuckDBTimestampTZValue` — `{ micros: bigint }`); todo o resto que os sniffers de CSV e JSON produzem já chega como `bigint`/`number`/`string`/`boolean`/`null`. Quem converte é `workers/duckdb/normalizeColumns.ts` — fica em `workers/`, não em `core/`, porque só essa camada já depende de `@duckdb/node-api` e conhece as formas dos wrappers (D18B).
+
+**Ao adicionar um formato ou tipo de coluna novo, sonde o que ele devolve de fato.** Um tipo embrulhado que `normalizeValue` não trate passa intacto, chega ao `apache-arrow` como objeto opaco e fica **silenciosamente errado** — nenhum teste de string pega isso, só uma sonda contra o motor real. Foi assim que TIMESTAMP entrou (D18E.6): o 18-E escreveu `normalizeColumns` contra `DuckDBDateValue` apenas, e `read_json_auto` trouxe TIMESTAMP.
+
+⚠️ **O tipo `JSON` é o fallback do próprio `read_json_auto` quando o tipo de um campo varia entre linhas** — não é um erro que o motor levante. Por isso `hasNestedType` (`core/duckdb/schema.ts`) recusa `^JSON$` junto de `STRUCT(`/`MAP(`/`[]`: um objeto de verdade escondido atrás desse fallback chega **serializado como string**, não como `DuckDBStructValue`, e passaria por coluna escalar comum.
+
 A formatação de célula (`∅` para `null`/`undefined`, `.toString()` para `bigint`) tem **um** dono desde o plano 19: `features/attachment/formatCell.ts`. A régua dos três disparou ali — `DatasetQueryPanel.tsx` e `DatasetPreview.tsx` carregavam cópia própria até o terceiro consumidor (`StepProposalCard`, D19.6) chegar. **Importe, não copie**; e é um `.ts` avulso, não dobrado no `DatasetTable.tsx`, porque `react-refresh/only-export-components` recusa um `.tsx` exportando algo além de componente.
 
 ## Formatos suportados hoje
