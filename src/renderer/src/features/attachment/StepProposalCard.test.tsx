@@ -63,34 +63,17 @@ describe('StepProposalCard', () => {
     expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
   })
 
-  it('asks for confirmation before removing a step, then removes it on Remover', async () => {
+  it('removes a step immediately on click — no confirmation, unlike deleting the card', async () => {
     const api = installApiMock()
     const user = userEvent.setup()
     await mount(api)
     await screen.findByText('filtrar idade maior que 18')
 
     await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
-    expect(screen.getByText('Deseja remover o passo de forma definitiva?')).toBeVisible()
-    // Both steps are still there — the dialog only asks, it does not act yet.
-    expect(screen.getByText('filtrar idade maior que 18')).toBeVisible()
-
-    await user.click(screen.getByRole('button', { name: 'Remover' }))
 
     expect(screen.queryByText('filtrar idade maior que 18')).not.toBeInTheDocument()
     expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
-  })
-
-  it('keeps the step when the removal is cancelled', async () => {
-    const api = installApiMock()
-    const user = userEvent.setup()
-    await mount(api)
-    await screen.findByText('filtrar idade maior que 18')
-
-    await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
-    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
-
-    expect(screen.getByText('filtrar idade maior que 18')).toBeVisible()
-    expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('asks for confirmation before deleting the whole card, then deletes it for good', async () => {
@@ -155,7 +138,6 @@ describe('StepProposalCard', () => {
     await screen.findByText('filtrar idade maior que 18')
 
     await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
-    await user.click(screen.getByRole('button', { name: 'Remover' }))
     await user.click(screen.getByRole('button', { name: 'Aplicar' }))
 
     expect(api.dataset.transform).toHaveBeenCalledWith('h1', [{ kind: 'limit', count: 10 }])

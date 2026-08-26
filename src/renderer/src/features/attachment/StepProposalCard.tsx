@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { tableFromIPC } from 'apache-arrow'
-import { Trash2, Undo2 } from 'lucide-react'
+import { Trash2, Undo2, X } from 'lucide-react'
 import type { ColumnProfile, Step, StepProposalPart } from '@shared/ipc'
 import { describeStep } from '@core/pipeline/describe'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -35,13 +35,6 @@ interface NullJump {
   after: number
 }
 
-// Two different destructive actions share one confirm dialog: editing which
-// steps will run (removeStep, ephemeral, client-side) vs. discarding the
-// whole card from the conversation for good (deleteCard, persisted —
-// live-testing round of arco 19 found the first alone did not satisfy "sem
-// volta" — the card itself has to leave, not just shrink to empty).
-type PendingAction = { kind: 'removeStep'; index: number } | { kind: 'deleteCard' }
-
 /**
  * Compares nullPercentage per column, before vs. after (D19.6) — never row
  * count: zero rows after a filter is often the CORRECT result, and an alarm
@@ -65,7 +58,7 @@ function nullJumps(before: ColumnProfile[], after: ColumnProfile[]): NullJump[] 
  * manual step construction (out of scope, D19's own "o que não esperar").
  *
  * @param messageId - Identity of the message carrying `part`, needed only to
- *   delete the whole card from the conversation (D19.7-5's confirm dialog).
+ *   delete the whole card from the conversation (D19.7-5).
  */
 function StepProposalCard({
   part,
@@ -78,8 +71,11 @@ function StepProposalCard({
   const { removeMessage } = useConversations()
   const [steps, setSteps] = useState<Step[]>(part.steps)
   const [state, setState] = useState<ApplyState>({ status: 'idle' })
-  const [pending, setPending] = useState<PendingAction | null>(null)
-  const confirmDescriptionId = useId()
+  // The ONLY destructive, confirmed action on this card — discarding it
+  // whole, for good. Editing which steps run (removeStep below) is not:
+  // it is reversible up until Aplicar, so it stays a plain, immediate click.
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const deleteDescriptionId = useId()
 
   async function handleApply(): Promise<void> {
     setState({ status: 'loading' })
@@ -104,16 +100,11 @@ function StepProposalCard({
     setSteps((current) => current.filter((_, position) => position !== index))
   }
 
-  function confirmPending(): void {
-    if (pending === null) return
-    if (pending.kind === 'removeStep') {
-      removeStep(pending.index)
-    } else if (conversation !== null) {
-      // Persisted (conversation:removeMessage) — a reload must not bring the
-      // card back, unlike removeStep's local-only edit above.
-      removeMessage(conversation.id, messageId)
-    }
-    setPending(null)
+  function confirmDelete(): void {
+    // Persisted (conversation:removeMessage) — a reload must not bring the
+    // card back, unlike removeStep's local-only edit above.
+    if (conversation !== null) removeMessage(conversation.id, messageId)
+    setConfirmingDelete(false)
   }
 
   const jumps = state.status === 'ready' ? nullJumps(state.result.before, state.result.after) : []
@@ -122,13 +113,13 @@ function StepProposalCard({
     <div className="flex max-w-[80%] flex-col gap-3 rounded-lg border border-border bg-surface-raised px-5 py-4 text-text">
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-semibold text-text-muted">Proposta de passos</span>
-        {/* Always present, independent of how many steps remain (even zero) —
-            this is the whole-card discard, distinct from a per-step edit. */}
+        {/* The one trash icon on this card, always present regardless of how
+            many steps remain (even zero) — discards the whole card. */}
         <Button
           variant="outline"
           size="sm"
           shape="circle"
-          onClick={() => setPending({ kind: 'deleteCard' })}
+          onClick={() => setConfirmingDelete(true)}
           aria-label="Excluir proposta"
         >
           <Trash2 className="text-danger-text" size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
@@ -141,22 +132,15 @@ function StepProposalCard({
           {steps.map((step, index) => (
             <li key={index} className="flex items-center gap-2">
               <span className="flex-1 text-sm">{describeStep(step)}</span>
-              {/* text-danger-text, never the solid danger fill, as an icon on a
-                  transparent button (D10.1) — the fill is for Remover below,
-                  the actual destructive action, not this trigger. */}
               <Button
                 variant="outline"
                 size="sm"
                 shape="circle"
                 className="flex-none"
-                onClick={() => setPending({ kind: 'removeStep', index })}
+                onClick={() => removeStep(index)}
                 aria-label={`Remover passo ${index + 1}`}
               >
-                <Trash2
-                  className="text-danger-text"
-                  size={ICON_SIZE.sm}
-                  strokeWidth={ICON_STROKE}
-                />
+                <X size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
               </Button>
             </li>
           ))}
@@ -196,27 +180,25 @@ function StepProposalCard({
         </div>
       )}
       <Dialog
-        open={pending !== null}
-        title={pending?.kind === 'deleteCard' ? 'Excluir proposta' : 'Remover passo'}
-        onClose={() => setPending(null)}
-        describedBy={confirmDescriptionId}
+        open={confirmingDelete}
+        title="Excluir proposta"
+        onClose={() => setConfirmingDelete(false)}
+        describedBy={deleteDescriptionId}
       >
-        <p className="mb-6 text-sm" id={confirmDescriptionId}>
-          {pending?.kind === 'deleteCard'
-            ? 'Deseja excluir esta proposta da conversa de forma definitiva?'
-            : 'Deseja remover o passo de forma definitiva?'}
+        <p className="mb-6 text-sm" id={deleteDescriptionId}>
+          Deseja excluir esta proposta da conversa de forma definitiva?
         </p>
         <div className="flex justify-end gap-3">
-          <Button variant="secondary" size="sm" onClick={() => setPending(null)}>
+          <Button variant="secondary" size="sm" onClick={() => setConfirmingDelete(false)}>
             <span className="flex items-center gap-2">
               <Undo2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
               Cancelar
             </span>
           </Button>
-          <Button variant="danger" size="sm" onClick={confirmPending}>
+          <Button variant="danger" size="sm" onClick={confirmDelete}>
             <span className="flex items-center gap-2">
               <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-              {pending?.kind === 'deleteCard' ? 'Excluir' : 'Remover'}
+              Excluir
             </span>
           </Button>
         </div>
