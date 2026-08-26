@@ -63,6 +63,8 @@ Efeito prático em quem adiciona um formato de dataset novo: a ordem do anexo se
 
 A formatação de célula (`∅` para `null`/`undefined`, `.toString()` para `bigint`) tem **um** dono desde o plano 19: `features/attachment/formatCell.ts`. A régua dos três disparou ali — `DatasetQueryPanel.tsx` e `DatasetPreview.tsx` carregavam cópia própria até o terceiro consumidor (`StepProposalCard`, D19.6) chegar. **Importe, não copie**; e é um `.ts` avulso, não dobrado no `DatasetTable.tsx`, porque `react-refresh/only-export-components` recusa um `.tsx` exportando algo além de componente.
 
+⚠️ **`read_csv_auto($1)` rejeita parâmetro vinculado** — `Binder Error: Unexpected prepared parameter`. O caminho do arquivo tem de ser **interpolado** na string do SQL, o que é exatamente o motivo de o hash ser validado por expressão regular antes (D18B.3): a validação existe porque o mecanismo seguro não estava disponível, não como preferência. Vale para as funções de leitura de arquivo em geral; não presuma que uma delas aceita parâmetro só porque `SELECT` aceita.
+
 ## Formatos suportados hoje
 
 `csv`/`tsv`/`txt` (delimitado, `sniffDatasetFormat` + `scanDelimited`), `json`/`ndjson`/`jsonl` (`read_json_auto`), `xlsx` (`read_xlsx`).

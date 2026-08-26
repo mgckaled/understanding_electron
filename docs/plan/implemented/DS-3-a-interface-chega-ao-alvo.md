@@ -4,7 +4,7 @@
 
 > Terceiro e último da [trilha DS](../active/README.md#a-trilha-de-design-system-ds-n). **Aceite global oposto ao de DS-1/DS-2: a tela muda, e a mudança é a entrega** — medida contra `alvo-chat.png`.
 >
-> **O design system é um envelope** — a régua é da skill [`design-system`](../../../.claude/skills/design-system/SKILL.md), o alvo é do [handoff](../../reference/handoff-ds-ago2026/README.md). Este plano **não constrói feature nenhuma**: leva ao alvo o que **já existe** no app. O que ainda não existe (clipe, cartão de anexo) é do [plano 16](../active/16-anexo-mecanismo-e-dataset.md); credencial de nuvem é do [plano 09](../active/09-camada-de-ia.md).
+> **O design system é um envelope** — a régua é da skill [`design-system`](../../../.claude/skills/design-system/SKILL.md), o alvo é do [handoff](../../reference/handoff-ds-ago2026/README.md). Este plano **não constrói feature nenhuma**: leva ao alvo o que **já existe** no app. O que ainda não existe (clipe, cartão de anexo) é do [plano 16](./16-anexo-mecanismo-e-dataset.md); credencial de nuvem é do [plano 09](../active/09-camada-de-ia.md).
 
 ---
 

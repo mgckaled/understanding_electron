@@ -1,6 +1,6 @@
 # Revisão de escopo (5ª) — nível 3 liberado na nuvem
 
-> Sem letra de trilha, como as revisões anteriores (1ª–4ª, ver [`ROADMAP § 1`](../../ROADMAP.md)) — reverte uma frase específica que o [`ESCOPO.md`](../../ESCOPO.md) declara, não abre uma trilha nova. Decidida em sessão antes do arco **19**, para o 19 já nascer sem essa política pendurada — embora o 19 não dependa dela: `propor: consulta e passos` manda só o esquema ao modelo (D9.4 do [plano 09](09-camada-de-ia.md)), nunca chega perto do nível 3.
+> Sem letra de trilha, como as revisões anteriores (1ª–4ª, ver [`ROADMAP § 1`](../../ROADMAP.md)) — reverte uma frase específica que o [`ESCOPO.md`](../../ESCOPO.md) declara, não abre uma trilha nova. Decidida em sessão antes do arco **19**, para o 19 já nascer sem essa política pendurada — embora o 19 não dependa dela: `propor: consulta e passos` manda só o esquema ao modelo (D9.4 do [plano 09](../active/09-camada-de-ia.md)), nunca chega perto do nível 3.
 
 ## A decisão
 

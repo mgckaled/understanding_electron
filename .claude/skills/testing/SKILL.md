@@ -37,6 +37,15 @@ Handler como **função exportada**, registrada por um `handle()` genérico (ski
 
 Nível 5 usa `electron-playwright-helpers`: `findLatestBuild('dist')` + `parseElectronApp(buildDir)`. A doc do pacote descreve a convenção como `out/<nome>-<plataforma>`, mas a função na prática aceita qualquer nome de pasta cujo split por hífen contenha um token de plataforma reconhecido — `win-unpacked` (saída padrão do `electron-builder --dir` no Windows) bate, porque contém `win`. Confirmado lendo `find_parse_builds.js` antes de escrever o teste, não supondo pela doc.
 
+## Um teste que passa com o defeito presente não estava provando nada
+
+A regra vale em todos os cinco níveis, e é mais fácil de violar do que parece — dois casos reais do projeto:
+
+- Um teste de "modelo com visão" passava contra uma implementação **errada** (buscar chave por sufixo `.context_length`), só porque o Ollama calhava de devolver as chaves numa ordem favorável. O caso certo não provava a regra; provava a ordem.
+- Um teste "não escreve `numCtx` quando não há janela" passava porque o campo nem é renderizado nesse estado, logo nada dispara `blur` — **o código antigo também passaria**. Nasceu vacuoso e foi removido.
+
+**O procedimento que fecha isso:** veja o teste **vermelho** antes de deixá-lo verde — removendo a correção, sabotando a entrada, ou escrevendo-o antes do conserto. Se você não viu falhar, não sabe o que ele mede.
+
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
 
 ## Limites de ambiente de teste — cinco casos, provados caros

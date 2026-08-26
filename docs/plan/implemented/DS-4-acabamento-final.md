@@ -5,7 +5,7 @@
 DS-1/DS-2/DS-3 levaram a interface do chat até `alvo-chat.png`. Uma sessão separada,
 fora deste repositório, gerou um novo protótipo — `docs/DS-04/reference/Chat Local
 Design System.dc.html` (pasta removida do repositório após a DS-4 fechar — ver
-[`DS-5`](../active/DS-5-icones-fonte-e-acabamento.md) § Fase 0)
+[`DS-5`](./DS-5-icones-fonte-e-acabamento.md) § Fase 0)
 — com cinco extensões de interface que o DS-3 não cobriu, e escreveu três documentos
 (`README.md`, `IMPLEMENTATION_PLAN.md`, `DS-4-BASE.md`, em `docs/DS-04/`) que tentam
 mapear o protótipo para o código real. A leitura desta sessão encontrou o

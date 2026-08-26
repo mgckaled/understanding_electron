@@ -12,6 +12,18 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### Catálogo síncrono concatenado com catálogo assíncrono vence o índice 0 na janela em que o assíncrono ainda não resolveu (ago/2026)
+`[...instalados, ...nuvem]` parece inofensivo, mas as duas metades resolvem em tempos diferentes: a tabela chumbada de nuvem é síncrona, o catálogo local vem por IPC. No primeiro render `instalados` está vazio, então o primeiro modelo de nuvem ocupa o índice 0 — e qualquer fallback do tipo "use o primeiro da lista" passa a escolher **nuvem por acidente de tempo**, nunca por decisão. Não apareceu em nenhuma das duas revisões de desenho; só um teste que travou com "Cannot read properties of undefined" expôs. **Conserto:** não concatenar enquanto o lado assíncrono estiver `loading` — a lista fica vazia (ou só com o lado já resolvido) até haver com que comparar. Vale para qualquer união de fontes com latências diferentes onde a ordem signifique algo.
+
+### Asserção por texto curto casa com substring de outro elemento — `/ok/i` bateu em "tokens" (ago/2026)
+Numa verificação ao vivo de resposta de modelo, `getByText(/ok/i)` deu verde **sem o modelo ter respondido**: casou com o `~8 de 32.768 tokens` do medidor de contexto, que estava na mesma tela. O teste afirmava provar a integração ponta a ponta com uma API real e não provava nada. **Conserto:** asserção por estrutura (contar turnos, escopar a um container) em vez de por texto curto; e desconfiar de qualquer regex de duas ou três letras contra uma tela inteira. Da mesma família de *"um teste que passa com o defeito presente"* (skill `testing`), mas o mecanismo aqui é a asserção larga demais, não o caso de teste errado.
+
+### `os.freemem()` no Windows devolve o *Disponível*, não o *Livre* — e a diferença é entre funcionar e dar teto zero (ago/2026)
+No Windows o Node devolve `ullAvailPhys`, que corresponde ao **Disponível** do Gerenciador de Tarefas (medido: 6,73 GiB, batendo com 58% de uso). O *Livre* seria quase zero, porque o Windows mantém quase tudo em standby recuperável — e qualquer orçamento calculado sobre ele daria teto **zero** para todo modelo, recusando até o padrão do app. A distinção não é acadêmica: é a diferença entre o cálculo de RAM funcionar e o app se recusar a rodar. Confira contra o Gerenciador antes de confiar num número de memória livre.
+
+### `user.type` despacha uma tecla por caractere — 4.000 delas estouram o timeout do teste (ago/2026)
+`userEvent.type()` simula digitação real, evento por caractere. Num teste de rascunho longo (4.000 caracteres, para exercitar um portão de orçamento) isso passa dos 5 s padrão do Vitest e o teste falha por timeout, não por defeito. Use `user.paste()` quando o que importa é o **conteúdo** no campo, não a mecânica de digitação. `user.type` só quando o teste for sobre digitar.
+
 ### O composer habilita antes de o catálogo de modelos existir — todo gate por capacidade lê `model === null` nesse intervalo (ago/2026)
 `ai:isAvailable` responde rápido (o provedor está de pé), mas `ai:models` faz um N+1 de `/api/show` para descobrir `capabilities` e leva **~5 s**. Nesse intervalo a interface já aceita interação, e qualquer coisa que decida por capacidade vê `model === null`: o gate de visão do plano 17 mostrava "Imagens" **desabilitada** mesmo com o `gemma3:4b` tendo `vision` de verdade. Não é bug do gate — é ordem de resolução. Ao verificar um gate de capacidade ao vivo, **espere o seletor de modelo aparecer**; ao escrever um, decida explicitamente o que fazer no estado "ainda não sei qual modelo" em vez de deixá-lo cair no ramo de "não tem a capacidade".
 
