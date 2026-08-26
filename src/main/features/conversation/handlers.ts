@@ -62,6 +62,18 @@ export function removeConversation({ id }: Args<'conversation:remove'>, db: Data
   db.prepare('DELETE FROM conversations WHERE id = ?').run(id)
 }
 
+export function removeMessage(
+  { conversationId, messageId }: Args<'conversation:removeMessage'>,
+  db: DatabaseSync
+): void {
+  // Same "absence is data" reasoning as appendMessage's dropped-race case — a
+  // message already gone (double click, stale card) touches zero rows, not an error.
+  db.prepare('DELETE FROM messages WHERE id = ? AND conversation_id = ?').run(
+    messageId,
+    conversationId
+  )
+}
+
 export function updateConversationSettings(
   { id, patch }: Args<'conversation:settings'>,
   db: DatabaseSync

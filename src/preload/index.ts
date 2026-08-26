@@ -54,6 +54,8 @@ const api: Api = {
     create: (conversation) => invoke('conversation:create', conversation),
     rename: (id, title) => invoke('conversation:rename', { id, title }),
     remove: (id) => invoke('conversation:remove', { id }),
+    removeMessage: (conversationId, messageId) =>
+      invoke('conversation:removeMessage', { conversationId, messageId }),
     append: (conversationId, message, title) =>
       invoke('conversation:append', { conversationId, message, title }),
     updateSettings: (id, patch) => invoke('conversation:settings', { id, patch })

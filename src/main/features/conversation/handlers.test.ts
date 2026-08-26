@@ -7,6 +7,7 @@ import {
   listConversations,
   readMessages,
   removeConversation,
+  removeMessage,
   renameConversation,
   updateConversationSettings
 } from './handlers'
@@ -248,5 +249,33 @@ describe('removeConversation', () => {
 
   it('is a no-op for an id that is not there', () => {
     expect(() => removeConversation({ id: 'ghost' }, db)).not.toThrow()
+  })
+})
+
+describe('removeMessage', () => {
+  beforeEach(() => {
+    createConversation({ id: 'c1', title: 'Nova conversa', createdAt: 1000 }, db)
+  })
+
+  it('deletes the one message and leaves the rest of the transcript alone', () => {
+    appendMessage({ conversationId: 'c1', message: message({ id: 'm1' }) }, db)
+    appendMessage({ conversationId: 'c1', message: message({ id: 'm2', createdAt: 3000 }) }, db)
+
+    removeMessage({ conversationId: 'c1', messageId: 'm1' }, db)
+
+    expect(readMessages({ conversationId: 'c1' }, db).map((item) => item.id)).toEqual(['m2'])
+  })
+
+  it('is a no-op for a message id that is not there', () => {
+    expect(() => removeMessage({ conversationId: 'c1', messageId: 'ghost' }, db)).not.toThrow()
+  })
+
+  it('leaves the message alone when conversationId does not match it', () => {
+    createConversation({ id: 'c2', title: 'Outra', createdAt: 1000 }, db)
+    appendMessage({ conversationId: 'c1', message: message({ id: 'm1' }) }, db)
+
+    removeMessage({ conversationId: 'c2', messageId: 'm1' }, db)
+
+    expect(readMessages({ conversationId: 'c1' }, db)).toHaveLength(1)
   })
 })

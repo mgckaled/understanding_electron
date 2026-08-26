@@ -7,6 +7,7 @@ import {
   listConversations,
   readMessages,
   removeConversation,
+  removeMessage,
   renameConversation,
   updateConversationSettings
 } from '../src/main/features/conversation/handlers'
@@ -40,6 +41,9 @@ export function createStoreApi(): Pick<Api, 'conversation' | 'settings'> {
       create: vi.fn(async (conversation) => createConversation(conversation, db)),
       rename: vi.fn(async (id: string, title: string) => renameConversation({ id, title }, db)),
       remove: vi.fn(async (id: string) => removeConversation({ id }, db)),
+      removeMessage: vi.fn(async (conversationId: string, messageId: string) =>
+        removeMessage({ conversationId, messageId }, db)
+      ),
       append: vi.fn(async (conversationId, message, title) =>
         appendMessage({ conversationId, message, ...(title === undefined ? {} : { title }) }, db)
       ),

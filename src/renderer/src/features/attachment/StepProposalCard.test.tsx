@@ -1,19 +1,24 @@
+import { QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ColumnProfile, StepProposalPart } from '@shared/ipc'
+import type { Api, ColumnProfile, StepProposalPart } from '@shared/ipc'
 import { columnsToArrowBytes } from '@core/duckdb/arrow'
 import { installApiMock } from '@test/api-mock'
+import { createQueryClient } from '../../shared/queryClient'
+import ConversationsProvider from '../conversation/ConversationsProvider'
 import StepProposalCard from './StepProposalCard'
 
-const PART: StepProposalPart = {
-  kind: 'stepProposal',
-  hash: 'h1',
-  proposalKind: 'steps',
-  steps: [
-    { kind: 'filter', column: 'idade', operator: 'gt', value: 18 },
-    { kind: 'limit', count: 10 }
-  ]
+const CONVERSATION_ID = 'c1'
+const MESSAGE_ID = 'm1'
+
+function part(steps: StepProposalPart['steps']): StepProposalPart {
+  return { kind: 'stepProposal', hash: 'h1', proposalKind: 'steps', steps }
 }
+
+const STEPS: StepProposalPart['steps'] = [
+  { kind: 'filter', column: 'idade', operator: 'gt', value: 18 },
+  { kind: 'limit', count: 10 }
+]
 
 function profile(overrides: Partial<ColumnProfile>): ColumnProfile {
   return {
@@ -28,17 +33,41 @@ function profile(overrides: Partial<ColumnProfile>): ColumnProfile {
   }
 }
 
-describe('StepProposalCard', () => {
-  it('renders each step in Portuguese', () => {
-    render(<StepProposalCard part={PART} />)
+// The card now deletes itself from the conversation (D19.7-5), so it needs a
+// real conversation behind it — same store-backed api the level-2 conversation
+// tests already use, not a hand-mocked useConversations.
+async function mount(api: Api, steps: StepProposalPart['steps'] = STEPS): Promise<void> {
+  await api.conversation.create({ id: CONVERSATION_ID, title: 'Vendas', createdAt: 1 })
+  await api.conversation.append(CONVERSATION_ID, {
+    id: MESSAGE_ID,
+    role: 'assistant',
+    parts: [part(steps)],
+    createdAt: 1
+  })
 
-    expect(screen.getByText('filtrar idade maior que 18')).toBeVisible()
+  render(
+    <QueryClientProvider client={createQueryClient()}>
+      <ConversationsProvider>
+        <StepProposalCard part={part(steps)} messageId={MESSAGE_ID} />
+      </ConversationsProvider>
+    </QueryClientProvider>
+  )
+}
+
+describe('StepProposalCard', () => {
+  it('renders each step in Portuguese', async () => {
+    const api = installApiMock()
+    await mount(api)
+
+    expect(await screen.findByText('filtrar idade maior que 18')).toBeVisible()
     expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
   })
 
   it('asks for confirmation before removing a step, then removes it on Remover', async () => {
+    const api = installApiMock()
     const user = userEvent.setup()
-    render(<StepProposalCard part={PART} />)
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
 
     await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
     expect(screen.getByText('Deseja remover o passo de forma definitiva?')).toBeVisible()
@@ -52,14 +81,45 @@ describe('StepProposalCard', () => {
   })
 
   it('keeps the step when the removal is cancelled', async () => {
+    const api = installApiMock()
     const user = userEvent.setup()
-    render(<StepProposalCard part={PART} />)
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
 
     await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(screen.getByText('filtrar idade maior que 18')).toBeVisible()
     expect(screen.getByText('limitar a 10 linhas')).toBeVisible()
+  })
+
+  it('asks for confirmation before deleting the whole card, then deletes it for good', async () => {
+    const api = installApiMock()
+    const user = userEvent.setup()
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
+
+    await user.click(screen.getByRole('button', { name: 'Excluir proposta' }))
+    expect(
+      screen.getByText('Deseja excluir esta proposta da conversa de forma definitiva?')
+    ).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Excluir' }))
+
+    // Persisted, not just hidden — the underlying message is gone from the store.
+    expect(await api.conversation.messages(CONVERSATION_ID)).toEqual([])
+  })
+
+  it('keeps the card when deleting it is cancelled', async () => {
+    const api = installApiMock()
+    const user = userEvent.setup()
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
+
+    await user.click(screen.getByRole('button', { name: 'Excluir proposta' }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(await api.conversation.messages(CONVERSATION_ID)).toHaveLength(1)
   })
 
   it('applies the remaining steps and renders the preview table', async () => {
@@ -74,13 +134,14 @@ describe('StepProposalCard', () => {
       }
     })
     const user = userEvent.setup()
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
 
-    render(<StepProposalCard part={PART} />)
     await user.click(screen.getByRole('button', { name: 'Aplicar' }))
 
     expect(await screen.findByText('20')).toBeVisible()
     expect(screen.getByText('30')).toBeVisible()
-    expect(api.dataset.transform).toHaveBeenCalledWith('h1', PART.steps)
+    expect(api.dataset.transform).toHaveBeenCalledWith('h1', STEPS)
   })
 
   it('sends only the remaining steps after a removal', async () => {
@@ -90,8 +151,9 @@ describe('StepProposalCard', () => {
       value: { bytes: columnsToArrowBytes({}), before: [], after: [] }
     })
     const user = userEvent.setup()
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
 
-    render(<StepProposalCard part={PART} />)
     await user.click(screen.getByRole('button', { name: 'Remover passo 1' }))
     await user.click(screen.getByRole('button', { name: 'Remover' }))
     await user.click(screen.getByRole('button', { name: 'Aplicar' }))
@@ -106,8 +168,9 @@ describe('StepProposalCard', () => {
       error: { kind: 'invalidQuery', message: 'Unknown column: "idade"' }
     })
     const user = userEvent.setup()
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
 
-    render(<StepProposalCard part={PART} />)
     await user.click(screen.getByRole('button', { name: 'Aplicar' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Unknown column: "idade"')
@@ -124,8 +187,9 @@ describe('StepProposalCard', () => {
       }
     })
     const user = userEvent.setup()
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
 
-    render(<StepProposalCard part={PART} />)
     await user.click(screen.getByRole('button', { name: 'Aplicar' }))
 
     const alert = await screen.findByRole('alert')
@@ -145,8 +209,9 @@ describe('StepProposalCard', () => {
       }
     })
     const user = userEvent.setup()
+    await mount(api)
+    await screen.findByText('filtrar idade maior que 18')
 
-    render(<StepProposalCard part={PART} />)
     await user.click(screen.getByRole('button', { name: 'Aplicar' }))
 
     await screen.findByText('20')

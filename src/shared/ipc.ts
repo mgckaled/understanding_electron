@@ -617,6 +617,13 @@ export const argsSchema = {
   }),
   'conversation:rename': z.object({ id: z.string().min(1), title: z.string() }),
   'conversation:remove': z.object({ id: z.string().min(1) }),
+  // The step-proposal card's "excluir" action (plano 19, live-testing round) —
+  // conversationId scopes the DELETE so a stale card cannot touch a message
+  // that moved conversations, which cannot happen today but costs nothing to rule out.
+  'conversation:removeMessage': z.object({
+    conversationId: z.string().min(1),
+    messageId: z.string().min(1)
+  }),
   // `title` present means "and rename to this" — the first user message becomes
   // the title (D13.9), decided in the renderer where `titleFromText` lives.
   // Folding it into the append keeps one call and no stale-title window.
@@ -749,6 +756,10 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['conversation:remove']>
     result: void
   }
+  'conversation:removeMessage': {
+    args: z.infer<(typeof argsSchema)['conversation:removeMessage']>
+    result: void
+  }
   'conversation:append': {
     args: z.infer<(typeof argsSchema)['conversation:append']>
     result: void
@@ -831,6 +842,8 @@ export type Api = {
     create(conversation: Omit<Conversation, 'updatedAt' | 'settings'>): Promise<void>
     rename(id: string, title: string): Promise<void>
     remove(id: string): Promise<void>
+    /** Deletes one message permanently — the step-proposal card's own "excluir" action (plano 19). */
+    removeMessage(conversationId: string, messageId: string): Promise<void>
     append(conversationId: string, message: Message, title?: string): Promise<void>
     /** Merge-patches this conversation's settings; absent keys are untouched. */
     updateSettings(id: string, patch: ConversationSettings): Promise<void>

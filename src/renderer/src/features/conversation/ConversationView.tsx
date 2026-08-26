@@ -265,7 +265,7 @@ function ConversationView(): React.JSX.Element {
                   {(() => {
                     const proposal = stepProposalPartOf(message)
                     return proposal !== null ? (
-                      <StepProposalCard part={proposal} />
+                      <StepProposalCard part={proposal} messageId={message.id} />
                     ) : (
                       <MarkdownMessage text={messageText(message)} />
                     )

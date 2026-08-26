@@ -7,6 +7,7 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
 import { errorMessage } from '../../shared/ui/messages'
+import { useActiveConversation, useConversations } from '../conversation/conversationsContext'
 import DatasetTable from './DatasetTable'
 
 // Judgment, not measurement (same label as qualifiesForTopValues,
@@ -34,6 +35,13 @@ interface NullJump {
   after: number
 }
 
+// Two different destructive actions share one confirm dialog: editing which
+// steps will run (removeStep, ephemeral, client-side) vs. discarding the
+// whole card from the conversation for good (deleteCard, persisted —
+// live-testing round of arco 19 found the first alone did not satisfy "sem
+// volta" — the card itself has to leave, not just shrink to empty).
+type PendingAction = { kind: 'removeStep'; index: number } | { kind: 'deleteCard' }
+
 /**
  * Compares nullPercentage per column, before vs. after (D19.6) — never row
  * count: zero rows after a filter is often the CORRECT result, and an alarm
@@ -55,15 +63,23 @@ function nullJumps(before: ColumnProfile[], after: ColumnProfile[]): NullJump[] 
  * A model's step proposal, editable before it runs (D19.1/D19.2) — remove a
  * step, then Aplicar compiles what remains through dataset:transform. No
  * manual step construction (out of scope, D19's own "o que não esperar").
+ *
+ * @param messageId - Identity of the message carrying `part`, needed only to
+ *   delete the whole card from the conversation (D19.7-5's confirm dialog).
  */
-function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Element {
+function StepProposalCard({
+  part,
+  messageId
+}: {
+  part: StepProposalPart
+  messageId: string
+}): React.JSX.Element {
+  const conversation = useActiveConversation()
+  const { removeMessage } = useConversations()
   const [steps, setSteps] = useState<Step[]>(part.steps)
   const [state, setState] = useState<ApplyState>({ status: 'idle' })
-  // Removing a step cannot be undone once Aplicar runs on what remains — the
-  // user asked for a confirm step here after finding the plain click too easy
-  // to trigger by accident, with no way back.
-  const [pendingRemoval, setPendingRemoval] = useState<number | null>(null)
-  const removalDescriptionId = useId()
+  const [pending, setPending] = useState<PendingAction | null>(null)
+  const confirmDescriptionId = useId()
 
   async function handleApply(): Promise<void> {
     setState({ status: 'loading' })
@@ -88,16 +104,36 @@ function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Eleme
     setSteps((current) => current.filter((_, position) => position !== index))
   }
 
-  function confirmRemoval(): void {
-    if (pendingRemoval === null) return
-    removeStep(pendingRemoval)
-    setPendingRemoval(null)
+  function confirmPending(): void {
+    if (pending === null) return
+    if (pending.kind === 'removeStep') {
+      removeStep(pending.index)
+    } else if (conversation !== null) {
+      // Persisted (conversation:removeMessage) — a reload must not bring the
+      // card back, unlike removeStep's local-only edit above.
+      removeMessage(conversation.id, messageId)
+    }
+    setPending(null)
   }
 
   const jumps = state.status === 'ready' ? nullJumps(state.result.before, state.result.after) : []
 
   return (
     <div className="flex max-w-[80%] flex-col gap-3 rounded-lg border border-border bg-surface-raised px-5 py-4 text-text">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold text-text-muted">Proposta de passos</span>
+        {/* Always present, independent of how many steps remain (even zero) —
+            this is the whole-card discard, distinct from a per-step edit. */}
+        <Button
+          variant="outline"
+          size="sm"
+          shape="circle"
+          onClick={() => setPending({ kind: 'deleteCard' })}
+          aria-label="Excluir proposta"
+        >
+          <Trash2 className="text-danger-text" size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+        </Button>
+      </div>
       {steps.length === 0 ? (
         <p className="text-sm text-text-faint">Nenhum passo restante.</p>
       ) : (
@@ -113,7 +149,7 @@ function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Eleme
                 size="sm"
                 shape="circle"
                 className="flex-none"
-                onClick={() => setPendingRemoval(index)}
+                onClick={() => setPending({ kind: 'removeStep', index })}
                 aria-label={`Remover passo ${index + 1}`}
               >
                 <Trash2
@@ -160,25 +196,27 @@ function StepProposalCard({ part }: { part: StepProposalPart }): React.JSX.Eleme
         </div>
       )}
       <Dialog
-        open={pendingRemoval !== null}
-        title="Remover passo"
-        onClose={() => setPendingRemoval(null)}
-        describedBy={removalDescriptionId}
+        open={pending !== null}
+        title={pending?.kind === 'deleteCard' ? 'Excluir proposta' : 'Remover passo'}
+        onClose={() => setPending(null)}
+        describedBy={confirmDescriptionId}
       >
-        <p className="mb-6 text-sm" id={removalDescriptionId}>
-          Deseja remover o passo de forma definitiva?
+        <p className="mb-6 text-sm" id={confirmDescriptionId}>
+          {pending?.kind === 'deleteCard'
+            ? 'Deseja excluir esta proposta da conversa de forma definitiva?'
+            : 'Deseja remover o passo de forma definitiva?'}
         </p>
         <div className="flex justify-end gap-3">
-          <Button variant="secondary" size="sm" onClick={() => setPendingRemoval(null)}>
+          <Button variant="secondary" size="sm" onClick={() => setPending(null)}>
             <span className="flex items-center gap-2">
               <Undo2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
               Cancelar
             </span>
           </Button>
-          <Button variant="danger" size="sm" onClick={confirmRemoval}>
+          <Button variant="danger" size="sm" onClick={confirmPending}>
             <span className="flex items-center gap-2">
               <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-              Remover
+              {pending?.kind === 'deleteCard' ? 'Excluir' : 'Remover'}
             </span>
           </Button>
         </div>

@@ -36,6 +36,8 @@ export type ConversationsApi = {
   select: (id: string) => void
   rename: (id: string, title: string) => void
   remove: (id: string) => void
+  /** Deletes one message permanently — the step-proposal card's own "excluir" action (plano 19). */
+  removeMessage: (conversationId: string, messageId: string) => void
   append: (id: string, message: NewMessage) => void
   /** Merge-patches one conversation's settings — model, num_ctx (D15.2). */
   updateSettings: (id: string, patch: ConversationSettings) => void
@@ -81,6 +83,12 @@ export function useConversations(): ConversationsApi {
     mutationFn: (id: string) => window.api.conversation.remove(id),
     onSuccess: invalidate
   })
+  const removeMessage = useMutation({
+    scope,
+    mutationFn: (args: { conversationId: string; messageId: string }) =>
+      window.api.conversation.removeMessage(args.conversationId, args.messageId),
+    onSuccess: invalidate
+  })
   const append = useMutation({
     scope,
     mutationFn: (args: { id: string; message: Message; title?: string }) =>
@@ -124,6 +132,9 @@ export function useConversations(): ConversationsApi {
         // the derivation above, instead of pointing at something that is gone.
         if (selectedId === id) setSelectedId(null)
       },
+      removeMessage: (conversationId: string, messageId: string) => {
+        removeMessage.mutate({ conversationId, messageId })
+      },
       append: (id: string, message: NewMessage) => {
         const full: Message = { ...message, id: crypto.randomUUID(), createdAt: Date.now() }
         // A conversation not in the list yet was just created, so it still
@@ -149,6 +160,7 @@ export function useConversations(): ConversationsApi {
       create,
       rename,
       remove,
+      removeMessage,
       append,
       updateSettings
     ]

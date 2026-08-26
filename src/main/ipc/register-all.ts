@@ -63,6 +63,7 @@ import {
   listConversations,
   readMessages,
   removeConversation,
+  removeMessage,
   renameConversation,
   updateConversationSettings
 } from '../features/conversation/handlers'
@@ -252,6 +253,14 @@ export async function registerAll(): Promise<() => void> {
     // Recomputes the GLOBAL reference set AFTER the cascade delete — a hash
     // still used by another conversation stays in it, which is what makes a
     // shared blob survive (D16.2 aceite), with no per-conversation bookkeeping.
+    await collectOrphanedAttachments(db, attachmentsDir)
+  })
+  // Same GC reasoning as conversation:remove above — deleting the message that
+  // carried a dataset/document/image part can orphan its blob (plano 19's
+  // step-proposal "excluir" is the first caller, but the channel deletes any
+  // message by id).
+  handle('conversation:removeMessage', async (args) => {
+    removeMessage(args, db)
     await collectOrphanedAttachments(db, attachmentsDir)
   })
   handle('conversation:append', (args) => appendMessage(args, db))
