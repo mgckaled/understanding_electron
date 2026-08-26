@@ -15,6 +15,8 @@ import type {
 } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
 import Settings from '../settings/Settings'
+import ArtifactPanel from '../artifact/ArtifactPanel'
+import ArtifactProvider from '../artifact/ArtifactProvider'
 import ConversationsProvider from './ConversationsProvider'
 import ConversationList from './ConversationList'
 import ConversationView from './ConversationView'
@@ -42,7 +44,14 @@ async function whenReady(): Promise<void> {
 function providers(children: ReactNode): React.JSX.Element {
   return (
     <QueryClientProvider client={createQueryClient()}>
-      <ConversationsProvider>{children}</ConversationsProvider>
+      <ConversationsProvider>
+        {/* Mirrors App.tsx: an attachment card is a trigger for the side panel
+            since DF3A.6, so the harness needs the region it opens into. */}
+        <ArtifactProvider>
+          {children}
+          <ArtifactPanel />
+        </ArtifactProvider>
+      </ConversationsProvider>
     </QueryClientProvider>
   )
 }
@@ -818,8 +827,9 @@ describe('ConversationView — os três tipos de anexo numa conversa', () => {
     expect(screen.getByText('2 colunas · 10 linhas')).toBeInTheDocument()
     expect(screen.getByText('especificacao.md')).toBeInTheDocument()
     expect(screen.getByText('MD')).toBeInTheDocument()
-    // ImageCard is collapsed by default (mirrors DocumentCard) — the miniature
-    // itself, revealed on click, is proven separately in modelSelection.test.tsx.
+    // ImageCard shows a filename header only (mirrors DocumentCard) — the
+    // miniature lives in the side panel since DF3A.6, and the click that opens
+    // it is proven separately in modelSelection.test.tsx.
     expect(screen.getByText('grafico.png')).toBeInTheDocument()
     expect(screen.getByText('PNG')).toBeInTheDocument()
 

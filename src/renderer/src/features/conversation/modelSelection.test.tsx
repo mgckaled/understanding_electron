@@ -5,6 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { installApiMock, TEST_MODEL } from '@test/api-mock'
 import type { AiModel, Api, ImagePart } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
+import ArtifactPanel from '../artifact/ArtifactPanel'
+import ArtifactProvider from '../artifact/ArtifactProvider'
 import ConversationsProvider from './ConversationsProvider'
 import ConversationList from './ConversationList'
 import ConversationView from './ConversationView'
@@ -35,7 +37,14 @@ const CODER: AiModel = {
 function providers(children: ReactNode): React.JSX.Element {
   return (
     <QueryClientProvider client={createQueryClient()}>
-      <ConversationsProvider>{children}</ConversationsProvider>
+      <ConversationsProvider>
+        {/* Mirrors App.tsx: an attachment card is a trigger for the side panel
+            since DF3A.6, so the harness needs the region it opens into. */}
+        <ArtifactProvider>
+          {children}
+          <ArtifactPanel />
+        </ArtifactProvider>
+      </ConversationsProvider>
     </QueryClientProvider>
   )
 }
@@ -550,10 +559,10 @@ describe('the vision gate on send', () => {
   }
 
   it('shows the miniature in the transcript once an attached image is sent', async () => {
-    // The aceite table's "mostra miniatura" clause — the card is
-    // AttachmentCard → ImageCard, collapsed behind a filename header until
-    // clicked, then an <img src="attachment://<hash>"> above the user's own
-    // bubble (ConversationView.tsx).
+    // The aceite table's "mostra miniatura" clause, which DF3A.6 moved rather
+    // than dropped: the card is AttachmentCard → ImageCard, a filename header
+    // that now TRIGGERS the side panel, and the <img src="attachment://<hash>">
+    // renders there instead of inside the transcript.
     const user = userEvent.setup()
     const api = mount()
     vi.mocked(api.image.pick).mockResolvedValue({ ok: true, value: { path: '/grafico.png' } })
