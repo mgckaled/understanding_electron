@@ -1,6 +1,6 @@
 # crivo
 
-Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**, com análise de dados como o pilar mais maduro — abrir CSV, Parquet, Excel ou JSON, perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado; documento, imagem, código, busca web, documentação (MCP) e raciocínio visível entram pela mesma conversa, cada um como pilar próprio (critério em [`ESCOPO.md`](docs/ESCOPO.md)). O motor de dados é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
+Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**, com análise de dados como o pilar mais maduro — abrir CSV, Excel ou JSON (Parquet está no escopo e **ainda não** no seletor — skill [`data`](.claude/skills/data/SKILL.md)), perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado; documento, imagem, código, busca web, documentação (MCP) e raciocínio visível entram pela mesma conversa, cada um como pilar próprio (critério em [`ESCOPO.md`](docs/ESCOPO.md)). O motor de dados é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
 
 ---
 
@@ -11,7 +11,7 @@ Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**
 | | Onde | Unidade | Quando |
 |---|---|---|---|
 | **Diário de execução** | tabela no fim do plano em `docs/plan/active/` | uma sessão | antes de encerrar **toda** sessão |
-| **Entrada de histórico** | [`docs/HISTORY.md`](docs/HISTORY.md) | um marco concluído | ao mover um plano para `implemented/` |
+| **Entrada de histórico** | [`docs/HISTORY.md`](docs/HISTORY.md) | um marco concluído | ao mover um plano para `implemented/` — **ou ao terminar um trabalho que mudou o projeto sem ter plano** (revisão de escopo, manutenção de documentação) |
 
 **Escalonamento — a regra que faz o sistema funcionar:** observação do diário que valha **além daquele plano** sobe para o `HISTORY.md` **na mesma sessão** (ou para o [`ARMADILHAS.md`](docs/ARMADILHAS.md), se for erro diagnosticado). O teste é *"isto vai custar tempo de novo?"* — armadilha diagnosticada, alternativa tentada e descartada, número medido: sobe. "Terminei o passo 3": morre com o plano.
 
@@ -47,26 +47,29 @@ Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao d
 
 ### Protocolo de leitura da documentação
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,7 MB / ~520k tokens** — os oito arquivos soltos são só ~100k dela, e `plan/implemented/` sozinho é o triplo disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,6 MB / ~490k tokens** — os sete arquivos soltos são só ~108k dela, e `plan/implemented/` sozinho é mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| `HISTORY-archive.md` | ~24k | `Grep` no nome do plano/fase. **Nunca** `Read` |
-| `ARMADILHAS.md` | ~23k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
-| `HISTORY.md` | ~17k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
+| `ARMADILHAS.md` | ~26k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
+| `HISTORY-archive.md` | ~25k | `Grep` no nome do plano/fase. **Nunca** `Read` |
+| `HISTORY.md` | ~18k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
 | `ESCOPO.md` | ~13k | `Grep` no pilar ou na operação |
 | `ROADMAP.md` | ~12k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
 | `DECISOES.md` | ~10k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
-| `README.md` | ~2k | único que cabe inteiro |
-| **`plan/implemented/`** (43 arq.) | **~257k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
-| `plan/active/` | ~11k | o plano **em execução** se lê inteiro; os demais, `Grep` |
-| `study/`, `reference/` | ~44k / ~59k | `Grep` no conceito; `Read` com `offset` na seção achada |
+| `README.md` | ~4k | único que cabe inteiro |
+| **`plan/implemented/`** (43 arq.) | **~268k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
+| `reference/` (19 arq.) | ~60k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| `study/` (12 arq.) | ~44k | `Grep` no conceito; `Read` com `offset` na seção achada |
+| `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
+
+⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** Foram medidos em 26/08/2026; a ordem de grandeza é o que importa aqui, não o dígito.
 
 **Como fazer certo, em ordem:** (1) `Grep -n` pelo termo → devolve linha e arquivo; (2) `Read` com `offset` = linha achada menos 5, `limit` 40–60; (3) se a seção continuar além, estenda o `limit`, não releia do zero. Um `Grep` com `-C 3` resolve a maioria das perguntas **sem nenhum `Read`**.
 
 **As três exceções que se leem inteiras:** este `CLAUDE.md`, `docs/README.md` e o plano ativo em que se está trabalhando. Mais nada.
 
-⚠️ **Plano em `implemented/` é o caso que mais engana.** Ele parece a fonte completa — e é, mas de um trabalho já terminado. O que dele ainda vale já subiu para `HISTORY.md`, `ARMADILHAS.md` ou `DECISOES.md`; abrir o plano inteiro paga ~7 KB de média (o `15` custa 94 KB) para reler o que o dono já responde numa linha.
+⚠️ **Plano em `implemented/` é o caso que mais engana.** Ele parece a fonte completa — e é, mas de um trabalho já terminado. O que dele ainda vale já subiu para `HISTORY.md`, `ARMADILHAS.md` ou `DECISOES.md`; abrir o plano inteiro paga **~20 KB de média** (o `15` custa 86 KB) para reler o que o dono já responde numa linha.
 
 ⚠️ **Isto vale também para você mesmo daqui a vinte turnos.** A tentação aparece como *"agora preciso do contexto completo"* — não precisa: a pergunta que motivou a leitura tem um termo, e o termo é grepável. Se realmente não houver termo, a pergunta ainda não está formada.
 
@@ -174,7 +177,7 @@ Add-MpPreference -ExclusionProcess "node.exe"
 | | |
 |---|---|
 | CPU | Intel i5-8265U — 4 núcleos / 8 threads |
-| RAM | 16 GB. **Não há um número de "livre" — há três**, medidos em 10/08/2026: **~9 GB** com só o app Electron rodando · **~7,5 GB** com só o VS Code · **~6 GB** no ambiente de trabalho típico (VS Code, Edge, WhatsApp, Claude Code). A variação de 3 GB é maior que o peso da maioria dos modelos da frota, e é por isso que o teto de contexto se lê em runtime em vez de ser chumbado — ver [`plan/active/15`](docs/plan/implemented/15-orcamento-de-contexto-e-modelo.md) § D15.2 |
+| RAM | 16 GB. **Não há um número de "livre" — há três**, medidos em 10/08/2026: **~9 GB** com só o app Electron rodando · **~7,5 GB** com só o VS Code · **~6 GB** no ambiente de trabalho típico (VS Code, Edge, WhatsApp, Claude Code). A variação de 3 GB é maior que o peso da maioria dos modelos da frota, e é por isso que o teto de contexto se lê em runtime em vez de ser chumbado — ver [`plan/implemented/15`](docs/plan/implemented/15-orcamento-de-contexto-e-modelo.md) § D15.2 |
 | GPU | NVIDIA MX150, 2 GB VRAM, CUDA configurado (herança do mill.tools, que a reserva para o Whisper) — mas o app roda **CPU-only por decisão testada, não por ausência de hardware**: `num_gpu` forçado no `gemma3:1b` foi medido e descartado para geração, penalidade já presente em contexto comum (não só extremo), sem estouro de VRAM — números e protocolo em [`docs/reference/models/ollama-models-gpu-analysis.md`](docs/reference/models/ollama-models-gpu-analysis.md) |
 | Ollama | 0.32.14 (atualizado fora do app, 18/08/2026 — era 0.32.6), servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
 
@@ -224,7 +227,7 @@ Contagem = linhas totais do arquivo, comentário e linha em branco inclusos (o q
 
 As duas últimas linhas são a decisão de manter main e preload finos, tornada mensurável: main que cresce vira lugar de lógica; preload que cresce, lugar de lógica no pior sítio para testá-la. **Divide-se ao tocar** — não varra a base atrás de arquivo grande; divida quando for estendê-lo. E coesão pesa abaixo do teto: componente que orquestra duas features, ou handlers de domínios diferentes no mesmo arquivo, dividem mesmo curtos.
 
-⚠️ **A linha do componente subiu de 150/250 para 250/400 em ago/2026, ao decidir o Tailwind** — e a subida é de **caractere, não de escopo**. Uma `<div>` passa a carregar 8–15 classes, e os dois maiores componentes de hoje (`ConversationView` 230, `ModelSelector` 214) estourariam o teto antigo sem ganhar uma responsabilidade sequer. Só esta linha muda: hook, `core/`, handler, main e preload não têm JSX. **O que divide continua sendo coesão** — 400 linhas de classe não é o mesmo sinal que 400 linhas de decisão, e a régua perdeu poder de alarme na troca. Motivo em [`HISTORY.md`](docs/HISTORY.md).
+⚠️ **A linha do componente subiu de 150/250 para 250/400 em ago/2026, ao decidir o Tailwind** — e a subida é de **caractere, não de escopo**. Uma `<div>` passa a carregar 8–15 classes, e os componentes que motivaram a subida estourariam o teto antigo sem ganhar uma responsabilidade sequer. Só esta linha muda: hook, `core/`, handler, main e preload não têm JSX. **O que divide continua sendo coesão** — 400 linhas de classe não é o mesmo sinal que 400 linhas de decisão, e a régua perdeu poder de alarme na troca. Motivo em [`HISTORY.md`](docs/HISTORY.md).
 
 ### Idioma
 
@@ -254,7 +257,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 | Abertura de link externo | `checkExternalUrl` em `src/core/url.ts` (lista branca `http:`/`https:`), **único** caminho até `shell.openExternal` — usado pelo canal `shell:openExternal`, pelo `setWindowOpenHandler` e pelo `will-navigate` |
 | Navegação e janela nova | negadas por padrão |
 | CSP | `default-src 'self'` no `index.html` |
-| Segredos | regra fixada (mão única, `safeStorage`, `userData`); **nenhum segredo existe ainda** |
+| Segredos | regra fixada (mão única, `safeStorage`, `userData`) e **em uso desde a trilha N-1** — chaves de provedor de nuvem em `main/features/secrets/`. `secrets:read` não existe por desenho (DN1A.3) |
 | `shamefullyHoist` | **desligado** (`false`) — gatilho cumprido no plano `18-A` |
 
 ### Arquitetura de dados
@@ -274,12 +277,13 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 - Commit nunca leva `Co-authored-by` mencionando Claude, Anthropic ou qualquer assistente de IA. Autoria é de quem revisa e decide, não de quem redige o texto.
 - Isto é aplicado por hook, não por convenção lembrada em cada sessão: [`.claude/hooks/no_ai_coauthor.mjs`](.claude/hooks/no_ai_coauthor.mjs), registrado como `PreToolUse` em `.claude/settings.json` para `Bash` e `PowerShell`. Bloqueia (saída 2) qualquer comando cujo texto contenha esse trailer, antes do commit acontecer.
 - Além do `no_ai_coauthor`, o `.claude/settings.json` liga três hooks `PostToolUse` (`Edit|Write`) — `format_fix` (Prettier + ESLint `--fix`), `guard` (invariantes que o lint não expressa, bloqueia com saída 2) e `test_related` (`vitest related` no arquivo tocado) — e um `Stop` que roda `pnpm check:fast`. O princípio segue de pé: só o que está registrado em `.claude/settings.json` roda; hook que existe como arquivo não é hook ativo.
+- ⚠️ **O `command` de um hook leva a linha inteira, com caminho absoluto via `$CLAUDE_PROJECT_DIR`.** Não existe campo `args` no schema, e caminho relativo deixa de resolver assim que o diretório da sessão muda. As duas formas erradas falham com saída 1, que **não bloqueia** — o hook fica inerte e o aviso vira ruído. Ambas já aconteceram aqui: [`ARMADILHAS.md`](docs/ARMADILHAS.md). **Ao mexer num hook, prove por provocação** — dispare a violação e confirme que ele recusa.
 
 ---
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo, com o que as fases 03–07 descobriram, é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md) e de [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **~73 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|
