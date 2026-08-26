@@ -27,6 +27,8 @@ SET memory_limit  →  SET lock_configuration = true
 
 ⚠️ **`allowed_directories` e `temp_directory` têm que vir ANTES de `enable_external_access = false`** — DuckDB rejeita mudar qualquer um dos dois depois que o acesso externo já está desligado ("Cannot change allowed_directories when enable_external_access is disabled"). Só achado ao vivo (D18A.3) — a documentação do DuckDB é ambígua nisso, não confie na intuição de "configura tudo, trava por último".
 
+**A ordem invertida deixa um blob copiado se o motor rejeitar o arquivo depois da cópia — e isso já está coberto.** `collectOrphanedAttachments` (`main/attachments/gc.ts`) varre, na inicialização, todo hash não referenciado por mensagem nenhuma; um anexo que falhou no meio cai exatamente nesse caso. Não escreva limpeza manual no caminho de erro do seu `attach*`: seria uma segunda política de retenção, divergindo em silêncio da que já roda.
+
 Efeito prático em quem adiciona um formato de dataset novo: a ordem do anexo se **inverte** — hash → guarda em `attachmentsDir` → só então pergunta o schema ao motor, nunca o contrário — porque o motor não teria como ler o caminho original mesmo que tentasse.
 
 ## `memory_limit` é um retrato de agora, não um número a copiar
