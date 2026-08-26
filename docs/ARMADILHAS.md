@@ -12,6 +12,9 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### Teste a 4931ms de um limite de 5000ms é mina, não teste lento (ago/2026)
+`ConversationView.test.tsx` tinha um caso — três ciclos de anexar-e-enviar num `:memory:` real — gastando **98,6% do orçamento padrão** do Vitest. Passava havia meses. Acrescentar **um componente ao cabeçalho** o estourou, e o vermelho aparece como `Test timed out in 5000ms` no arquivo de quem mexeu, não no teste que estava no limite. O sintoma engana: parece defeito da mudança. **Diagnóstico em um toque:** `git stash` e `vitest run --reporter=verbose`, que imprime o ms de cada teste — se já estava perto do teto, a mudança detonou em vez de causar. **Conserto:** timeout explícito no `it` (terceiro argumento) **com o número medido no comentário**, nunca subir o `testTimeout` global, que esconderia a próxima mina em vez de nomear esta.
+
 ### `fetch` num esquema customizado falha por CORS, não por CSP — e o privilégio que falta é `corsEnabled` (ago/2026)
 Um esquema registrado com `{ standard, secure, supportFetchAPI }` **não** aceita `fetch` do renderer. O sintoma engana duas vezes: primeiro parece CSP (e abrir `connect-src` no `index.html` de fato muda a mensagem de erro, sem resolver), depois parece cabeçalho ausente (`access-control-allow-origin: *` no handler **também** não resolve — o Chromium rejeita antes de enviar). A causa é que esquema diferente é **origem** diferente, e o privilégio `corsEnabled` do `registerSchemesAsPrivileged` tem default `false`. **Diagnóstico em um toque:** `TypeError: Failed to fetch` é CORS; recusa de CSP diz "Refused to connect". `<img src>` continua funcionando o tempo todo, porque imagem não passa por CORS — o que faz parecer que o esquema "funciona". Achado no F-3-A ao tentar copiar bytes de imagem; a decisão de ligar `corsEnabled` foi deixada em aberto, por alargar a registração de segurança.
 

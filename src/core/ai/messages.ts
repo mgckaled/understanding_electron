@@ -44,6 +44,17 @@ export function attachmentPartOf(message: Message): AttachmentPart | null {
   )
 }
 
+/**
+ * Every attachment in the transcript, oldest first (DF3B.2).
+ *
+ * Derived from {@link attachmentPartOf} rather than re-scanning parts, so
+ * "what counts as an attachment" is decided in one place. A file attached
+ * twice appears twice: these are cards on screen, not distinct files.
+ */
+export function attachmentPartsOf(messages: Message[]): AttachmentPart[] {
+  return messages.map(attachmentPartOf).filter((part): part is AttachmentPart => part !== null)
+}
+
 /** The step proposal on an assistant message, if any (plano 19) — the card ConversationView swaps in for the plain text bubble. */
 export function stepProposalPartOf(message: Message): StepProposalPart | null {
   return (

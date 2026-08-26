@@ -55,6 +55,14 @@ A função que conta é pura, recebe `Message[]`, e vive em `core/ai/messages.ts
 
 **Conta cartões, não arquivos distintos.** Dois anexos do mesmo arquivo contam dois, porque são dois cartões na transcrição e o número existe para descrever o que se vê.
 
+### DF3B.7 — O clipe conta o que o painel **consegue abrir**, e hoje isso exclui dataset — decisão nascida na execução
+
+Não estava no plano, e apareceu ao escrever o passo 3: o `ArtifactRef` (DF3A.2) tem dois membros, `document` e `image`. Um dataset anexado **não** é abrível até o F-3-D.
+
+Contar "todos os anexos" e abrir só alguns seria mentira nos dois sentidos — o número prometeria um painel que não abre, e o seletor da outra metade deste plano listaria menos itens do que o clipe conta. Então o clipe conta **artefatos**, não anexos: o mesmo `artifactsOf(messages)` alimenta o número e a lista, e os dois não têm como divergir. O dataset entra sozinho no F-3-D, ao ganhar seu membro na união — nenhuma linha do clipe muda.
+
+Onde cada metade mora: `attachmentPartsOf` fica em `core/` (puro, não tem opinião sobre desenho); `toArtifactRef`/`artifactsOf` ficam no renderer, porque *"quais tipos são abríveis"* **é** a composição do `ArtifactRef`, que é fato de tela.
+
 ### DF3B.3 — O atalho é ouvido no **renderer**, e as três alternativas do Electron são recusadas com motivo
 
 | Rota | Por que não |

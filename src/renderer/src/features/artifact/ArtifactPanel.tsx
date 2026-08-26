@@ -17,8 +17,7 @@ import { canCopy, copyArtifact } from './copyArtifact'
 // expanded width is used even when the sidebar is collapsed: erring toward more
 // room for the thread is the safe direction. Below roughly 1100px the two
 // simply compete, and the panel sits at its 22rem floor.
-const WIDTH =
-  'clamp(22rem, var(--artifact-width), min(50vw, 100vw - var(--sidebar-width) - 26rem))'
+const WIDTH = 'clamp(22rem, var(--artifact-width), min(50vw, 100vw - var(--sidebar-width) - 26rem))'
 const DEFAULT_WIDTH = '34rem'
 
 /** How long the copy button stays confirmed. Long enough to be seen, short

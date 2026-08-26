@@ -1,8 +1,7 @@
-import type { ReactNode } from 'react'
-import { QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
+import { providers } from '@test/renderer-providers'
 import type {
   Api,
   AppError,
@@ -13,11 +12,7 @@ import type {
   JobEvent,
   Result
 } from '@shared/ipc'
-import { createQueryClient } from '../../shared/queryClient'
 import Settings from '../settings/Settings'
-import ArtifactPanel from '../artifact/ArtifactPanel'
-import ArtifactProvider from '../artifact/ArtifactProvider'
-import ConversationsProvider from './ConversationsProvider'
 import ConversationList from './ConversationList'
 import ConversationView from './ConversationView'
 import NewConversationButton from './NewConversationButton'
@@ -41,20 +36,6 @@ async function whenReady(): Promise<void> {
  * sharing state. Every assertion below is the fase-13 one, unchanged, which is
  * exactly what step 3 existed to collect on (D13.2).
  */
-function providers(children: ReactNode): React.JSX.Element {
-  return (
-    <QueryClientProvider client={createQueryClient()}>
-      <ConversationsProvider>
-        {/* Mirrors App.tsx: an attachment card is a trigger for the side panel
-            since DF3A.6, so the harness needs the region it opens into. */}
-        <ArtifactProvider>
-          {children}
-          <ArtifactPanel />
-        </ArtifactProvider>
-      </ConversationsProvider>
-    </QueryClientProvider>
-  )
-}
 
 /** The view alone, under the stores it now reads from. */
 function renderView(): HTMLElement {
@@ -841,7 +822,13 @@ describe('ConversationView — os três tipos de anexo numa conversa', () => {
     expect(thread.getAllByText('o que diz a especificação?')).toHaveLength(1)
     expect(thread.getAllByText('o que é esse gráfico?')).toHaveLength(1)
     expect(thread.getAllByText('ok')).toHaveLength(3)
-  })
+    // 15s, not the default 5s. Measured: this test alone spent 4931ms of the
+    // 5000ms budget BEFORE the header gained the artifact clip — three full
+    // attach-and-send cycles through a real :memory: database, in one test. It
+    // was a landmine, not a regression: whoever touched any component in this
+    // tree next would have detonated it, and the failure would have looked
+    // like their bug.
+  }, 15000)
 })
 
 describe('ConversationView — proposta de passos (plano 19)', () => {

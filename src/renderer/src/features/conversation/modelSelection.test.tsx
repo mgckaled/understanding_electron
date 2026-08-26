@@ -1,13 +1,8 @@
-import type { ReactNode } from 'react'
-import { QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock, TEST_MODEL } from '@test/api-mock'
+import { providers } from '@test/renderer-providers'
 import type { AiModel, Api, ImagePart } from '@shared/ipc'
-import { createQueryClient } from '../../shared/queryClient'
-import ArtifactPanel from '../artifact/ArtifactPanel'
-import ArtifactProvider from '../artifact/ArtifactProvider'
-import ConversationsProvider from './ConversationsProvider'
 import ConversationList from './ConversationList'
 import ConversationView from './ConversationView'
 import NewConversationButton from './NewConversationButton'
@@ -32,21 +27,6 @@ const CODER: AiModel = {
   contextLength: 32768,
   attention: { blockCount: 36, headCountKv: 2, headDim: 128, slidingWindow: null },
   variantOf: null
-}
-
-function providers(children: ReactNode): React.JSX.Element {
-  return (
-    <QueryClientProvider client={createQueryClient()}>
-      <ConversationsProvider>
-        {/* Mirrors App.tsx: an attachment card is a trigger for the side panel
-            since DF3A.6, so the harness needs the region it opens into. */}
-        <ArtifactProvider>
-          {children}
-          <ArtifactPanel />
-        </ArtifactProvider>
-      </ConversationsProvider>
-    </QueryClientProvider>
-  )
 }
 
 /**

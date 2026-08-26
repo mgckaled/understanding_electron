@@ -1,11 +1,8 @@
-import type { ReactNode } from 'react'
-import { QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock, TEST_MODEL } from '@test/api-mock'
+import { providers } from '@test/renderer-providers'
 import type { Api } from '@shared/ipc'
-import { createQueryClient } from '../../shared/queryClient'
-import ConversationsProvider from './ConversationsProvider'
 import ConversationView from './ConversationView'
 
 /*
@@ -19,14 +16,6 @@ import ConversationView from './ConversationView'
 
 const ready = { ok: true, value: { service: 'ollama', version: '0.5.1' } } as const
 const PROMPT = 'Pergunte algo ao modelo…'
-
-function providers(children: ReactNode): React.JSX.Element {
-  return (
-    <QueryClientProvider client={createQueryClient()}>
-      <ConversationsProvider>{children}</ConversationsProvider>
-    </QueryClientProvider>
-  )
-}
 
 function mount(): Api {
   const api = installApiMock()

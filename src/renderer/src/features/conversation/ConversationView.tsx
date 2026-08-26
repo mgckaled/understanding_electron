@@ -21,6 +21,7 @@ import ContextControl from './ContextControl'
 import { ModelPicker, BudgetMeter } from './ModelSelector'
 import Composer from './Composer'
 import ThinkingMark from './ThinkingMark'
+import ArtifactCount from '../artifact/ArtifactCount'
 import MessageList from './MessageList'
 import { completePartial } from './completePartial'
 
@@ -175,9 +176,13 @@ function ConversationView(): React.JSX.Element {
           title now, and the model selector moved into the composer below. A
           title taken from the first message can be long; the header must not grow. */}
       <header className="flex flex-none items-center border-b border-border px-7 py-5">
-        <h1 className="overflow-hidden text-md font-semibold whitespace-nowrap text-ellipsis text-text">
+        <h1 className="min-w-[0px] overflow-hidden text-md font-semibold whitespace-nowrap text-ellipsis text-text">
           {conversation?.title ?? 'Assistente local'}
         </h1>
+        {/* Opposite end from the title, which truncates rather than pushing it
+            (DF3B.1). `min-w-[0px]` on the <h1> is what makes the truncation win
+            over the clip instead of the other way round. */}
+        <ArtifactCount messages={messages} />
       </header>
 
       {/* The one scrolling surface. Its ref is measured by useStickToBottom, so
