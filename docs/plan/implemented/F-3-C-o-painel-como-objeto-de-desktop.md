@@ -1,6 +1,6 @@
 # F-3-C — O painel como objeto de desktop: transição, janela estreita e arrasto
 
-> Terceiro dos planos do painel de artefato, depois do [F-3-A](../implemented/F-3-A-painel-de-artefato.md) (a região, documento e imagem) e do [F-3-B](../implemented/F-3-B-como-se-chega-ao-painel.md) (clipe, seletor, atalho). Este cobre **como o painel se comporta como janela**: aparece, cede espaço e é redimensionável. Copiar imagem saiu para o F-3-E; dataset segue no F-3-D.
+> Terceiro dos planos do painel de artefato, depois do [F-3-A](F-3-A-painel-de-artefato.md) (a região, documento e imagem) e do [F-3-B](F-3-B-como-se-chega-ao-painel.md) (clipe, seletor, atalho). Este cobre **como o painel se comporta como janela**: aparece, cede espaço e é redimensionável. Copiar imagem saiu para o F-3-E; dataset segue no F-3-D.
 
 **Origem:** os três itens vêm das decisões que o usuário tomou ao fechar o F-3-A, registradas no [`ROADMAP § 3`](../../ROADMAP.md). A pesquisa desta sessão (Context7 + web) confirmou dois deles e **derrubou um risco** que estava aberto desde o F-3-A.
 
@@ -139,4 +139,19 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 26/08/2026 | 1-5 | **plano concluído**, movido para `implemented/` | Cinco passos, cinco commits, na mesma sessão em que o plano nasceu. Nenhuma decisão precisou ser revista — a pesquisa prévia tinha resolvido o que costuma virar revisão na execução. O nível 4 pegou dois defeitos na alça (altura zero por `inset-y-0` sem CSS; metade dela fora do `overflow-hidden`) e uma asserção minha que só provava que o painel ocupa espaço. `check:fast`: 882 testes, 81s; e2e do painel: 3 casos. |
 | 26/08/2026 | — | plano escrito, ainda não executado | Escrito depois de uma pesquisa ampla pedida pelo usuário (Context7 + web). Ela derrubou o risco do `useStickToBottom` por leitura do fonte, achou a armadilha do `@starting-style` na saída, deu nome ao padrão do arrasto (_window splitter_ da APG) e trouxe a contra-evidência do VS Code/Slack contra a DF3C.3 — que o usuário manteve depois de vê-la. O corte do F-3 passou a cinco planos com a saída do copiar imagem. |
+
+**O que este plano deixou fora dele** — escalonado na conclusão, e é onde se consulta hoje:
+
+| Achado | Dono |
+|---|---|
+| `@starting-style` só vale na entrada no DOM — animação de saída exige adiar o desmonte | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Alça de arrasto sem evento nenhum: `inset-y-0`/`left-0` não geram CSS, e `overflow-hidden` come o que sobra da borda | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| `ArtifactPanel` é o quarto componente em CSS Modules, e o primeiro que não é primitivo | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| `collapsed` é do `App.tsx`, e `app/sidebarSpace.ts` é o único estado de casca | skill [`architecture`](../../../.claude/skills/architecture/SKILL.md) |
+| Decisões DF3C.1–DF3C.7 | [`DECISOES.md`](../../DECISOES.md) |
+
+⚠️ **Medido e não corrigido:** ao recolher a sidebar, `--sidebar-width-now` muda no mesmo quadro, mas a sidebar leva os 200ms da transição para encolher de fato. Durante esses 200ms o painel já usa a conta da sidebar recolhida enquanto ela ainda ocupa 264px, e a conversa fica momentaneamente mais espremida (199px medidos) do que no estado final (367–416px). Some sozinho ao fim da animação; corrigir exigiria escolher qual dos dois lados fica errado durante a transição.
+
+⚠️ **Aceite não observado:** a DF3C.7 (arrastar 40px além do piso fecha o painel) não foi exercitada ao vivo — o e2e arrasta para **alargar**, que é o gesto com folga para medir. O caminho existe e tem teste de unidade nenhum: só se prova no dedo.

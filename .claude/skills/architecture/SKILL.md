@@ -53,13 +53,14 @@ src/
 
 ## Dentro do renderer há três pastas, e a casca não importa de `features/` (D13.1)
 
-`src/renderer/src/` tem `shared/ui/` (um de cada primitivo reusável), `features/` (uma por assunto) e `app/`, que não é nenhum dos dois: **existe uma só e não tem domínio.** Ali moram `AppShell` (o grid de regiões) e `Sidebar` (o chrome: recolher, três regiões, rodapé).
+`src/renderer/src/` tem `shared/ui/` (um de cada primitivo reusável), `features/` (uma por assunto) e `app/`, que não é nenhum dos dois: **existe uma só e não tem domínio.** Ali moram `AppShell` (o grid de regiões), `Sidebar` (o chrome: três regiões e rodapé, **controlada** — quem segura `collapsed` é o `App.tsx`) e `sidebarSpace.ts` (quando a casca recolhe a sidebar sozinha, DF3C.2).
 
 ```
 app/AppShell.tsx        grid de regiões — recebe sidebar e main por slot
-app/Sidebar.tsx         chrome: recolher, nav · conteúdo · rodapé
+app/Sidebar.tsx         chrome: nav · conteúdo · rodapé (controlada)
+app/sidebarSpace.ts     o único estado de casca: sidebar recolhida
 features/<assunto>/     uma por assunto
-App.tsx                 só composição — quem entra em qual slot
+App.tsx                 composição — quem entra em qual slot, e a casca
 ```
 
 > **`app/` nunca importa de `features/`.** Quem compõe é o `App.tsx`. É a regra que faz a casca sobreviver ao arco: tela de configurações, bloco de passos revisáveis e o que vier entram por composição, sem tocar o fonte da casca — e a régua de tamanho de componente do [`CLAUDE.md`](../../../CLAUDE.md) nunca é gasta com ela.

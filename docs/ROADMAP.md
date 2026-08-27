@@ -49,7 +49,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 35 | **DS-8** | primitivos — `Toolbar`/`Panel` apagados (zero consumidores), contrato de a11y fechado, `cx()` (relatório externo, avaliado item a item) | ✅ concluída |
 | 36 | **R-5** | `DECISOES.md` — índice tabular das decisões dentro de cada plano | ✅ concluída |
 | 37 | — | revisão de escopo: nível 3 liberado na nuvem (5ª) | ✅ concluída |
-| 38 | **F-3** | painel de artefato — [F-3-A](plan/implemented/F-3-A-painel-de-artefato.md) ✅ **concluído em 26/08/2026** (região, documento e imagem), [F-3-B](plan/implemented/F-3-B-como-se-chega-ao-painel.md) ✅ **concluído em 26/08/2026** (clipe contador, seletor, atalho), [F-3-C](plan/active/F-3-C-o-painel-como-objeto-de-desktop.md) (transição, janela estreita, arrasto — escrito 26/08/2026), F-3-D (dataset) e F-3-E (copiar imagem). Código **não** entra: o pilar não existe (gap F2.8, abaixo). A sigla F-3 estava reservada para a tabela de custo de contexto por modelo, que virou **F-4** | A e B concluídos; C escrito; D e E sem arquivo |
+| 38 | **F-3** | painel de artefato — [F-3-A](plan/implemented/F-3-A-painel-de-artefato.md) ✅ **concluído em 26/08/2026** (região, documento e imagem), [F-3-B](plan/implemented/F-3-B-como-se-chega-ao-painel.md) ✅ **concluído em 26/08/2026** (clipe contador, seletor, atalho), [F-3-C](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) ✅ **concluído em 26/08/2026** (transição, janela estreita, arrasto), F-3-D (dataset) e F-3-E (copiar imagem). Código **não** entra: o pilar não existe (gap F2.8, abaixo). A sigla F-3 estava reservada para a tabela de custo de contexto por modelo, que virou **F-4** | A, B e C concluídos; D e E sem arquivo |
 | — | — | receitas salvas · catálogo camada 2 · observatório · RAG (fatia 5 do 09) · ML (fatia 6 do 09) | depois do arco |
 
 **Por que 21–23 (e agora E-1/E-2/N-1) não pegam número fora da ordem em que foram escritos.** O 16 preenchia um vão dentro do intervalo já reservado (13–20); os planos 21–23 vêm de um guia externo ([`web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md)) e dependem só da fatia 1 do [plano 09](plan/active/09-camada-de-ia.md) (chat local, já concluída) — nunca do 17, do 18 ou do 19. Entram **depois** do 20 na numeração, não entre o 16 e o 17: renumerar custaria a mesma reescrita de tabela e referências cruzadas que a trilha DS recusou pagar (`plano 21-23` já é citado em fonte, no `AttachButton` do F-2). A trilha **E** (Exportação) e a trilha **N** (Nuvem) seguem a mesma regra — letra própria em vez de renumerar 19/20/21-23, e cada plano nasce como arquivo **na sessão em que for o próximo a ser executado**, nunca antes.
@@ -119,21 +119,22 @@ Uma linha por medição — a forma é regra, ver [`README § Número que se rem
 | ago/2026 | 18-D | 66 / 568 | **~88s** | ⚠️ máquina suja (CSV de ~500 MB, `electron.exe` órfãos) — **não** era patamar novo |
 | ago/2026 | 18-E | 71 / 607 | **~57s** | medido a frio, como o gatilho pedia — confirma que os ~88s eram ruído |
 | 26/08/2026 | — (enxugamento das skills) | 93 / 832 | **42,7s** | `vitest run` isolado; `environment` soma 82,9s entre workers |
+| 26/08/2026 | F-3-A/B/C | 100 / 882 | **81s** | portão inteiro cronometrado (não só o `vitest run`), o que explica o salto sobre a linha acima |
 
 **O que a série provou, e uma medição isolada não provaria:** de 24 para 93 arquivos e de 172 para 832 testes, o total **não** cresceu proporcionalmente. Um pico isolado (os ~88s do 18-D) é suspeito de ambiente, não de regressão — e foi remedir a frio que decidiu.
 
 
 ---
 
-### Painel de artefato: quatro decisões tomadas em 26/08/2026, ainda não implementadas
+### Painel de artefato: quatro decisões tomadas em 26/08/2026 — duas já implementadas
 
-Tomadas pelo usuário ao fechar o F-3-A, e cada uma tem plano com dono. Registradas aqui para não morrerem numa conversa.
+Tomadas pelo usuário ao fechar o F-3-A, e cada uma tem plano com dono. Registradas aqui para não morrerem numa conversa. As duas riscadas saíram no F-3-C; sobram a de copiar imagem (`F-3-E`) e a da paginação (`F-3-D`).
 
 | O que | Decisão | Dono |
 |---|---|---|
 | Copiar bytes de imagem | canal **`image:bytes`**, não o privilégio `corsEnabled` — mantém a registração do esquema mínima, e os bytes pagos duas vezes na fronteira são irrelevantes no tamanho de uma imagem anexada. **Saiu do F-3-C em 26/08/2026:** é o único item de contrato IPC do corte (toca `shared`/`main`/`preload`, testa no nível 3), e os outros três são renderer puro | `F-3-E` |
-| Janela estreita (conversa em 271px) | **recolher a sidebar sozinha** quando o painel abrir sem espaço — ela já sabe recolher, é reversível, e devolve 220px à conversa. Descartados: sobrepor em vez de empurrar (mais caro) e aceitar | `F-3-C` |
-| Transição de abertura | **existe**, e é *fade*, não *slide*. Pesquisado: a diretriz de movimento da Microsoft manda usar **fade** quando a UI é parte da superfície do app e o resto é **redimensionado** para acomodá-la — que é exatamente o caso do painel, que empurra. 200 ms bate com `--duration-base`, e a faixa de 150–200 ms é a recomendada para controle interativo. Como bônus, fade **não anima largura**, então não reflui a thread a cada quadro. ⚠️ O "risco do `useStickToBottom`" citado aqui foi **derrubado** na pesquisa do F-3-C: o hook não tem ouvinte de `scroll`, e um reflow de largura não é lido como rolagem do usuário | `F-3-C` |
+| ~~Janela estreita (conversa em 271px)~~ ✅ **implementado no F-3-C** (DF3C.3/DF3C.4) — recolhe só na abertura e só quando não couber, com o teto do painel lendo a largura viva da sidebar; conversa de 271px para 416px | ~~`F-3-C`~~ |
+| ~~Transição de abertura~~ ✅ **implementada no F-3-C** (DF3C.1) | **existe**, e é *fade*, não *slide*. Pesquisado: a diretriz de movimento da Microsoft manda usar **fade** quando a UI é parte da superfície do app e o resto é **redimensionado** para acomodá-la — que é exatamente o caso do painel, que empurra. 200 ms bate com `--duration-base`, e a faixa de 150–200 ms é a recomendada para controle interativo. Como bônus, fade **não anima largura**, então não reflui a thread a cada quadro. ⚠️ O "risco do `useStickToBottom`" citado aqui foi **derrubado** na pesquisa do F-3-C: o hook não tem ouvinte de `scroll`, e um reflow de largura não é lido como rolagem do usuário | ~~`F-3-C`~~ |
 | Paginação do dataset no painel | **não entra.** Fica no teto de 200 linhas do `dataset:query`, e o limite é **registrado como aberto** em vez de contornado — paginar estoura o corte | `F-3-D` |
 
 ⚠️ **O teto de 200 linhas é limite conhecido, não bug.** O painel de dataset mostra uma página, nunca o arquivo — coerente com a regra do [`ESCOPO`](ESCOPO.md) de nenhuma etapa materializar o resultado completo em JavaScript. Reabrir isso é escrever o canal de paginação, e ninguém escreveu.

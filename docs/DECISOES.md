@@ -258,6 +258,13 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | F-3-B | [DF3B.5](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | O seletor lista os artefatos da conversa; **revista na execução:** a lista subiu para o contexto, e escolher o item aberto não fecha o painel |
 | F-3-B | [DF3B.6](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | `ConversationView` se divide por coesão; **revista na execução:** o corte ficou um nível abaixo, e o `div` que rola não se move |
 | F-3-B | [DF3B.7](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | O clipe conta o que o painel **consegue abrir** — dataset fica fora até o F-3-D — decisão nascida na execução |
+| F-3-C | [DF3C.1](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | Fade na entrada e na saída; a saída obriga o desmonte a esperar, porque `@starting-style` só vale na entrada |
+| F-3-C | [DF3C.2](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | O `collapsed` da sidebar sobe para o `App.tsx` — o painel avisa que abriu, a casca decide, e `app/` segue sem importar de `features/` |
+| F-3-C | [DF3C.3](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | Recolhe só na abertura, só quando não couber, e nunca reexpande; expandir na mão desliga a regra pela sessão |
+| F-3-C | [DF3C.4](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | O teto do painel passa a ler a largura **viva** da sidebar (`--sidebar-width-now`) — 271px → 416px de conversa |
+| F-3-C | [DF3C.5](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | A alça é o *window splitter* da WAI-ARIA, com `aria-value*` em pixels e `Enter` fechando sem restaurar |
+| F-3-C | [DF3C.6](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | A largura mora no provider e sobrevive à troca de anexo; o arrasto escreve no nó por `ref`, sem passar pelo React |
+| F-3-C | [DF3C.7](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | Arrastar 40px além do piso fecha o painel — registrado como o item mais provável de cair na prova ao vivo |
 
 ---
 
