@@ -47,23 +47,23 @@ Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao d
 
 ### Protocolo de leitura da documentação
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,6 MB / ~490k tokens** — os sete arquivos soltos são só ~108k dela, e `plan/implemented/` sozinho é mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,7 MB / ~499k tokens** (89 arquivos) — os sete arquivos soltos são só ~113k dela, e `plan/implemented/` sozinho é mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| `ARMADILHAS.md` | ~26k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
-| `HISTORY-archive.md` | ~25k | `Grep` no nome do plano/fase. **Nunca** `Read` |
+| `ARMADILHAS.md` | ~27k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
+| `HISTORY-archive.md` | ~28k | `Grep` no nome do plano/fase. **Nunca** `Read` |
 | `HISTORY.md` | ~18k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
-| `ESCOPO.md` | ~13k | `Grep` no pilar ou na operação |
-| `ROADMAP.md` | ~12k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
-| `DECISOES.md` | ~10k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
+| `ESCOPO.md` | ~12k | `Grep` no pilar ou na operação |
+| `ROADMAP.md` | ~14k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
+| `DECISOES.md` | ~11k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
 | `README.md` | ~4k | único que cabe inteiro |
-| **`plan/implemented/`** (43 arq.) | **~268k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
-| `reference/` (19 arq.) | ~60k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
-| `study/` (12 arq.) | ~44k | `Grep` no conceito; `Read` com `offset` na seção achada |
+| **`plan/implemented/`** (49 arq.) | **~280k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
+| `reference/` (19 arq.) | ~56k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| `study/` (12 arq.) | ~42k | `Grep` no conceito; `Read` com `offset` na seção achada |
 | `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
 
-⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** Foram medidos em 26/08/2026; a ordem de grandeza é o que importa aqui, não o dígito.
+⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** Foram remedidos em 27/08/2026; a ordem de grandeza é o que importa aqui, não o dígito. ⚠️ **Dois tetos estão estourados** (`ARMADILHAS.md`, este arquivo) — registrado com o conserto no [`ROADMAP § 2`](docs/ROADMAP.md).
 
 **Como fazer certo, em ordem:** (1) `Grep -n` pelo termo → devolve linha e arquivo; (2) `Read` com `offset` = linha achada menos 5, `limit` 40–60; (3) se a seção continuar além, estenda o `limit`, não releia do zero. Um `Grep` com `-C 3` resolve a maioria das perguntas **sem nenhum `Read`**.
 
