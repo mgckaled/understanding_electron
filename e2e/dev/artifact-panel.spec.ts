@@ -259,3 +259,66 @@ test('cede espaço numa janela estreita, e o arrasto muda a largura', async () =
   await handle.dblclick()
   await expect.poll(() => widthOf(PANEL)).toBeLessThan(panelDragged)
 })
+
+// The dataset is the only artifact with more than one view, so it is the only
+// one whose panel body has a tab strip, a pinned footer and its own scrolling
+// region. jsdom judges none of that: it has no layout, so `flex-1`,
+// `min-h-[0px]` and a `sticky` header all pass there whether or not they work.
+test('opens a dataset in the panel and moves between its three tabs', async () => {
+  const fixturePath = join(process.cwd(), 'e2e/fixtures/perfil.csv')
+
+  await page.evaluate(async (path) => {
+    const api = (window as unknown as { api: Api }).api
+    const result = await api.dataset.attach(path, 'e2e-artifact-dataset')
+    if (!result.ok) throw new Error(`attach failed: ${JSON.stringify(result.error)}`)
+
+    const id = `c-dataset-${Date.now()}`
+    await api.conversation.create({ id, title: 'Dataset', createdAt: Date.now() })
+    await api.conversation.append(id, {
+      id: `m-${Date.now()}`,
+      role: 'user',
+      parts: [result.value],
+      createdAt: Date.now()
+    })
+  }, fixturePath)
+
+  await page.reload()
+  await page.getByRole('button', { name: /perfil\.csv/ }).click()
+
+  const panel = page.getByRole('complementary', { name: 'Anexo aberto' })
+  await expect(panel).toBeVisible()
+
+  // Dados: the rows, and the footer telling the truth about how many there are.
+  await expect(panel.getByRole('table')).toBeVisible()
+  await expect(panel.getByText('1–10 de 10')).toBeVisible()
+
+  // DF3D.4 in a real browser: present, and greyed out because OFFSET is
+  // scheduled — not hidden, which is what DF3A.7 does to a capability that is
+  // never coming.
+  await expect(panel.getByRole('button', { name: 'Próxima página' })).toBeDisabled()
+
+  // The strip must not scroll away with the rows, and the footer must not sit
+  // on top of the last row — the reason the dataset body owns the whole region
+  // instead of living inside the panel's scrolling div.
+  const strip = panel.getByRole('tablist', { name: 'Vistas do arquivo' })
+  await expect(strip).toBeVisible()
+  const stripBox = (await strip.boundingBox())!
+  expect(stripBox.height).toBeGreaterThan(0)
+
+  await panel.getByRole('tab', { name: 'Perfil' }).click()
+  await expect(panel.getByRole('cell', { name: 'cidade' })).toBeVisible()
+
+  // Consulta: the keyboard path, which is the one a SQL tool is used through.
+  await panel.getByRole('tab', { name: 'Consulta' }).click()
+  const editor = panel.getByRole('textbox', { name: 'Consulta SQL' })
+  await editor.click()
+  await editor.press('Control+Enter')
+
+  await expect(panel.getByText(/10 linhas · 3 colunas · \d+ ms/)).toBeVisible()
+
+  // Arrow keys move between tabs and wrap, which is the half of the APG pattern
+  // a mouse never exercises.
+  await panel.getByRole('tab', { name: 'Consulta' }).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(panel.getByRole('tab', { name: 'Dados' })).toHaveAttribute('aria-selected', 'true')
+})
