@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MessageSquare, Search } from 'lucide-react'
 import AppShell from './app/AppShell'
 import Sidebar from './app/Sidebar'
+import { useSidebarSpace } from './app/sidebarSpace'
 import OllamaStatus from './components/OllamaStatus'
 import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
@@ -25,17 +25,18 @@ const queryClient = createQueryClient()
 // features/ and keeps plano 18's blocks out of the shell's source. The providers
 // wrap the whole shell because both columns read from them.
 function App(): React.JSX.Element {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const { collapsed, setCollapsed, makeRoom } = useSidebarSpace()
 
   return (
     <QueryClientProvider client={queryClient}>
       <ConversationsProvider>
-        <ArtifactProvider>
+        <ArtifactProvider onOpen={makeRoom}>
           <AppShell
+            sidebarCollapsed={collapsed}
             sidebar={
               <Sidebar
-                collapsed={sidebarCollapsed}
-                onCollapsedChange={setSidebarCollapsed}
+                collapsed={collapsed}
+                onCollapsedChange={setCollapsed}
                 nav={<NewConversationButton />}
                 // The "Abrir arquivo" section moved into the composer as the
                 // clip (DS5, item 7) — the sidebar's content slot is

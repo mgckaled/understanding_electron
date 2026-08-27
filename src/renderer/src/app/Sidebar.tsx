@@ -42,13 +42,11 @@ function Sidebar({
   footer,
   collapsedRail
 }: SidebarProps): React.JSX.Element {
-  const width = collapsed ? 'w-(--sidebar-width-collapsed)' : 'w-(--sidebar-width)'
-
   return (
     // Named because it is no longer the only complementary region: the artifact
     // panel (F-3-A) is the second, and two unnamed landmarks are one landmark
     // as far as a screen reader is concerned.
-    <aside aria-label="Conversas" className={`${SIDEBAR_BASE} ${width}`}>
+    <aside aria-label="Conversas" className={`${SIDEBAR_BASE} w-(--sidebar-width-now)`}>
       {/* Each region is pinned to its own row with row-start-*: without it an
           absent nav would slide content into row 2 and the footer into the
           flexible row, so it stops sitting at the bottom — and the bug shows up

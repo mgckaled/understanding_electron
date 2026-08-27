@@ -9,6 +9,8 @@ import type { ReactNode } from 'react'
 
 type AppShellProps = {
   sidebar: ReactNode
+  /** Publishes the sidebar's live width to the whole grid (DF3C.4). */
+  sidebarCollapsed: boolean
   main: ReactNode
   /**
    * The right-hand region (plano F-3-A). Renders raw, unlike `main`: only the
@@ -28,9 +30,25 @@ type AppShellProps = {
 // base, so the numeric form emits nothing (measured); the arbitrary value does.
 // The third track is `auto`, so the shell never learns the panel's width — the
 // panel sizes itself (DF3A.4), and a closed one collapses the track to zero.
-function AppShell({ sidebar, main, artifact }: AppShellProps): React.JSX.Element {
+function AppShell({
+  sidebar,
+  sidebarCollapsed,
+  main,
+  artifact
+}: AppShellProps): React.JSX.Element {
   return (
-    <div className="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden bg-bg">
+    // --sidebar-width-now is set here and nowhere else: the sidebar's own width
+    // and the panel's ceiling both read it, so they cannot disagree (DF3C.4).
+    <div
+      className="grid h-full grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden bg-bg"
+      style={
+        {
+          '--sidebar-width-now': sidebarCollapsed
+            ? 'var(--sidebar-width-collapsed)'
+            : 'var(--sidebar-width)'
+        } as React.CSSProperties
+      }
+    >
       {sidebar}
       <main className="flex h-full min-w-[0px] flex-col overflow-hidden">{main}</main>
       {artifact}

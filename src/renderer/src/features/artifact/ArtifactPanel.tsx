@@ -14,12 +14,11 @@ import { canCopy, copyArtifact } from './copyArtifact'
 //
 // The clamp keeps the conversation readable: 50vw is the ceiling asked for, but
 // on a narrow window the second term of the `min` wins and the panel yields.
-// It subtracts `--sidebar-width` because measuring against the WINDOW
-// over-promised — at 900px the thread was left with 248px, measured live. The
-// expanded width is used even when the sidebar is collapsed: erring toward more
-// room for the thread is the safe direction. Below roughly 1100px the two
-// simply compete, and the panel sits at its 22rem floor.
-const WIDTH = 'clamp(22rem, var(--artifact-width), min(50vw, 100vw - var(--sidebar-width) - 26rem))'
+// It subtracts the sidebar's LIVE width (DF3C.4) because measuring against the
+// window over-promised — at 900px the thread was left with 248px, measured
+// live. Below roughly 1100px the two compete and the panel sits at its floor.
+const WIDTH =
+  'clamp(22rem, var(--artifact-width), min(50vw, 100vw - var(--sidebar-width-now, var(--sidebar-width)) - 26rem))'
 const DEFAULT_WIDTH = '34rem'
 
 /** How long the copy button stays confirmed. Long enough to be seen, short

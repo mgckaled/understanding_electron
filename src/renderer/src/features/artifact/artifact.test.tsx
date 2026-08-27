@@ -57,11 +57,11 @@ function mount(): void {
   render(harness())
 }
 
-function harness(): React.JSX.Element {
+function harness(onOpen?: () => void): React.JSX.Element {
   return (
     <QueryClientProvider client={createQueryClient()}>
       <ConversationsProvider>
-        <ArtifactProvider>
+        <ArtifactProvider onOpen={onOpen}>
           <Probe />
           <ArtifactPanel />
         </ArtifactProvider>
@@ -127,6 +127,17 @@ describe('ArtifactProvider', () => {
     const panel = screen.getByRole('complementary', { name: PANEL })
     expect(panel).toBeVisible()
     expect(panel).not.toHaveAttribute('data-closing')
+  })
+
+  it('asks the shell for room when it opens, never when it swaps (DF3C.3)', async () => {
+    installApiMock()
+    const onOpen = vi.fn()
+    render(harness(onOpen))
+
+    await userEvent.click(screen.getByRole('button', { name: 'abrir doc' }))
+    await userEvent.click(screen.getByRole('button', { name: 'abrir img' }))
+
+    expect(onOpen).toHaveBeenCalledOnce()
   })
 
   it('swaps to the other artifact without closing in between', async () => {

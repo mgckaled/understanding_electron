@@ -14,7 +14,13 @@ function isTyping(element: HTMLElement): boolean {
 // Window state, sibling of "sidebar collapsed" — never persisted (DF3A.5). It
 // cannot live in the card: the card unmounts when the conversation changes, and
 // the panel is precisely what has to notice that.
-function ArtifactProvider({ children }: { children: ReactNode }): React.JSX.Element {
+type ArtifactProviderProps = {
+  children: ReactNode
+  /** Called when the panel goes from closed to open, so the shell can free room (DF3C.3). */
+  onOpen?: () => void
+}
+
+function ArtifactProvider({ children, onOpen }: ArtifactProviderProps): React.JSX.Element {
   const [current, setCurrent] = useState<ArtifactRef | null>(null)
   const { activeId } = useConversations()
   const conversation = useActiveConversation()
@@ -63,9 +69,10 @@ function ArtifactProvider({ children }: { children: ReactNode }): React.JSX.Elem
       }
       cancelFade()
       trigger.current = opener
+      if (current === null) onOpen?.()
       setCurrent(ref)
     },
-    [current, closing, close, cancelFade]
+    [current, closing, close, cancelFade, onOpen]
   )
 
   // A different conversation is a different set of artifacts, and the panel is
