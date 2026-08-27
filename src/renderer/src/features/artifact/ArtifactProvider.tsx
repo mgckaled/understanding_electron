@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useActiveConversation, useConversations } from '../conversation/conversationsContext'
 import { ArtifactContext, type ArtifactRef } from './artifactContext'
 import { artifactsOf } from './artifactsOf'
-import { DEFAULT_WIDTH } from './artifactWidth'
+import { DEFAULT_WIDTH } from '../../shared/ui/SidePanel/panelWidth'
 
 // Mirrors --duration-base: the unmount is scheduled in JS, and CSS cannot
 // delay it (DF3C.1).

@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { CLOSE_SLACK, DEFAULT_WIDTH, MIN_WIDTH, maxWidth } from './artifactWidth'
+import { CLOSE_SLACK, DEFAULT_WIDTH, MIN_WIDTH, maxWidth } from './panelWidth'
 
 // The window splitter of the WAI-ARIA APG: role, aria-value* and the keyboard
 // come from the pattern (DF3C.5). Values are in px, not the 0–100 the pattern
@@ -7,7 +7,7 @@ import { CLOSE_SLACK, DEFAULT_WIDTH, MIN_WIDTH, maxWidth } from './artifactWidth
 
 const STEP = 16
 
-type ArtifactResizerProps = {
+type PanelResizerProps = {
   /** The panel this handle sizes, for `aria-controls`. */
   panelId: string
   width: number
@@ -18,13 +18,13 @@ type ArtifactResizerProps = {
   close: () => void
 }
 
-function ArtifactResizer({
+function PanelResizer({
   panelId,
   width,
   apply,
   commit,
   close
-}: ArtifactResizerProps): React.JSX.Element {
+}: PanelResizerProps): React.JSX.Element {
   // Measured once, at pointerdown: getBoundingClientRect per pointermove is the
   // classic layout thrash, and the panel's right edge does not move anyway.
   const from = useRef<{ right: number; pointerId: number } | null>(null)
@@ -111,4 +111,4 @@ function ArtifactResizer({
   )
 }
 
-export default ArtifactResizer
+export default PanelResizer

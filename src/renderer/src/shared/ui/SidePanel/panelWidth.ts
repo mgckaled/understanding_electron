@@ -19,4 +19,4 @@ export function maxWidth(): number {
 // `style`. It subtracts the sidebar's LIVE width because measuring against the
 // window over-promised: at 900px the thread was left with 248px, measured live.
 export const WIDTH_CSS =
-  'clamp(22rem, var(--artifact-width), min(50vw, 100vw - var(--sidebar-width-now, var(--sidebar-width)) - 26rem))'
+  'clamp(22rem, var(--panel-width), min(50vw, 100vw - var(--sidebar-width-now, var(--sidebar-width)) - 26rem))'

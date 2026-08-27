@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 import type { ArtifactApi, ArtifactRef } from '@renderer/features/artifact/artifactContext'
-import { DEFAULT_WIDTH } from '@renderer/features/artifact/artifactWidth'
+import { DEFAULT_WIDTH } from '@renderer/shared/ui/SidePanel/panelWidth'
 
 /**
  * A hand-made `ArtifactApi` for level-2 tests that mount one artifact component

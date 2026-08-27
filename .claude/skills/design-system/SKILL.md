@@ -108,7 +108,7 @@ Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atr
 
 ⚠️ **`tokens.css` nunca entra num `@layer`** (DS1.5). Violá-lo some com toda a cor do app, e é o único aviso que sobrevive como linha solta no fonte — o resto da narrativa de `base.css`/`tailwind.css` está em [`reference.md`](reference.md).
 
-**Quatro componentes ficam em CSS Modules, por limite físico real, não por não terem sido migrados:** `Dialog`, `Popover`, `MarkdownMessage` e `ArtifactPanel`. Os dois primeiros porque a plataforma (`<dialog>`, `popover="auto"`) exige seletor que o Tailwind não alcança (`::backdrop`, `[popover]:not(:popover-open)`); o terceiro porque o conteúdo é HTML gerado pelo `react-markdown`, sem className previsível; o quarto — o único que não é primitivo — porque `@starting-style` precisa de **regra**, não de classe (DF3C.1). `Button`, `Field`, `Switch` e `Slider` são 100% utilitários.
+**Quatro componentes ficam em CSS Modules, por limite físico real, não por não terem sido migrados:** `Dialog`, `Popover`, `MarkdownMessage` e `SidePanel`. Os dois primeiros porque a plataforma (`<dialog>`, `popover="auto"`) exige seletor que o Tailwind não alcança (`::backdrop`, `[popover]:not(:popover-open)`); o terceiro porque o conteúdo é HTML gerado pelo `react-markdown`, sem className previsível; o quarto porque `@starting-style` precisa de **regra**, não de classe (DF3C.1) — ele nasceu como `ArtifactPanel`, fora de `shared/ui/`, e virou primitivo no E-1-B ao ganhar o segundo inquilino. `Button`, `Field`, `Switch` e `Slider` são 100% utilitários.
 
 ## Os sete primitivos: um diretório por componente
 

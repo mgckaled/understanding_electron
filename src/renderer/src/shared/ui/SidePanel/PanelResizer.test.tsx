@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ArtifactResizer from './ArtifactResizer'
-import { DEFAULT_WIDTH, MIN_WIDTH, maxWidth } from './artifactWidth'
+import PanelResizer from './PanelResizer'
+import { DEFAULT_WIDTH, MIN_WIDTH, maxWidth } from './panelWidth'
 
 // The drag itself is level 4: jsdom has no layout, so a pointer gesture here
 // would measure a rect of zeros. What IS testable is the pattern's other half —
@@ -13,7 +13,7 @@ function mount(width = DEFAULT_WIDTH): {
   const commit = vi.fn()
   const close = vi.fn()
   render(
-    <ArtifactResizer
+    <PanelResizer
       panelId="panel-1"
       width={width}
       apply={vi.fn()}
@@ -24,7 +24,7 @@ function mount(width = DEFAULT_WIDTH): {
   return { commit, close }
 }
 
-describe('ArtifactResizer', () => {
+describe('PanelResizer', () => {
   it('is a window splitter, pointing at the panel it sizes', () => {
     mount()
     const handle = screen.getByRole('separator')
