@@ -22,7 +22,10 @@ async function withAnswer(): Promise<void> {
     createdAt: 2000
   })
   render(providers(<ConversationView />))
-  await screen.findByRole('button', { name: 'Enviar para rascunho' })
+  // Longer than the 1s default on purpose: this waits out a three-query chain
+  // (list, then messages, then the turn), and it went red only under the full
+  // suite, where every jsdom environment competes for the same cores.
+  await screen.findByRole('button', { name: 'Enviar para rascunho' }, { timeout: 5000 })
 }
 
 describe('enviar para rascunho', () => {
@@ -84,5 +87,25 @@ describe('enviar para rascunho', () => {
       expect(drafts).toHaveLength(1)
       expect(drafts[0].sourceMessageId).toBe('m1')
     })
+  })
+})
+
+describe('DraftCount', () => {
+  it('stays out of the header while the conversation has no draft', async () => {
+    await withAnswer()
+
+    // Anchored on the counter's own wording: the turn's button carries
+    // "Enviar para rascunho" and would match anything looser.
+    expect(screen.queryByTitle(/nesta conversa/)).toBeNull()
+  })
+
+  it('counts drafts on its own, without touching the attachment clip', async () => {
+    await withAnswer()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para rascunho' }))
+
+    expect(await screen.findByTitle('1 rascunho nesta conversa')).toBeVisible()
+    // The clip is absent, not showing 1: an answer is not an attachment.
+    expect(screen.queryByRole('button', { name: /anexos da conversa/ })).toBeNull()
   })
 })

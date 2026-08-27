@@ -22,6 +22,7 @@ import { ModelPicker, BudgetMeter } from './ModelSelector'
 import Composer from './Composer'
 import ThinkingMark from './ThinkingMark'
 import ArtifactCount from '../artifact/ArtifactCount'
+import DraftCount from '../draft/DraftCount'
 import MessageList from './MessageList'
 import { completePartial } from './completePartial'
 
@@ -182,7 +183,10 @@ function ConversationView(): React.JSX.Element {
         {/* Opposite end from the title, which truncates rather than pushing it
             (DF3B.1). `min-w-[0px]` on the <h1> is what makes the truncation win
             over the clip instead of the other way round. */}
-        <ArtifactCount />
+        <div className="ml-auto flex flex-none items-center gap-1">
+          <DraftCount />
+          <ArtifactCount />
+        </div>
       </header>
 
       {/* The one scrolling surface. Its ref is measured by useStickToBottom, so

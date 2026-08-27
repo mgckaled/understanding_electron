@@ -23,7 +23,7 @@ function ArtifactCount(): React.JSX.Element | null {
     <Button
       variant="ghost"
       size="sm"
-      className="ml-auto flex-none"
+      className="flex-none"
       onClick={(event) => togglePanel(event.currentTarget)}
       aria-pressed={open}
       aria-label={`${open ? 'Fechar' : 'Abrir'} anexos da conversa (${artifacts.length})`}
