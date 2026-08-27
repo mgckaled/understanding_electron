@@ -102,7 +102,7 @@ function ArtifactPanel(): React.JSX.Element | null {
 
       {/* The region below the header, not a scrolling surface: which part of a
           body scrolls depends on the body, and ArtifactBody decides it. */}
-      <div className="flex min-h-[0px] flex-1 flex-col">
+      <div className="flex min-h-[0px] flex-1 flex-col p-1">
         <ArtifactBody artifact={current} />
       </div>
     </aside>
