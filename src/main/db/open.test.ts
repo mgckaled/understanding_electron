@@ -22,17 +22,25 @@ describe('openDatabase', () => {
 
     const opened = openDatabase(':memory:')
 
-    expect(currentVersion(opened)).toBe(2)
-    expect(tableNames(opened)).toEqual(['app_settings', 'conversations', 'messages', 'secrets'])
+    // Derived, never a literal: the ladder grows every time a plan adds a rung,
+    // and a hardcoded height turns that into four unrelated red tests.
+    expect(currentVersion(opened)).toBe(migrations.length)
+    expect(tableNames(opened)).toEqual([
+      'app_settings',
+      'conversations',
+      'drafts',
+      'messages',
+      'secrets'
+    ])
     opened.close()
   })
 
   it('is a no-op on a database already at the top of the ladder', () => {
     const db = openDatabase(':memory:')
 
-    // Re-running must not re-execute v1/v2 — a second CREATE TABLE would throw.
-    expect(migrate(db)).toBe(2)
-    expect(currentVersion(db)).toBe(2)
+    // Re-running must not re-execute a shipped rung — a second CREATE TABLE would throw.
+    expect(migrate(db)).toBe(migrations.length)
+    expect(currentVersion(db)).toBe(migrations.length)
     db.close()
   })
 
@@ -56,7 +64,7 @@ describe('openDatabase', () => {
  * real rung after v1 meets, and the one a single-rung ladder never exercises.
  */
 describe('migrate — a further rung', () => {
-  const v3: Migration = (db) => {
+  const extraRung: Migration = (db) => {
     db.exec('ALTER TABLE conversations ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0')
   }
 
@@ -71,12 +79,12 @@ describe('migrate — a further rung', () => {
     return db
   }
 
-  it('climbs to a third rung leaving the existing rows intact', () => {
+  it('climbs one rung past the top leaving the existing rows intact', () => {
     const db = seeded()
 
-    expect(migrate(db, [...migrations, v3])).toBe(3)
+    expect(migrate(db, [...migrations, extraRung])).toBe(migrations.length + 1)
 
-    expect(currentVersion(db)).toBe(3)
+    expect(currentVersion(db)).toBe(migrations.length + 1)
     const conversation = db.prepare('SELECT title, pinned FROM conversations').get()
     expect(conversation?.['title']).toBe('Vendas')
     expect(conversation?.['pinned']).toBe(0)
@@ -95,7 +103,7 @@ describe('migrate — a further rung', () => {
 
     // Both halves matter: a bumped version would make the next open skip the
     // rung, and a surviving table would make its retry fail on CREATE TABLE.
-    expect(currentVersion(db)).toBe(2)
+    expect(currentVersion(db)).toBe(migrations.length)
     expect(tableNames(db)).not.toContain('half')
     db.close()
   })

@@ -11,6 +11,7 @@ import {
   renameConversation,
   updateConversationSettings
 } from '../src/main/features/conversation/handlers'
+import { createDraft, listDrafts, removeDraft } from '../src/main/features/draft/handlers'
 import { readSettings, writeSettings } from '../src/main/features/settings/handlers'
 
 /**
@@ -31,7 +32,7 @@ import { readSettings, writeSettings } from '../src/main/features/settings/handl
  *
  * Each call gets its own database, so tests stay isolated with no reset step.
  */
-export function createStoreApi(): Pick<Api, 'conversation' | 'settings'> {
+export function createStoreApi(): Pick<Api, 'conversation' | 'draft' | 'settings'> {
   const db = openDatabase(':memory:')
 
   return {
@@ -48,6 +49,11 @@ export function createStoreApi(): Pick<Api, 'conversation' | 'settings'> {
         appendMessage({ conversationId, message, ...(title === undefined ? {} : { title }) }, db)
       ),
       updateSettings: vi.fn(async (id, patch) => updateConversationSettings({ id, patch }, db))
+    },
+    draft: {
+      list: vi.fn(async (conversationId: string) => listDrafts({ conversationId }, db)),
+      create: vi.fn(async (draft) => createDraft(draft, db)),
+      remove: vi.fn(async (id: string) => removeDraft({ id }, db))
     },
     settings: {
       read: vi.fn(async () => readSettings(undefined, db)),

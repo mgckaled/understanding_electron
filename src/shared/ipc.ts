@@ -504,6 +504,23 @@ export type Conversation = {
   settings: ConversationSettings
 }
 
+/**
+ * A model answer the user pulled out of the transcript to work on (DE1A.1).
+ *
+ * Its own table, not a MessagePart: `toChatMessages` reads `messages`, so a
+ * draft cannot reach the model from here even by accident. `sourceMessageId`
+ * says where it came from and outlives that message (DE1A.2).
+ */
+export type Draft = {
+  id: string
+  conversationId: string
+  sourceMessageId: string
+  title: string
+  content: string
+  createdAt: number
+  updatedAt: number
+}
+
 // Machine-scale configuration (D13.4/D14.7): a property OF THIS COMPUTER, not
 // "rarely changed". Stored per conversation, reopening an old one would restore
 // a thread count from a different machine — hence its own key-value table. The
@@ -641,6 +658,19 @@ export const argsSchema = {
     id: z.string().min(1),
     patch: conversationSettingsSchema
   }),
+  // Drafts (trilha E-1). Identity is minted in the renderer like every
+  // conversation channel above (D14.5), and `title` is derived there too, by
+  // core/draft/title.ts (DE1A.4).
+  'draft:list': z.object({ conversationId: z.string().min(1) }),
+  'draft:create': z.object({
+    id: z.string().min(1),
+    conversationId: z.string().min(1),
+    sourceMessageId: z.string().min(1),
+    title: z.string(),
+    content: z.string(),
+    createdAt: z.number().int().nonnegative()
+  }),
+  'draft:remove': z.object({ id: z.string().min(1) }),
   'settings:read': z.void(),
   // A patch, not the whole object: a setting added later is written by whoever
   // owns it, without every writer having to know the full shape.
@@ -773,6 +803,11 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['conversation:settings']>
     result: void
   }
+  // No Result, by the conversation block's rule: an indexed INSERT into a local
+  // SQLite has no failure the UI distinguishes, and absence is data (DE1A.5).
+  'draft:list': { args: z.infer<(typeof argsSchema)['draft:list']>; result: Draft[] }
+  'draft:create': { args: z.infer<(typeof argsSchema)['draft:create']>; result: void }
+  'draft:remove': { args: z.infer<(typeof argsSchema)['draft:remove']>; result: void }
   'settings:read': { args: z.infer<(typeof argsSchema)['settings:read']>; result: AppSettings }
   'settings:write': { args: z.infer<(typeof argsSchema)['settings:write']>; result: void }
   // weakBackend: true on SUCCESS is the DN1A.4 signal (Linux basic_text) —
@@ -860,6 +895,12 @@ export type Api = {
     append(conversationId: string, message: Message, title?: string): Promise<void>
     /** Merge-patches this conversation's settings; absent keys are untouched. */
     updateSettings(id: string, patch: ConversationSettings): Promise<void>
+  }
+  draft: {
+    /** Oldest first, scoped to one conversation — drafts die with it (`ON DELETE CASCADE`). */
+    list(conversationId: string): Promise<Draft[]>
+    create(draft: Omit<Draft, 'updatedAt'>): Promise<void>
+    remove(id: string): Promise<void>
   }
   settings: {
     read(): Promise<AppSettings>

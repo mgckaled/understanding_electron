@@ -12,6 +12,38 @@ function withConversation(): DatabaseSync {
   return db
 }
 
+describe('schema v3', () => {
+  function withDraft(): DatabaseSync {
+    const db = withConversation()
+    db.prepare(
+      `INSERT INTO drafts
+         (id, conversation_id, source_message_id, title, content, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run('d1', 'c1', 'm1', 'Vendas', '# Vendas', 1000, 1000)
+    return db
+  }
+
+  it('cascades a conversation delete down to its drafts', () => {
+    const db = withDraft()
+
+    db.prepare('DELETE FROM conversations WHERE id = ?').run('c1')
+
+    expect(db.prepare('SELECT COUNT(*) AS n FROM drafts').get()?.['n']).toBe(0)
+    db.close()
+  })
+
+  // DE1A.2: source_message_id is provenance, not ownership. Deleting the answer
+  // must not take the text the user has been editing.
+  it('keeps a draft whose source message was deleted', () => {
+    const db = withDraft()
+
+    db.prepare('DELETE FROM messages WHERE id = ?').run('m1')
+
+    expect(db.prepare('SELECT COUNT(*) AS n FROM drafts').get()?.['n']).toBe(1)
+    db.close()
+  })
+})
+
 describe('schema v1', () => {
   it('cascades a conversation delete down to its messages', () => {
     const db = withConversation()

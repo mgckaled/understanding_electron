@@ -37,7 +37,7 @@ O caminho macro, do estado atual até o produto do [`ESCOPO.md`](ESCOPO.md) — 
 | 23 | **N-1** | arquitetura mínima de modelos de nuvem/opt-in | ✅ concluída em 25/08/2026 — N-1-A (segredo), N-1-B (GLM ponta a ponta) e [N-1-C](plan/implemented/N-1-C-gemini-e-catalogo-de-nuvem.md) (Gemini, catálogo de nuvem no seletor, janela de contexto cloud-aware). Provedor terceirizado (Groq/Cerebras/SambaNova, Peça F do guia de nuvem) não entra como N-1-D — abre a trilha **N-2**, sem arquivo ainda, quando alguém escrever o primeiro plano dela |
 | 24 | **R-3** | sincronização de docs pós-18/N-1 e nascimento da skill `data` | ✅ concluída |
 | 25 | [19](plan/implemented/19-propor-consulta-e-passos.md) | propor: consulta e passos | ✅ concluída em 25/08/2026 |
-| 26 | **E-1** | motor de exportação de documento (`.md`/`.pdf`/`.docx`/`.xml`) | planejado |
+| 26 | **E-1** | motor de exportação de documento (`.txt`/`.md`/`.pdf`/`.docx`) — trilha `E-1-A..F` | planejado |
 | 27 | 20 | gráfico como artefato | planejado |
 | 28 | **E-2** | motor `.pptx` (aproveita imagens de gráfico do 20) | planejado |
 | 29 | 21 | raciocínio visível — local **e** nuvem numa tacada só, depende do N-1 | planejado |

@@ -68,6 +68,7 @@ import {
   renameConversation,
   updateConversationSettings
 } from '../features/conversation/handlers'
+import { createDraft, listDrafts, removeDraft } from '../features/draft/handlers'
 import { readSettings, writeSettings } from '../features/settings/handlers'
 import { hasSecret, removeSecret, writeSecret } from '../features/secrets/handlers'
 import { readSecretForUse } from '../features/secrets/read'
@@ -267,6 +268,10 @@ export async function registerAll(): Promise<() => void> {
   })
   handle('conversation:append', (args) => appendMessage(args, db))
   handle('conversation:settings', (args) => updateConversationSettings(args, db))
+
+  handle('draft:list', (args) => listDrafts(args, db))
+  handle('draft:create', (args) => createDraft(args, db))
+  handle('draft:remove', (args) => removeDraft(args, db))
 
   handle('settings:read', (args) => readSettings(args, db))
   handle('settings:write', (args) => {

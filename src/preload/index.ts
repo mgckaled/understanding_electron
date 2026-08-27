@@ -61,6 +61,11 @@ const api: Api = {
       invoke('conversation:append', { conversationId, message, title }),
     updateSettings: (id, patch) => invoke('conversation:settings', { id, patch })
   },
+  draft: {
+    list: (conversationId) => invoke('draft:list', { conversationId }),
+    create: (draft) => invoke('draft:create', draft),
+    remove: (id) => invoke('draft:remove', { id })
+  },
   settings: {
     read: () => invoke('settings:read'),
     write: (patch) => invoke('settings:write', patch)

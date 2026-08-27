@@ -56,4 +56,25 @@ const v2: Migration = (db) => {
   `)
 }
 
-export const migrations: readonly Migration[] = [v1, v2]
+// A draft is NOT a message part, though `parts` being JSON would have made it
+// free (DE1A.1): a table cannot reach toChatMessages, which reads `messages`.
+// `source_message_id` carries no foreign key on purpose — it is provenance, not
+// ownership, and node:sqlite enables foreign_keys by default, so a cascade
+// there would delete text the user edited (DE1A.2).
+const v3: Migration = (db) => {
+  db.exec(`
+    CREATE TABLE drafts (
+      id                TEXT PRIMARY KEY,
+      conversation_id   TEXT    NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      source_message_id TEXT    NOT NULL,
+      title             TEXT    NOT NULL,
+      content           TEXT    NOT NULL,
+      created_at        INTEGER NOT NULL,
+      updated_at        INTEGER NOT NULL
+    );
+
+    CREATE INDEX drafts_by_conversation ON drafts (conversation_id, created_at);
+  `)
+}
+
+export const migrations: readonly Migration[] = [v1, v2, v3]
