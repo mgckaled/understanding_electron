@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { columnsToArrowBytes } from '@core/duckdb/arrow'
 import { installApiMock } from '@test/api-mock'
@@ -48,8 +48,62 @@ describe('DatasetQueryPanel', () => {
     render(<DatasetQueryPanel hash="h1" />)
     await run(user)
 
-    expect(await screen.findByText('Mostrando as primeiras 200 linhas.')).toBeVisible()
+    expect(await screen.findByText('mostrando as primeiras 200')).toBeVisible()
     expect(screen.getAllByRole('row')).toHaveLength(201) // 200 data rows + header
+  })
+
+  it('says how much came back and how long it took (DF3D.7)', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.query).mockResolvedValue({
+      ok: true,
+      value: columnsToArrowBytes({ id: [1n, 2n], name: ['Ana', 'Bruno'] })
+    })
+    const user = userEvent.setup()
+
+    render(<DatasetQueryPanel hash="h1" />)
+    await run(user)
+
+    // The duration is real, so only its shape can be asserted.
+    expect(await screen.findByText(/2 linhas · 2 colunas · \d+ ms/)).toBeVisible()
+  })
+
+  it('runs on Ctrl+Enter without touching the button', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.query).mockResolvedValue({
+      ok: true,
+      value: columnsToArrowBytes({ id: [1n] })
+    })
+    const user = userEvent.setup()
+
+    render(<DatasetQueryPanel hash="h1" />)
+    await user.click(screen.getByRole('textbox', { name: 'Consulta SQL' }))
+    await user.keyboard('{Control>}{Enter}{/Control}')
+
+    await waitFor(() => expect(api.dataset.query).toHaveBeenCalledOnce())
+  })
+
+  // The typo punished twice: the result being compared against disappears at
+  // the exact moment the SQL goes wrong.
+  it('keeps the last good result on screen when the next query fails', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.query).mockResolvedValue({
+      ok: true,
+      value: columnsToArrowBytes({ name: ['Ana'] })
+    })
+    const user = userEvent.setup()
+
+    render(<DatasetQueryPanel hash="h1" />)
+    await run(user)
+    expect(await screen.findByText('Ana')).toBeVisible()
+
+    vi.mocked(api.dataset.query).mockResolvedValue({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'Binder Error' }
+    })
+    await run(user)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Binder Error')
+    expect(screen.getByText('Ana')).toBeVisible()
   })
 
   it('renders NULL cells distinctly instead of an empty cell', async () => {

@@ -68,6 +68,18 @@ describe('ArtifactDataset', () => {
     expect(api.dataset.profile).toHaveBeenCalledWith('h1')
   })
 
+  it('carries the SQL tool as its third tab', async () => {
+    mount()
+    await screen.findByRole('table')
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Consulta' }))
+
+    expect(screen.getByRole('textbox', { name: 'Consulta SQL' })).toHaveValue(
+      'SELECT * FROM dataset'
+    )
+    expect(screen.getByRole('button', { name: 'Executar' })).toBeVisible()
+  })
+
   // The half of the pager that works today (DF3D.3): the cap is SQL text the
   // renderer writes, so no channel is involved.
   it('re-reads the file with the page size that was picked', async () => {

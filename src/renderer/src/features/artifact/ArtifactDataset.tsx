@@ -3,6 +3,7 @@ import type { DatasetPart } from '@shared/ipc'
 import { errorMessage } from '../../shared/ui/messages'
 import DatasetPager, { type PageSize } from '../attachment/DatasetPager'
 import DatasetProfileTable from '../attachment/DatasetProfileTable'
+import DatasetQueryPanel from '../attachment/DatasetQueryPanel'
 import DatasetTable from '../attachment/DatasetTable'
 import { useDatasetPreview, DEFAULT_PREVIEW_ROWS } from '../attachment/useDatasetPreview'
 import { useDatasetProfile } from '../attachment/useDatasetProfile'
@@ -82,7 +83,14 @@ function ArtifactDataset({ part }: { part: DatasetPart }): React.JSX.Element {
       onChange={setTab}
       tabs={[
         { id: 'dados', label: 'Dados', render: () => <Rows part={part} /> },
-        { id: 'perfil', label: 'Perfil', render: () => <Profile hash={part.hash} /> }
+        { id: 'perfil', label: 'Perfil', render: () => <Profile hash={part.hash} /> },
+        // Typed SQL dies with the panel, by decision (DF3D.8): it is work in
+        // progress per dataset, and keeping it would mean a map by hash.
+        {
+          id: 'consulta',
+          label: 'Consulta',
+          render: () => <DatasetQueryPanel hash={part.hash} fill />
+        }
       ]}
     />
   )
