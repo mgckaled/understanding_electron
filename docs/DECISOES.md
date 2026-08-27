@@ -4,7 +4,7 @@
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os headings dos planos, não transcrição manual), feito no plano `R-5` (ago/2026):
+Levantamento mecânico (grep sobre os headings dos planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**285 linhas** em 27/08/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
 - **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, sem heading atômico (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
@@ -338,6 +338,21 @@ Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, a
 
 | trilha | sigla | descrição |
 |---|---|---|
+| E-1-A | [DE1A.1](plan/implemented/E-1-A-o-rascunho-existe.md) | O rascunho é **tabela própria**, não parte de mensagem |
+| E-1-A | [DE1A.2](plan/implemented/E-1-A-o-rascunho-existe.md) | `source_message_id` é **procedência**, não posse — e por isso não é chave estrangeira |
+| E-1-A | [DE1A.3](plan/implemented/E-1-A-o-rascunho-existe.md) | "Já rascunhei esta resposta?" é estado **derivado**, nunca um sinalizador |
+| E-1-A | [DE1A.4](plan/implemented/E-1-A-o-rascunho-existe.md) | O título nasce da primeira linha, e a regra mora em `core/` |
+| E-1-A | [DE1A.5](plan/implemented/E-1-A-o-rascunho-existe.md) | `draft:*` **não** retorna `Result` |
+| E-1-A | [DE1A.6](plan/implemented/E-1-A-o-rascunho-existe.md) | Identidade nasce no renderer |
+| E-1-A | [DE1A.7](plan/implemented/E-1-A-o-rascunho-existe.md) | Este plano **não** tem painel, e isso é o corte, não um adiamento |
+| E-1-B | [DE1B.1](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Um alvo aberto, duas seleções: a exclusão é estrutural |
+| E-1-B | [DE1B.2](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | A casca sai para `shared/ui/SidePanel/`; o corpo fica onde está |
+| E-1-B | [DE1B.3](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Cada inquilino guarda a própria largura |
+| E-1-B | [DE1B.4](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | `Tabs` não sobe neste plano |
+| E-1-B | [DE1B.5](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | `Ctrl+D` no mesmo ouvinte do `Ctrl+B` |
+| E-1-B | [DE1B.6](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O `Esc` do `Dialog` para de vazar, e o conserto é no primitivo |
+| E-1-B | [DE1B.7](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Apagar o rascunho aberto cai para o mais recente que sobrou |
+| E-1-B | [DE1B.8](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O contador vira botão, e continua nunca somado ao clipe |
 | 09 (ativo) | [D9.1](plan/active/09-camada-de-ia.md) | A chamada de LLM roda no main, não no `utilityProcess` |
 | 09 (ativo) | [D9.2](plan/active/09-camada-de-ia.md) | Uma fronteira de rede, injetável, exatamente como o `embed_fn` |
 | 09 (ativo) | [D9.3](plan/active/09-camada-de-ia.md) | Nuvem é opt-in, e o gate é o mesmo formato para os três |

@@ -67,7 +67,9 @@ App.tsx                 composição — quem entra em qual slot, e a casca
 
 **Slot não é ponto de extensão.** Um `AppShell` que recebe `main` como prop tem exatamente o mesmo número de linhas que um que renderiza a conversa direto — é o mesmo código, menos acoplado. **Slot é a recusa a fixar**, não um recurso a demonstrar: não invente uma segunda tela para provar que o slot funciona. A distinção que impede isto de virar OCP disfarçado está em [`HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
 
-**Entre `features/` a importação é livre**, e acontece: `conversation` lê `useSettings()` de `features/settings/` porque a chamada ao modelo precisa do teto de threads da máquina. O que a tabela acima restringe é travessia de **processo**, não vizinhança dentro do renderer. Gatilho de revisão em [`ROADMAP § 2`](../../../docs/ROADMAP.md): a sexta fatia em `features/` troca o `no-restricted-imports` por `eslint-plugin-boundaries`.
+**Entre `features/` a importação é livre**, e acontece: `conversation` lê `useSettings()` de `features/settings/` porque a chamada ao modelo precisa do teto de threads da máquina. O que a tabela acima restringe é travessia de **processo**, não vizinhança dentro do renderer. ⚠️ **O gatilho da sexta fatia disparou no E-1-B** (`artifact`, `attachment`, `conversation`, `draft`, `panel`, `settings`) e **está aberto**: trocar o `no-restricted-imports` por `eslint-plugin-boundaries` é dependência nova, então passa pela régua abaixo e por um plano próprio — [`ROADMAP § 2`](../../../docs/ROADMAP.md).
+
+⚠️ **`features/panel/` é a fatia mais nova e a mais estranha: ela não tem domínio, tem uma região.** Guarda **qual inquilino ocupa a faixa da direita**, e nada além disso; `artifact` e `draft` guardam a própria seleção e pedem a região. Fica em `features/` e não em `app/` porque a casca não importa de `features/` (D13.1), e `panel` precisa ser importada pelas duas. O ganho é que "só um painel aberto por vez" vira estado **inexpressável** em vez de regra que dois lugares têm de lembrar (DE1B.1).
 
 ## Aliases, nunca caminho relativo entre camadas
 

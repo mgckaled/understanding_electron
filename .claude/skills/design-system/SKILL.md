@@ -110,11 +110,13 @@ Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atr
 
 **Quatro componentes ficam em CSS Modules, por limite físico real, não por não terem sido migrados:** `Dialog`, `Popover`, `MarkdownMessage` e `SidePanel`. Os dois primeiros porque a plataforma (`<dialog>`, `popover="auto"`) exige seletor que o Tailwind não alcança (`::backdrop`, `[popover]:not(:popover-open)`); o terceiro porque o conteúdo é HTML gerado pelo `react-markdown`, sem className previsível; o quarto porque `@starting-style` precisa de **regra**, não de classe (DF3C.1) — ele nasceu como `ArtifactPanel`, fora de `shared/ui/`, e virou primitivo no E-1-B ao ganhar o segundo inquilino. `Button`, `Field`, `Switch` e `Slider` são 100% utilitários.
 
-## Os sete primitivos: um diretório por componente
+## Os oito primitivos: um diretório por componente
 
-`Button`, `Field`, `Dialog`, `Popover`, `MarkdownMessage`, `Switch` e `Slider` em `src/renderer/src/shared/ui/<Nome>/`.
+`Button`, `Field`, `Dialog`, `Popover`, `MarkdownMessage`, `Switch`, `Slider` e `SidePanel` em `src/renderer/src/shared/ui/<Nome>/`.
 
-⚠️ **O que decide se um oitavo nasce não é a contagem, é ter mais de um chamador.** `Panel` e `Toolbar` existiram e foram apagados no DS-8 por ficarem sem nenhum — sobreviveram duas migrações inteiras sem que ninguém remedisse. Se um layout de ações ou uma superfície com borda precisar existir de novo, nasce quando o **segundo** chamador aparecer, não antes.
+`SidePanel` é o mais novo e o exemplo da régua funcionando nos dois sentidos: nasceu como `ArtifactPanel` dentro de `features/`, e só subiu no E-1-B, quando o painel de rascunho virou o **segundo** chamador. Ele carrega a casca da região da direita — `<aside>`, fade, resizer, foco ao abrir, `Esc` com foco dentro — e recebe `header`/`children` por slot, sem conhecer artefato nem rascunho.
+
+⚠️ **O que decide se um nono nasce não é a contagem, é ter mais de um chamador.** `Panel` e `Toolbar` existiram e foram apagados no DS-8 por ficarem sem nenhum — sobreviveram duas migrações inteiras sem que ninguém remedisse. Se um layout de ações ou uma superfície com borda precisar existir de novo, nasce quando o **segundo** chamador aparecer, não antes.
 
 A regra ganhou seu primeiro caso **a favor** no F-3-D: `Tabs` (padrão Tabs da WAI-ARIA APG — setas com volta, `Home`/`End`, `tabindex` rotativo, ativação seguindo o foco) nasceu em `features/artifact/`, não aqui, porque só o painel de dataset o chama. **Uma segunda aba na mesma tira não conta como segundo chamador** — o que conta é uma segunda superfície. Ele sobe quando ela aparecer.
 

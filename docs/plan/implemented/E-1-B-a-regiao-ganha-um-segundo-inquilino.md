@@ -154,6 +154,8 @@ Rodapé nascendo com um ocupante: `Trash2` fantasma em `text-danger-text`, à es
 
 ## Diário de execução
 
+✅ **Aceite observado pelo usuário em 27/08/2026.** As **sete** conferências do passo 6, todas certas — inclusive a que motivou o plano (um painel fecha quando o outro abre, nunca os dois) e a do defeito herdado (`Esc` no diálogo não fecha mais o painel junto, nos dois painéis). **Plano concluído** — segue para o **E-1-C**, que dá ao rascunho a aba `Editar`.
+
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
 | 27/08/2026 | 1-5 | passos 1-5 concluídos; falta a prova ao vivo (passo 6) | **A extração do passo 1 se provou pelo negativo:** 70 testes de painel e resizer passaram sem uma asserção editada. **`release` não estava no plano e o teste o exigiu:** trocar de conversa esvazia a seleção, mas fechar com fade deixa a região marcada como nossa por 200ms, e o próximo `raise` pulava o `onOpen` — a sidebar não abriria espaço. Navegação não é fechamento. **O defeito do `Esc` confirmou-se vermelho contra o código de hoje** antes do conserto, e virou a 89ª entrada de [`ARMADILHAS.md`](../../ARMADILHAS.md). **Duas sabotagens**, uma por decisão: sem o fallback da DE1B.7 só o teste dela cai. **Dois defeitos do próprio teste:** `append` depois do render escreve no banco sem invalidar a consulta, e `findByRole` no singular estoura com dois botões iguais — os dois enganam porque falham como *timeout*, não como asserção. `pnpm build` verde; `--panel-width` com 3 ocorrências no bundle e `--artifact-width` com zero. `check:fast`: 952 testes, 108 arquivos. |
