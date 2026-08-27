@@ -56,6 +56,19 @@ describe('saveExport', () => {
     expect(written).toContain('Vendas')
   })
 
+  it('writes a real docx, not the markdown with another extension', async () => {
+    const result = await saveExport(
+      { text: MARKDOWN, format: 'docx', suggestedName: 'Vendas.docx' },
+      dialogChoosing('Vendas.docx'),
+      db
+    )
+
+    expect(result.ok).toBe(true)
+    const bytes = await readFile(join(dir, 'Vendas.docx'))
+    // A docx is a zip; the markdown would have started with `#`.
+    expect([...bytes.subarray(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04])
+  })
+
   it('is a cancellation, not a failure, when the dialog is dismissed', async () => {
     const result = await saveExport(
       { text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' },

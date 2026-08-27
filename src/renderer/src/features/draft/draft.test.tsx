@@ -369,15 +369,27 @@ describe('exportar', () => {
     return screen.findByRole('complementary', { name: 'Rascunho aberto' })
   }
 
-  it('offers four formats and wires two', async () => {
+  it('offers four formats and wires three', async () => {
     const panel = await openDraft()
 
     await userEvent.click(within(panel).getByRole('button', { name: 'Formato: .md' }))
 
     expect(screen.getByRole('button', { name: /Markdown/, hidden: true })).toBeEnabled()
     expect(screen.getByRole('button', { name: /Texto sem marcação/, hidden: true })).toBeEnabled()
-    expect(screen.getByRole('button', { name: /Word/, hidden: true })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Word/, hidden: true })).toBeEnabled()
     expect(screen.getByRole('button', { name: /\.pdf/, hidden: true })).toBeDisabled()
+  })
+
+  it('sends the chosen format down the channel', async () => {
+    const panel = await openDraft()
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Formato: .md' }))
+    await userEvent.click(screen.getByRole('button', { name: /Word/, hidden: true }))
+    await userEvent.click(within(panel).getByRole('button', { name: /Exportar/ }))
+
+    expect(api.export.save).toHaveBeenCalledWith(
+      expect.objectContaining({ format: 'docx', suggestedName: expect.stringMatching(/\.docx$/) })
+    )
   })
 
   // DE1D.8: the footer reads the live document, so an edit that has not been

@@ -7,12 +7,12 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 
 type Option = { format: ExportFormat; label: string; soon?: true }
 
-// Four shown, two wired: a format that is coming stays visible and disabled
+// Four shown, three wired: a format that is coming stays visible and disabled
 // rather than absent, so the menu says what the app will do (DS5.7).
 const OPTIONS: Option[] = [
   { format: 'md', label: '.md — Markdown' },
   { format: 'txt', label: '.txt — Texto sem marcação' },
-  { format: 'docx', label: '.docx — Word', soon: true },
+  { format: 'docx', label: '.docx — Word' },
   { format: 'pdf', label: '.pdf', soon: true }
 ]
 

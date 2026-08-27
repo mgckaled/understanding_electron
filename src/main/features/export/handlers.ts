@@ -4,6 +4,7 @@ import type { SaveDialogOptions, SaveDialogReturnValue } from 'electron'
 import type { Args, ExportFormat, Result } from '@shared/ipc'
 import { ok } from '@core/result'
 import { toPlainText } from '@core/export/markdown'
+import { toDocx } from '@core/export/toDocx'
 import { writeAtomic } from '@core/export/write'
 import { readSettings, writeSettings } from '../settings/handlers'
 
@@ -16,8 +17,10 @@ const FILTERS: Record<ExportFormat, { name: string; extensions: string[] }> = {
   pdf: { name: 'PDF', extensions: ['pdf'] }
 }
 
-function render(text: string, format: ExportFormat): string {
-  return format === 'txt' ? toPlainText(text) : text
+function render(text: string, format: ExportFormat): Promise<string | Uint8Array> | string {
+  if (format === 'txt') return toPlainText(text)
+  if (format === 'docx') return toDocx(text)
+  return text
 }
 
 /**
@@ -44,7 +47,7 @@ export async function saveExport(
 
   if (canceled || filePath === undefined || filePath === '') return ok(null)
 
-  const written = await writeAtomic(filePath, render(text, format))
+  const written = await writeAtomic(filePath, await render(text, format))
   if (!written.ok) return written
 
   writeSettings({ lastExportDir: dirname(filePath) }, db)
