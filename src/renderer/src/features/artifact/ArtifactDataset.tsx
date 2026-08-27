@@ -11,7 +11,7 @@ import { useDatasetProfile } from '../attachment/useDatasetProfile'
 import ArtifactSteps from './ArtifactSteps'
 import { proposalsOf } from './proposalsOf'
 import { useArtifact } from './artifactContext'
-import Tabs from './Tabs'
+import Tabs from '../../shared/ui/Tabs/Tabs'
 
 const NOTE = 'px-5 py-4 text-xs text-text-muted'
 

@@ -84,3 +84,26 @@ describe('Tabs', () => {
     expect(screen.getByRole('tabpanel')).toHaveTextContent('corpo gama')
   })
 })
+
+describe('keepMounted', () => {
+  const TABS = [
+    { id: 'a', label: 'A', render: () => <p>corpo a</p> },
+    { id: 'b', label: 'B', render: () => <p>corpo b</p> }
+  ]
+
+  it('renders only the active panel by default', () => {
+    render(<Tabs tabs={TABS} active="a" onChange={vi.fn()} label="Abas" />)
+
+    expect(screen.getByText('corpo a')).toBeVisible()
+    expect(screen.queryByText('corpo b')).toBeNull()
+  })
+
+  // DE1C.4: the draft editor cannot be unmounted — a CodeMirror history dies
+  // with its view, so peeking at the preview would erase undo every time.
+  it('keeps every panel in the DOM and hides the inactive one', () => {
+    render(<Tabs tabs={TABS} active="a" onChange={vi.fn()} label="Abas" keepMounted />)
+
+    expect(screen.getByText('corpo a')).toBeVisible()
+    expect(screen.getByText('corpo b')).not.toBeVisible()
+  })
+})
