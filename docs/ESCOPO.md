@@ -340,7 +340,7 @@ Diferente do documento **anexado** — que só entra como contexto e nunca produ
 | Formato | Como se gera | Observação |
 |---|---|---|
 | `.md` | texto que o modelo já produziu, salvo direto | sem biblioteca — não é motor, é `writeFile` |
-| `.txt` | idem, o texto sem a marcação | sem biblioteca |
+| `.txt` | o texto sem a marcação | **usa** `remark` + `strip-markdown` (E-1-D), não é `replace` de símbolo. E os handlers de substituição de `code`/`table` não são opcionais: sem eles o pacote **apaga** os dois (E-1-E) |
 | `.pdf` | `pdf-lib` | desenha texto/posição; sem paginação automática de prosa longa |
 | `.docx` | `docx` (dolanmiu) | API declarativa por parágrafo, Node puro, sem módulo nativo |
 

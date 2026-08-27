@@ -127,6 +127,7 @@ Uma linha por medição — a forma é regra, ver [`README § Número que se rem
 | ago/2026 | 18-E | 71 / 607 | **~57s** | medido a frio, como o gatilho pedia — confirma que os ~88s eram ruído |
 | 26/08/2026 | — (enxugamento das skills) | 93 / 832 | **42,7s** | `vitest run` isolado; `environment` soma 82,9s entre workers |
 | 26/08/2026 | F-3-A/B/C | 100 / 882 | **81s** | portão inteiro cronometrado (não só o `vitest run`), o que explica o salto sobre a linha acima |
+| 27/08/2026 | E-1-E | 112 / 1022 | **~63s** | portão inteiro. A milésima asserção do projeto caiu no passo 2; os 25 testes a mais custaram ~2s, dentro do ruído que a série já mede |
 | 27/08/2026 | E-1-D | 110 / 997 | **~61s** | portão inteiro. Uma corrida caiu de 997 testes por instabilidade e passou nas duas seguintes — a série continua medindo ambiente tanto quanto código |
 | 27/08/2026 | E-1-C | 108 / 961 | **~68s** | portão inteiro. Nove testes a mais e o CodeMirror no bundle; a variação entre corridas do mesmo commit (61s–80s nesta sessão) continua maior que o efeito de um plano |
 | 27/08/2026 | E-1-A/B | 108 / 952 | **~64s** | portão inteiro. Três arquivos e quarenta testes a mais, +14s — e a maior parte não é asserção: `environment` sozinho é ~140s de tempo somado. A variação de ~50s a ~69s entre corridas **do mesmo commit** foi vista nesta sessão, então a série continua medindo ambiente tanto quanto código |
