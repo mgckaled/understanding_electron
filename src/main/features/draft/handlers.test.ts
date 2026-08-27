@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { openDatabase } from '../../db/open'
-import { createDraft, listDrafts, removeDraft } from './handlers'
+import { createDraft, listDrafts, removeDraft, updateDraft } from './handlers'
 
 function withConversation(): DatabaseSync {
   const db = openDatabase(':memory:')
@@ -77,6 +77,27 @@ describe('draft handlers', () => {
     removeDraft({ id: 'd1' }, db)
 
     expect(listDrafts({ conversationId: 'c1' }, db).map((one) => one.id)).toEqual(['d2'])
+  })
+
+  it('rewrites text and title, leaving createdAt where it was', () => {
+    draft('d1', 1000)
+
+    updateDraft({ id: 'd1', title: 'Custos', content: '# Custos', updatedAt: 5000 }, db)
+
+    expect(listDrafts({ conversationId: 'c1' }, db)[0]).toEqual(
+      expect.objectContaining({
+        title: 'Custos',
+        content: '# Custos',
+        createdAt: 1000,
+        updatedAt: 5000
+      })
+    )
+  })
+
+  it('ignores an update addressed to a draft that is already gone', () => {
+    expect(() =>
+      updateDraft({ id: 'ghost', title: 'x', content: 'y', updatedAt: 5000 }, db)
+    ).not.toThrow()
   })
 
   // DE1A.5: absence is data, not an error — the DELETE's own `changes` swallows it.

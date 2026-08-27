@@ -30,6 +30,18 @@ export function createDraft(
   ).run(id, conversationId, sourceMessageId, title, content, createdAt, createdAt)
 }
 
+export function updateDraft(
+  { id, title, content, updatedAt }: Args<'draft:update'>,
+  db: DatabaseSync
+): void {
+  db.prepare('UPDATE drafts SET title = ?, content = ?, updated_at = ? WHERE id = ?').run(
+    title,
+    content,
+    updatedAt,
+    id
+  )
+}
+
 export function removeDraft({ id }: Args<'draft:remove'>, db: DatabaseSync): void {
   db.prepare('DELETE FROM drafts WHERE id = ?').run(id)
 }

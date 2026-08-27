@@ -11,7 +11,12 @@ import {
   renameConversation,
   updateConversationSettings
 } from '../src/main/features/conversation/handlers'
-import { createDraft, listDrafts, removeDraft } from '../src/main/features/draft/handlers'
+import {
+  createDraft,
+  listDrafts,
+  removeDraft,
+  updateDraft
+} from '../src/main/features/draft/handlers'
 import { readSettings, writeSettings } from '../src/main/features/settings/handlers'
 
 /**
@@ -53,6 +58,7 @@ export function createStoreApi(): Pick<Api, 'conversation' | 'draft' | 'settings
     draft: {
       list: vi.fn(async (conversationId: string) => listDrafts({ conversationId }, db)),
       create: vi.fn(async (draft) => createDraft(draft, db)),
+      update: vi.fn(async (draft) => updateDraft(draft, db)),
       remove: vi.fn(async (id: string) => removeDraft({ id }, db))
     },
     settings: {

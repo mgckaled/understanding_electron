@@ -670,6 +670,12 @@ export const argsSchema = {
     content: z.string(),
     createdAt: z.number().int().nonnegative()
   }),
+  'draft:update': z.object({
+    id: z.string().min(1),
+    title: z.string(),
+    content: z.string(),
+    updatedAt: z.number().int().nonnegative()
+  }),
   'draft:remove': z.object({ id: z.string().min(1) }),
   'settings:read': z.void(),
   // A patch, not the whole object: a setting added later is written by whoever
@@ -807,6 +813,7 @@ export type IpcContract = {
   // SQLite has no failure the UI distinguishes, and absence is data (DE1A.5).
   'draft:list': { args: z.infer<(typeof argsSchema)['draft:list']>; result: Draft[] }
   'draft:create': { args: z.infer<(typeof argsSchema)['draft:create']>; result: void }
+  'draft:update': { args: z.infer<(typeof argsSchema)['draft:update']>; result: void }
   'draft:remove': { args: z.infer<(typeof argsSchema)['draft:remove']>; result: void }
   'settings:read': { args: z.infer<(typeof argsSchema)['settings:read']>; result: AppSettings }
   'settings:write': { args: z.infer<(typeof argsSchema)['settings:write']>; result: void }
@@ -900,6 +907,8 @@ export type Api = {
     /** Oldest first, scoped to one conversation — drafts die with it (`ON DELETE CASCADE`). */
     list(conversationId: string): Promise<Draft[]>
     create(draft: Omit<Draft, 'updatedAt'>): Promise<void>
+    /** Rewrites the text and its derived title; `createdAt` is untouched. */
+    update(draft: Pick<Draft, 'id' | 'title' | 'content' | 'updatedAt'>): Promise<void>
     remove(id: string): Promise<void>
   }
   settings: {

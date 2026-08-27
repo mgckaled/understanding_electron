@@ -64,6 +64,7 @@ const api: Api = {
   draft: {
     list: (conversationId) => invoke('draft:list', { conversationId }),
     create: (draft) => invoke('draft:create', draft),
+    update: (draft) => invoke('draft:update', draft),
     remove: (id) => invoke('draft:remove', { id })
   },
   settings: {
