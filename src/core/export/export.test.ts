@@ -2,7 +2,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { exportFileName } from './fileName'
-import { toPlainText } from './toPlainText'
+import { toPlainText } from './markdown'
 import { writeAtomic } from './write'
 
 describe('exportFileName', () => {
@@ -70,6 +70,29 @@ describe('toPlainText', () => {
 
     expect(out).toContain('relatório')
     expect(out).not.toContain('https://')
+  })
+
+  it('turns a table into readable lines instead of dropping it', () => {
+    const out = toPlainText('| Mês | Vendas |\n| --- | --- |\n| Jan | 120 |')
+
+    expect(out).toContain('Mês')
+    expect(out).toContain('Vendas')
+    expect(out).toContain('120')
+    expect(out).not.toContain('|')
+  })
+
+  it('keeps the source of a code block', () => {
+    const out = toPlainText('Antes.\n\n```js\nconst a = 1\n```\n\nDepois.')
+
+    expect(out).toContain('const a = 1')
+    expect(out).not.toContain('```')
+  })
+
+  it('drops the strikethrough marks and keeps the word', () => {
+    const out = toPlainText('Isto está ~~errado~~ agora.')
+
+    expect(out).toContain('errado')
+    expect(out).not.toContain('~~')
   })
 })
 

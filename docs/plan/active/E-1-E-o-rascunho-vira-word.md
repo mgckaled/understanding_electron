@@ -34,15 +34,21 @@ O critério não é peso — é **duplicação**. Todo conversor pronto empilha 
 
 ⚠️ **A dependência entra pela régua da skill `architecture`:** justificativa registrada aqui, alternativas nomeadas acima.
 
-### DE1E.2 — O parse de markdown vira fonte única, e ele tem GFM
+### DE1E.2 — O parse de markdown vira fonte única, e GFM sozinho **não** bastava
 
-Nasce `src/core/export/parse.ts`, com **um** processador configurado — `remark` + `remark-gfm` — e uma função que devolve a `Root` do mdast. Os dois consumidores passam a beber dali: o `toPlainText` (que hoje monta o próprio) e o `toDocx` (que ainda não existe).
+Nasce `src/core/export/markdown.ts` (o `toPlainText.ts` renomeado, por `git mv`), dono de **um** dialeto — `remark` + `remark-gfm` — servindo os dois consumidores: `toPlainText` e o emissor do `.docx`.
 
-O motivo é o desencontro achado acima: a **Prévia** já renderiza GFM, o `.txt` não. Sem esta decisão, o `.docx` nasceria com o mesmo defeito e o app teria **três** interpretações do mesmo texto.
+O motivo declarado era o desencontro entre a **Prévia** (que já renderiza GFM) e o `.txt` (que não). Sem isto o `.docx` nasceria com o mesmo defeito e o app teria **três** interpretações do mesmo texto.
 
-⚠️ **`remark-gfm` é ESM-only, como toda a família.** Ele entra no `exclude` do `externalizeDepsPlugin` do bloco `main`, ao lado de `remark` e `strip-markdown` — e o `check:bundle` da DE1D.9 cobre isso sem nenhuma linha nova de script.
+⚠️ **Só que ligar GFM, sozinho, teria piorado o `.txt`.** Medido antes de escrever: com `remark-gfm` no caminho, o `strip-markdown` **apaga a tabela inteira** — "Mês", "Vendas", "120", tudo some. Sem GFM os pipes ao menos sobreviviam. Trocar "feio porém completo" por "limpo porém sem o dado" seria regressão, não conserto.
 
-**Efeito colateral aceito e desejado:** o `.txt` passa a despir tabela e `~~riscado~~` também. É correção, não escopo novo — a alternativa é manter um defeito porque consertá-lo estava fora do título do plano.
+**E a investigação achou um segundo defeito, este já em produção há um plano inteiro:** o `.txt` de hoje **apaga blocos de código**. `'Antes.\n\n```js\nconst a = 1\n```\n\nDepois.'` sai como `'Antes.\n\nDepois.'`. Está no fonte do `strip-markdown`, declarado: `code: empty`, `table: empty`, junto de `html`, `thematicBreak`, `toml` e `yaml`. A prova ao vivo do E-1-D não pegou porque conferia o que **sai** (`#`, `**`, `-`), nunca o que **sobrevive**.
+
+**O conserto usa o mecanismo que o próprio `strip-markdown` documenta** — tuplas de substituição em `remove` —, não um plugin próprio: `code` vira parágrafo com o fonte preservado, `table` vira um parágrafo por linha com as células separadas por tabulação. A recursão do `strip` processa o que o handler devolve, então ênfase dentro de célula continua sendo despida.
+
+⚠️ **`remark-gfm` é ESM-only, como toda a família** — entra no `exclude` do `externalizeDepsPlugin`. **Provado por provocação:** tirá-lo do `exclude` e construir reproduz *"Expected usable value but received an empty preset"*, a mensagem exata que derrubou o app no E-1-D.
+
+**O separador de célula tem um dono só** (`CELL_SEPARATOR`, exportado daqui): `.txt` e `.docx` achatam tabela do mesmo jeito, ou o mesmo rascunho sairia diferente em dois formatos.
 
 ### DE1E.3 — Externo ou embutido é decidido por sonda, e é o **passo 1**
 
@@ -129,11 +135,13 @@ O desfecho decide **uma linha** do `electron.vite.config.ts` (DE1E.3) e nada mai
 
 ⚠️ **Nada de emissor antes disso.** Escrever 150 linhas e só então descobrir que o pacote não carrega é a ordem que já custou uma sessão.
 
-### Passo 2 — `core/export/parse.ts`, e o `.txt` consertado no caminho
+### Passo 2 — `core/export/markdown.ts`, e o `.txt` consertado no caminho
 
-Um processador, com GFM (DE1E.2). `toPlainText` migrado para ele. `remark-gfm` no `exclude` se o passo 1 disser que precisa.
+Um dialeto, com GFM, e as duas tuplas de substituição que impedem `code` e `table` de sumirem (DE1E.2). `toPlainText.ts` renomeado por `git mv`. `remark-gfm` no `exclude`.
 
-**Teste:** nível 1. O teste da tabela **nasce vermelho** — hoje o `.txt` deixa os pipes passarem; depois da migração, a tabela sai como texto corrido. Idem `~~riscado~~`. E os casos que o E-1-D já cobre (título, lista, ênfase, link, bloco de código, **parágrafo sobrevivendo**) continuam verdes, provando que a troca de processador não regrediu nada.
+**Teste:** nível 1. Os três casos novos **nascem vermelhos** — tabela, bloco de código e `~~riscado~~`. E os três que o E-1-D já cobre (parágrafo sobrevivendo, lista achatada, alvo de link descartado) continuam verdes, provando que a troca de dialeto não regrediu nada.
+
+⚠️ **Provocação obrigatória no bundler**, não só no teste: tirar `remark-gfm` do `exclude` e construir precisa reproduzir a mensagem da DE1D.9.
 
 ### Passo 3 — `core/export/blocks.ts`: o mapeamento inteiro, em dado plano
 
@@ -180,5 +188,6 @@ O tradutor (`Block[]` → `Document` → `Packer.toBuffer`), o `numbering.config
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 27/08/2026 | 2 | verde — **1000 testes, 110 arquivos** | **A decisão que eu tinha escrito estava errada, e medir antes de implementar foi o que salvou.** DE1E.2 prometia que ligar GFM consertaria o `.txt` de tabela; medido, ele faz o oposto — o `strip-markdown` **apaga a tabela inteira** quando o GFM a transforma em nó `table`, trocando "feio porém completo" por "limpo porém sem o dado". **E a investigação achou um segundo defeito já em produção desde o E-1-D:** o `.txt` apaga blocos de código (`code: empty` no mapa do `strip-markdown`, ao lado de `table`, `html`, `thematicBreak`, `toml` e `yaml`). A prova ao vivo do E-1-D não pegou porque conferia o que **sai**, nunca o que **sobrevive** — uma lição sobre a forma da conferência, não sobre este pacote. Conserto pelo mecanismo documentado do próprio `strip-markdown` (tuplas em `remove`), sem plugin próprio. **Provocação no bundler:** `remark-gfm` fora do `exclude` reproduz *"Expected usable value but received an empty preset"* — a mensagem idêntica do E-1-D. Os `as` que escrevi nas tuplas eram desnecessários e saíram. |
 | 27/08/2026 | 1 | sonda fechada — **`docx` fica externo** | **O `check:bundle` do passo 1 seria vazio e eu quase o aceitei:** com a dependência instalada e nada importando `docx`, o bundle não referencia o pacote, então "carrega" não prova interop nenhuma. O juiz honesto foi `require('docx')` cru, sem fallback — **306 exports nomeados, sem embrulho `default`**, `Packer.toBuffer` é função. O `dist/index.cjs` do `docx` tem **zero `require()`**: ele embute `jszip`, `nanoid`, `hash.js` e os dois `xml`, então o `nanoid@5` ESM-puro nunca é exigido em runtime e o risco da DE1E.3 não se materializa. **A mesma sonda achou o risco do outro lado:** `require('remark-gfm')` devolve `{ default }` — a forma exata da DE1D.9 —, então ele entra no `exclude` no passo 2, quando o `core/` passar a importá-lo. O `check:bundle` só vira juiz de verdade no passo 4, com o emissor importado; rodar de novo lá faz parte do passo. |
 | 27/08/2026 | — | plano escrito, ainda não executado | **A pesquisa achou um defeito que já está no app, não um risco futuro:** a Prévia usa `remark-gfm` e o `toPlainText` não, então tabela aparece formatada no painel e sai como pipes literais no `.txt`. O `.docx` herdaria o desencontro — daí o parse virar fonte única (DE1E.2), o que conserta o `.txt` sem plano próprio. **E confirmou uma assimetria do `docx` que teria custado tempo:** marcador é grátis, lista numerada exige `numbering.config` declarado no `Document`, com níveis fixados de antemão — markdown aninha sem limite, `docx` não (DE1E.4). O risco do `nanoid@5` (ESM puro dentro de um pacote CJS) **não** foi resolvido por leitura: virou o passo 1, com o `check:bundle` da DE1D.9 como juiz, porque a lição daquela armadilha foi que a sonda escrita à mão mentiu. |

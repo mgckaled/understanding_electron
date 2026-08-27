@@ -10,7 +10,7 @@ export default defineConfig({
     // breaks: rollup emits `require(pkg)` and uses the namespace as the default
     // export, so `strip-markdown` arrived as `{ default }` instead of the
     // function. The remark family is ESM-only throughout, so it is bundled.
-    plugins: [externalizeDepsPlugin({ exclude: ['remark', 'strip-markdown'] })],
+    plugins: [externalizeDepsPlugin({ exclude: ['remark', 'remark-gfm', 'strip-markdown'] })],
     resolve: {
       alias: aliases
     },
