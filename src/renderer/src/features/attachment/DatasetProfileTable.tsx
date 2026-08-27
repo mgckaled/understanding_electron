@@ -7,7 +7,7 @@ const NUM = `${CELL} text-right tabular-nums`
 const COLUMNS = ['Coluna', 'Tipo', '% nulos', 'Mín', 'Máx', 'Média', 'Mais frequentes']
 
 const IN_BUBBLE = 'max-h-[400px] overflow-auto rounded-md border border-border'
-const IN_PANEL = 'min-h-[0px] flex-1 overflow-auto'
+const IN_PANEL = 'min-h-[0px] flex-1 overflow-auto px-5 pb-2'
 
 function formatNumber(value: number | null, fractionDigits = 0): string {
   if (value === null) return '—'

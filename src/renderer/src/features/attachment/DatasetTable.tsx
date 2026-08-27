@@ -6,7 +6,7 @@ const HEAD = `sticky top-[0px] bg-surface-raised text-left font-semibold ${CELL}
 // A bubble caps the table's height; the panel gives it the region that is
 // left over. Everything else about the two is identical.
 const IN_BUBBLE = 'max-h-[400px] overflow-auto rounded-md border border-border'
-const IN_PANEL = 'min-h-[0px] flex-1 overflow-auto'
+const IN_PANEL = 'min-h-[0px] flex-1 overflow-auto px-5 pb-2'
 
 // Third consumer (StepProposalCard, D19.6) — the régua dos três's extraction
 // trigger. DatasetQueryPanel and DatasetPreview each carried their own copy
