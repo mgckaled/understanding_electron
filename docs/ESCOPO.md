@@ -319,7 +319,7 @@ O app **pode** sobrescrever o arquivo de origem, mediante confirmação explíci
 
 Isso não é gratuito, e as três consequências ficam registradas agora:
 
-**Escrita atômica, sempre.** Grava em arquivo temporário no mesmo volume e só então renomeia sobre o original. Escrita direta que falha na metade — falta de espaço, queda de energia, cancelamento — destrói o dado de entrada, e não há desfazer.
+**Escrita atômica, sempre.** Grava em arquivo temporário no mesmo volume e só então renomeia sobre o original. ⚠️ **No Windows o rename não é atômico** — vira `MoveFileEx`, honra os modos de compartilhamento e falha com `EPERM`/`EACCES`/`EBUSY` quando o destino está travado, inclusive por trava passageira do antivírus ou do indexador. A garantia que **sobra** é a que importa (o destino fica intacto quando algo falha no meio), mas exige repetição e limpeza do temporário, medido e implementado em [`E-1-D`](plan/implemented/E-1-D-o-caminho-de-saida.md) § DE1D.2. Escrita direta que falha na metade — falta de espaço, queda de energia, cancelamento — destrói o dado de entrada, e não há desfazer.
 
 **Arquivo aberto em outro programa.** No Windows, um `.xlsx` aberto no Excel tem bloqueio exclusivo, e o rename falha com `WinError 32`. É o mesmo tipo de armadilha que o mill.tools já documenta para o `.temp` do yt-dlp. Precisa de erro claro — "feche o arquivo no Excel" — e não de uma falha genérica.
 

@@ -107,6 +107,8 @@ O que fica nesta skill, porque é de camada e não de contrato:
 
 Com o sandbox ligado, o preload perde o `require` completo — sobra um polyfill limitado, sem capacidade de carregar múltiplos arquivos do próprio código. Por isso o preload é, e continua sendo, **um arquivo único**: `externalizeDepsPlugin()` nunca entra no bloco `preload` do `electron.vite.config.ts`. Ele existe para deixar dependência fora do bundle e resolvida por `require` em runtime — exatamente o que o preload sandboxed não sabe fazer.
 
+⚠️ **O bloco `main` tem o plugin pelo motivo oposto, e com uma exceção nomeada.** Ali as dependências **são** externalizadas — `require(pkg)` em runtime —, o que é certo para binário nativo e errado para pacote **ESM-only**: rollup usa o resultado do `require` direto como export padrão, e o `require(esm)` do Node 24 devolve o *namespace*, então chega `{ default }` em vez da função e o app morre ao carregar. A família `remark` entra em `exclude` por isso (DE1D.9), e `scripts/check-main-bundle.mjs` guarda a regressão — nenhum nível de teste alcança o bundle construído.
+
 **É por isso que `preload/` importa `shared/` só por tipo, e essa restrição já mordeu uma vez** — o defeito, o sintoma (janela vazia, sem erro no terminal) e a regra que dele decorre são da skill [`ipc`](../ipc/SKILL.md).
 
 Navegação para fora da origem do app é negada por padrão (`will-navigate`, ao lado do `setWindowOpenHandler` que já negava janela nova), com uma única exceção em desenvolvimento: o HMR do Vite precisa navegar dentro da própria origem do servidor.

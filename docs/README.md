@@ -93,15 +93,15 @@ A régua de tamanho do [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) mede códig
 
 O gatilho é ago/2026, medido: os arquivos soltos de `docs/` somavam **~326 KB / ~100k tokens**, e `HISTORY.md` sozinho, **182 KB**. Duas leituras integrais estouravam o orçamento de uma sessão inteira e disparavam autocompactação — que apaga justamente o trabalho em curso.
 
-Remedido em 27/08/2026: **~1,7 MB / ~499k tokens** em 89 arquivos, dos quais `plan/implemented/` responde por **56%**. O mesmo número aparece no [`CLAUDE.md`](../CLAUDE.md#protocolo-de-leitura-da-documentação), que é quem o usa para decidir como ler — os dois se remedem juntos ou um mente.
+Remedido em 27/08/2026, ao fechar a trilha E-1-A..D: **~1,8 MB / ~540k tokens** em 93 arquivos, dos quais `plan/implemented/` responde por **56%**. O mesmo número aparece no [`CLAUDE.md`](../CLAUDE.md#protocolo-de-leitura-da-documentação), que é quem o usa para decidir como ler — os dois se remedem juntos ou um mente.
 
 | Arquivo | Teto | Quando estoura |
 |---|---|---|
 | `HISTORY.md` | **10 marcos** | a mais antiga desce para `HISTORY-archive.md`, na mesma edição |
-| `ARMADILHAS.md` | ~80 KB | comprimir as mais antigas (número + mecanismo + conserto; a narrativa sai). ⚠️ **Estourado: 92 KB em 27/08/2026** — registrado no [`ROADMAP § 2`](ROADMAP.md) |
+| `ARMADILHAS.md` | ~80 KB | comprimir as mais antigas (número + mecanismo + conserto; a narrativa sai). ⚠️ **Estourado: 96,5 KB em 27/08/2026** — registrado no [`ROADMAP § 2`](ROADMAP.md) |
 | `HISTORY-archive.md` | — | sem teto: é fila de saída, nunca lido inteiro |
 | `ESCOPO.md`, `ROADMAP.md`, `DECISOES.md` | ~45 KB | desmembrar por assunto em `reference/`, com ponteiro |
-| `CLAUDE.md` | **~25 KB** | é lido em **toda** sessão — o que tem outro dono sai e vira ponteiro. ⚠️ **Estourado: 28 KB em 27/08/2026** — registrado no [`ROADMAP § 2`](ROADMAP.md) |
+| `CLAUDE.md` | **~25 KB** | é lido em **toda** sessão — o que tem outro dono sai e vira ponteiro. ⚠️ **Estourado: 30 KB em 27/08/2026** — registrado no [`ROADMAP § 2`](ROADMAP.md) |
 | plano individual (`plan/**`) | **~35 KB** | o excesso é quase sempre diário de execução: comprimir à régua de uma linha por sessão (abaixo). O `15` (94 KB) já nasceu violando |
 | skill (`SKILL.md`) | ~40 KB | dividir em arquivo auxiliar na pasta da skill |
 
