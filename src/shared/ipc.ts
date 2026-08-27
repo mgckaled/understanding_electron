@@ -534,10 +534,16 @@ export type Draft = {
 export const themeSchema = z.enum(['system', 'light', 'dark'])
 export type Theme = z.infer<typeof themeSchema>
 
+/** What the footer offers; `.docx` and `.pdf` land in E-1-E and E-1-F. */
+export const exportFormatSchema = z.enum(['md', 'txt', 'docx', 'pdf'])
+export type ExportFormat = z.infer<typeof exportFormatSchema>
+
 export const appSettingsSchema = z.object({
   /** Cap on the CPU threads Ollama may use — maps to options.num_thread. */
   numThread: z.number().int().positive(),
-  theme: themeSchema
+  theme: themeSchema,
+  /** Where the last export landed, so the next dialog opens there (DE1D.5). */
+  lastExportDir: z.string().optional()
 })
 export type AppSettings = z.infer<typeof appSettingsSchema>
 
@@ -681,6 +687,13 @@ export const argsSchema = {
     updatedAt: z.number().int().nonnegative()
   }),
   'draft:remove': z.object({ id: z.string().min(1) }),
+  // One channel from dialog to disk: splitting it would leave a window where
+  // the chosen path goes stale before the write (DE1D.1).
+  'export:save': z.object({
+    text: z.string(),
+    format: exportFormatSchema,
+    suggestedName: z.string()
+  }),
   'settings:read': z.void(),
   // A patch, not the whole object: a setting added later is written by whoever
   // owns it, without every writer having to know the full shape.
@@ -819,6 +832,12 @@ export type IpcContract = {
   'draft:create': { args: z.infer<(typeof argsSchema)['draft:create']>; result: void }
   'draft:update': { args: z.infer<(typeof argsSchema)['draft:update']>; result: void }
   'draft:remove': { args: z.infer<(typeof argsSchema)['draft:remove']>; result: void }
+  // Result, unlike the draft block: file in use, no permission and a full disk
+  // are states the interface has to tell apart. `null` is a cancelled dialog.
+  'export:save': {
+    args: z.infer<(typeof argsSchema)['export:save']>
+    result: Result<{ path: string } | null>
+  }
   'settings:read': { args: z.infer<(typeof argsSchema)['settings:read']>; result: AppSettings }
   'settings:write': { args: z.infer<(typeof argsSchema)['settings:write']>; result: void }
   // weakBackend: true on SUCCESS is the DN1A.4 signal (Linux basic_text) —
@@ -914,6 +933,14 @@ export type Api = {
     /** Rewrites the text and its derived title; `createdAt` is untouched. */
     update(draft: Pick<Draft, 'id' | 'title' | 'content' | 'updatedAt'>): Promise<void>
     remove(id: string): Promise<void>
+  }
+  export: {
+    /** Asks where to save, writes there, and returns the path — `null` if cancelled. */
+    save(args: {
+      text: string
+      format: ExportFormat
+      suggestedName: string
+    }): Promise<Result<{ path: string } | null>>
   }
   settings: {
     read(): Promise<AppSettings>

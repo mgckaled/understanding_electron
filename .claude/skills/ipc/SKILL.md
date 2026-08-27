@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**37 canais em `IpcContract`**, conferidos contra o código em 27/08/2026.
+**38 canais em `IpcContract`**, conferidos contra o código em 27/08/2026.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -118,6 +118,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` | sim |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings` | não |
 | `draft` | `list`, `create`, `update`, `remove` | não |
+| `export` | `save` | **sim** — arquivo em uso, permissão e disco cheio são estados que a interface desenha |
 | `settings` | `read`, `write` | não |
 | `secrets` | `write` (`Result`), `has`, `remove` | `write` só — `has`/`remove` seguem a régua de `conversation` |
 

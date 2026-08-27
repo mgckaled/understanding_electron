@@ -85,6 +85,10 @@ export function createApiMock(): Api {
     // Not bare vi.fn()s: these two are the surfaces the renderer READS BACK
     // after writing, so a mock that forgets everything would make every test
     // about switching, renaming, history or a persisted setting vacuous.
+    // Resolves a cancelled dialog by default, for the same reason ai.models
+    // resolves a real catalog: a bare vi.fn() gives `undefined`, and reading
+    // `.ok` off it would throw in every test that merely mounts the footer.
+    export: { save: vi.fn().mockResolvedValue({ ok: true, value: null }) },
     ...createStoreApi(),
     secrets: {
       write: vi.fn(),

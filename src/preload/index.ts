@@ -61,6 +61,9 @@ const api: Api = {
       invoke('conversation:append', { conversationId, message, title }),
     updateSettings: (id, patch) => invoke('conversation:settings', { id, patch })
   },
+  export: {
+    save: (args) => invoke('export:save', args)
+  },
   draft: {
     list: (conversationId) => invoke('draft:list', { conversationId }),
     create: (draft) => invoke('draft:create', draft),
