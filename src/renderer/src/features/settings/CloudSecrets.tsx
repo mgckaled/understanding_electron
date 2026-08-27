@@ -54,7 +54,7 @@ function MaskedApiKeyInput({
         // compiled stylesheet, not by this string (Button.tsx's own SHAPE
         // comment already flags this class of conflict) — measured live: the
         // button rendered on its own line below the input without the `!`.
-        className="absolute! inset-y-0 right-1 my-auto"
+        className="absolute! inset-y-[0px] right-1 my-auto"
         onClick={() => setRevealed((current) => !current)}
         aria-label={revealed ? 'Ocultar chave' : 'Mostrar chave'}
       >

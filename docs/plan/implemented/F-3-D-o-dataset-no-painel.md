@@ -1,6 +1,6 @@
 # F-3-D — O dataset no painel: abas, paginação reservada e a consulta como ferramenta
 
-> Quarto plano do painel de artefato, depois do [F-3-A](../implemented/F-3-A-painel-de-artefato.md) (a região, documento e imagem), do [F-3-B](../implemented/F-3-B-como-se-chega-ao-painel.md) (clipe, seletor, atalho) e do [F-3-C](../implemented/F-3-C-o-painel-como-objeto-de-desktop.md) (transição, janela estreita, arrasto). Este traz o **dataset** — o único artefato com mais de uma vista, e por isso o primeiro que precisa de abas.
+> Quarto plano do painel de artefato, depois do [F-3-A](F-3-A-painel-de-artefato.md) (a região, documento e imagem), do [F-3-B](F-3-B-como-se-chega-ao-painel.md) (clipe, seletor, atalho) e do [F-3-C](F-3-C-o-painel-como-objeto-de-desktop.md) (transição, janela estreita, arrasto). Este traz o **dataset** — o único artefato com mais de uma vista, e por isso o primeiro que precisa de abas.
 
 **Origem:** o F-3-A reservou o dataset para cá desde o primeiro corte, e a **DF3A.3** desenhou o corpo do painel podendo ser assíncrono _contra este caso_, não contra os fáceis. A conversa que precedeu este plano decidiu três coisas: o `tablist` como forma, a paginação **reaberta** (o `ROADMAP` a dava por encerrada) e a saída do botão de copiar.
 
@@ -195,4 +195,17 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 27/08/2026 | 1-5 | **plano concluído**, movido para `implemented/` | Cinco passos, cinco commits, na mesma sessão em que o plano nasceu. **Duas decisões mudaram na execução:** a ordem dos passos 3 e 4 (encolher o cartão antes de a aba Consulta existir deixaria um commit sem nenhuma superfície capaz de rodar SQL), e a DF3D.10, corrigida pelo usuário durante a escrita — o ⧉ sai só do dado tabular, custo de código zero. **Dois componentes ficaram órfãos e foram apagados** (`DatasetPreview`, `DatasetProfile`), com os ramos de erro e de arquivo vazio reescritos contra `ArtifactDataset` em vez de perdidos. `check:fast`: 898 testes, 102 arquivos; e2e do painel: 4 casos. |
 | 27/08/2026 | — | plano escrito, ainda não executado | Escrito depois de um levantamento com Context7 + web pedido pelo usuário. A DuckDB Local UI deu a forma (três regiões viram pilha com abas num painel estreito); o Applied Steps do Power Query deu o modelo do F-3-F. Três decisões do usuário na conversa: o `tablist` (que absorveu o _post-18-C fix_ como propriedade), a **reabertura da paginação** — o `ROADMAP` a dava por encerrada — e a saída do ⧉. Dois achados no código mudaram o recorte: `buildFinalSql` já embrulha em `LIMIT`, então o tamanho de página não precisa de canal; e o `ArtifactPicker` escolhe ícone em dois lugares por um ternário de dois casos. |
+
+**O que este plano deixou fora dele** — escalonado na conclusão, e é onde se consulta hoje:
+
+| Achado | Dono |
+|---|---|
+| O `sticky` da tabela nunca grudou: `top-0` não gera CSS, terceira ocorrência da mesma armadilha | [`ARMADILHAS.md`](../../ARMADILHAS.md) (entrada do F-3-C, estendida) |
+| A varredura de `<prop>-0` no renderer, com o comando e os dois sítios consertados | [`ROADMAP § 2`](../../ROADMAP.md) |
+| `Tabs` é o primeiro caso **a favor** da régua do oitavo primitivo — aba nova não é chamador novo | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| Alinhamento numérico em tabela de dados, e de onde sai "esta coluna é numérica" | [`reference.md`](../../../.claude/skills/design-system/reference.md) da skill |
+| Decisões DF3D.1–DF3D.10 | [`DECISOES.md`](../../DECISOES.md) |
+
+⚠️ **Pendente de conferência visual, e só o olho responde:** as abas trocando sem salto de altura; a tira e o rodapé ficando parados enquanto as linhas rolam (a fixture de e2e tem 10 linhas e não transborda, então isso não foi provado); a aba Consulta nos 352px do piso do painel; e os dois sítios que a varredura de `<prop>-0` consertou fora deste plano — o ícone de busca da lista de conversas e o botão de revelar chave em `CloudSecrets`, que passaram a receber CSS que antes não recebiam.

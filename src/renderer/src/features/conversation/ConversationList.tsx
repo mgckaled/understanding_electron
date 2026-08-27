@@ -182,7 +182,7 @@ function ConversationList(): React.JSX.Element {
     <section className="flex flex-col gap-4">
       {conversations.length > 0 && (
         <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-text-faint">
+          <span className="pointer-events-none absolute inset-y-[0px] left-4 flex items-center text-text-faint">
             <Search size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           </span>
           <input

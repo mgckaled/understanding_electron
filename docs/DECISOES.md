@@ -265,6 +265,16 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | F-3-C | [DF3C.5](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | A alça é o *window splitter* da WAI-ARIA, com `aria-value*` em pixels e `Enter` fechando sem restaurar |
 | F-3-C | [DF3C.6](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | A largura mora no provider e sobrevive à troca de anexo; o arrasto escreve no nó por `ref`, sem passar pelo React |
 | F-3-C | [DF3C.7](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md) | Arrastar 40px além do piso fecha o painel — registrado como o item mais provável de cair na prova ao vivo |
+| F-3-D | [DF3D.1](plan/implemented/F-3-D-o-dataset-no-painel.md) | O corpo do dataset é um `tablist`, e ele **absorve** o *post-18-C fix* em vez de mantê-lo como condição |
+| F-3-D | [DF3D.2](plan/implemented/F-3-D-o-dataset-no-painel.md) | O `tablist` mora em `features/artifact/` — a régua é dois chamadores, e uma segunda aba não é um segundo chamador |
+| F-3-D | [DF3D.3](plan/implemented/F-3-D-o-dataset-no-painel.md) | O rodapé de paginação nasce inteiro, com o tamanho de página funcionando de verdade e a navegação reservada |
+| F-3-D | [DF3D.4](plan/implemented/F-3-D-o-dataset-no-painel.md) | Setas desabilitadas em vez de ausentes — é a DF3A.7 aplicada a um caso em que a premissa dela é falsa |
+| F-3-D | [DF3D.5](plan/implemented/F-3-D-o-dataset-no-painel.md) | Número alinha à direita com `tabular-nums`, lido da primeira célula não-nula em vez de um schema |
+| F-3-D | [DF3D.6](plan/implemented/F-3-D-o-dataset-no-painel.md) | `DatasetCard` encolhe para gatilho, mas mantém "Propor passos" — é fala ao modelo, não vista do arquivo |
+| F-3-D | [DF3D.7](plan/implemented/F-3-D-o-dataset-no-painel.md) | A aba Consulta ganha `Ctrl+Enter`, tempo medido, resultado que não pisca e erro que não apaga o anterior |
+| F-3-D | [DF3D.8](plan/implemented/F-3-D-o-dataset-no-painel.md) | SQL digitado e aba escolhida morrem ao fechar o painel — paridade com o cartão, dita em voz alta |
+| F-3-D | [DF3D.9](plan/implemented/F-3-D-o-dataset-no-painel.md) | A aba Passos não entra: a proposta é mensagem, o pipeline é estado que ainda não existe (F-3-F) |
+| F-3-D | [DF3D.10](plan/implemented/F-3-D-o-dataset-no-painel.md) | Dataset não ganha ⧉ e documento mantém o dele; exportar resultado é da trilha E |
 
 ---
 

@@ -116,6 +116,8 @@ Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atr
 
 ⚠️ **O que decide se um oitavo nasce não é a contagem, é ter mais de um chamador.** `Panel` e `Toolbar` existiram e foram apagados no DS-8 por ficarem sem nenhum — sobreviveram duas migrações inteiras sem que ninguém remedisse. Se um layout de ações ou uma superfície com borda precisar existir de novo, nasce quando o **segundo** chamador aparecer, não antes.
 
+A regra ganhou seu primeiro caso **a favor** no F-3-D: `Tabs` (padrão Tabs da WAI-ARIA APG — setas com volta, `Home`/`End`, `tabindex` rotativo, ativação seguindo o foco) nasceu em `features/artifact/`, não aqui, porque só o painel de dataset o chama. **Uma segunda aba na mesma tira não conta como segundo chamador** — o que conta é uma segunda superfície. Ele sobe quando ela aparecer.
+
 `Dialog` (D13.8) é o `<dialog>` nativo com `showModal()`, sem dependência: camada superior, foco preso, `Esc`, foco devolvido ao gatilho e `::backdrop` estilizável vêm da plataforma. `closedby="any"` fecha ao clicar fora sem handler próprio — confirmado no Chromium 148 que o Electron 42 embute, lendo o IDL, não uma tabela de compatibilidade. **Configuração é modal, não rota:** um destino de navegação desmonta o que estava na tela; o modal é irmão na árvore, então uma resposta em fluxo continua chegando atrás.
 
 `Popover` (DS-4) é o atributo nativo `popover="auto"` + CSS anchor positioning — mesmo raciocínio, plataforma em vez de biblioteca. Controle 100% imperativo (`open` prop → `useEffect` → `showPopover()`/`hidePopover()`), nunca `popovertarget` declarativo; um listener de `toggle` sincroniza o fechamento nativo (clique fora, `Esc`) de volta ao `onClose`.
