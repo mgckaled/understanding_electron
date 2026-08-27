@@ -2,8 +2,7 @@ import { Check, Copy, NotebookPen, RotateCcw, Share2 } from 'lucide-react'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useCopyToClipboard } from '../../shared/hooks/useCopyToClipboard'
-import { useDrafts } from '../draft/useDrafts'
-import { useConversations } from './conversationsContext'
+import { useDraft } from '../draft/draftContext'
 
 // Four icons under each assistant turn (DS5, item 5; the fourth is E-1-A).
 // Copy and "enviar para rascunho" are wired —
@@ -21,8 +20,7 @@ type TurnActionsProps = {
 
 function TurnActions({ text, messageId }: TurnActionsProps): React.JSX.Element {
   const { copied, copy } = useCopyToClipboard()
-  const { activeId } = useConversations()
-  const { hasDraftOf, create } = useDrafts(activeId)
+  const { hasDraftOf, createFrom } = useDraft()
   // Derived, never a flag on the message (DE1A.3): deleting the draft puts the
   // button back to "create" with nothing to unset anywhere.
   const drafted = hasDraftOf(messageId)
@@ -47,7 +45,7 @@ function TurnActions({ text, messageId }: TurnActionsProps): React.JSX.Element {
         variant="ghost"
         size="sm"
         type="button"
-        onClick={() => create(messageId, text)}
+        onClick={() => createFrom(messageId, text)}
         disabled={drafted}
         title={drafted ? 'Rascunho criado' : 'Enviar para rascunho'}
         aria-label={drafted ? 'Rascunho criado' : 'Enviar para rascunho'}

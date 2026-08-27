@@ -13,12 +13,13 @@ type AppShellProps = {
   sidebarCollapsed: boolean
   main: ReactNode
   /**
-   * The right-hand region (plano F-3-A). Renders raw, unlike `main`: only the
-   * panel knows whether it is open, so it brings its own `<aside>` or nothing —
-   * a wrapper here would draw an empty region with a border every time it is
-   * closed. The shell still owns the track; it just does not own the element.
+   * The right-hand region (plano F-3-A), shared by its tenants (DE1B.1).
+   * Renders raw, unlike `main`: only a panel knows whether it is open, so it
+   * brings its own `<aside>` or nothing — a wrapper here would draw an empty
+   * region with a border every time it is closed. The shell owns the track; it
+   * just does not own the element.
    */
-  artifact?: ReactNode
+  panel?: ReactNode
 }
 
 // Structural scroll (D13.5): the grid fills the height:100% root and clips its
@@ -34,7 +35,7 @@ function AppShell({
   sidebar,
   sidebarCollapsed,
   main,
-  artifact
+  panel
 }: AppShellProps): React.JSX.Element {
   return (
     // --sidebar-width-now is set here and nowhere else: the sidebar's own width
@@ -51,7 +52,7 @@ function AppShell({
     >
       {sidebar}
       <main className="flex h-full min-w-[0px] flex-col overflow-hidden">{main}</main>
-      {artifact}
+      {panel}
     </div>
   )
 }

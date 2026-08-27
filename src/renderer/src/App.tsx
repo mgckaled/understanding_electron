@@ -8,6 +8,8 @@ import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
 import ArtifactPanel from './features/artifact/ArtifactPanel'
 import ArtifactProvider from './features/artifact/ArtifactProvider'
+import DraftPanel from './features/draft/DraftPanel'
+import DraftProvider from './features/draft/DraftProvider'
 import PanelProvider from './features/panel/PanelProvider'
 import ConversationsProvider from './features/conversation/ConversationsProvider'
 import NewConversationButton from './features/conversation/NewConversationButton'
@@ -33,6 +35,7 @@ function App(): React.JSX.Element {
       <ConversationsProvider>
         <PanelProvider onOpen={makeRoom}>
           <ArtifactProvider>
+            <DraftProvider>
           <AppShell
             sidebarCollapsed={collapsed}
             sidebar={
@@ -86,8 +89,14 @@ function App(): React.JSX.Element {
               />
             }
             main={<ConversationView />}
-            artifact={<ArtifactPanel />}
+            panel={
+              <>
+                <ArtifactPanel />
+                <DraftPanel />
+              </>
+            }
           />
+            </DraftProvider>
           </ArtifactProvider>
         </PanelProvider>
       </ConversationsProvider>

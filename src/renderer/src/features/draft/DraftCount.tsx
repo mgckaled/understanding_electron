@@ -1,7 +1,6 @@
 import { NotebookPen } from 'lucide-react'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
-import { useConversations } from '../conversation/conversationsContext'
-import { useDrafts } from './useDrafts'
+import { useDraft } from './draftContext'
 
 // Its own count beside the clip, never summed into it: an attachment came from
 // the user and a draft came from the conversation, and one number for both
@@ -11,8 +10,7 @@ import { useDrafts } from './useDrafts'
 // E-1-B, and a greyed control promises a capability that is not there — the
 // same reasoning ArtifactPicker uses for a list of one.
 function DraftCount(): React.JSX.Element | null {
-  const { activeId } = useConversations()
-  const { drafts } = useDrafts(activeId)
+  const { drafts } = useDraft()
 
   if (drafts.length === 0) return null
 
