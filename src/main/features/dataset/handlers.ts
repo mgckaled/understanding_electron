@@ -9,7 +9,8 @@ import type {
   Step
 } from '@shared/ipc'
 import { ok, err } from '@core/result'
-import { isValidHash, isReadOnlyQuery, buildFinalSql } from '@core/duckdb/query'
+import { isAttachmentHash } from '@core/attachments/hash'
+import { isReadOnlyQuery, buildFinalSql } from '@core/duckdb/query'
 import { compileSteps } from '@core/pipeline/compile'
 import { attachJsonDataset } from './attachJson'
 import { attachDelimitedDataset } from './attachDelimited'
@@ -92,7 +93,7 @@ export async function queryDataset(
   { hash, sql }: { hash: string; sql: string },
   runQuery: (hash: string, sql: string) => Promise<Uint8Array>
 ): Promise<Result<Uint8Array>> {
-  if (!isValidHash(hash)) {
+  if (!isAttachmentHash(hash)) {
     return err({ kind: 'invalidQuery', message: 'Identificador de anexo inválido.' })
   }
   if (!isReadOnlyQuery(sql)) {
@@ -130,7 +131,7 @@ export async function transformDataset(
     sql: string
   ) => Promise<{ bytes: Uint8Array; before: ColumnProfile[]; after: ColumnProfile[] }>
 ): Promise<Result<DatasetTransformResult>> {
-  if (!isValidHash(hash)) {
+  if (!isAttachmentHash(hash)) {
     return err({ kind: 'invalidQuery', message: 'Identificador de anexo inválido.' })
   }
 
@@ -155,7 +156,7 @@ export async function profileDataset(
   { hash }: { hash: string },
   runProfile: (hash: string) => Promise<ColumnProfile[]>
 ): Promise<Result<ColumnProfile[]>> {
-  if (!isValidHash(hash)) {
+  if (!isAttachmentHash(hash)) {
     return err({ kind: 'invalidQuery', message: 'Identificador de anexo inválido.' })
   }
 

@@ -1,14 +1,8 @@
 import { join } from 'node:path'
 import type { DatasetFormat } from '../dataset/format'
 import { sqlPath } from './config'
+import { isAttachmentHash } from '../attachments/hash'
 
-// Mirrors main/attachments/protocol.ts's HASH_PATTERN (D17.6) — two call
-// sites, not extracted (régua dos três, D18B.5).
-const HASH_PATTERN = /^[a-f0-9]{64}$/
-
-export function isValidHash(hash: string): boolean {
-  return HASH_PATTERN.test(hash)
-}
 
 /**
  * Rejects anything that is not a single read-only statement (D18B.2) — best
@@ -47,7 +41,7 @@ export function buildViewSqlInterpolated(
   format: DatasetFormat,
   encoding?: 'latin-1'
 ): string {
-  if (!isValidHash(hash)) throw new Error(`invalid attachment hash: ${hash}`)
+  if (!isAttachmentHash(hash)) throw new Error(`invalid attachment hash: ${hash}`)
   const path = sqlPath(join(attachmentsDir, hash))
   if (format === 'json') {
     return `CREATE OR REPLACE VIEW dataset AS SELECT * FROM read_json_auto('${path}')`

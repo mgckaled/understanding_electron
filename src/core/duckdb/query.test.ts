@@ -1,5 +1,4 @@
 import {
-  isValidHash,
   isReadOnlyQuery,
   buildViewSqlInterpolated,
   buildFinalSql,
@@ -8,22 +7,6 @@ import {
 } from './query'
 
 const VALID_HASH = 'a'.repeat(64)
-
-describe('isValidHash', () => {
-  it('accepts a 64-char lowercase hex digest', () => {
-    expect(isValidHash(VALID_HASH)).toBe(true)
-  })
-
-  it.each([
-    ['too short', 'a'.repeat(63)],
-    ['too long', 'a'.repeat(65)],
-    ['uppercase', 'A'.repeat(64)],
-    ['path traversal attempt', '../../etc/passwd'],
-    ['empty string', '']
-  ])('rejects %s', (_label, hash) => {
-    expect(isValidHash(hash)).toBe(false)
-  })
-})
 
 describe('isReadOnlyQuery', () => {
   it.each([

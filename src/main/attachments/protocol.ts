@@ -1,14 +1,10 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { protocol } from 'electron'
+import { isAttachmentHash } from '@core/attachments/hash'
 import { sniffImageMimeType } from '@core/image/sniff'
 
 export const ATTACHMENT_SCHEME = 'attachment'
-
-// The 64 hex chars of a sha256 digest (D16.3) — the only shape a blob's name
-// can have. Rejecting anything else here is what keeps the hostname out of
-// the filesystem call below: no path segment, no traversal.
-const HASH_PATTERN = /^[a-f0-9]{64}$/
 
 /**
  * Declares the scheme's privileges — `standard`/`secure`/`supportFetchAPI`
@@ -34,7 +30,7 @@ export function registerAttachmentScheme(): void {
 export function handleAttachmentProtocol(attachmentsDir: string): void {
   protocol.handle(ATTACHMENT_SCHEME, async (request) => {
     const hash = new URL(request.url).hostname
-    if (!HASH_PATTERN.test(hash)) return new Response('bad hash', { status: 400 })
+    if (!isAttachmentHash(hash)) return new Response('bad hash', { status: 400 })
 
     try {
       const bytes = await readFile(join(attachmentsDir, hash))
