@@ -114,3 +114,61 @@ test('opens an attached document in the artifact panel, and lets the CSP reach t
   await expect(panel).toBeHidden()
   await expect(card).toBeFocused()
 })
+
+// The three ways in that F-3-B adds, in a real Chromium: the header clip, the
+// picker, and the accelerator. None of them is provable at level 2 in the way
+// that matters — the clip reads a real transcript, the picker's popover is
+// `display:none` under jsdom, and a keyboard accelerator is a keyboard.
+test('reaches the panel through the header clip, the picker and Ctrl+B', async () => {
+  const two = await page.evaluate(async (paths) => {
+    const api = (window as unknown as { api: Api }).api
+    const first = await api.document.attach(paths.doc, 'e2e-clip-1')
+    const second = await api.image.attach(paths.img, 'e2e-clip-2')
+    if (!first.ok || !second.ok) throw new Error('attach failed')
+
+    const id = `c-clip-${Date.now()}`
+    await api.conversation.create({ id, title: 'Dois anexos', createdAt: Date.now() })
+    await api.conversation.append(id, {
+      id: `m1-${Date.now()}`,
+      role: 'user',
+      parts: [first.value],
+      createdAt: Date.now()
+    })
+    await api.conversation.append(id, {
+      id: `m2-${Date.now()}`,
+      role: 'user',
+      parts: [second.value],
+      createdAt: Date.now() + 1
+    })
+    return { doc: first.value.fileName, img: second.value.fileName }
+  }, {
+    doc: join(process.cwd(), 'e2e/fixtures/especificacao.md'),
+    img: join(process.cwd(), 'e2e/fixtures/quadrado.png')
+  })
+
+  await page.reload()
+  const panel = page.getByRole('complementary', { name: 'Anexo aberto' })
+
+  // The clip counts both and opens the NEWEST — the image, not the document.
+  const clip = page.getByRole('button', { name: /anexos da conversa \(2\)/ })
+  await expect(clip).toBeVisible()
+  await clip.click()
+  await expect(panel).toContainText(two.img)
+
+  // The picker switches without closing.
+  await panel.getByRole('button', { name: new RegExp(two.img) }).click()
+  await page.getByRole('button', { name: two.doc, exact: true }).click()
+  await expect(panel).toBeVisible()
+  await expect(panel).toContainText(two.doc)
+
+  // Ctrl+B closes, Ctrl+B opens again.
+  await page.keyboard.press('Control+b')
+  await expect(panel).toBeHidden()
+  await page.keyboard.press('Control+b')
+  await expect(panel).toBeVisible()
+
+  // The "never while typing" guard is NOT asserted here: the composer's
+  // textarea is disabled whenever the app cannot reach a model, which is the
+  // state this spec runs in. It is covered at level 2 against the real
+  // provider, where a focused field can be arranged.
+})

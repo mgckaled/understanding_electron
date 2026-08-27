@@ -1,6 +1,6 @@
 # F-3-B — Como se chega ao painel: clipe no cabeçalho, seletor de anexos e atalho
 
-> Segundo dos quatro planos do painel de artefato, depois do [F-3-A](../implemented/F-3-A-painel-de-artefato.md). Este cobre **as três formas de abrir e trocar** o que o painel mostra; o comportamento do painel como objeto de desktop (arrasto, janela estreita, transição) é do F-3-C, e o dataset do F-3-D.
+> Segundo dos quatro planos do painel de artefato, depois do [F-3-A](F-3-A-painel-de-artefato.md). Este cobre **as três formas de abrir e trocar** o que o painel mostra; o comportamento do painel como objeto de desktop (arrasto, janela estreita, transição) é do F-3-C, e o dataset do F-3-D.
 
 **Origem:** pedido do usuário (26/08/2026) durante a revisão do F-3-A — um ícone de clipe com a contagem de anexos no cabeçalho da conversa, do lado oposto ao título, que abre o painel e some quando não há anexo. Junta-se ao que o F-3-A já tinha deixado marcado para cá: seletor de anexos no cabeçalho do painel e atalho de teclado.
 
@@ -159,4 +159,17 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 26/08/2026 | 1-6 | **plano concluído**, movido para `implemented/` | Seis passos, seis commits, na mesma sessão do F-3-A. Duas decisões revistas na execução (DF3B.5 e DF3B.6), uma nascida nela (DF3B.7). O portão desenterrou uma mina de timeout de meses; a provocação pegou um teste **meu** vazio. `check:fast`: 871 testes; e2e com dois casos. |
 | 26/08/2026 | — | plano escrito, ainda não executado | Escrito na mesma sessão do F-3-A, lendo o código dele. Context7 (`electron`) decidiu a DF3B.3: `globalShortcut` dispara sem foco, e o acelerador local exige um `MenuItem` que este app não tem — `grep` confirmou zero `setApplicationMenu` em `src/main/`. O corte passou de três planos para quatro na escrita, ao contar seis passos no B. |
+
+**O que este plano deixou fora dele** — escalonado na conclusão, e é onde se consulta hoje:
+
+| Achado | Dono |
+|---|---|
+| Teste a 4931ms de um limite de 5000ms é mina, não teste lento — quem tocar o componente detona, e o vermelho parece defeito dele | [`ARMADILHAS.md`](../../ARMADILHAS.md) |
+| Asserção síncrona de **ausência** logo após o evento é vacuosa; prove o **estado final** que o efeito indesejado teria invertido | skill [`testing`](../../../.claude/skills/testing/SKILL.md) |
+| Decisões DF3B.1–DF3B.7 | [`DECISOES.md`](../../DECISOES.md) |
+
+⚠️ **Aceite não observado, registrado como tal:** `Ctrl+B` num teclado **ABNT2 físico** não foi verificado — o e2e dirige o Chromium por `page.keyboard.press`, que não passa pelo layout do sistema. A preocupação registrada na DF3B.4 é sobre `Ctrl+Alt` ser o AltGr, e o atalho escolhido **não** usa `Ctrl+Alt`; ainda assim, o acorde só se prova nos dedos.
+
+⚠️ **Não asserido ao vivo, com motivo:** a guarda de "não dispara digitando". O `textarea` do composer fica desabilitado sempre que o app não alcança um modelo, que é o estado em que este spec roda. Coberta no nível 2 contra o provider real, onde dá para arranjar um campo focado.

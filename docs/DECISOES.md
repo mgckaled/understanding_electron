@@ -251,6 +251,13 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | F-3-A | [DF3A.6](plan/implemented/F-3-A-painel-de-artefato.md) | A seta do cartão vira `ChevronRight` e `aria-expanded` dá lugar a `aria-current` — nada expande mais |
 | F-3-A | [DF3A.7](plan/implemented/F-3-A-painel-de-artefato.md) | **Revista na execução:** copiar existe para documento e não para imagem; a CSP não foi aberta, porque o bloqueio é CORS (`corsEnabled`), não CSP |
 | F-3-A | [DF3A.8](plan/implemented/F-3-A-painel-de-artefato.md) | Foco de ida e de volta, e `Esc` — o painel não é modal, então não prende foco |
+| F-3-B | [DF3B.1](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | O clipe abre o anexo mais recente e fecha se já estiver aberto — um clique tem de chegar a conteúdo |
+| F-3-B | [DF3B.2](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | Sem anexo, sem ícone; a contagem mora em `core/`, não no componente |
+| F-3-B | [DF3B.3](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | O atalho é ouvido no renderer — `globalShortcut` dispara sem foco, e o acelerador local exige um menu que o app não tem |
+| F-3-B | [DF3B.4](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | `Ctrl+B` para o painel, invertendo o VS Code: o acorde fácil vai para a ação frequente |
+| F-3-B | [DF3B.5](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | O seletor lista os artefatos da conversa; **revista na execução:** a lista subiu para o contexto, e escolher o item aberto não fecha o painel |
+| F-3-B | [DF3B.6](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | `ConversationView` se divide por coesão; **revista na execução:** o corte ficou um nível abaixo, e o `div` que rola não se move |
+| F-3-B | [DF3B.7](plan/implemented/F-3-B-como-se-chega-ao-painel.md) | O clipe conta o que o painel **consegue abrir** — dataset fica fora até o F-3-D — decisão nascida na execução |
 
 ---
 
