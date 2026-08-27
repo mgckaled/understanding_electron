@@ -162,3 +162,20 @@ describe('excluir a proposta', () => {
     await waitFor(async () => expect(await api.conversation.messages('c1')).toHaveLength(0))
   })
 })
+
+// Inherited from the card this replaced: the engine's own text reaches the
+// screen, because "deu erro" is not actionable and a Binder Error is.
+describe('erro do motor', () => {
+  it('shows the engine text and leaves the steps editable', async () => {
+    const api = mount()
+    vi.mocked(api.dataset.transform).mockResolvedValue({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'Binder Error: column "x" not found' }
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver resultado' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('column "x" not found')
+    expect(screen.getByLabelText('filtrar idade maior que 18')).toBeEnabled()
+  })
+})

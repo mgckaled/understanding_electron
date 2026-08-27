@@ -2,7 +2,7 @@ import type { Message, MessageStopped } from '@shared/ipc'
 import { attachmentPartOf, messageText, stepProposalPartOf } from '@core/ai/messages'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import AttachmentCard from '../attachment/AttachmentCard'
-import StepProposalCard from '../attachment/StepProposalCard'
+import StepProposalLine from '../attachment/StepProposalLine'
 import TurnActions from './TurnActions'
 
 // Reading a saved conversation, "there is no answer here" and "the answer was
@@ -41,13 +41,13 @@ function MessageList({ messages }: { messages: Message[] }): React.JSX.Element {
           </li>
         ) : (
           // Assistant turn: plain text on the left, no bubble, no label. A step
-          // proposal (plano 19) replaces the text entirely — the reply IS the
-          // card, not prose alongside it.
+          // proposal replaces the text entirely — the reply IS the line, and it
+          // opens the panel where the steps are edited (DF3F.1).
           <li key={message.id} className="flex flex-col gap-2">
             {(() => {
               const proposal = stepProposalPartOf(message)
               return proposal !== null ? (
-                <StepProposalCard part={proposal} messageId={message.id} />
+                <StepProposalLine part={proposal} messageId={message.id} />
               ) : (
                 <MarkdownMessage text={messageText(message)} />
               )

@@ -8,9 +8,8 @@ const HEAD = `sticky top-[0px] bg-surface-raised text-left font-semibold ${CELL}
 const IN_BUBBLE = 'max-h-[400px] overflow-auto rounded-md border border-border'
 const IN_PANEL = 'min-h-[0px] flex-1 overflow-auto px-5 pb-2'
 
-// Third consumer (StepProposalCard, D19.6) — the régua dos três's extraction
-// trigger. DatasetQueryPanel and DatasetPreview each carried their own copy
-// of this exact table markup until now.
+// Extracted at the third consumer (D19.6), and still shared by three: the
+// panel's rows, its query result and its step result.
 function DatasetTable({
   columns,
   rows,

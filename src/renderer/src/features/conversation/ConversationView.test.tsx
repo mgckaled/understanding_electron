@@ -832,12 +832,32 @@ describe('ConversationView — os três tipos de anexo numa conversa', () => {
 })
 
 describe('ConversationView — proposta de passos (plano 19)', () => {
-  it('renders a stepProposal part as its editable card, not as markdown text', async () => {
+  // DF3F.1: the reply stays in the transcript, but as a line — the steps and
+  // the Ver resultado moved to the panel, proven in ArtifactSteps.test.tsx.
+  it('renders a stepProposal part as a line, not as markdown text', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
     const conversationId = 'c-proposal'
     await api.conversation.create({ id: conversationId, title: 'Vendas', createdAt: 1 })
     await api.conversation.updateSettings(conversationId, { model: 'gemma3:4b' })
+    // The dataset first: the line names the file it belongs to, and without
+    // an artifact to open it degrades on purpose (DF3F.2).
+    await api.conversation.append(conversationId, {
+      id: 'm0',
+      role: 'user',
+      parts: [
+        {
+          kind: 'dataset',
+          hash: 'h1',
+          fileName: 'vendas.csv',
+          format: 'delimited',
+          delimiter: ',',
+          columns: ['id'],
+          rowCount: 10
+        }
+      ],
+      createdAt: 1
+    })
     await api.conversation.append(conversationId, {
       id: 'm1',
       role: 'assistant',
@@ -855,7 +875,8 @@ describe('ConversationView — proposta de passos (plano 19)', () => {
     renderView()
     await whenReady()
 
-    expect(await screen.findByText('limitar a 10 linhas')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Aplicar' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Propus 1 passo para vendas\.csv/ }))
+      .toBeVisible()
+    expect(screen.queryByText('limitar a 10 linhas')).toBeNull()
   })
 })
