@@ -168,6 +168,8 @@ As dependências entram e são **declaradas explicitamente** (`shamefullyHoist: 
 
 ## Diário de execução
 
+✅ **Aceite observado pelo usuário em 27/08/2026.** As **nove** conferências do passo 5, todas certas — inclusive as duas que nenhum teste alcança e que justificaram trocar a `<textarea>` pelo CodeMirror: a história sobrevive à troca de aba, e desfazer **não** atravessa de um rascunho para outro. **Plano concluído** — segue para o **E-1-D**, o caminho de saída.
+
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
 | 27/08/2026 | 1-4 | passos 1-4 concluídos; falta a prova ao vivo (passo 5) | **A sabotagem achou um teste vacuoso e um desenho redundante.** O primeiro teste da gravação passava com o `blur` desligado: quem gravava era um segundo caminho no `DraftPanel`, na troca de aba — dois mecanismos gravando duas vezes. Ficou um, porque clicar numa aba já tira o foco do editor. **Um erro de lint que o React 19 pega e o TypeScript não:** escrever em `ref` durante a renderização (`Cannot access refs during render`) — movido para efeito. **`EditorView.findFromDOM` resolveu a cobertura melhor do que o plano previa:** é API pública, e permite editar por transação, então o nível 2 prova que um documento **alterado** é gravado ao sair — só o teclado de verdade fica para a prova ao vivo. **Bundle medido:** 2,0 MB → 2,66 MB com o CodeMirror, 3,02 MB com o destaque; **o destaque sozinho custa 352,8 kB**, e o número está no fonte. `check:fast`: 961 testes, 108 arquivos. |

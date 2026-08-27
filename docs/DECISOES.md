@@ -4,7 +4,7 @@
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os headings dos planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**285 linhas** em 27/08/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
+Levantamento mecânico (grep sobre os headings dos planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**294 linhas** em 27/08/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
 - **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, sem heading atômico (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
@@ -353,6 +353,15 @@ Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, a
 | E-1-B | [DE1B.6](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O `Esc` do `Dialog` para de vazar, e o conserto é no primitivo |
 | E-1-B | [DE1B.7](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Apagar o rascunho aberto cai para o mais recente que sobrou |
 | E-1-B | [DE1B.8](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O contador vira botão, e continua nunca somado ao clipe |
+| E-1-C | [DE1C.1](plan/implemented/E-1-C-o-rascunho-se-edita.md) | CodeMirror 6, montado à mão, sem invólucro de React |
+| E-1-C | [DE1C.2](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Um objeto de tema serve aos **dois** temas do app |
+| E-1-C | [DE1C.3](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Extensões compostas à mão, nunca `basicSetup` |
+| E-1-C | [DE1C.4](plan/implemented/E-1-C-o-rascunho-se-edita.md) | `Tabs` sobe para `shared/ui/`, com montagem persistente **opt-in** |
+| E-1-C | [DE1C.5](plan/implemented/E-1-C-o-rascunho-se-edita.md) | `Tab` sai do campo, e agora por padrão do próprio editor |
+| E-1-C | [DE1C.6](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Grava no `blur`; trocar de rascunho grava antes e **reinicia o documento** |
+| E-1-C | [DE1C.7](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Editar retitula, e o título continua derivado |
+| E-1-C | [DE1C.8](plan/implemented/E-1-C-o-rascunho-se-edita.md) | O que o nível 2 alcança, e o que só a prova ao vivo alcança |
+| E-1-C | [DE1C.9](plan/implemented/E-1-C-o-rascunho-se-edita.md) | A prévia não ganha código |
 | 09 (ativo) | [D9.1](plan/active/09-camada-de-ia.md) | A chamada de LLM roda no main, não no `utilityProcess` |
 | 09 (ativo) | [D9.2](plan/active/09-camada-de-ia.md) | Uma fronteira de rede, injetável, exatamente como o `embed_fn` |
 | 09 (ativo) | [D9.3](plan/active/09-camada-de-ia.md) | Nuvem é opt-in, e o gate é o mesmo formato para os três |

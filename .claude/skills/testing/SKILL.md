@@ -50,7 +50,7 @@ A regra vale em todos os cinco níveis, e é mais fácil de violar do que parece
 
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
 
-## Limites de ambiente de teste — cinco casos, provados caros
+## Limites de ambiente de teste — seis casos, provados caros
 
 Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão silenciosa.** Quando o comportamento depende de tempo real de chegada, layout ou motor de CSS, jsdom não prova nada — só a verificação ao vivo prova. Cada um citável por título em [`docs/ARMADILHAS.md`](../../../docs/ARMADILHAS.md):
 
@@ -59,6 +59,7 @@ Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão
 - CSS não é aplicado — nível 2 clica em botão `visibility: hidden` que só o `:hover` revela. § *Teste de nível 2 clica em botão que o CSS esconde*.
 - `prefers-color-scheme` — Playwright emula `'light'` por padrão, ganha do `nativeTheme`. § *O Playwright emula `prefers-color-scheme: light`*.
 - Eventos de animação não chegam ao React — `window.AnimationEvent` é `undefined`. § *`animationiteration` borbulha de 14 filhos*.
+- CodeMirror **lança ao montar** — mede texto por `Range`/`elementFromPoint`, que o jsdom não implementa; e digitação real (`contenteditable` + `beforeinput`) segue fora de alcance mesmo com os mocks. § *CodeMirror não monta sob jsdom*.
 
 ## O que persiste é testado contra o banco real, nunca contra uma fake
 

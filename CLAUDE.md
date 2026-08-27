@@ -124,6 +124,7 @@ O que não é pacote npm comum, e a restrição que cada um impõe:
 | `apache-arrow` | o binding **não** exporta Arrow nativo: monta-se em JS, no worker e no renderer — skill [`ipc`](.claude/skills/ipc/SKILL.md) |
 | `resources/duckdb-extensions/excel.duckdb_extension` | binário vendorizado, **travado à versão exata de `@duckdb/node-api` que o gerou**. Um bump não quebra `typecheck` nem teste — só runtime: rerodar `scripts/fetch-duckdb-excel-extension.mjs` faz parte do bump ([`ROADMAP § 2`](docs/ROADMAP.md)) |
 | `unpdf` | zero dependências; o `peerDependency` `@napi-rs/canvas` **não entra** |
+| **CodeMirror 6** (`state`, `view`, `commands`, `language`, `lang-markdown`, `@lezer/highlight`) | seis entradas de **uma** biblioteca — ela é modular por desenho. Editor do rascunho (E-1-C). Composto à mão, **nunca `basicSetup`**; o tema é só `var(--color-*)`, porque o CSS que ele injeta fica fora do alcance do `guard`. `lang-markdown` arrasta `lang-html`: **352,8 kB** de bundle só pelo destaque de sintaxe, medido |
 
 ---
 
@@ -283,7 +284,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo — **89 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **90 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|
