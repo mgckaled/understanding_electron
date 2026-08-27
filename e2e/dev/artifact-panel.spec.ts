@@ -172,3 +172,90 @@ test('reaches the panel through the header clip, the picker and Ctrl+B', async (
   // state this spec runs in. It is covered at level 2 against the real
   // provider, where a focused field can be arranged.
 })
+
+// F-3-C, and the reason it is here: none of the three items is provable below
+// level 4. The sidebar collapsing needs a real viewport, the drag needs real
+// layout, and the fade needs a compositor.
+test('cede espaço numa janela estreita, e o arrasto muda a largura', async () => {
+  const fixturePath = join(process.cwd(), 'e2e/fixtures/especificacao.md')
+
+  await page.evaluate(async (path) => {
+    const api = (window as unknown as { api: Api }).api
+    const result = await api.document.attach(path, 'e2e-artifact-resize')
+    if (!result.ok) throw new Error(`attach failed: ${JSON.stringify(result.error)}`)
+
+    const id = `c-resize-${Date.now()}`
+    await api.conversation.create({ id, title: 'Arrasto', createdAt: Date.now() })
+    await api.conversation.append(id, {
+      id: `m-${Date.now()}`,
+      role: 'user',
+      parts: [result.value],
+      createdAt: Date.now()
+    })
+  }, fixturePath)
+
+  async function setWindow(w: number, h: number): Promise<void> {
+    await electronApp.evaluate(
+      ({ BrowserWindow }, size) => BrowserWindow.getAllWindows()[0].setSize(size.w, size.h),
+      { w, h }
+    )
+  }
+
+  async function widthOf(selector: string): Promise<number> {
+    return page.evaluate(
+      (css) => document.querySelector(css)?.getBoundingClientRect().width ?? 0,
+      selector
+    )
+  }
+
+  const SIDEBAR = 'aside[aria-label="Conversas"]'
+  const PANEL = 'aside[aria-label="Anexo aberto"]'
+
+  await setWindow(900, 700)
+  // Reload also resets the shell: a previous test may have left the sidebar
+  // collapsed, and this one is about who collapses it.
+  await page.reload()
+  const card = page.getByRole('button', { name: /especificacao\.md/ })
+  await expect(card).toBeVisible()
+  expect(await widthOf(SIDEBAR)).toBeGreaterThan(200)
+
+  await card.click()
+  await expect(page.getByRole('complementary', { name: 'Anexo aberto' })).toBeVisible()
+
+  // DF3C.3: the three regions do not fit at this size, so the sidebar yields —
+  // polled because it animates (DF3C.1 duration, inherited from the DS).
+  await expect.poll(() => widthOf(SIDEBAR)).toBeLessThan(100)
+  const threadCollapsed = await widthOf('main')
+
+  // DF3C.4 proved by the coupling itself: expanding the sidebar by hand has to
+  // take room from the thread, which only happens because the panel's ceiling
+  // reads the sidebar's LIVE width. It also exercises the override of DF3C.3 —
+  // nothing re-collapses it afterwards.
+  await page.getByRole('button', { name: 'Expandir a barra lateral' }).click()
+  await expect.poll(() => widthOf(SIDEBAR)).toBeGreaterThan(200)
+  expect(await widthOf('main')).toBeLessThan(threadCollapsed)
+
+  // Maximized, because at 900px the panel is already at its ceiling and a drag
+  // would have nowhere to go.
+  await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].maximize())
+  await page.waitForFunction(() => window.innerWidth > 1000)
+
+  const handle = page.getByRole('separator', { name: 'Redimensionar o painel' })
+  const box = (await handle.boundingBox())!
+  const panelBefore = await widthOf(PANEL)
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x - 150, box.y + box.height / 2, { steps: 10 })
+  await page.mouse.up()
+
+  // Invariants, never pixels: this machine scales the display.
+  const panelDragged = await widthOf(PANEL)
+  expect(panelDragged).toBeGreaterThan(panelBefore)
+  expect(panelDragged + (await widthOf('main'))).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth)
+  )
+
+  await handle.dblclick()
+  await expect.poll(() => widthOf(PANEL)).toBeLessThan(panelDragged)
+})

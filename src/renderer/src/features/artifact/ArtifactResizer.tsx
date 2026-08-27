@@ -97,9 +97,11 @@ function ArtifactResizer({
       onPointerCancel={onPointerEnd}
       onDoubleClick={() => commit(DEFAULT_WIDTH)}
       onKeyDown={onKeyDown}
-      // 10px of hit target over the 1px border, the measure react-resizable-panels
-      // uses for fine pointers. touch-none keeps the browser from panning instead.
-      className="group absolute inset-y-0 left-[-5px] z-10 w-[10px] cursor-col-resize touch-none"
+      // 10px of hit target, the measure react-resizable-panels uses for fine
+      // pointers. INSIDE the panel, not straddling its border: the panel clips
+      // its overflow, and a handle hanging out of it is dead to the pointer.
+      // touch-none keeps the browser from panning instead of dragging.
+      className="group absolute top-[0px] left-[0px] z-10 h-full w-[10px] cursor-col-resize touch-none"
     >
       <div
         aria-hidden="true"
