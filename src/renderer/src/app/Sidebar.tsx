@@ -1,25 +1,26 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Button from '../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../shared/ui/icon'
 
 // Three regions, not one (D13.1): nav, content, footer — the shape a sidebar
 // that is only "the list of conversations" must be restructured into once a
-// second thing exists, which this plan already has. `collapsed` stays local:
-// it is the only state the chrome owns, and the conversation store should not
-// answer for something no conversation knows about.
+// second thing exists, which this plan already has. `collapsed` is controlled
+// from App.tsx since F-3-C: the artifact panel asks for the room (DF3C.2), and
+// state the panel has to move cannot live inside the sidebar.
 
-type SidebarProps = {
+export type SidebarProps = {
+  collapsed: boolean
+  onCollapsedChange: (collapsed: boolean) => void
   nav?: ReactNode
   content?: ReactNode
   footer?: ReactNode
   /**
    * The collapsed rail's buttons — a render-prop, not a plain node, because
-   * only Sidebar owns `collapsed`/`setCollapsed` and `nav`/`content`/`footer`
-   * are feature components with no notion of expanding the shell around them
-   * (same shape as Composer's `modelSelector`, DS4.8). `app/` still never
-   * imports `features/`: App.tsx decides what the rail's buttons DO, this
-   * file only decides where they sit and how to reopen itself.
+   * `nav`/`content`/`footer` are feature components with no notion of
+   * expanding the shell around them (same shape as Composer's
+   * `modelSelector`, DS4.8). `app/` still never imports `features/`: App.tsx
+   * decides what the rail's buttons DO, this file only where they sit.
    */
   collapsedRail?: (expand: () => void) => ReactNode
 }
@@ -33,8 +34,14 @@ const SIDEBAR_BASE =
   'grid h-full grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden border-r border-border ' +
   'bg-surface transition-[width] duration-(--duration-base) ease-initial'
 
-function Sidebar({ nav, content, footer, collapsedRail }: SidebarProps): React.JSX.Element {
-  const [collapsed, setCollapsed] = useState(false)
+function Sidebar({
+  collapsed,
+  onCollapsedChange,
+  nav,
+  content,
+  footer,
+  collapsedRail
+}: SidebarProps): React.JSX.Element {
   const width = collapsed ? 'w-(--sidebar-width-collapsed)' : 'w-(--sidebar-width)'
 
   return (
@@ -61,7 +68,7 @@ function Sidebar({ nav, content, footer, collapsedRail }: SidebarProps): React.J
           variant="ghost"
           size="sm"
           shape="square"
-          onClick={() => setCollapsed((value) => !value)}
+          onClick={() => onCollapsedChange(!collapsed)}
           aria-expanded={!collapsed}
           aria-label={collapsed ? 'Expandir a barra lateral' : 'Recolher a barra lateral'}
         >
@@ -96,7 +103,7 @@ function Sidebar({ nav, content, footer, collapsedRail }: SidebarProps): React.J
           window's height. */}
       {collapsed && collapsedRail && (
         <nav className="row-span-3 row-start-2 flex flex-col items-center gap-2 px-1 pb-4">
-          {collapsedRail(() => setCollapsed(false))}
+          {collapsedRail(() => onCollapsedChange(false))}
         </nav>
       )}
     </aside>

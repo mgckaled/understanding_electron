@@ -1,6 +1,16 @@
+import { useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import Sidebar from './Sidebar'
+import Sidebar, { type SidebarProps } from './Sidebar'
+
+// The sidebar is controlled since F-3-C (DF3C.2); this holds the state App.tsx
+// now holds, so the assertions below are the ones from before.
+type OwnProps = Omit<SidebarProps, 'collapsed' | 'onCollapsedChange'>
+
+function Controlled(props: OwnProps): React.JSX.Element {
+  const [collapsed, setCollapsed] = useState(false)
+  return <Sidebar {...props} collapsed={collapsed} onCollapsedChange={setCollapsed} />
+}
 
 // Collapsing is behaviour, not layout: the three regions leave the tree and come
 // back. Asserting the width or the class would be the tying test the `testing`
@@ -9,7 +19,11 @@ describe('Sidebar', () => {
   it('drops the three regions when collapsed and restores them', async () => {
     const user = userEvent.setup()
     render(
-      <Sidebar nav={<span>nav</span>} content={<span>lista</span>} footer={<span>versões</span>} />
+      <Controlled
+        nav={<span>nav</span>}
+        content={<span>lista</span>}
+        footer={<span>versões</span>}
+      />
     )
 
     expect(screen.getByText('lista')).toBeInTheDocument()
@@ -28,7 +42,7 @@ describe('Sidebar', () => {
   it('renders collapsedRail while collapsed, and its expand callback reopens the sidebar', async () => {
     const user = userEvent.setup()
     render(
-      <Sidebar
+      <Controlled
         nav={<span>nav</span>}
         content={<span>lista</span>}
         footer={<span>versões</span>}
