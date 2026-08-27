@@ -61,9 +61,12 @@ describe('artifactsOf', () => {
     expect(refs.map((ref) => ref.id)).toEqual(['h-doc', 'h-img'])
   })
 
-  it('leaves a dataset out until F-3-D, so the count never promises a panel that cannot open', () => {
-    expect(toArtifactRef(DATA)).toBeNull()
-    expect(artifactsOf([turn('m1', DATA)])).toEqual([])
+  // The inversion of the F-3-B case: the clip counted only what the panel
+  // could open, and the panel could not open a dataset. Now it can, and no
+  // line of the clip changed to make it so (DF3B.7).
+  it('counts a dataset, now that the panel opens one', () => {
+    expect(toArtifactRef(DATA)).toEqual({ kind: 'dataset', id: 'h-csv', part: DATA })
+    expect(artifactsOf([turn('m1', DATA)]).map((ref) => ref.id)).toEqual(['h-csv'])
   })
 
   it('counts cards, not distinct files', () => {

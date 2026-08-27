@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { DocumentPart, ImagePart } from '@shared/ipc'
+import type { DatasetPart, DocumentPart, ImagePart } from '@shared/ipc'
 
 /**
  * Anything a conversation can open in the side panel (DF3A.2).
@@ -15,6 +15,7 @@ import type { DocumentPart, ImagePart } from '@shared/ipc'
 export type ArtifactRef =
   | { kind: 'document'; id: string; part: DocumentPart }
   | { kind: 'image'; id: string; part: ImagePart }
+  | { kind: 'dataset'; id: string; part: DatasetPart }
 
 export type ArtifactApi = {
   current: ArtifactRef | null

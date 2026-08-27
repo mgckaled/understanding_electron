@@ -7,7 +7,8 @@ import type { ArtifactRef } from './artifactContext'
  *
  * Which kinds are openable is a renderer fact — it is the membership of
  * {@link ArtifactRef} — so it is decided here and not in `core/`, which has no
- * opinion about what gets drawn. `dataset` joins in F-3-D.
+ * opinion about what gets drawn. Every kind is openable since F-3-D, and the
+ * `null` stays for the next one that is not.
  */
 export function toArtifactRef(part: AttachmentPart): ArtifactRef | null {
   switch (part.kind) {
@@ -16,7 +17,7 @@ export function toArtifactRef(part: AttachmentPart): ArtifactRef | null {
     case 'image':
       return { kind: 'image', id: part.hash, part }
     case 'dataset':
-      return null
+      return { kind: 'dataset', id: part.hash, part }
   }
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
+import DatasetPreview from '../attachment/DatasetPreview'
 import type { ArtifactRef } from './artifactContext'
 
 const EMPTY = 'text-reading text-text-muted'
@@ -20,10 +21,8 @@ function ImageBody({ hash, fileName }: { hash: string; fileName: string }): Reac
   )
 }
 
-// Dispatches on `kind`, the same shape AttachmentCard already uses for the
-// transcript. The slot may render asynchronously (DF3A.3) even though neither
-// of today's two inhabitants needs to: a dataset body is paged and can fail,
-// and a contract shaped around the synchronous cases would break in F-3-C.
+// Dispatches on `kind`, the same shape AttachmentCard uses for the transcript.
+// The dataset body is the asynchronous case DF3A.3 shaped this slot against.
 function ArtifactBody({ artifact }: { artifact: ArtifactRef }): React.JSX.Element {
   switch (artifact.kind) {
     case 'document': {
@@ -36,6 +35,8 @@ function ArtifactBody({ artifact }: { artifact: ArtifactRef }): React.JSX.Elemen
     }
     case 'image':
       return <ImageBody hash={artifact.part.hash} fileName={artifact.part.fileName} />
+    case 'dataset':
+      return <DatasetPreview part={artifact.part} />
   }
 }
 

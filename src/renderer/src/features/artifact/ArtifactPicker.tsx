@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Check, ChevronDown, FileText, Image } from 'lucide-react'
+import { Check, ChevronDown, FileText, Image, Table2 } from 'lucide-react'
 import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -21,12 +21,20 @@ const TRIGGER =
 const ROW =
   'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-text hover:bg-surface'
 
+// Exhaustive on purpose: a ternary here defaulted a dataset to the document
+// icon, and the two places that draw it disagreed silently.
+const ICON: Record<ArtifactRef['kind'], typeof FileText> = {
+  document: FileText,
+  image: Image,
+  dataset: Table2
+}
+
 function ArtifactPicker({ current }: { current: ArtifactRef }): React.JSX.Element {
   const { artifacts, toggle } = useArtifact()
   const [open, setOpen] = useState(false)
   const anchorName = toAnchorName(useId())
 
-  const Icon = current.kind === 'image' ? Image : FileText
+  const Icon = ICON[current.kind]
   const many = artifacts.length > 1
 
   function choose(ref: ArtifactRef): void {
@@ -77,7 +85,7 @@ function ArtifactPicker({ current }: { current: ArtifactRef }): React.JSX.Elemen
         className="flex w-[300px] flex-col gap-1"
       >
         {artifacts.map((ref) => {
-          const RowIcon = ref.kind === 'image' ? Image : FileText
+          const RowIcon = ICON[ref.kind]
           const isCurrent = ref.id === current.id
           return (
             <button

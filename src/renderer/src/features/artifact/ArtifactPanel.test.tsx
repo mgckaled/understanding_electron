@@ -1,6 +1,9 @@
+import { QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DocumentPart, ImagePart } from '@shared/ipc'
+import type { DatasetPart, DocumentPart, ImagePart } from '@shared/ipc'
+import { installApiMock } from '@test/api-mock'
+import { createQueryClient } from '../../shared/queryClient'
 import ArtifactPanel from './ArtifactPanel'
 import { copyArtifact } from './copyArtifact'
 import { ArtifactContext, type ArtifactRef } from './artifactContext'
@@ -29,15 +32,26 @@ const IMG: ImagePart = {
   fileName: 'grafico.png',
   mimeType: 'image/png'
 }
+const DATA: DatasetPart = {
+  kind: 'dataset',
+  hash: 'h-csv',
+  fileName: 'vendas.csv',
+  format: 'delimited',
+  delimiter: ',',
+  columns: ['id'],
+  rowCount: 3
+}
 
-// The panel reads the context and nothing else, so a hand-made value is the
-// whole environment it needs — no provider, no conversation, no query client.
+// The panel reads the context and nothing else; the query client is here only
+// because a dataset body queries, and the two other kinds ignore it.
 function mount(current: ArtifactRef | null): ReturnType<typeof fakeArtifactApi> {
   const api = fakeArtifactApi(current)
   render(
-    <ArtifactContext value={api}>
-      <ArtifactPanel />
-    </ArtifactContext>
+    <QueryClientProvider client={createQueryClient()}>
+      <ArtifactContext value={api}>
+        <ArtifactPanel />
+      </ArtifactContext>
+    </QueryClientProvider>
   )
   return api
 }
@@ -112,6 +126,18 @@ describe('ArtifactPanel', () => {
 
     expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Fechar painel' })).toBeVisible()
+  })
+
+  // DF3D.10: tabular data leaves through export (trilha E), not the clipboard.
+  // A document still copies — its text is the only way out it has.
+  it('offers no copy button for a dataset', () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.query).mockReturnValue(new Promise(() => {}))
+
+    mount({ kind: 'dataset', id: DATA.hash, part: DATA })
+
+    expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
+    expect(screen.getByText('vendas.csv')).toBeVisible()
   })
 
   it('closes through the header button', async () => {
