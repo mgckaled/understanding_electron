@@ -5,6 +5,7 @@ import SidePanel from '../../shared/ui/SidePanel/SidePanel'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import ArtifactBody from './ArtifactBody'
 import ArtifactPicker from './ArtifactPicker'
+import { usePanel } from '../panel/panelContext'
 import { useArtifact } from './artifactContext'
 import { canCopy, copyArtifact } from './copyArtifact'
 
@@ -13,7 +14,8 @@ import { canCopy, copyArtifact } from './copyArtifact'
 const COPIED_MS = 1200
 
 function ArtifactPanel(): React.JSX.Element | null {
-  const { current, closing, width, setWidth, close } = useArtifact()
+  const { current, close } = useArtifact()
+  const { closing, width, setWidth } = usePanel()
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 

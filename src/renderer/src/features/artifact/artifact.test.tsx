@@ -8,6 +8,7 @@ import ConversationsProvider from '../conversation/ConversationsProvider'
 import { useConversations } from '../conversation/conversationsContext'
 import ArtifactPanel from './ArtifactPanel'
 import ArtifactProvider from './ArtifactProvider'
+import PanelProvider from '../panel/PanelProvider'
 import { useArtifact, type ArtifactRef } from './artifactContext'
 
 const DOC: DocumentPart = {
@@ -61,10 +62,12 @@ function harness(onOpen?: () => void): React.JSX.Element {
   return (
     <QueryClientProvider client={createQueryClient()}>
       <ConversationsProvider>
-        <ArtifactProvider onOpen={onOpen}>
-          <Probe />
-          <ArtifactPanel />
-        </ArtifactProvider>
+        <PanelProvider onOpen={onOpen}>
+          <ArtifactProvider>
+            <Probe />
+            <ArtifactPanel />
+          </ArtifactProvider>
+        </PanelProvider>
       </ConversationsProvider>
     </QueryClientProvider>
   )
@@ -239,5 +242,19 @@ describe('ArtifactProvider', () => {
     await userEvent.click(screen.getByRole('button', { name: 'trocar de conversa' }))
 
     expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
+  })
+
+  // Not the same as the assertion above: the panel disappears either way, but a
+  // region still marked as ours would skip the next `onOpen` (DE1B.1).
+  it('hands the region back, so the next open asks the shell for room again', async () => {
+    installApiMock()
+    const onOpen = vi.fn()
+    render(harness(onOpen))
+
+    await userEvent.click(screen.getByRole('button', { name: 'abrir doc' }))
+    await userEvent.click(screen.getByRole('button', { name: 'trocar de conversa' }))
+    await userEvent.click(screen.getByRole('button', { name: 'abrir doc' }))
+
+    expect(onOpen).toHaveBeenCalledTimes(2)
   })
 })

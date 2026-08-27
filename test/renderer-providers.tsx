@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { createQueryClient } from '@renderer/shared/queryClient'
 import ArtifactPanel from '@renderer/features/artifact/ArtifactPanel'
 import ArtifactProvider from '@renderer/features/artifact/ArtifactProvider'
+import PanelProvider from '@renderer/features/panel/PanelProvider'
 import ConversationsProvider from '@renderer/features/conversation/ConversationsProvider'
 
 /**
@@ -24,10 +25,12 @@ export function providers(children: ReactNode): React.JSX.Element {
   return (
     <QueryClientProvider client={createQueryClient()}>
       <ConversationsProvider>
-        <ArtifactProvider>
-          {children}
-          <ArtifactPanel />
-        </ArtifactProvider>
+        <PanelProvider>
+          <ArtifactProvider>
+            {children}
+            <ArtifactPanel />
+          </ArtifactProvider>
+        </PanelProvider>
       </ConversationsProvider>
     </QueryClientProvider>
   )

@@ -8,6 +8,7 @@ import ConversationList from './features/conversation/ConversationList'
 import ConversationView from './features/conversation/ConversationView'
 import ArtifactPanel from './features/artifact/ArtifactPanel'
 import ArtifactProvider from './features/artifact/ArtifactProvider'
+import PanelProvider from './features/panel/PanelProvider'
 import ConversationsProvider from './features/conversation/ConversationsProvider'
 import NewConversationButton from './features/conversation/NewConversationButton'
 import Settings from './features/settings/Settings'
@@ -30,7 +31,8 @@ function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
       <ConversationsProvider>
-        <ArtifactProvider onOpen={makeRoom}>
+        <PanelProvider onOpen={makeRoom}>
+          <ArtifactProvider>
           <AppShell
             sidebarCollapsed={collapsed}
             sidebar={
@@ -86,7 +88,8 @@ function App(): React.JSX.Element {
             main={<ConversationView />}
             artifact={<ArtifactPanel />}
           />
-        </ArtifactProvider>
+          </ArtifactProvider>
+        </PanelProvider>
       </ConversationsProvider>
     </QueryClientProvider>
   )

@@ -9,6 +9,8 @@ import ArtifactPanel from './ArtifactPanel'
 import { copyArtifact } from './copyArtifact'
 import { ArtifactContext, type ArtifactRef } from './artifactContext'
 import { fakeArtifactApi } from '@test/artifact-api'
+import { fakePanelApi } from '@test/panel-api'
+import { PanelContext } from '../panel/panelContext'
 
 // The clipboard itself is mocked, not jsdom's `navigator`: what `copyArtifact`
 // really does — fetch through `attachment://`, ClipboardItem — has no meaning
@@ -50,9 +52,11 @@ function mount(current: ArtifactRef | null): ReturnType<typeof fakeArtifactApi> 
   render(
     <QueryClientProvider client={createQueryClient()}>
       <ConversationsProvider>
-        <ArtifactContext value={api}>
-          <ArtifactPanel />
-        </ArtifactContext>
+        <PanelContext value={fakePanelApi()}>
+          <ArtifactContext value={api}>
+            <ArtifactPanel />
+          </ArtifactContext>
+        </PanelContext>
       </ConversationsProvider>
     </QueryClientProvider>
   )
