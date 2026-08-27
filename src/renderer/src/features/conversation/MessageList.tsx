@@ -57,7 +57,7 @@ function MessageList({ messages }: { messages: Message[] }): React.JSX.Element {
               // says less, it is not an error.
               <span className="text-2xs text-warn-text">{STOPPED_LABEL[message.stopped]}</span>
             )}
-            <TurnActions text={messageText(message)} />
+            <TurnActions text={messageText(message)} messageId={message.id} />
           </li>
         )
       })}
