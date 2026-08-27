@@ -275,6 +275,13 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | F-3-D | [DF3D.8](plan/implemented/F-3-D-o-dataset-no-painel.md) | SQL digitado e aba escolhida morrem ao fechar o painel — paridade com o cartão, dita em voz alta |
 | F-3-D | [DF3D.9](plan/implemented/F-3-D-o-dataset-no-painel.md) | A aba Passos não entra: a proposta é mensagem, o pipeline é estado que ainda não existe (F-3-F) |
 | F-3-D | [DF3D.10](plan/implemented/F-3-D-o-dataset-no-painel.md) | Dataset não ganha ⧉ e documento mantém o dele; exportar resultado é da trilha E |
+| F-3-E | [DF3E.1](plan/implemented/F-3-E-copiar-imagem.md) | Desenho C: o canal `image:bytes` com o JPEG recodificado no renderer; `clipboard.writeImage` no main recusado por perder alfa no Windows |
+| F-3-E | [DF3E.2](plan/implemented/F-3-E-copiar-imagem.md) | A ramificação é pelo `mimeType`, nunca pela extensão — a D17.7 guarda o nome original de um SVG rasterizado |
+| F-3-E | [DF3E.3](plan/implemented/F-3-E-copiar-imagem.md) | `Result<Uint8Array>`, sem `kind` novo em `AppError` — blob varrido pelo GC de anexos é dado, não defeito |
+| F-3-E | [DF3E.4](plan/implemented/F-3-E-copiar-imagem.md) | A validação de hash sai para `core/` antes do terceiro consumidor: é decisão de segurança, não contagem |
+| F-3-E | [DF3E.5](plan/implemented/F-3-E-copiar-imagem.md) | Documento continua copiando no renderer; `copyArtifact` vira despacho por `kind` |
+| F-3-E | [DF3E.6](plan/implemented/F-3-E-copiar-imagem.md) | O cartão da transcrição não ganha ⧉ — o F-3 inteiro é sobre o painel |
+| F-3-E | [DF3E.7](plan/implemented/F-3-E-copiar-imagem.md) | A ativação transitória fica medida ao vivo; a saída documentada é `Promise<Blob>` no `ClipboardItem` |
 
 ---
 

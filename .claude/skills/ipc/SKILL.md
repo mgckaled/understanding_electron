@@ -101,9 +101,11 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 **Para binário que precisa chegar ao DOM a resposta já existe, e não é um canal:** bytes de imagem viajam do disco ao `<img>` do renderer pelo protocolo customizado `attachment://` (`src/main/attachments/protocol.ts`, `protocol.handle` + `registerSchemesAsPrivileged`, D17.6) — nunca por `invoke`/JSON.
 
+⚠️ **Mas isso vale para o DOM, não para a área de transferência.** O esquema não tem o privilégio `corsEnabled`, então `fetch('attachment://…')` é recusado antes da CSP, e o `<img>` contamina um canvas. Por isso o `image:bytes` existe (DF3E.1): é o **único** caminho do renderer até os bytes quando o destino não é uma tag. A contaminação é da origem, não dos bytes — um `Blob` montado a partir do que chegou por `invoke` desenha em canvas limpo.
+
 ## Canais de hoje
 
-**32 canais em `IpcContract`**, conferidos contra o código em 26/08/2026.
+**33 canais em `IpcContract`**, conferidos contra o código em 27/08/2026.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -111,7 +113,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `shell` | `openExternal` | sim |
 | `dataset` | `pick`, `attach`, `query`, `profile`, `transform` | sim |
 | `document` | `pick`, `attach` | sim |
-| `image` | `pick`, `attach` | sim |
+| `image` | `pick`, `attach`, `bytes` | sim |
 | `job` | `cancel` | não |
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` | sim |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings` | não |

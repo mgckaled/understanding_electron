@@ -1,6 +1,6 @@
 # F-3-E — Copiar imagem: o canal `image:bytes`, e o galho que o JPEG obriga
 
-> Quinto plano do painel de artefato, depois do [F-3-A](../implemented/F-3-A-painel-de-artefato.md), [F-3-B](../implemented/F-3-B-como-se-chega-ao-painel.md), [F-3-C](../implemented/F-3-C-o-painel-como-objeto-de-desktop.md) e [F-3-D](../implemented/F-3-D-o-dataset-no-painel.md). É o **único do corte que toca contrato IPC** — por isso saiu do F-3-C: raio de explosão diferente, camada diferente, nível de teste diferente.
+> Quinto plano do painel de artefato, depois do [F-3-A](F-3-A-painel-de-artefato.md), [F-3-B](F-3-B-como-se-chega-ao-painel.md), [F-3-C](F-3-C-o-painel-como-objeto-de-desktop.md) e [F-3-D](F-3-D-o-dataset-no-painel.md). É o **único do corte que toca contrato IPC** — por isso saiu do F-3-C: raio de explosão diferente, camada diferente, nível de teste diferente.
 
 **Origem:** a **DF3A.7** registrou que a imagem não pode ser copiada e mapeou os três caminhos fechados — `fetch('attachment://…')` barrado por CORS antes da CSP (o esquema não tem o privilégio `corsEnabled`), o canvas contaminado pelo `<img>`, e nenhum canal servindo bytes. O usuário decidiu em 26/08 abrir o **canal**, não o privilégio.
 
@@ -148,4 +148,15 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 27/08/2026 | 1-3 | passos de código concluídos; **passo 4 (conferência ao vivo) pendente com o usuário** | Três passos, três commits. **A DF3E.7 fechou antes de virar risco:** o MDN confirma que `ClipboardItem` aceita `Promise<Blob>`, então a saída existe e é padrão caso a ativação transitória expire — o código ficou na forma simples (dois `await`, depois escreve), com a alternativa documentada em vez de aplicada por precaução. Achado de tipo, não previsto: o TypeScript 5.9 tipa `Uint8Array` como `Uint8Array<ArrayBufferLike>` e `Blob` exige `ArrayBuffer` — resolvido copiando, não com cast nem com `bytes.buffer`, que entregaria tudo em volta da view se ela tivesse deslocamento. `check:fast`: 909 testes, 104 arquivos. |
 | 27/08/2026 | — | plano escrito, ainda não executado | Escrito depois de um levantamento com Context7 + web. Ele achou **dois** furos no desenho que o `ROADMAP` tinha fixado em 26/08: o Chromium só aceita `image/png` em `ClipboardItem`, e o `ImagePart` admite JPEG; e a saída óbvia (`clipboard.writeImage` no main) perde transparência no Windows. O desenho C mantém o canal registrado e resolve os dois. A recusa do desenho B tem **evidência do corpus do usuário**, não julgamento: uma captura de uso real tinha um monograma rasterizado de SVG anexado, o caso exato que B estragaria. Achado de graça: a divergência entre `fileName` e conteúdo (D17.7) vira decisão nomeada em vez de detalhe, e ela reaparece na trilha E. |
+
+**O que este plano deixou fora dele** — escalonado na conclusão:
+
+| Achado | Dono |
+|---|---|
+| O `attachment://` serve o DOM, não a área de transferência — e o canvas está contaminado pela origem, não pelos bytes | skill [`ipc`](../../../.claude/skills/ipc/SKILL.md) |
+| 33 canais em `IpcContract`, `image` com três | skill [`ipc`](../../../.claude/skills/ipc/SKILL.md) |
+| Decisões DF3E.1–DF3E.7 | [`DECISOES.md`](../../DECISOES.md) |
+
+⚠️ **Aceite não observado, e é o único que importa aqui.** O passo 4 não foi executado: colar em um editor de imagem e em um app de chat, com as duas origens — o PNG com transparência (um SVG rasterizado, como o `logo-proposta-monograma-c.svg` do corpus real) e o JPEG. Nenhum dos 909 testes toca a área de transferência do sistema operacional, e nenhum poderia. **Se a transparência não sobreviver, o desenho C não cumpriu o que prometeu** — e é exatamente por isso que ele foi escolhido em vez do B.
