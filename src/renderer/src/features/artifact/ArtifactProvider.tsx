@@ -23,6 +23,7 @@ type ArtifactProviderProps = {
 
 function ArtifactProvider({ children, onOpen }: ArtifactProviderProps): React.JSX.Element {
   const [current, setCurrent] = useState<ArtifactRef | null>(null)
+  const [proposalId, setProposalId] = useState<string | null>(null)
   const [width, setWidth] = useState(DEFAULT_WIDTH)
   const { activeId } = useConversations()
   const conversation = useActiveConversation()
@@ -63,7 +64,7 @@ function ArtifactProvider({ children, onOpen }: ArtifactProviderProps): React.JS
   }, [])
 
   const toggle = useCallback(
-    (ref: ArtifactRef, opener: HTMLElement | null) => {
+    (ref: ArtifactRef, opener: HTMLElement | null, proposal?: string) => {
       // While closing, the same artifact reopens instead of toggling shut.
       if (current !== null && current.id === ref.id && !closing) {
         close()
@@ -71,6 +72,7 @@ function ArtifactProvider({ children, onOpen }: ArtifactProviderProps): React.JS
       }
       cancelFade()
       trigger.current = opener
+      setProposalId(proposal ?? null)
       if (current === null) onOpen?.()
       setCurrent(ref)
     },
@@ -118,8 +120,18 @@ function ArtifactProvider({ children, onOpen }: ArtifactProviderProps): React.JS
   }, [togglePanel])
 
   const value = useMemo(
-    () => ({ current, closing, width, setWidth, artifacts, toggle, togglePanel, close }),
-    [current, closing, width, artifacts, toggle, togglePanel, close]
+    () => ({
+      current,
+      closing,
+      width,
+      setWidth,
+      artifacts,
+      proposalId,
+      toggle,
+      togglePanel,
+      close
+    }),
+    [current, closing, width, artifacts, proposalId, toggle, togglePanel, close]
   )
 
   return <ArtifactContext value={value}>{children}</ArtifactContext>

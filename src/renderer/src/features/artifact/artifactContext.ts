@@ -37,14 +37,18 @@ export type ArtifactApi = {
    * one and the length of the other start disagreeing.
    */
   artifacts: ArtifactRef[]
+  /** The proposal the last open asked for, or `null` for the newest (DF3F.2). */
+  proposalId: string | null
   /**
    * Opens `ref` in the panel, or closes the panel when `ref` is already the
    * open one — the card stays dumb and this rule lives in one place.
    *
    * @param trigger - The element that opened it, so focus can return there on
    *   close (DF3A.8). `null` when nothing should be focused back.
+   * @param proposalId - Which proposal the Passos tab should show, when `ref`
+   *   is a dataset (DF3F.2). Omitted opens the newest.
    */
-  toggle: (ref: ArtifactRef, trigger: HTMLElement | null) => void
+  toggle: (ref: ArtifactRef, trigger: HTMLElement | null, proposalId?: string) => void
   /**
    * Opens the newest artifact, or closes whatever is open (DF3B.1).
    *

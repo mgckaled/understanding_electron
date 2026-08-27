@@ -68,6 +68,10 @@
   background-color: var(--color-accent);
 }
 
+@utility accent-accent {
+  accent-color: var(--color-accent);
+}
+
 @utility bg-accent-hover {
   background-color: var(--color-accent-hover);
 }

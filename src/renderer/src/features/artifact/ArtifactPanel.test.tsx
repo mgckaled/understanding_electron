@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import type { DatasetPart, DocumentPart, ImagePart } from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
 import { createQueryClient } from '../../shared/queryClient'
+import ConversationsProvider from '../conversation/ConversationsProvider'
 import ArtifactPanel from './ArtifactPanel'
 import { copyArtifact } from './copyArtifact'
 import { ArtifactContext, type ArtifactRef } from './artifactContext'
@@ -48,9 +49,11 @@ function mount(current: ArtifactRef | null): ReturnType<typeof fakeArtifactApi> 
   const api = fakeArtifactApi(current)
   render(
     <QueryClientProvider client={createQueryClient()}>
-      <ArtifactContext value={api}>
-        <ArtifactPanel />
-      </ArtifactContext>
+      <ConversationsProvider>
+        <ArtifactContext value={api}>
+          <ArtifactPanel />
+        </ArtifactContext>
+      </ConversationsProvider>
     </QueryClientProvider>
   )
   return api

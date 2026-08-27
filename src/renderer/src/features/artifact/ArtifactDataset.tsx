@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { DatasetPart } from '@shared/ipc'
 import { errorMessage } from '../../shared/ui/messages'
+import { useActiveConversation } from '../conversation/conversationsContext'
 import DatasetPager, { type PageSize } from '../attachment/DatasetPager'
 import DatasetProfileTable from '../attachment/DatasetProfileTable'
 import DatasetQueryPanel from '../attachment/DatasetQueryPanel'
 import DatasetTable from '../attachment/DatasetTable'
 import { useDatasetPreview, DEFAULT_PREVIEW_ROWS } from '../attachment/useDatasetPreview'
 import { useDatasetProfile } from '../attachment/useDatasetProfile'
+import ArtifactSteps from './ArtifactSteps'
+import { proposalsOf } from './proposalsOf'
+import { useArtifact } from './artifactContext'
 import Tabs from './Tabs'
 
 const NOTE = 'px-5 py-4 text-xs text-text-muted'
@@ -74,7 +78,16 @@ function Profile({ hash }: { hash: string }): React.JSX.Element {
 
 /** The panel body for a dataset: the views the card used to stack inline (DF3D.1). */
 function ArtifactDataset({ part }: { part: DatasetPart }): React.JSX.Element {
-  const [tab, setTab] = useState('dados')
+  const conversation = useActiveConversation()
+  const { proposalId } = useArtifact()
+  const messages = conversation?.messages
+  const proposals = useMemo(() => proposalsOf(messages ?? [], part.hash), [messages, part.hash])
+  // The one that was asked for, or the newest — the transcript is the index,
+  // so the tab carries no navigation of its own (DF3F.2).
+  const proposal =
+    proposals.find((candidate) => candidate.messageId === proposalId) ??
+    proposals[proposals.length - 1]
+  const [tab, setTab] = useState(proposalId === null ? 'dados' : 'passos')
 
   return (
     <Tabs
@@ -90,6 +103,21 @@ function ArtifactDataset({ part }: { part: DatasetPart }): React.JSX.Element {
           id: 'consulta',
           label: 'Consulta',
           render: () => <DatasetQueryPanel hash={part.hash} fill />
+        },
+        {
+          id: 'passos',
+          label: 'Passos',
+          render: () =>
+            proposal === undefined ? (
+              <p className={NOTE}>Nenhuma proposta ainda. Peça uma no cartão do arquivo.</p>
+            ) : (
+              <ArtifactSteps
+                key={proposal.messageId}
+                proposal={proposal}
+                hash={part.hash}
+                rowCount={part.rowCount}
+              />
+            )
         }
       ]}
     />

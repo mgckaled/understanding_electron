@@ -5,6 +5,9 @@ import type { ColumnProfile, DatasetPart } from '@shared/ipc'
 import { columnsToArrowBytes } from '@core/duckdb/arrow'
 import { installApiMock } from '@test/api-mock'
 import { createQueryClient } from '../../shared/queryClient'
+import ConversationsProvider from '../conversation/ConversationsProvider'
+import { ArtifactContext } from './artifactContext'
+import { fakeArtifactApi } from '@test/artifact-api'
 import ArtifactDataset from './ArtifactDataset'
 
 const PART: DatasetPart = {
@@ -43,7 +46,11 @@ function mount(): ReturnType<typeof installApiMock> {
   vi.mocked(api.dataset.profile).mockResolvedValue({ ok: true, value: PROFILE })
   render(
     <QueryClientProvider client={createQueryClient()}>
-      <ArtifactDataset part={PART} />
+      <ConversationsProvider>
+        <ArtifactContext value={fakeArtifactApi(null)}>
+          <ArtifactDataset part={PART} />
+        </ArtifactContext>
+      </ConversationsProvider>
     </QueryClientProvider>
   )
   return api
@@ -78,7 +85,11 @@ describe('ArtifactDataset', () => {
     })
     render(
       <QueryClientProvider client={createQueryClient()}>
-        <ArtifactDataset part={PART} />
+        <ConversationsProvider>
+          <ArtifactContext value={fakeArtifactApi(null)}>
+            <ArtifactDataset part={PART} />
+          </ArtifactContext>
+        </ConversationsProvider>
       </QueryClientProvider>
     )
 
@@ -90,7 +101,11 @@ describe('ArtifactDataset', () => {
     vi.mocked(api.dataset.query).mockResolvedValue({ ok: true, value: rows(0) })
     render(
       <QueryClientProvider client={createQueryClient()}>
-        <ArtifactDataset part={PART} />
+        <ConversationsProvider>
+          <ArtifactContext value={fakeArtifactApi(null)}>
+            <ArtifactDataset part={PART} />
+          </ArtifactContext>
+        </ConversationsProvider>
       </QueryClientProvider>
     )
 

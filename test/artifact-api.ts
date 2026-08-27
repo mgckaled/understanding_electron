@@ -25,6 +25,7 @@ export function fakeArtifactApi(
     width: DEFAULT_WIDTH,
     setWidth: vi.fn(),
     artifacts,
+    proposalId: null,
     toggle: vi.fn(),
     togglePanel: vi.fn(),
     close: vi.fn()
