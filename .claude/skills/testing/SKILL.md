@@ -98,6 +98,10 @@ Perseguir número em `renderer/` produz teste de amarração (verifica classe CS
 
 Dentro de `shared/`, nem tudo é lógica: um arquivo de só-constante (`APP_ID`) não tem o que testar além do valor em si — um teste trivial de igualdade é aceitável e barato de manter, não é o mesmo problema do teste de amarração do renderer (não quebra a cada mudança não relacionada). Já um schema Zod real (`argsSchema`) tem comportamento de verdade — validar/rejeitar payload — e merece teste que o exercite, não só que "a linha rodou".
 
+## O bundle do main tem um teste, e ele não é um teste
+
+`scripts/check-main-bundle.mjs` carrega `out/main/index.js` com `electron` esbulhado, no fim do `pnpm build`. Existe porque **os cinco níveis rodam o fonte sob ESM** e o bundle do main é **CJS com dependências externalizadas**: um pacote ESM-only chega lá como `{ default }` em vez da função, e o app morre ao carregar sem nenhum outro sinal. Mesma família do `asar list` — verificação do **artefato**, não do código. Diagnóstico em [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md) § *Pacote ESM-only chega ao bundle CJS*.
+
 ## `pnpm build` não roda teste; `check:fast` é o portão
 
 `build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição e o pré-commit chamam — um lugar para manter alinhado, não três configs espalhadas.

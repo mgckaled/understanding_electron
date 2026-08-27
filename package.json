@@ -20,12 +20,13 @@
     "check:fast": "pnpm run typecheck && pnpm run lint && pnpm run test",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
-    "build": "pnpm run typecheck && electron-vite build",
+    "build": "pnpm run typecheck && electron-vite build && pnpm run check:bundle",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "pnpm run build && electron-builder --dir",
     "build:win": "pnpm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "check:bundle": "node scripts/check-main-bundle.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.0",

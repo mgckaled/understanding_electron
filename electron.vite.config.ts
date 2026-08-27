@@ -1,11 +1,16 @@
 import { resolve } from 'node:path'
-import { defineConfig } from 'electron-vite'
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { aliases } from './config/aliases'
 
 export default defineConfig({
   main: {
+    // Dependencies are external by default, and for an ESM-only package that
+    // breaks: rollup emits `require(pkg)` and uses the namespace as the default
+    // export, so `strip-markdown` arrived as `{ default }` instead of the
+    // function. The remark family is ESM-only throughout, so it is bundled.
+    plugins: [externalizeDepsPlugin({ exclude: ['remark', 'strip-markdown'] })],
     resolve: {
       alias: aliases
     },

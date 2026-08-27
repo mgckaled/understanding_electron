@@ -48,3 +48,10 @@ desktop.ini
 # preferência de máquina — e, desde a config do MCP Context7, também guarda a
 # API key pessoal em "env" — e nunca viaja — docs/plan/implemented/08-automacao-e-registro.md
 .claude/settings.local.json
+.claude/images/
+
+# others
+descarte/
+
+# personal notes, drafts, and other non-shared content. Never in the repository.
+notes/

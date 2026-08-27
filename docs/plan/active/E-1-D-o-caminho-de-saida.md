@@ -86,6 +86,18 @@ O primitivo seria a camada superior, o posicionamento flutuante, a fila, o dispe
 
 Decidir fila e política de erro com um chamador seria chutar — a mesma armadilha que a DE1B.4 recusou para o `Tabs`. O **F-5** nasce com dois chamadores de verdade e **absorve** esta linha em vez de duplicá-la.
 
+### DE1D.9 — O bundle do `main` ganha uma checagem, porque nenhum teste o alcança
+
+Achado **ao vivo, pelo usuário**, depois de o plano estar escrito e os três passos verdes: o app morria ao carregar com *"Expected usable value but received an empty preset"*.
+
+O bundle do `main` é CJS com dependências externalizadas, e rollup emite `require("pacote")` usando o resultado **direto** como export padrão. Para um pacote **ESM-only**, o `require(esm)` do Node 24 devolve o *namespace* — `{ __esModule, default }` —, então o `strip-markdown` chegou como objeto em vez de função.
+
+⚠️ **A verificação prévia existia e mentiu.** A sonda foi `require('strip-markdown')` seguida de `s.default ?? s`, que imprime `function` **por causa do `?? s`** — exatamente o defeito, mascarado pelo próprio contorno.
+
+Conserto: `externalizeDepsPlugin({ exclude: ['remark', 'strip-markdown'] })` no bloco `main`, embutindo em vez de externalizar. Vale para a família `remark` inteira, que é ESM-only — e paga de novo no E-1-E.
+
+Garantia contra a volta: `scripts/check-main-bundle.mjs` carrega o bundle com `electron` esbulhado, no fim do `pnpm build`. **Provado por sabotagem**: revertendo a exclusão, ele reproduz a mensagem exata que o usuário viu e o build recusa.
+
 ### DE1D.8 — O que se exporta é o documento do editor, não o gravado
 
 O rodapé já tem o leitor do documento vivo (é o que a aba `Prévia` usa desde o E-1-C). Exportar lê dali, então **não há corrida** entre a gravação do `blur` e a exportação.
@@ -173,5 +185,6 @@ Seletor de formato, `⬇ Exportar`, `🗑 Apagar rascunho` com texto, e a linha 
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
-| 27/08/2026 | 1-3 | passos 1-3 concluídos; falta a prova ao vivo (passo 4) | **Uma verificação antes de escrever poupou um defeito de runtime:** o `remark` é ESM-only e o bundle do main é CJS com dependências externalizadas — funciona porque o Node 24 do Electron 42 traz `require(esm)` ligado por padrão. Testado no terminal, não suposto; teria falhado no Node 20. **O teste achou uma corrida que o plano não previu:** o nome sugerido vinha de `current.title`, o título **gravado**, que continua o de antes da edição até o blur completar — passou a ser derivado do documento vivo, então texto e nome saem da mesma fonte. **Sabotagem:** sem a distinção `file-in-use`, só o teste dela cai. **Duas armadilhas de escrita de arquivo pelo heredoc**, ambas pegas pelo lint: a classe de caracteres proibidos saiu incluindo espaço e hífen, e as barras invertidas dos caminhos do Windows viraram escape inválido. `check:fast`: 997 testes, 110 arquivos. |
+| 27/08/2026 | 1-3 + DE1D.9 | três passos verdes; **um defeito de runtime achado pelo usuário e consertado** | O app não carregava: pacote ESM-only chega ao bundle CJS do main como `{ default }`. **Minha verificação prévia existia e mentiu** — a sonda tinha `s.default ?? s`, que mascara exatamente o defeito. Conserto no bundler (embutir em vez de externalizar), 91ª armadilha, e uma checagem do artefato ligada ao `pnpm build` que reproduz a mensagem exata quando sabotada. |
+| 27/08/2026 | 1-3 | passos 1-3, antes do defeito acima | **Uma verificação antes de escrever poupou um defeito de runtime:** o `remark` é ESM-only e o bundle do main é CJS com dependências externalizadas — funciona porque o Node 24 do Electron 42 traz `require(esm)` ligado por padrão. Testado no terminal, não suposto; teria falhado no Node 20. **O teste achou uma corrida que o plano não previu:** o nome sugerido vinha de `current.title`, o título **gravado**, que continua o de antes da edição até o blur completar — passou a ser derivado do documento vivo, então texto e nome saem da mesma fonte. **Sabotagem:** sem a distinção `file-in-use`, só o teste dela cai. **Duas armadilhas de escrita de arquivo pelo heredoc**, ambas pegas pelo lint: a classe de caracteres proibidos saiu incluindo espaço e hífen, e as barras invertidas dos caminhos do Windows viraram escape inválido. `check:fast`: 997 testes, 110 arquivos. |
 | 27/08/2026 | — | plano escrito, ainda não executado | **A pesquisa contradisse o próprio `ESCOPO`:** "escrita atômica = temporário + rename" é suposição POSIX, e no Windows `rename` vira `MoveFileEx`, que honra modos de compartilhamento e falha com `EPERM`/`EACCES`/`EBUSY` — daí a repetição e a limpeza do temporário. **E achou uma mensagem errada esperando para acontecer:** o Windows devolve `EPERM` para rename travado, que `mapFsError` já traduz como "sem permissão", quando o certo é "feche o arquivo em outro programa". **Três decisões do usuário moldaram o corte:** `.txt` despido (o que traz o `remark` para cá e barateia o E-1-E para uma dependência só), a ordem dos botões no rodapé com ícone + texto, e adiar o Toast — que ele mesmo propôs virar trilha, e que virou **F-5** depois de eu argumentar que um primitivo desenhado dentro de um plano de feature sai moldado por um chamador só. |
