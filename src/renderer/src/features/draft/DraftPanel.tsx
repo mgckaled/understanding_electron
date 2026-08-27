@@ -1,10 +1,11 @@
-import { NotebookPen, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import Button from '../../shared/ui/Button/Button'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import SidePanel from '../../shared/ui/SidePanel/SidePanel'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { usePanel } from '../panel/panelContext'
 import { useDraft } from './draftContext'
+import DraftPicker from './DraftPicker'
 
 const READING = 'min-h-[0px] flex-1 overflow-y-auto p-7 select-text'
 
@@ -24,16 +25,7 @@ function DraftPanel(): React.JSX.Element | null {
       onClose={close}
       header={
         <>
-          <p className="flex min-w-[0px] items-center gap-3 text-sm font-medium text-text">
-            <NotebookPen
-              size={ICON_SIZE.md}
-              strokeWidth={ICON_STROKE}
-              className="flex-none text-text-muted"
-            />
-            <span className="min-w-[0px] overflow-hidden text-ellipsis whitespace-nowrap">
-              {current.title}
-            </span>
-          </p>
+          <DraftPicker current={current} />
           <Button
             variant="ghost"
             size="sm"

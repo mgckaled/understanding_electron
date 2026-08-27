@@ -1,4 +1,5 @@
 import { NotebookPen } from 'lucide-react'
+import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useDraft } from './draftContext'
 
@@ -6,22 +7,31 @@ import { useDraft } from './draftContext'
 // the user and a draft came from the conversation, and one number for both
 // would answer neither question.
 //
-// Not a button yet, and not a disabled one: there is no panel to open until
-// E-1-B, and a greyed control promises a capability that is not there — the
-// same reasoning ArtifactPicker uses for a list of one.
+// `aria-pressed`, not `aria-current`: this is a toggle, while a card's
+// `aria-current` claims something else ("I am the one on screen").
 function DraftCount(): React.JSX.Element | null {
-  const { drafts } = useDraft()
+  const { drafts, current, togglePanel } = useDraft()
 
+  // Absent, not disabled: a greyed button promises a capability this
+  // conversation does not have (DF3B.2).
   if (drafts.length === 0) return null
 
+  const open = current !== null
+
   return (
-    <span
-      className="flex flex-none items-center gap-2 px-3 font-ui text-sm text-text-muted"
-      title={`${drafts.length} rascunho${drafts.length === 1 ? '' : 's'} nesta conversa`}
+    <Button
+      variant="ghost"
+      size="sm"
+      className="flex-none"
+      onClick={(event) => togglePanel(event.currentTarget)}
+      aria-pressed={open}
+      aria-label={`${open ? 'Fechar' : 'Abrir'} rascunhos da conversa (${drafts.length})`}
     >
-      <NotebookPen size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-      {drafts.length}
-    </span>
+      <span className="flex items-center gap-2">
+        <NotebookPen size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+        {drafts.length}
+      </span>
+    </Button>
   )
 }
 
