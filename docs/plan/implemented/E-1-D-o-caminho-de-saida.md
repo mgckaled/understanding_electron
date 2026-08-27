@@ -183,6 +183,8 @@ Seletor de formato, `⬇ Exportar`, `🗑 Apagar rascunho` com texto, e a linha 
 
 ## Diário de execução
 
+✅ **Aceite observado pelo usuário em 27/08/2026.** As oito conferências do passo 4, todas certas — inclusive as duas que motivaram decisões: `.txt` sai despido com parágrafos separados, e exportar por cima de um arquivo aberto no Word diz *"aberto em outro programa"* e não *"sem permissão"*. **Plano concluído** — segue para o **E-1-E** (`.docx`), que herda o `remark` já embutido e fica com uma dependência só.
+
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
 | 27/08/2026 | 1-3 + DE1D.9 | três passos verdes; **um defeito de runtime achado pelo usuário e consertado** | O app não carregava: pacote ESM-only chega ao bundle CJS do main como `{ default }`. **Minha verificação prévia existia e mentiu** — a sonda tinha `s.default ?? s`, que mascara exatamente o defeito. Conserto no bundler (embutir em vez de externalizar), 91ª armadilha, e uma checagem do artefato ligada ao `pnpm build` que reproduz a mensagem exata quando sabotada. |

@@ -4,7 +4,7 @@
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os headings dos planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**294 linhas** em 27/08/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
+Levantamento mecânico (grep sobre os headings dos planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**303 linhas** em 27/08/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
 - **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, sem heading atômico (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
@@ -362,6 +362,15 @@ Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, a
 | E-1-C | [DE1C.7](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Editar retitula, e o título continua derivado |
 | E-1-C | [DE1C.8](plan/implemented/E-1-C-o-rascunho-se-edita.md) | O que o nível 2 alcança, e o que só a prova ao vivo alcança |
 | E-1-C | [DE1C.9](plan/implemented/E-1-C-o-rascunho-se-edita.md) | A prévia não ganha código |
+| E-1-D | [DE1D.1](plan/implemented/E-1-D-o-caminho-de-saida.md) | Um canal só, do diálogo à gravação |
+| E-1-D | [DE1D.2](plan/implemented/E-1-D-o-caminho-de-saida.md) | A escrita atômica ganha repetição, porque no Windows ela não é atômica |
+| E-1-D | [DE1D.3](plan/implemented/E-1-D-o-caminho-de-saida.md) | `file-in-use` é um `kind` novo, e a razão é o Windows, não a novidade da falha |
+| E-1-D | [DE1D.4](plan/implemented/E-1-D-o-caminho-de-saida.md) | O nome sugerido é saneado em `core/`, e o teste é a tabela do Windows |
+| E-1-D | [DE1D.5](plan/implemented/E-1-D-o-caminho-de-saida.md) | A última pasta é lembrada, e mora onde configuração de máquina já mora |
+| E-1-D | [DE1D.6](plan/implemented/E-1-D-o-caminho-de-saida.md) | `.txt` é markdown despido, e o remark chega aqui |
+| E-1-D | [DE1D.7](plan/implemented/E-1-D-o-caminho-de-saida.md) | A confirmação é uma linha `role="status"` no rodapé; o Toast vira **F-5** |
+| E-1-D | [DE1D.8](plan/implemented/E-1-D-o-caminho-de-saida.md) | O que se exporta é o documento do editor, não o gravado |
+| E-1-D | [DE1D.9](plan/implemented/E-1-D-o-caminho-de-saida.md) | O bundle do `main` ganha uma checagem, porque nenhum teste o alcança |
 | 09 (ativo) | [D9.1](plan/active/09-camada-de-ia.md) | A chamada de LLM roda no main, não no `utilityProcess` |
 | 09 (ativo) | [D9.2](plan/active/09-camada-de-ia.md) | Uma fronteira de rede, injetável, exatamente como o `embed_fn` |
 | 09 (ativo) | [D9.3](plan/active/09-camada-de-ia.md) | Nuvem é opt-in, e o gate é o mesmo formato para os três |
