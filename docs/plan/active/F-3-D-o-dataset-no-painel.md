@@ -144,21 +144,23 @@ O substituto para dado tabular é **exportar resultado**, na trilha E — que co
 
 Nível 2: o clipe conta o CSV, o seletor o lista com ícone próprio, e o cabeçalho de um dataset não desenha o ⧉ enquanto o de um documento continua desenhando. **A suíte de `artifactsOf` é o contrato** — o caso que hoje afirma "dataset devolve null" inverte, e é a prova de que a DF3B.7 se cumpriu.
 
-### 2. O `tablist`, a aba Dados e o rodapé (DF3D.1–DF3D.5)
+### 2. O `tablist`, as abas Dados e Perfil, e o rodapé (DF3D.1–DF3D.5)
 
-O `tablist` local, a aba **Dados** servindo o que `DatasetPreview` já serve, o rodapé com tamanho de página funcional e navegação desabilitada, e o alinhamento numérico em `DatasetTable`.
+O `tablist` local, a aba **Dados** servindo o que `DatasetPreview` já serve, a aba **Perfil** sem o _disclosure_ que o cartão tinha, o rodapé com tamanho de página funcional e navegação desabilitada, e o alinhamento numérico em `DatasetTable`.
 
-Nível 2: setas navegam entre abas, `aria-selected` acompanha, só um `tabpanel` visível; trocar o tamanho de página refaz a consulta com o `LIMIT` novo; as setas estão presentes **e** desabilitadas.
+Nível 2: setas navegam entre abas com volta, `Home`/`End`, `aria-selected` acompanha, só um `tabpanel` no DOM; trocar o tamanho de página refaz a consulta com o `LIMIT` novo; as setas estão presentes **e** desabilitadas.
 
-### 3. A aba Perfil, e o cartão encolhe (DF3D.6)
+### 3. A aba Consulta (DF3D.7, DF3D.8)
 
-`DatasetProfile` perde o _disclosure_ e vira conteúdo de aba. `DatasetCard` perde as três tabelas e ganha **Abrir**, mantendo "Propor passos".
+Os cinco itens. Nível 2 alcança quatro: `Ctrl+Enter` dispara, o erro não limpa a tabela anterior, a barra de status traz linhas e colunas, e o editor cresce. **O que jsdom não julga:** a opacidade durante a reexecução e o "não piscar" — nível 4 e olho.
+
+### 4. O cartão encolhe (DF3D.6)
+
+`DatasetCard` perde as três superfícies e ganha **Abrir**, mantendo "Propor passos". `DatasetProfile` (a versão com _disclosure_) é apagado.
 
 Nível 2: a suíte do cartão passa de "expande a pré-visualização" para "chama `toggle` com o `ref` certo" — a mesma reescrita que `DocumentCard` e `ImageCard` sofreram no F-3-A.
 
-### 4. A aba Consulta (DF3D.7, DF3D.8)
-
-Os cinco itens. Nível 2 alcança quatro: `Ctrl+Enter` dispara, o erro não limpa a tabela anterior, a barra de status traz linhas e colunas, e o editor cresce. **O que jsdom não julga:** a opacidade durante a reexecução e o "não piscar" — nível 4 e olho.
+⚠️ **A ordem 3↔4 é o inverso do que este plano escreveu primeiro.** Encolher o cartão antes de a aba Consulta existir deixaria um commit inteiro sem nenhuma superfície capaz de rodar SQL. O painel ganha tudo antes de a bolha perder qualquer coisa.
 
 ### 5. Prova ao vivo
 

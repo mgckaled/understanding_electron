@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
-import DatasetPreview from '../attachment/DatasetPreview'
+import ArtifactDataset from './ArtifactDataset'
 import type { ArtifactRef } from './artifactContext'
 
 const EMPTY = 'text-reading text-text-muted'
+
+// Reading density and one scrolling surface (D13.5). A dataset does NOT use
+// it: its tab strip and pager stay put while only the rows scroll, so it takes
+// the whole region and divides it itself.
+const READING = 'min-h-[0px] flex-1 overflow-y-auto p-7 select-text'
+
+function Reading({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <div className={READING}>{children}</div>
+}
 
 function ImageBody({ hash, fileName }: { hash: string; fileName: string }): React.JSX.Element {
   const [failed, setFailed] = useState(false)
@@ -28,15 +37,30 @@ function ArtifactBody({ artifact }: { artifact: ArtifactRef }): React.JSX.Elemen
     case 'document': {
       const { text, format } = artifact.part
       if (text.trim() === '') {
-        return <p className={EMPTY}>Este arquivo não tem texto extraído.</p>
+        return (
+          <Reading>
+            <p className={EMPTY}>Este arquivo não tem texto extraído.</p>
+          </Reading>
+        )
       }
-      if (format === 'md') return <MarkdownMessage text={text} />
-      return <p className="text-reading leading-normal whitespace-pre-wrap text-text">{text}</p>
+      return (
+        <Reading>
+          {format === 'md' ? (
+            <MarkdownMessage text={text} />
+          ) : (
+            <p className="text-reading leading-normal whitespace-pre-wrap text-text">{text}</p>
+          )}
+        </Reading>
+      )
     }
     case 'image':
-      return <ImageBody hash={artifact.part.hash} fileName={artifact.part.fileName} />
+      return (
+        <Reading>
+          <ImageBody hash={artifact.part.hash} fileName={artifact.part.fileName} />
+        </Reading>
+      )
     case 'dataset':
-      return <DatasetPreview part={artifact.part} />
+      return <ArtifactDataset part={artifact.part} />
   }
 }
 

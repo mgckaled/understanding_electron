@@ -100,9 +100,9 @@ function ArtifactPanel(): React.JSX.Element | null {
         </div>
       </header>
 
-      {/* Reading density, and the panel's own scrolling surface — the header
-          stays put and the page still never scrolls (D13.5). */}
-      <div className="min-h-[0px] flex-1 overflow-y-auto p-7 select-text">
+      {/* The region below the header, not a scrolling surface: which part of a
+          body scrolls depends on the body, and ArtifactBody decides it. */}
+      <div className="flex min-h-[0px] flex-1 flex-col">
         <ArtifactBody artifact={current} />
       </div>
     </aside>
