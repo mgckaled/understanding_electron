@@ -4,6 +4,10 @@ export type AppError =
   | { kind: 'not-found'; path: string }
   | { kind: 'permission'; path: string }
   | { kind: 'blocked'; reason: string }
+  // Distinct from `permission` because Windows conflates the two: a rename onto
+  // a destination held by another program reports EPERM, which mapFsError reads
+  // as a permission problem and would explain wrongly (DE1D.3).
+  | { kind: 'file-in-use'; path: string }
   | { kind: 'cancelled' }
   | { kind: 'timeout'; afterMs: number }
   | { kind: 'unavailable'; service: string; hint: string }

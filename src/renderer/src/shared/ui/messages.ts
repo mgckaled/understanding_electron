@@ -12,6 +12,7 @@ const MESSAGES: Record<ErrorKind, string> = {
   'not-found': 'Arquivo não encontrado.',
   permission: 'Sem permissão para acessar este arquivo.',
   blocked: 'Operação bloqueada.',
+  'file-in-use': 'Este arquivo está aberto em outro programa. Feche-o e tente de novo.',
   cancelled: 'Operação cancelada.',
   timeout: 'A operação demorou demais e foi interrompida.',
   unavailable: 'Serviço indisponível no momento.',
