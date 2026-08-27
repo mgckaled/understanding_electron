@@ -304,6 +304,14 @@ Seis screenshots nomeadas por estado, usadas como referência de QA do DS-4 — 
 ### Um script de verificação ao vivo não está isento da própria armadilha que ele existe para evitar (ago/2026)
 Na QA de fechamento do DS-4, um script Playwright descartável parecia mostrar o tema preso no claro — na verdade o script não tinha limpado a emulação de `prefers-color-scheme` do próprio Playwright (padrão `'light'`, vencendo `nativeTheme.themeSource`), a mesma ressalva que a skill `testing` já registrava, só não aplicada a este script improvisado. Conserto: `page.emulateMedia({ colorScheme: null })` antes de ler qualquer coisa do renderer. Um script "verificado ao vivo" fora do spec não herda a disciplina que o spec segue por convenção. [`plan/implemented/DS-4-acabamento-final.md`](plan/implemented/DS-4-acabamento-final.md)
 
+### `size-4` são 8px, não 16 — a escala numérica é a do projeto, não a grade do Tailwind (ago/2026)
+Escrito no F-3-F para uma caixa de marcação, `size-4` gerou `width: var(--space-4)` — **8px**, metade do esperado. 
+O projeto desliga `--spacing-*: initial` e remapeia os degraus nomeados para a própria escala (`--space-1: 2px`, `2: 4px`, `3: 6px`, `4: 8px`, `5: 12px`, `6: 16px`, `7: 24px`, `8: 32px`, `9: 48px`), 
+então **o número no utilitário é o índice de um degrau, não múltiplo de 4px**. Quem vem de Tailwind padrão lê `p-4` como 16px e recebe 8. 
+É o **oposto** da armadilha do degrau `0` logo abaixo: ali não sai CSS nenhum e o alarme é a ausência total; aqui sai CSS válido com o valor errado, 
+e nada — nem lint, nem typecheck, nem jsdom — tem como notar. Conserto: consultar a escala, e o único juiz continua sendo o `grep` no CSS construído. 
+[`src/renderer/src/shared/ui/tokens.css`](../src/renderer/src/shared/ui/tokens.css)
+
 ### `min-w-0` não gera CSS quando a base `--spacing` do Tailwind está desligada — falha silenciosa, e é a regressão da D13.5 (ago/2026)
 Medido no DS-2 via `grep` no CSS de produção: `min-w-0`/`min-h-0` não emitiam regra nenhuma, porque o projeto desliga `--spacing-*: initial` e mapeia só os degraus nomeados 1-9, deixando o v4 sem valor de tema para `<prop>-0`. Dano real: regressão da rolagem estrutural da fase 13 (bloco de código largo empurra a coluna para fora da tela), invisível a qualquer teste de nível 2 (jsdom não faz layout). Conserto: valor arbitrário `min-w-[0px]`, que ignora o tema. O único juiz do que o v4 gera é o `grep` no CSS construído, não a documentação. [`plan/implemented/DS-2-migracao-da-casca-e-features.md`](plan/implemented/DS-2-migracao-da-casca-e-features.md)
 

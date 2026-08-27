@@ -282,6 +282,14 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | F-3-E | [DF3E.5](plan/implemented/F-3-E-copiar-imagem.md) | Documento continua copiando no renderer; `copyArtifact` vira despacho por `kind` |
 | F-3-E | [DF3E.6](plan/implemented/F-3-E-copiar-imagem.md) | O cartão da transcrição não ganha ⧉ — o F-3 inteiro é sobre o painel |
 | F-3-E | [DF3E.7](plan/implemented/F-3-E-copiar-imagem.md) | A ativação transitória fica medida ao vivo; a saída documentada é `Promise<Blob>` no `ClipboardItem` |
+| F-3-F | [DF3F.1](plan/implemented/F-3-F-a-aba-de-passos.md) | A proposta continua sendo mensagem; o cartão vira linha — some da tela só quando é apagada de verdade |
+| F-3-F | [DF3F.2](plan/implemented/F-3-F-a-aba-de-passos.md) | A aba mostra a proposta que foi aberta, e a transcrição é o índice — nenhuma navegação dentro da aba |
+| F-3-F | [DF3F.3](plan/implemented/F-3-F-a-aba-de-passos.md) | Passo se desliga e fica riscado na lista; só a proposta inteira se apaga |
+| F-3-F | [DF3F.4](plan/implemented/F-3-F-a-aba-de-passos.md) | `Ver resultado`, não `Aplicar` — nada é gravado, e a trilha E é que terá um botão que grava |
+| F-3-F | [DF3F.5](plan/implemented/F-3-F-a-aba-de-passos.md) | O antes-e-depois sobe para o topo; mostrar contagem de linhas não é alarmar com ela (D19.6 intacta) |
+| F-3-F | [DF3F.6](plan/implemented/F-3-F-a-aba-de-passos.md) | Apagar no painel apaga a mensagem, e a linha some da conversa junto — uma ação, dois lugares |
+| F-3-F | [DF3F.7](plan/implemented/F-3-F-a-aba-de-passos.md) | Passos ligados e resultado vivem em `ArtifactDataset`: sobrevivem à troca de aba, morrem com o painel |
+| F-3-F | [DF3F.8](plan/implemented/F-3-F-a-aba-de-passos.md) | Caixa de marcação, não `Switch` — a APG reserva o switch para ação binária, não para item de lista |
 
 ---
 

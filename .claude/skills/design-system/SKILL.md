@@ -104,7 +104,7 @@ Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atr
 
 ## Tailwind v4 sobre `tokens.css` — CSS Modules só por limite físico
 
-`src/renderer/src/assets/tailwind.css` declara `@theme inline` mapeando cada token semântico de `tokens.css` para uma variável Tailwind (`--color-*`), e `@utility` para o que a paleta padrão não cobre (`bg-accent`, `bg-danger`, `bg-warn`, `bg-ok`, mais as de animação). Componente escreve `className="bg-surface text-accent-text"`, nunca `var()` direto.
+`src/renderer/src/assets/tailwind.css` declara `@theme inline` mapeando cada token semântico de `tokens.css` para uma variável Tailwind (`--color-*`), e `@utility` para o que a paleta padrão não cobre (`bg-accent`, `bg-danger`, `bg-warn`, `bg-ok`, `accent-accent`, mais as de animação). ⚠️ **Toda propriedade de cor precisa do seu próprio `@utility`** — `accent-accent` foi escrito no F-3-F e gerava **regra nenhuma** até ser declarado, deixando a caixa de marcação com o azul do sistema. Verificar no CSS construído, nunca no fonte. Componente escreve `className="bg-surface text-accent-text"`, nunca `var()` direto.
 
 ⚠️ **`tokens.css` nunca entra num `@layer`** (DS1.5). Violá-lo some com toda a cor do app, e é o único aviso que sobrevive como linha solta no fonte — o resto da narrativa de `base.css`/`tailwind.css` está em [`reference.md`](reference.md).
 

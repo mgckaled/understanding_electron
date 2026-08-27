@@ -1,6 +1,6 @@
 # F-3-F — A aba Passos: a bolha vira linha, e o pipeline ganha lugar
 
-> Último plano do painel de artefato, depois do [F-3-A](../implemented/F-3-A-painel-de-artefato.md), [F-3-B](../implemented/F-3-B-como-se-chega-ao-painel.md), [F-3-C](../implemented/F-3-C-o-painel-como-objeto-de-desktop.md), [F-3-D](../implemented/F-3-D-o-dataset-no-painel.md) e [F-3-E](../implemented/F-3-E-copiar-imagem.md). Fecha o corte.
+> Último plano do painel de artefato, depois do [F-3-A](F-3-A-painel-de-artefato.md), [F-3-B](F-3-B-como-se-chega-ao-painel.md), [F-3-C](F-3-C-o-painel-como-objeto-de-desktop.md), [F-3-D](F-3-D-o-dataset-no-painel.md) e [F-3-E](F-3-E-copiar-imagem.md). Fecha o corte.
 
 **Origem:** a **DF3D.9** adiou esta aba com um motivo nomeado — a proposta é uma **mensagem**, mas "o pipeline aplicado a este dataset" não existia como estado. O usuário decidiu o recorte em 27/08: o cartão da conversa vira uma **linha** que abre o painel; passo se **desliga** em vez de ser removido; apagar a proposta no painel apaga a linha na conversa; e `Aplicar` vira **`Ver resultado`**.
 
@@ -140,4 +140,16 @@ Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. R
 
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 27/08/2026 | 1-4 | passos de código concluídos; **passo 5 (prova ao vivo) pendente com o usuário** | Os passos 1-3 saíram num commit só: a lixeira já vinha escrita no componente, e separá-la seria um commit só de teste. **Duas falhas silenciosas achadas no CSS construído**, nenhuma visível no fonte: `accent-accent` não gerava regra (cor precisa de `@utility`) e `size-4` são 8px, porque a escala numérica é a do projeto — armadilha nova, registrada. **Conservação pegou um erro do F-3-D de carona:** três comentários citavam `DatasetPreview`, apagado lá e não corrigido na hora. `check:fast`: 912 testes, 105 arquivos. |
 | 27/08/2026 | — | plano escrito, ainda não executado | Recorte decidido com o usuário em quatro perguntas, todas respondidas por ele. A pesquisa (Context7 + web) mudou **duas** coisas antes de existir código: o OpenRefine deu o precedente para desligar-em-vez-de-apagar (passo desfeito fica cinza, religa com um clique), e a APG contradisse a sugestão original de usar o primitivo `Switch` — item numa lista pede caixa de marcação. Achados no código: `dataset:transform` **não grava nada** (o que condenou o nome `Aplicar`), o antes/depois já é calculado e descartado, e `proposalKind` é gravado e nunca lido. |
+
+**O que este plano deixou fora dele** — escalonado na conclusão:
+
+| Achado | Dono |
+|---|---|
+| `size-4` são 8px: a escala numérica é a do projeto, não a grade de 4px do Tailwind | [`ARMADILHAS.md`](../../ARMADILHAS.md) (88 entradas) |
+| Propriedade de cor precisa do próprio `@utility`, senão não gera regra | skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) |
+| Os consumidores de `DatasetTable`/`formatCell` mudaram de nome duas vezes; a skill agora descreve o papel, não o arquivo | skill [`data`](../../../.claude/skills/data/SKILL.md) |
+| Decisões DF3F.1–DF3F.8 | [`DECISOES.md`](../../DECISOES.md) |
+
+⚠️ **Aceite não observado.** O passo 5 não foi executado, por decisão do usuário nesta sessão: pedir uma proposta de verdade, desligar um passo, ver o resultado mudar, religar, e apagar a proposta conferindo que a linha some da conversa. Os 912 testes provam a decisão; a caixa de marcação com a cor certa e o riscado do passo desligado só o olho julga.
