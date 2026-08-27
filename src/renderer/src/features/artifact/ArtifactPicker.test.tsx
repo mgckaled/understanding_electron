@@ -39,8 +39,10 @@ describe('ArtifactPicker', () => {
   it('is a plain title, not a control, when there is nothing to switch to', () => {
     mount([DOC_REF], DOC_REF)
 
-    expect(screen.getByRole('button')).toBeDisabled()
-    expect(screen.getByRole('button')).not.toHaveAttribute('aria-haspopup')
+    // Not a disabled control either: a box with a chevron that never opens is
+    // an affordance that lies.
+    expect(screen.queryByRole('button', { hidden: true })).toBeNull()
+    expect(screen.getByText('notas.md')).toBeVisible()
   })
 
   it('becomes a trigger once the conversation has a second artifact', async () => {

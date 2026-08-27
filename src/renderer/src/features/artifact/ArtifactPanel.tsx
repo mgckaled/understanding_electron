@@ -69,34 +69,36 @@ function ArtifactPanel(): React.JSX.Element | null {
           eye connects the two without having to think about it. */}
       <header className="flex flex-none items-center gap-3 border-b border-border px-5 py-4">
         <ArtifactPicker current={current} />
-        {/* Absent, not disabled, for an image: a greyed button promises a
+        <div className="ml-auto flex flex-none items-center gap-1">
+          {/* Absent, not disabled, for an image: a greyed button promises a
             capability that is not coming back on its own (DF3A.7). */}
-        {canCopy(current) && (
+          {canCopy(current) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              shape="square"
+              className="flex-none"
+              onClick={() => void handleCopy()}
+              aria-label={copied ? 'Copiado' : 'Copiar'}
+            >
+              {copied ? (
+                <Check size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} className="text-ok-text" />
+              ) : (
+                <Copy size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+              )}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
             shape="square"
             className="flex-none"
-            onClick={() => void handleCopy()}
-            aria-label={copied ? 'Copiado' : 'Copiar'}
+            onClick={close}
+            aria-label="Fechar painel"
           >
-            {copied ? (
-              <Check size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} className="text-ok-text" />
-            ) : (
-              <Copy size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-            )}
+            <X size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          shape="square"
-          className="flex-none"
-          onClick={close}
-          aria-label="Fechar painel"
-        >
-          <X size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-        </Button>
+        </div>
       </header>
 
       {/* Reading density, and the panel's own scrolling surface — the header
