@@ -68,6 +68,35 @@ describe('ArtifactDataset', () => {
     expect(api.dataset.profile).toHaveBeenCalledWith('h1')
   })
 
+  // Inherited from DatasetPreview, which this replaced: never a blank surface,
+  // because a silent gap reads as the panel breaking rather than loading.
+  it('says why there is no table instead of showing nothing', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.query).mockResolvedValue({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'Binder Error' }
+    })
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <ArtifactDataset part={PART} />
+      </QueryClientProvider>
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Binder Error')
+  })
+
+  it('says so when the file has no data row', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.query).mockResolvedValue({ ok: true, value: rows(0) })
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <ArtifactDataset part={PART} />
+      </QueryClientProvider>
+    )
+
+    expect(await screen.findByText('Arquivo sem linhas de dado.')).toBeVisible()
+  })
+
   it('carries the SQL tool as its third tab', async () => {
     mount()
     await screen.findByRole('table')

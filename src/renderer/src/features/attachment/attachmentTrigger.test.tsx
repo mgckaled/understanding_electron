@@ -1,8 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { DocumentPart, ImagePart } from '@shared/ipc'
+import { QueryClientProvider } from '@tanstack/react-query'
+import type { DatasetPart, DocumentPart, ImagePart } from '@shared/ipc'
 import { ArtifactContext, type ArtifactRef } from '../artifact/artifactContext'
 import { fakeArtifactApi } from '@test/artifact-api'
+import { installApiMock } from '@test/api-mock'
+import { createQueryClient } from '../../shared/queryClient'
+import ConversationsProvider from '../conversation/ConversationsProvider'
+import DatasetCard from './DatasetCard'
 import DocumentCard from './DocumentCard'
 import ImageCard from './ImageCard'
 
@@ -19,8 +24,20 @@ const IMG: ImagePart = {
   fileName: 'grafico.png',
   mimeType: 'image/png'
 }
+const DATA: DatasetPart = {
+  kind: 'dataset',
+  hash: 'h-csv',
+  fileName: 'clientes.csv',
+  format: 'delimited',
+  delimiter: ',',
+  columns: ['id', 'nome'],
+  rowCount: 10
+}
 
-function mount(node: React.JSX.Element, current: ArtifactRef | null = null): ReturnType<typeof fakeArtifactApi> {
+function mount(
+  node: React.JSX.Element,
+  current: ArtifactRef | null = null
+): ReturnType<typeof fakeArtifactApi> {
   const api = fakeArtifactApi(current)
   render(<ArtifactContext value={api}>{node}</ArtifactContext>)
   return api
@@ -63,5 +80,29 @@ describe('os cartões de anexo como gatilho do painel (DF3A.6)', () => {
     mount(<DocumentCard part={DOC} />, { kind: 'document', id: 'h-doc', part: DOC })
 
     expect(screen.queryByText('conteudo')).toBeNull()
+  })
+
+  // The dataset joins two plans later (DF3D.6), and carries one thing the
+  // other two do not: a request aimed at the model, which stays in the
+  // transcript because its answer arrives there.
+  it('hands the dataset over too, keeping Propor passos on the card', async () => {
+    installApiMock()
+    const api = fakeArtifactApi(null)
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <ConversationsProvider>
+          <ArtifactContext value={api}>
+            <DatasetCard part={DATA} />
+          </ArtifactContext>
+        </ConversationsProvider>
+      </QueryClientProvider>
+    )
+    const trigger = screen.getByRole('button', { name: /clientes\.csv/ })
+
+    await userEvent.click(trigger)
+
+    expect(api.toggle).toHaveBeenCalledWith({ kind: 'dataset', id: 'h-csv', part: DATA }, trigger)
+    expect(screen.getByRole('button', { name: 'Propor passos' })).toBeVisible()
+    expect(screen.queryByRole('table')).toBeNull()
   })
 })
