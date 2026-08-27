@@ -1,0 +1,20 @@
+/*
+ * CSS Modules because @starting-style needs a rule, not a class — the same
+ * platform limit that keeps Dialog and Popover here. Fade, duration and why
+ * the exit state exists at all: DF3C.1.
+ */
+
+.panel {
+  opacity: 1;
+  transition: opacity var(--duration-base) ease;
+}
+
+@starting-style {
+  .panel {
+    opacity: 0;
+  }
+}
+
+.panel[data-closing] {
+  opacity: 0;
+}

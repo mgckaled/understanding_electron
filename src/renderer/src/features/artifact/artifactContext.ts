@@ -18,6 +18,8 @@ export type ArtifactRef =
 
 export type ArtifactApi = {
   current: ArtifactRef | null
+  /** True while the panel is fading out and still mounted (DF3C.1). */
+  closing: boolean
   /**
    * Every artifact this conversation can open, oldest first.
    *

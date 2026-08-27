@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, Copy, X } from 'lucide-react'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
+import styles from './ArtifactPanel.module.css'
 import ArtifactBody from './ArtifactBody'
 import ArtifactPicker from './ArtifactPicker'
 import { useArtifact } from './artifactContext'
@@ -26,7 +27,7 @@ const DEFAULT_WIDTH = '34rem'
 const COPIED_MS = 1200
 
 function ArtifactPanel(): React.JSX.Element | null {
-  const { current, close } = useArtifact()
+  const { current, closing, close } = useArtifact()
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const region = useRef<HTMLElement>(null)
@@ -61,7 +62,8 @@ function ArtifactPanel(): React.JSX.Element | null {
       onKeyDown={(event) => {
         if (event.key === 'Escape') close()
       }}
-      className="flex h-full flex-col overflow-hidden border-l border-border bg-surface outline-none"
+      className={`${styles.panel} flex h-full flex-col overflow-hidden border-l border-border bg-surface outline-none`}
+      data-closing={closing ? 'true' : undefined}
       style={{ '--artifact-width': DEFAULT_WIDTH, width: WIDTH } as React.CSSProperties}
       aria-label="Anexo aberto"
     >

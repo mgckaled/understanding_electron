@@ -18,5 +18,12 @@ export function fakeArtifactApi(
   current: ArtifactRef | null,
   artifacts: ArtifactRef[] = current === null ? [] : [current]
 ): ArtifactApi {
-  return { current, artifacts, toggle: vi.fn(), togglePanel: vi.fn(), close: vi.fn() }
+  return {
+    current,
+    closing: false,
+    artifacts,
+    toggle: vi.fn(),
+    togglePanel: vi.fn(),
+    close: vi.fn()
+  }
 }

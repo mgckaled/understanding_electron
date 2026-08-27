@@ -3,6 +3,10 @@ import { useActiveConversation, useConversations } from '../conversation/convers
 import { ArtifactContext, type ArtifactRef } from './artifactContext'
 import { artifactsOf } from './artifactsOf'
 
+// Mirrors --duration-base: the unmount is scheduled in JS, and CSS cannot
+// delay it (DF3C.1).
+const FADE_MS = 200
+
 function isTyping(element: HTMLElement): boolean {
   return element.isContentEditable || element.tagName === 'TEXTAREA' || element.tagName === 'INPUT'
 }
@@ -26,16 +30,43 @@ function ArtifactProvider({ children }: { children: ReactNode }): React.JSX.Elem
   // Focus goes back where it came from, or keyboard navigation opens the panel
   // and lands nowhere. Cleared after use so a later close does not steal focus
   // from wherever the user has moved on to.
-  const close = useCallback(() => {
-    setCurrent(null)
-    trigger.current?.focus()
-    trigger.current = null
+  const [closing, setClosing] = useState(false)
+  const fade = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const cancelFade = useCallback(() => {
+    if (fade.current !== null) clearTimeout(fade.current)
+    fade.current = null
+    setClosing(false)
   }, [])
 
-  const toggle = useCallback((ref: ArtifactRef, opener: HTMLElement | null) => {
-    trigger.current = opener
-    setCurrent((open) => (open !== null && open.id === ref.id ? null : ref))
+  useEffect(() => () => (fade.current === null ? undefined : clearTimeout(fade.current)), [])
+
+  const close = useCallback(() => {
+    // Before the fade ends: 200ms of focus on a leaving element is a lost Tab.
+    trigger.current?.focus()
+    trigger.current = null
+    setClosing(true)
+    if (fade.current !== null) clearTimeout(fade.current)
+    fade.current = setTimeout(() => {
+      fade.current = null
+      setClosing(false)
+      setCurrent(null)
+    }, FADE_MS)
   }, [])
+
+  const toggle = useCallback(
+    (ref: ArtifactRef, opener: HTMLElement | null) => {
+      // While closing, the same artifact reopens instead of toggling shut.
+      if (current !== null && current.id === ref.id && !closing) {
+        close()
+        return
+      }
+      cancelFade()
+      trigger.current = opener
+      setCurrent(ref)
+    },
+    [current, closing, close, cancelFade]
+  )
 
   // A different conversation is a different set of artifacts, and the panel is
   // not a destination that survives navigation. Adjusted DURING render, not in
@@ -47,7 +78,9 @@ function ArtifactProvider({ children }: { children: ReactNode }): React.JSX.Elem
   const [seenConversation, setSeenConversation] = useState(activeId)
   if (seenConversation !== activeId) {
     setSeenConversation(activeId)
+    // No fade: navigation is not a close.
     setCurrent(null)
+    setClosing(false)
   }
 
   const togglePanel = useCallback(
@@ -76,8 +109,8 @@ function ArtifactProvider({ children }: { children: ReactNode }): React.JSX.Elem
   }, [togglePanel])
 
   const value = useMemo(
-    () => ({ current, artifacts, toggle, togglePanel, close }),
-    [current, artifacts, toggle, togglePanel, close]
+    () => ({ current, closing, artifacts, toggle, togglePanel, close }),
+    [current, closing, artifacts, toggle, togglePanel, close]
   )
 
   return <ArtifactContext value={value}>{children}</ArtifactContext>

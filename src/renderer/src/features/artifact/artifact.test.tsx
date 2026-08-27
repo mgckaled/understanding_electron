@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { DocumentPart, ImagePart } from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
@@ -74,6 +74,10 @@ function harness(): React.JSX.Element {
 // by role alone matched both in the real app while passing here (found live).
 const PANEL = 'Anexo aberto'
 
+// Not imported from the provider: a test that reads the constant it checks
+// cannot notice it changing.
+const FADE_MS = 200
+
 describe('ArtifactProvider', () => {
   it('opens the panel for the clicked artifact', async () => {
     mount()
@@ -92,7 +96,37 @@ describe('ArtifactProvider', () => {
     await userEvent.click(trigger)
     await userEvent.click(trigger)
 
-    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull())
+  })
+
+  it('stays mounted while it fades, and leaves the DOM only after (DF3C.1)', async () => {
+    mount()
+    const trigger = screen.getByRole('button', { name: 'abrir doc' })
+    await userEvent.click(trigger)
+
+    await userEvent.click(trigger)
+
+    expect(screen.getByRole('complementary', { name: PANEL })).toHaveAttribute(
+      'data-closing',
+      'true'
+    )
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull())
+  })
+
+  it('cancels a pending fade when the panel is asked for again', async () => {
+    mount()
+    const trigger = screen.getByRole('button', { name: 'abrir doc' })
+    await userEvent.click(trigger)
+    await userEvent.click(trigger)
+
+    await userEvent.click(trigger)
+
+    // Waiting past the fade IS the assertion: a stray timer only closes the
+    // panel later, so an immediate check passes against the bug.
+    await new Promise((resolve) => setTimeout(resolve, FADE_MS + 100))
+    const panel = screen.getByRole('complementary', { name: PANEL })
+    expect(panel).toBeVisible()
+    expect(panel).not.toHaveAttribute('data-closing')
   })
 
   it('swaps to the other artifact without closing in between', async () => {
@@ -117,8 +151,9 @@ describe('ArtifactProvider', () => {
 
     await userEvent.keyboard('{Escape}')
 
-    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
+    // Synchronous on purpose: focus comes back before the fade ends (DF3C.1).
     expect(trigger).toHaveFocus()
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull())
   })
 
   it('opens the newest artifact, not the first, when nothing is open', async () => {
@@ -144,7 +179,7 @@ describe('ArtifactProvider', () => {
 
     await userEvent.keyboard('{Control>}b{/Control}')
 
-    expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull()
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: PANEL })).toBeNull())
   })
 
   it('never fires while the user is typing', async () => {
