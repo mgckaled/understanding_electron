@@ -10,6 +10,7 @@ import { usePanel } from '../panel/panelContext'
 import { useDraft } from './draftContext'
 import DraftPicker from './DraftPicker'
 import DraftEditor from './DraftEditor'
+import DraftFooter from './DraftFooter'
 
 const READING = 'min-h-[0px] flex-1 overflow-y-auto p-7 select-text'
 
@@ -86,21 +87,10 @@ function DraftPanel(): React.JSX.Element | null {
         keepMounted
       />
 
-      {/* The bar of what happens to this draft. Discard sits at the far end
-          from where `Exportar` lands in E-1-D, and further still from the
-          header's close (DE1B.2). */}
-      <footer className="flex flex-none items-center border-t border-border px-5 py-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          shape="square"
-          className="flex-none"
-          onClick={() => setConfirming(true)}
-          aria-label="Excluir rascunho"
-        >
-          <Trash2 className="text-danger-text" size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-        </Button>
-      </footer>
+      <DraftFooter
+        readText={() => read.current()}
+        onDelete={() => setConfirming(true)}
+      />
 
       <Dialog
         open={confirming}

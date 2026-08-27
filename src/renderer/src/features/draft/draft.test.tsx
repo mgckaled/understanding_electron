@@ -258,7 +258,7 @@ describe('excluir um rascunho', () => {
   }
 
   async function confirmDelete(): Promise<void> {
-    await userEvent.click(screen.getByRole('button', { name: 'Excluir rascunho' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Apagar rascunho' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Excluir', hidden: true }))
   }
 
@@ -358,5 +358,88 @@ describe('as duas abas', () => {
     await waitFor(async () =>
       expect((await api.draft.list('c1'))[0].content).toContain('Caíram 3%.')
     )
+  })
+})
+
+describe('exportar', () => {
+  async function openDraft(): Promise<HTMLElement> {
+    await withAnswer()
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para rascunho' }))
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    return screen.findByRole('complementary', { name: 'Rascunho aberto' })
+  }
+
+  it('offers four formats and wires two', async () => {
+    const panel = await openDraft()
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Formato: .md' }))
+
+    expect(screen.getByRole('button', { name: /Markdown/, hidden: true })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /Texto sem marcação/, hidden: true })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /Word/, hidden: true })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /\.pdf/, hidden: true })).toBeDisabled()
+  })
+
+  // DE1D.8: the footer reads the live document, so an edit that has not been
+  // written yet still reaches the file.
+  it('sends the editor document and a sanitised name', async () => {
+    const panel = await openDraft()
+    typeInto(panel, '# Receita: 2026/2027\n\nSubiu.')
+
+    await userEvent.click(within(panel).getByRole('button', { name: /Exportar/ }))
+
+    expect(api.export.save).toHaveBeenCalledWith({
+      text: '# Receita: 2026/2027\n\nSubiu.',
+      format: 'md',
+      suggestedName: 'Receita 2026 2027.md'
+    })
+  })
+
+  it('carries the chosen format into the call', async () => {
+    const panel = await openDraft()
+    await userEvent.click(within(panel).getByRole('button', { name: 'Formato: .md' }))
+    await userEvent.click(screen.getByRole('button', { name: /Texto sem marcação/, hidden: true }))
+
+    await userEvent.click(within(panel).getByRole('button', { name: /Exportar/ }))
+
+    expect(api.export.save).toHaveBeenCalledWith(
+      expect.objectContaining({ format: 'txt', suggestedName: 'Vendas do trimestre.txt' })
+    )
+  })
+
+  it('says where the file landed', async () => {
+    const panel = await openDraft()
+    vi.mocked(api.export.save).mockResolvedValue({
+      ok: true,
+      value: { path: 'C:\\Users\\eu\\Documentos\\Vendas.md' }
+    })
+
+    await userEvent.click(within(panel).getByRole('button', { name: /Exportar/ }))
+
+    expect(await within(panel).findByText(/Documentos\\Vendas\.md/)).toBeVisible()
+  })
+
+  // DE1D.3: EPERM from a locked rename is not a permission problem, and the
+  // message has to be the one the user can act on.
+  it('explains a file held by another program', async () => {
+    const panel = await openDraft()
+    vi.mocked(api.export.save).mockResolvedValue({
+      ok: false,
+      error: { kind: 'file-in-use', path: 'C:\\Vendas.md' }
+    })
+
+    await userEvent.click(within(panel).getByRole('button', { name: /Exportar/ }))
+
+    expect(await within(panel).findByText(/aberto em outro programa/)).toBeVisible()
+  })
+
+  it('stays quiet when the dialog is cancelled', async () => {
+    const panel = await openDraft()
+
+    await userEvent.click(within(panel).getByRole('button', { name: /Exportar/ }))
+
+    const status = within(panel).getByRole('status')
+    await waitFor(() => expect(api.export.save).toHaveBeenCalled())
+    expect(status).toHaveTextContent('')
   })
 })
