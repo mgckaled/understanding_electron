@@ -9,6 +9,8 @@ export type DraftApi = {
   /** Whether this answer already produced a draft — the turn button's state (DE1A.3). */
   hasDraftOf: (messageId: string) => boolean
   createFrom: (sourceMessageId: string, content: string) => void
+  /** Rewrites one draft; the title is re-derived from the text (DE1C.7). */
+  update: (id: string, content: string) => void
   remove: (id: string) => void
   /**
    * Shows `draft`, or closes the panel when it is already the one open.

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import type { Api } from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
+import { EditorView } from '@codemirror/view'
 import ConversationView from '../conversation/ConversationView'
 import { useDraft } from './draftContext'
 
@@ -134,6 +135,26 @@ function Probe(): React.JSX.Element {
   )
 }
 
+/** What the CodeMirror document holds, read from the DOM it renders. */
+function editorText(panel: HTMLElement): string {
+  return panel.querySelector('.cm-content')?.textContent ?? ''
+}
+
+/**
+ * Edits the document the way the editor itself does — a transaction — since
+ * typing is not reproducible under jsdom (contenteditable + `beforeinput`).
+ * `findFromDOM` is CodeMirror's own API for reaching a mounted view.
+ */
+function typeInto(panel: HTMLElement, text: string): void {
+  const host = panel.querySelector('.cm-editor')
+  const view = host instanceof HTMLElement ? EditorView.findFromDOM(host) : null
+  if (view === null) throw new Error('no editor mounted in this panel')
+  // Focus first, or there is no blur to leave later — and a real edit always
+  // starts with the caret in the field.
+  view.contentDOM.focus()
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } })
+}
+
 describe('o painel de rascunho', () => {
   async function withDraft(): Promise<void> {
     await withAnswer()
@@ -147,9 +168,8 @@ describe('o painel de rascunho', () => {
     await userEvent.click(screen.getByRole('button', { name: /abrir rascunho/ }))
 
     const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
-    // The heading is the markdown body; the plain text is the panel's own title.
-    expect(within(panel).getByRole('heading', { name: 'Vendas do trimestre' })).toBeVisible()
-    expect(within(panel).getByText('Subiram 12%.')).toBeVisible()
+    expect(editorText(panel)).toContain('## Vendas do trimestre')
+    expect(editorText(panel)).toContain('Subiram 12%.')
   })
 
   // DE1B.1: one region, two tenants — a second <aside> has to be unreachable.
@@ -188,7 +208,7 @@ describe('como se chega ao painel', () => {
 
     await userEvent.click(screen.getByRole('button', { name: COUNTER }))
     const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
-    expect(within(panel).getByRole('heading', { name: 'Custos' })).toBeVisible()
+    expect(editorText(panel)).toContain('# Custos')
 
     await userEvent.click(screen.getByRole('button', { name: COUNTER }))
     await waitFor(() =>
@@ -205,7 +225,7 @@ describe('como se chega ao painel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Vendas do trimestre', hidden: true }))
 
     const panel = screen.getByRole('complementary', { name: 'Rascunho aberto' })
-    expect(within(panel).getByRole('heading', { name: 'Vendas do trimestre' })).toBeVisible()
+    expect(editorText(panel)).toContain('## Vendas do trimestre')
   })
 
   it('is a title and not a control while there is only one draft', async () => {
@@ -250,9 +270,7 @@ describe('excluir um rascunho', () => {
     await confirmDelete()
 
     const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
-    await waitFor(() =>
-      expect(within(panel).getByRole('heading', { name: 'Vendas do trimestre' })).toBeVisible()
-    )
+    await waitFor(() => expect(editorText(panel)).toContain('## Vendas do trimestre'))
   })
 
   it('closes the panel when the last one goes', async () => {
@@ -279,5 +297,66 @@ describe('excluir um rascunho', () => {
     await confirmDelete()
 
     expect(await screen.findByRole('button', { name: 'Enviar para rascunho' })).toBeEnabled()
+  })
+})
+
+describe('as duas abas', () => {
+  async function openDraft(): Promise<HTMLElement> {
+    await withAnswer()
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para rascunho' }))
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    return screen.findByRole('complementary', { name: 'Rascunho aberto' })
+  }
+
+  it('opens on the editor, with the markdown as written', async () => {
+    const panel = await openDraft()
+
+    expect(within(panel).getByRole('tab', { name: 'Editar' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+    expect(editorText(panel)).toContain('## Vendas do trimestre')
+  })
+
+  it('renders the markdown on the preview tab', async () => {
+    const panel = await openDraft()
+
+    await userEvent.click(within(panel).getByRole('tab', { name: 'Prévia' }))
+
+    expect(within(panel).getByRole('heading', { name: 'Vendas do trimestre' })).toBeVisible()
+  })
+
+  // DE1C.4: unmounting the editor to peek at the preview would throw the undo
+  // history away, so the panel opts into keepMounted and this is what guards it.
+  it('keeps the editor mounted while the preview is showing', async () => {
+    const panel = await openDraft()
+
+    await userEvent.click(within(panel).getByRole('tab', { name: 'Prévia' }))
+
+    expect(panel.querySelector('.cm-content')).not.toBeNull()
+  })
+
+  it('writes nothing when the field is left untouched', async () => {
+    const panel = await openDraft()
+
+    await userEvent.click(within(panel).getByRole('tab', { name: 'Prévia' }))
+
+    expect(api.draft.update).not.toHaveBeenCalled()
+  })
+
+  // DE1C.7: the title is re-derived, so changing the first line renames the
+  // draft. ⚠️ Real keystrokes are NOT covered here — see `typeInto`.
+  it('writes an edited document on the way out, and retitles it', async () => {
+    const panel = await openDraft()
+
+    typeInto(panel, '# Custos revisados\n\nCaíram 3%.')
+    await userEvent.click(within(panel).getByRole('tab', { name: 'Prévia' }))
+
+    expect(api.draft.update).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Custos revisados' })
+    )
+    await waitFor(async () =>
+      expect((await api.draft.list('c1'))[0].content).toContain('Caíram 3%.')
+    )
   })
 })

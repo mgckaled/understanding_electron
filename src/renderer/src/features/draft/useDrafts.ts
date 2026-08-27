@@ -12,6 +12,7 @@ export type DraftsApi = {
   /** Whether this answer already produced a draft — the button's own state (DE1A.3). */
   hasDraftOf: (messageId: string) => boolean
   create: (sourceMessageId: string, content: string) => void
+  update: (id: string, content: string) => void
   remove: (id: string) => void
 }
 
@@ -37,6 +38,16 @@ export function useDrafts(conversationId: string | null): DraftsApi {
     mutationFn: (draft: Omit<Draft, 'updatedAt'>) => window.api.draft.create(draft),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key })
   })
+  const updateMutation = useMutation({
+    mutationFn: (draft: { id: string; content: string }) =>
+      window.api.draft.update({
+        id: draft.id,
+        title: draftTitle(draft.content),
+        content: draft.content,
+        updatedAt: Date.now()
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: key })
+  })
   const removeMutation = useMutation({
     mutationFn: (id: string) => window.api.draft.remove(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key })
@@ -58,6 +69,16 @@ export function useDrafts(conversationId: string | null): DraftsApi {
     [conversationId, createMutation]
   )
 
+  const update = useCallback(
+    (id: string, content: string) => {
+      // Nothing typed, nothing written: blur fires on every way out of the
+      // field, and most of them carry no edit at all.
+      if (drafts.find((draft) => draft.id === id)?.content === content) return
+      updateMutation.mutate({ id, content })
+    },
+    [drafts, updateMutation]
+  )
+
   const remove = useCallback((id: string) => removeMutation.mutate(id), [removeMutation])
 
   const hasDraftOf = useCallback(
@@ -66,7 +87,7 @@ export function useDrafts(conversationId: string | null): DraftsApi {
   )
 
   return useMemo(
-    () => ({ drafts, hasDraftOf, create, remove }),
-    [drafts, hasDraftOf, create, remove]
+    () => ({ drafts, hasDraftOf, create, update, remove }),
+    [drafts, hasDraftOf, create, update, remove]
   )
 }

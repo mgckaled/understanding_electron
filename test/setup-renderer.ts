@@ -58,6 +58,14 @@ if (typeof HTMLElement !== 'undefined' && !HTMLElement.prototype.showPopover) {
   }
 }
 
+// CodeMirror measures text to lay itself out, and jsdom implements none of the
+// three APIs it reaches for — without these it throws on mount (DE1C.8). Zeroed
+// rectangles are enough to let it construct: layout itself is never asserted
+// here, only that the editor mounts and holds the right document.
+Range.prototype.getBoundingClientRect = () => new DOMRect()
+Range.prototype.getClientRects = () => [] as unknown as DOMRectList
+Document.prototype.elementFromPoint = () => null
+
 afterEach(() => {
   cleanup()
 })
