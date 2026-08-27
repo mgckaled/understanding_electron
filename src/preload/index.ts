@@ -28,7 +28,8 @@ const api: Api = {
   },
   image: {
     pick: () => invoke('image:pick'),
-    attach: (path, jobId) => invoke('image:attach', { path, jobId })
+    attach: (path, jobId) => invoke('image:attach', { path, jobId }),
+    bytes: (hash) => invoke('image:bytes', { hash })
   },
   job: {
     cancel: (jobId) => invoke('job:cancel', { jobId }),

@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, shell, dialog, nativeTheme, safeStorage, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
@@ -17,7 +18,7 @@ import {
 } from '../features/dataset/handlers'
 import { pickDataset } from '../features/dataset/pick'
 import { pickDocument, attachDocument } from '../features/document/handlers'
-import { pickImage, attachImage } from '../features/image/handlers'
+import { pickImage, attachImage, readImageBytes } from '../features/image/handlers'
 import { cancelJob } from '../features/job/handlers'
 import { readHashedFile, hashOnlyFile, sniffFileFormat } from '../features/dataset/lines'
 import { readDocumentFile, statDocumentSize } from '../features/document/readFile'
@@ -191,6 +192,7 @@ export async function registerAll(): Promise<() => void> {
       ensureAttachmentBytes
     )
   )
+  handle('image:bytes', (args) => readImageBytes(args, attachmentsDir, readFile))
   handle('job:cancel', (args) => cancelJob(args))
 
   const ollamaAdapter: ProviderAdapter = {

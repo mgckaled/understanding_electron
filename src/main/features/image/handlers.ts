@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto'
-import { basename } from 'node:path'
+import { basename, join } from 'node:path'
 import type { OpenDialogOptions, OpenDialogReturnValue } from 'electron'
 import type { DatasetRef, ImagePart, JobEvent, JobId, Result } from '@shared/ipc'
+import { isAttachmentHash } from '@core/attachments/hash'
 import { ok, err } from '@core/result'
 import { mapFsError } from '@core/fsError'
 import { sniffImageMimeType, sniffRasterFormat, type RasterFormat } from '@core/image/sniff'
@@ -69,5 +70,31 @@ export async function attachImage(
     return err(mapFsError(error, path))
   } finally {
     jobs.finish(jobId)
+  }
+}
+
+/**
+ * The stored blob's bytes, addressed by hash.
+ *
+ * @param readFile - Injected so the handler stays callable in plain Node.
+ * @returns The bytes, or `not-found` when the blob was already swept by
+ *   `collectOrphanedAttachments`.
+ */
+export async function readImageBytes(
+  { hash }: { hash: string },
+  attachmentsDir: string,
+  readFile: (path: string) => Promise<Buffer>
+): Promise<Result<Uint8Array>> {
+  // Rejected before the path is built, never after: the hash is a filename
+  // segment, and `join` would happily resolve `..`.
+  if (!isAttachmentHash(hash)) {
+    return err({ kind: 'blocked', reason: 'Identificador de anexo inválido.' })
+  }
+
+  const path = join(attachmentsDir, hash)
+  try {
+    return ok(await readFile(path))
+  } catch (error) {
+    return err(mapFsError(error, path))
   }
 }

@@ -565,6 +565,7 @@ export const argsSchema = {
   'document:attach': z.object({ path: z.string(), jobId: z.string() }),
   'image:pick': z.void(),
   'image:attach': z.object({ path: z.string(), jobId: z.string() }),
+  'image:bytes': z.object({ hash: z.string().min(1) }),
   'job:cancel': z.object({ jobId: z.string() }),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
   // N+1 behind one channel (D15.1): /api/tags omits `vision` and the context
@@ -703,6 +704,10 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['image:attach']>
     result: Result<ImagePart>
   }
+  'image:bytes': {
+    args: z.infer<(typeof argsSchema)['image:bytes']>
+    result: Result<Uint8Array>
+  }
   'job:cancel': { args: z.infer<(typeof argsSchema)['job:cancel']>; result: void }
   'ai:isAvailable': {
     args: z.infer<(typeof argsSchema)['ai:isAvailable']>
@@ -813,6 +818,14 @@ export type Api = {
     pick(): Promise<Result<DatasetRef | null>>
     /** Hashes and stores `path` once (D17.2) — no extraction, the bytes ride verbatim. */
     attach(path: string, jobId: JobId): Promise<Result<ImagePart>>
+    /**
+     * The stored blob's bytes, the renderer's only way to them (DF3E.1).
+     *
+     * `attachment://` cannot serve this: the scheme has no `corsEnabled`
+     * privilege, so `fetch` is refused before the CSP is consulted, and the
+     * `<img>` taints a canvas (DF3A.7).
+     */
+    bytes(hash: string): Promise<Result<Uint8Array>>
   }
   job: {
     cancel(jobId: JobId): Promise<void>

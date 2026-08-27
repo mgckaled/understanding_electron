@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
+import { join } from 'node:path'
 import * as jobs from '../../jobs'
-import { pickImage, attachImage } from './handlers'
+import { pickImage, attachImage, readImageBytes } from './handlers'
 
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x01])
 const JPEG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x01])
@@ -211,5 +212,43 @@ describe('attachImage', () => {
 
     expect(result).toEqual({ ok: false, error: { kind: 'cancelled' } })
     expect(storeAttachment).not.toHaveBeenCalled()
+  })
+})
+
+describe('readImageBytes', () => {
+  const HASH = 'a'.repeat(64)
+
+  it('reads the blob addressed by the hash', async () => {
+    const readFile = vi.fn().mockResolvedValue(Buffer.from([1, 2, 3]))
+
+    const result = await readImageBytes({ hash: HASH }, '/tmp/attachments', readFile)
+
+    expect(result).toEqual({ ok: true, value: Buffer.from([1, 2, 3]) })
+    expect(readFile).toHaveBeenCalledWith(join('/tmp/attachments', HASH))
+  })
+
+  // The guard has to run BEFORE the path is built — a rejection that happens
+  // after `join` has already resolved `..` is not a guard, it is a log line.
+  it('refuses a hash that would escape the attachments directory, without touching the disk', async () => {
+    const readFile = vi.fn()
+
+    const result = await readImageBytes({ hash: '../../etc/passwd' }, '/tmp/attachments', readFile)
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'blocked', reason: 'Identificador de anexo inválido.' }
+    })
+    expect(readFile).not.toHaveBeenCalled()
+  })
+
+  it('reports a swept blob as not-found rather than throwing', async () => {
+    const readFile = vi.fn().mockRejectedValue(Object.assign(new Error('nope'), { code: 'ENOENT' }))
+
+    const result = await readImageBytes({ hash: HASH }, '/tmp/attachments', readFile)
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'not-found', path: join('/tmp/attachments', HASH) }
+    })
   })
 })
