@@ -121,10 +121,12 @@ describe('ArtifactPanel', () => {
     expect(api.close).toHaveBeenCalledOnce()
   })
 
-  it('offers no copy button for an image, because the bytes are unreachable', () => {
+  // The inversion of the F-3-A case: the bytes were unreachable then, and the
+  // `image:bytes` channel is what reaches them now (DF3E.1).
+  it('offers the copy button for an image', () => {
     mount({ kind: 'image', id: IMG.hash, part: IMG })
 
-    expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Copiar' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Fechar painel' })).toBeVisible()
   })
 
