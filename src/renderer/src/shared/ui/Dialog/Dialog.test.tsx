@@ -52,3 +52,29 @@ describe('Dialog', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })
+
+// The platform gives `cancel` and `close` as non-bubbling events, but the
+// keydown that produced them bubbles all the way up — so an ancestor listening
+// for Esc (the side panel does) acted on the same press. Found in production
+// code, where deleting a step proposal by keyboard closed the panel too.
+describe('Esc does not reach past the dialog', () => {
+  it('stops the keydown from waking an ancestor that also listens for it', async () => {
+    const onAncestorEsc = vi.fn()
+    render(
+      <div
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') onAncestorEsc()
+        }}
+      >
+        <Dialog open title="Excluir" onClose={vi.fn()}>
+          <button type="button">Excluir</button>
+        </Dialog>
+      </div>
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir' }))
+    await userEvent.keyboard('{Escape}')
+
+    expect(onAncestorEsc).not.toHaveBeenCalled()
+  })
+})

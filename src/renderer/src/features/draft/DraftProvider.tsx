@@ -13,7 +13,9 @@ function DraftProvider({ children }: { children: ReactNode }): React.JSX.Element
 
   // Resolved from the list rather than held as an object, so an edit or a
   // deletion elsewhere reaches the panel without a second copy to keep in step.
-  const selected = drafts.find((draft) => draft.id === openId) ?? null
+  // Deleting the open one falls back to the newest that survived; only an empty
+  // list closes the panel (DE1B.7).
+  const selected = drafts.find((draft) => draft.id === openId) ?? drafts.at(-1) ?? null
   const current = showing === 'draft' ? selected : null
 
   const toggle = useCallback(

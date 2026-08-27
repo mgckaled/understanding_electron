@@ -227,3 +227,57 @@ describe('como se chega ao painel', () => {
     expect(screen.getByRole('complementary', { name: 'Rascunho aberto' })).toBeVisible()
   })
 })
+
+describe('excluir um rascunho', () => {
+  async function openTwo(): Promise<void> {
+    await withAnswer(['# Custos\n\nCaíram 3%.'])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Enviar para rascunho' })[0])
+    await userEvent.click(await screen.findByRole('button', { name: 'Enviar para rascunho' }))
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+  }
+
+  async function confirmDelete(): Promise<void> {
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir rascunho' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir', hidden: true }))
+  }
+
+  // DE1B.7: closing always would hide drafts that still exist; keeping the
+  // deleted one would show what is gone.
+  it('falls back to the newest that survived', async () => {
+    await openTwo()
+
+    await confirmDelete()
+
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+    await waitFor(() =>
+      expect(within(panel).getByRole('heading', { name: 'Vendas do trimestre' })).toBeVisible()
+    )
+  })
+
+  it('closes the panel when the last one goes', async () => {
+    await withAnswer()
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para rascunho' }))
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    await confirmDelete()
+
+    await waitFor(() =>
+      expect(screen.queryByRole('complementary', { name: 'Rascunho aberto' })).toBeNull()
+    )
+  })
+
+  // Closes the loop E-1-A opened: `draft:remove` shipped there with no caller,
+  // and this is the cycle that proves "já rascunhei?" is derived (DE1A.3).
+  it('lets the turn offer to draft that answer again', async () => {
+    await withAnswer()
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para rascunho' }))
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    await confirmDelete()
+
+    expect(await screen.findByRole('button', { name: 'Enviar para rascunho' })).toBeEnabled()
+  })
+})

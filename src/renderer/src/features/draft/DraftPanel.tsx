@@ -1,5 +1,7 @@
-import { X } from 'lucide-react'
+import { useId, useState } from 'react'
+import { Trash2, Undo2, X } from 'lucide-react'
 import Button from '../../shared/ui/Button/Button'
+import Dialog from '../../shared/ui/Dialog/Dialog'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import SidePanel from '../../shared/ui/SidePanel/SidePanel'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -10,8 +12,10 @@ import DraftPicker from './DraftPicker'
 const READING = 'min-h-[0px] flex-1 overflow-y-auto p-7 select-text'
 
 function DraftPanel(): React.JSX.Element | null {
-  const { current, close } = useDraft()
+  const { current, remove, close } = useDraft()
   const { closing, width, setWidth } = usePanel()
+  const [confirming, setConfirming] = useState(false)
+  const describedBy = useId()
 
   if (current === null) return null
 
@@ -44,6 +48,54 @@ function DraftPanel(): React.JSX.Element | null {
       <div className={READING}>
         <MarkdownMessage text={current.content} />
       </div>
+
+      {/* The bar of what happens to this draft. Discard sits at the far end
+          from where `Exportar` lands in E-1-D, and further still from the
+          header's close (DE1B.2). */}
+      <footer className="flex flex-none items-center border-t border-border px-5 py-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          shape="square"
+          className="flex-none"
+          onClick={() => setConfirming(true)}
+          aria-label="Excluir rascunho"
+        >
+          <Trash2 className="text-danger-text" size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+        </Button>
+      </footer>
+
+      <Dialog
+        open={confirming}
+        title="Excluir rascunho"
+        onClose={() => setConfirming(false)}
+        describedBy={describedBy}
+      >
+        <p className="mb-6 text-sm" id={describedBy}>
+          Deseja excluir “{current.title}” de forma definitiva?
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" size="sm" onClick={() => setConfirming(false)}>
+            <span className="flex items-center gap-2">
+              <Undo2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+              Cancelar
+            </span>
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => {
+              setConfirming(false)
+              remove(current.id)
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <Trash2 size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+              Excluir
+            </span>
+          </Button>
+        </div>
+      </Dialog>
     </SidePanel>
   )
 }

@@ -48,6 +48,12 @@ function Dialog({ open, title, onClose, describedBy, children }: DialogProps): R
       // Fires for every way out — Esc, the backdrop, close(). Without it the
       // state would stay `open` after Esc and the trigger would look dead.
       onClose={onClose}
+      // `cancel` and `close` do not bubble, but the keydown behind them does —
+      // and an ancestor listening for Esc (SidePanel) would act on the same
+      // press, closing itself along with the dialog.
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') event.stopPropagation()
+      }}
     >
       <div className="flex flex-none items-center justify-between gap-4 border-b border-border px-6 py-5">
         <h2 className="text-md font-semibold" id={titleId}>
