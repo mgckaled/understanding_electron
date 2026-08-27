@@ -1,32 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Check, Copy, X } from 'lucide-react'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import styles from './ArtifactPanel.module.css'
 import ArtifactBody from './ArtifactBody'
 import ArtifactPicker from './ArtifactPicker'
+import ArtifactResizer from './ArtifactResizer'
 import { useArtifact } from './artifactContext'
 import { canCopy, copyArtifact } from './copyArtifact'
-
-// The width is a value, not a class: it comes from state (DF3A.4), and
-// Tailwind's static scan cannot see a runtime number — the framework's own docs
-// send complex sizing to `style` for exactly this reason.
-//
-// The clamp keeps the conversation readable: 50vw is the ceiling asked for, but
-// on a narrow window the second term of the `min` wins and the panel yields.
-// It subtracts the sidebar's LIVE width (DF3C.4) because measuring against the
-// window over-promised — at 900px the thread was left with 248px, measured
-// live. Below roughly 1100px the two compete and the panel sits at its floor.
-const WIDTH =
-  'clamp(22rem, var(--artifact-width), min(50vw, 100vw - var(--sidebar-width-now, var(--sidebar-width)) - 26rem))'
-const DEFAULT_WIDTH = '34rem'
+import { WIDTH_CSS } from './artifactWidth'
 
 /** How long the copy button stays confirmed. Long enough to be seen, short
  *  enough that it is gone before the next glance. */
 const COPIED_MS = 1200
 
 function ArtifactPanel(): React.JSX.Element | null {
-  const { current, closing, close } = useArtifact()
+  const { current, closing, width, setWidth, close } = useArtifact()
+  const panelId = useId()
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const region = useRef<HTMLElement>(null)
@@ -52,6 +42,7 @@ function ArtifactPanel(): React.JSX.Element | null {
 
   return (
     <aside
+      id={panelId}
       ref={region}
       // Not a Dialog and not a focus trap: the panel is NOT modal — clicking
       // back into the conversation with it open has to keep working. So Esc
@@ -61,11 +52,18 @@ function ArtifactPanel(): React.JSX.Element | null {
       onKeyDown={(event) => {
         if (event.key === 'Escape') close()
       }}
-      className={`${styles.panel} flex h-full flex-col overflow-hidden border-l border-border bg-surface outline-none`}
+      className={`${styles.panel} relative flex h-full flex-col overflow-hidden border-l border-border bg-surface outline-none`}
       data-closing={closing ? 'true' : undefined}
-      style={{ '--artifact-width': DEFAULT_WIDTH, width: WIDTH } as React.CSSProperties}
+      style={{ '--artifact-width': `${width}px`, width: WIDTH_CSS } as React.CSSProperties}
       aria-label="Anexo aberto"
     >
+      <ArtifactResizer
+        panelId={panelId}
+        width={width}
+        apply={(px) => region.current?.style.setProperty('--artifact-width', `${px}px`)}
+        commit={setWidth}
+        close={close}
+      />
       {/* Chrome density (D13.6), and the same icon and name the card shows — the
           eye connects the two without having to think about it. */}
       <header className="flex flex-none items-center gap-3 border-b border-border px-5 py-4">

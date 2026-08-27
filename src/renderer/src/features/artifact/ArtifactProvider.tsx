@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useActiveConversation, useConversations } from '../conversation/conversationsContext'
 import { ArtifactContext, type ArtifactRef } from './artifactContext'
 import { artifactsOf } from './artifactsOf'
+import { DEFAULT_WIDTH } from './artifactWidth'
 
 // Mirrors --duration-base: the unmount is scheduled in JS, and CSS cannot
 // delay it (DF3C.1).
@@ -22,6 +23,7 @@ type ArtifactProviderProps = {
 
 function ArtifactProvider({ children, onOpen }: ArtifactProviderProps): React.JSX.Element {
   const [current, setCurrent] = useState<ArtifactRef | null>(null)
+  const [width, setWidth] = useState(DEFAULT_WIDTH)
   const { activeId } = useConversations()
   const conversation = useActiveConversation()
   // Memoised on the transcript, not recomputed per render: without this the
@@ -116,8 +118,8 @@ function ArtifactProvider({ children, onOpen }: ArtifactProviderProps): React.JS
   }, [togglePanel])
 
   const value = useMemo(
-    () => ({ current, closing, artifacts, toggle, togglePanel, close }),
-    [current, closing, artifacts, toggle, togglePanel, close]
+    () => ({ current, closing, width, setWidth, artifacts, toggle, togglePanel, close }),
+    [current, closing, width, artifacts, toggle, togglePanel, close]
   )
 
   return <ArtifactContext value={value}>{children}</ArtifactContext>

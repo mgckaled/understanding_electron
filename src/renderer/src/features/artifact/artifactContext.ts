@@ -21,6 +21,14 @@ export type ArtifactApi = {
   /** True while the panel is fading out and still mounted (DF3C.1). */
   closing: boolean
   /**
+   * The panel's width in px (DF3C.6).
+   *
+   * Lives here, not in the panel: it survives swapping artifacts and switching
+   * conversation, and the panel unmounts on both.
+   */
+  width: number
+  setWidth: (px: number) => void
+  /**
    * Every artifact this conversation can open, oldest first.
    *
    * Lives here, not in each consumer: the header clip and the panel's picker
