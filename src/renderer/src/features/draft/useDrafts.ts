@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Draft } from '@shared/ipc'
+import type { Draft, DraftKind } from '@shared/ipc'
 import { draftTitle } from '@core/draft/title'
 
 function draftsKey(conversationId: string): readonly ['drafts', string] {
@@ -46,10 +46,10 @@ export function useDrafts(conversationId: string | null): DraftsApi {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key })
   })
   const updateMutation = useMutation({
-    mutationFn: (draft: { id: string; content: string }) =>
+    mutationFn: (draft: { id: string; content: string; kind: DraftKind }) =>
       window.api.draft.update({
         id: draft.id,
-        title: draftTitle(draft.content),
+        title: draftTitle(draft.content, draft.kind),
         content: draft.content,
         updatedAt: Date.now()
       }),
@@ -63,14 +63,15 @@ export function useDrafts(conversationId: string | null): DraftsApi {
   const create = useCallback(
     (sourceMessageId: string, content: string, code?: { language: string | null }) => {
       if (conversationId === null) return
+      const kind: DraftKind = code === undefined ? 'markdown' : 'code'
       // Identity and time are minted here, never by the handler (DE1A.6/D14.5).
       createMutation.mutate({
         id: crypto.randomUUID(),
         conversationId,
         sourceMessageId,
-        kind: code === undefined ? 'markdown' : 'code',
+        kind,
         language: code?.language ?? null,
-        title: draftTitle(content),
+        title: draftTitle(content, kind),
         content,
         createdAt: Date.now()
       })
@@ -82,8 +83,9 @@ export function useDrafts(conversationId: string | null): DraftsApi {
     (id: string, content: string) => {
       // Nothing typed, nothing written: blur fires on every way out of the
       // field, and most of them carry no edit at all.
-      if (drafts.find((draft) => draft.id === id)?.content === content) return
-      updateMutation.mutate({ id, content })
+      const draft = drafts.find((one) => one.id === id)
+      if (draft === undefined || draft.content === content) return
+      updateMutation.mutate({ id, content, kind: draft.kind })
     },
     [drafts, updateMutation]
   )

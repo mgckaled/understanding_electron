@@ -79,16 +79,11 @@ function DraftPanel(): React.JSX.Element | null {
     >
       {/* Reading density (D13.5) — a draft is prose read for a minute, and the
           preview is markdown because four of the export formats are. */}
-      <Tabs
-        tabs={tabs}
-        active={tab}
-        onChange={setTab}
-        label="Modo do rascunho"
-        keepMounted
-      />
+      <Tabs tabs={tabs} active={tab} onChange={setTab} label="Modo do rascunho" keepMounted />
 
       <DraftFooter
         readText={() => read.current()}
+        kind={current?.kind ?? 'markdown'}
         onDelete={() => setConfirming(true)}
       />
 

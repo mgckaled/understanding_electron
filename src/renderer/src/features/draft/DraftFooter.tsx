@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FileDown, Trash2 } from 'lucide-react'
-import type { AppError, ExportFormat } from '@shared/ipc'
+import type { AppError, DraftKind, ExportFormat } from '@shared/ipc'
 import { draftTitle } from '@core/draft/title'
 import { exportFileName } from '@core/export/fileName'
 import Button from '../../shared/ui/Button/Button'
@@ -15,10 +15,13 @@ type Notice = { kind: 'ok'; path: string } | { kind: 'error'; error: AppError }
 
 function DraftFooter({
   readText,
+  kind,
   onDelete
 }: {
   /** The live document, so exporting never races the blur that saves (DE1D.8). */
   readText: () => string
+  /** Which dialect the open draft is, so the file name is derived by its rule. */
+  kind: DraftKind
   onDelete: () => void
 }): React.JSX.Element {
   const [format, setFormat] = useState<ExportFormat>('md')
@@ -42,7 +45,7 @@ function DraftFooter({
     const result = await window.api.export.save({
       text,
       format,
-      suggestedName: exportFileName(draftTitle(text), format)
+      suggestedName: exportFileName(draftTitle(text, kind), format)
     })
     setSaving(false)
 
