@@ -58,7 +58,13 @@ Nasce `src/core/export/toHtml.ts`, puro, sem `electron`. É o que mantém a gara
 
 `window.destroy()` no `finally`, sem exceção. Janela offscreen vazada é processo vazado, e nenhum teste apanha isso sozinho.
 
-**A carga em dois tempos**, e não `data:` URL com o documento inteiro: `loadURL('data:text/html,')` mínimo, depois `executeJavaScript` escrevendo o documento. O motivo é tamanho — um rascunho longo percent-encodificado numa URL encosta no teto do Chromium, e o sintoma seria falhar só para documentos grandes.
+**A carga em dois tempos**, e não `data:` URL com o documento inteiro: `loadURL('data:text/html,…')` mínimo, depois `executeJavaScript` escrevendo o documento.
+
+⚠️ **A justificativa que eu escrevi primeiro estava errada, e a correção importa mais que o número.** Eu havia medido o `data:` URL falhando "entre 128 e 192 KB" e registrado isso como necessidade. Era **artefato da sonda**: ela criava uma janela, destruía, criava outra — e destruir a **única** janela dispara `window-all-closed`, cujo padrão do Electron é encerrar o app. A segunda janela falhava sempre, em qualquer tamanho, e eu li isso como teto de tamanho porque a primeira era pequena e a segunda grande.
+
+Remedido com uma janela âncora viva (o que a `mainWindow` é em produção): `data:` URL vai até **1 MB** e morre em 2 MB com `ERR_INVALID_URL`; a carga em dois tempos passa **4 MB sem teto encontrado**. Então a escolha continua certa — sem teto conhecido, e é o padrão já provado no `rasterizeToPng` —, mas **não** pelo motivo que eu tinha escrito.
+
+⚠️ **A lição é sobre a forma da sonda, não sobre o Chromium:** uma medição que varia duas coisas ao mesmo tempo (o tamanho **e** a ordem) mede a que eu não estava olhando. O app nunca sofreria disso porque a janela principal está sempre aberta — a sonda é que não a tinha.
 
 ### DE1F.3 — Todo texto é escapado, e o documento gerado nasce com `default-src 'none'`
 
@@ -97,6 +103,26 @@ Decisão do dono, literal: *"tipografia não precisa — o que o sistema oferece
 | `main/features/export/printPdf.ts` | HTML → bytes, via janela offscreen | não — é Electron vivo, como o `rasterizeToPng` |
 
 `saveExport` recebe `printPdf` **por parâmetro**, exatamente como já recebe `showSaveDialog`. O nível 3 injeta um dublê e continua rodando sem Electron; o composition root injeta o real.
+
+### DE1F.9 — Número de página entra, e o template do Chromium não herda estilo nenhum
+
+**Pedido do usuário na prova ao vivo**, e o corte o tinha em *Fora deste plano* com a justificativa "nenhum chamador pediu". Pediu.
+
+`displayHeaderFooter: true` + `footerTemplate` com as classes próprias do Chromium (`pageNumber`, `totalPages`), e `headerTemplate` **vazio de propósito** — ligado sem ele, o Chromium imprime título e data no topo por conta própria.
+
+⚠️ **O template não herda nada da página e renderiza com fonte de tamanho zero.** Cada regra do `style` inline é obrigatória, não decoração; sem `font-size` o rodapé existe e é invisível.
+
+**Provado por diferença, não por inspeção:** o texto do PDF vem comprimido e com glifos remapeados por *subsetting*, então procurar "Página" nos bytes não prova nada. O que prova é o tamanho do arquivo **mudar conforme o comprimento do rodapé** — 19,8 KB sem rodapé contra 30,4 / 35,2 / 33,1 KB com três textos diferentes.
+
+### DE1F.8 — O doctype pertence à **primeira** carga, não ao documento gerado
+
+Achado sondando a paginação, e é independente dela. `document.compatMode` vinha **`BackCompat`**: o `data:text/html` inicial não tinha doctype, e **`innerHTML` não muda o modo de compatibilidade de um documento depois**. O `toHtml` emite `<!doctype html>` no documento dele e isso **não ajuda** — quem decide é a carga que criou o documento.
+
+Efeito: todo PDF exportado renderizava em **modo quirks**, onde altura de linha e dimensionamento de célula de tabela seguem outras regras. Não era um defeito de paginação; era um defeito de tudo, silencioso.
+
+Um caractere de conserto (`data:text/html,<!doctype html><div></div>`), medido antes e depois: `BackCompat` → `CSS1Compat`, mesmas 3 páginas.
+
+⚠️ **Não é testável abaixo do Electron vivo**, mesma categoria do `rasterizeToPng`. O que sobra é o comentário no ponto de aplicação, porque a linha parece decorativa e não é.
 
 ### DE1F.7 — Sem `generateDocumentOutline` e sem `generateTaggedPDF`
 
@@ -163,7 +189,8 @@ A janela offscreen no molde do `rasterizeToPng`, `printPdf` injetado no `saveExp
 |---|---|
 | Marcadores/índice no PDF | **gatilho** — `generateDocumentOutline` sair de experimental (DE1F.7) |
 | PDF acessível (tagged) | mesmo gatilho, mesmo motivo |
-| Cabeçalho, rodapé e número de página | fora — `displayHeaderFooter` existe e nenhum chamador pediu. Decisão de documento, não de conversão |
+| ~~Número de página~~ | **entrou** — o usuário pediu na prova ao vivo, ver DE1F.9 |
+| Cabeçalho e data no topo | fora — o `headerTemplate` fica vazio de propósito |
 | Escolher A4 × Carta, margem, retrato × paisagem | fora — seria configuração; o `@page` fixa A4 num lugar só, e mover para as Configurações é um plano de UI |
 | Imagem embutida no PDF | fora — mesmo motivo da DE1E.7: `core/` não resolve anexo. O `alt` vira texto |
 | `.pptx` | **E-2**, e depois do plano 20 (aproveita imagem de gráfico) |
@@ -172,8 +199,11 @@ A janela offscreen no molde do `rasterizeToPng`, `printPdf` injetado no `saveExp
 
 ## Diário de execução
 
+✅ **Aceite observado pelo usuário em 27/08/2026.** As dez conferências do passo 4 certas. A única levantada — "a paginação não veio" — **não era defeito**: o rascunho daquela tentativa cabia em uma página, e o mesmo rascunho de 63 parágrafos que virou o `.docx` aprovado saiu com **3 páginas e conteúdo completo**. **Plano concluído, e a trilha E fecha com ele** — quatro formatos de saída, `.md`/`.txt`/`.docx`/`.pdf`, e o seletor sem nenhuma opção desabilitada.
+
 | Data | Passo(s) | Estado | Observação |
 |---|---|---|---|
+| 27/08/2026 | 4 | **prova ao vivo — nenhum defeito de conversão** | ⚠️ **A única suspeita levantada não se reproduziu, e tentar reproduzi-la é que pagou.** Duas sondas contra o `toHtml` real paginaram (4 páginas em prosa longa, 3 no formato do `.docx` validado), então o relato tinha de ser outra coisa — e era: **o painel engana sobre o comprimento**. Ele tem ~400px com texto de leitura a 18px, ~45 caracteres por linha; uma A4 com margem de 2cm a 11pt cabe ~90. Três telas roladas no painel viram uma página. **Não perseguir o defeito relatado, e sim reproduzi-lo primeiro, foi o que evitou "consertar" um comportamento correto.** E a tentativa de reprodução achou um defeito **de verdade**, independente do relato: o documento inteiro renderizava em modo quirks (DE1F.8). |
 | 27/08/2026 | 2-3 | verdes — **1047 testes, 113 arquivos**, `pnpm build` com `check:bundle` | **Uma segunda sonda desmentiu uma suposição minha e confirmou um risco que eu não tinha visto.** Eu ia registrar que a CSP em `<meta>` injetada por `innerHTML` é ignorada pelo Chromium (é o que a orientação geral diz) e que a tranca da DE1F.3 seria decorativa — medido com `securitypolicyviolation` e uma imagem remota, **ela está ATIVA**. Já o `data:` URL com o documento inteiro, que eu tratava como alternativa viável, **falha com `ERR_FAILED` entre 128 e 192 KB** — perto demais de um rascunho longo, então a carga em dois tempos deixa de ser conveniência e vira necessidade. **Duas sabotagens:** sem o escape caem os quatro testes de `<script>`/`<img onerror>`/`&`/bloco de código, e só eles; sem o ramo `pdf` do `render` cai um teste, o certo. ⚠️ **Uma asserção minha nasceu vacuosa e foi corrigida antes de virar commit:** `not.toContain('onerror=alert')` é falsa por construção — o texto escapado **contém** essa string, como texto; o que não pode existir é a tag que abre. É a mesma família da lição da DE1E.9. |
 | 27/08/2026 | 1 | sonda verde — **o caminho inteiro funciona** | Janela offscreen sandboxed no molde do `rasterizeToPng`, carga em dois tempos, `printToPDF`. **PDF válido de 34 KB, com as DUAS páginas** que o `break-before: page` pedia, `MediaBox` de `594,96 × 841,92 pt` (A4 — o `preferCSSPageSize` respeitou o `@page`), fonte monoespaçada embutida e fluxo comprimido. Acentuação portuguesa correta. **Tempo a frio: 542 ms** — `loadURL` 166, `executeJavaScript` 12, `printToPDF` 364. É meio segundo por exportação, com a janela nascendo e morrendo a cada vez; aceitável para uma ação que já abre diálogo de salvar, e **não vale cache de janela** (janela viva é processo vivo). ⚠️ **Nenhuma surpresa, e é isso que se queria saber antes de escrever `toHtml`:** os dois medos da pesquisa (`data:` bloqueada, guarda de navegação global) continuam sem se materializar em execução real, não só em leitura. |
 | 27/08/2026 | — | plano escrito, ainda não executado | **A objeção que eu tinha contra o `printToPDF` foi dissolvida pelo usuário, não por mim:** eu recomendava assumir a bifurcação do pipeline como custo; ele perguntou se não dava para sair "no mesmo esquema do `.docx`", e dá — o HTML gerado do `Block[]` faz o `.pdf` virar o **terceiro renderizador** em vez de um segundo caminho, e ainda entrega o formato mais testável dos três. **A pesquisa derrubou dois medos e confirmou um:** `data:` URL não é bloqueada aqui (o `rasterizeToPng` já a usa em produção, D17.7) e o guarda de navegação é por janela, não global; mas imprimir antes de a carga terminar produz **PDF em branco, sem erro**, então o `await` é obrigatório. **E tirou um recurso da mesa:** `generateDocumentOutline` é experimental e tem issue aberta de não gerar o índice — vira gatilho em vez de entrega. |
