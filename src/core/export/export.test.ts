@@ -2,7 +2,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { exportFileName } from './fileName'
-import { toPlainText } from './markdown'
+import { toPlainText } from './toPlainText'
 import { writeAtomic } from './write'
 
 describe('exportFileName', () => {
@@ -53,7 +53,8 @@ describe('toPlainText', () => {
     expect(out).not.toContain('#')
     expect(out).not.toContain('**')
     expect(out).toContain('Vendas')
-    // The reason strip-markdown was chosen over mdast-util-to-string (DE1D.6).
+    // Paragraphs stay apart — the requirement that picked strip-markdown in the
+    // E-1-D and outlived it (DE1E.9).
     expect(out).toMatch(/Subiram 12% no trimestre\.\s*\n\s*\nO resto caiu\./)
   })
 
@@ -86,6 +87,32 @@ describe('toPlainText', () => {
 
     expect(out).toContain('const a = 1')
     expect(out).not.toContain('```')
+  })
+
+  // Reported live: the code came out escaped and its indentation replaced by
+  // `&#x20;`, because the text was being serialised BACK to markdown.
+  it('keeps a code block byte for byte, indentation included', () => {
+    const source = [
+      'export async function fetchNews() {',
+      '  try {',
+      '    const url = NEWS_URL;',
+      '  } catch (error) {',
+      '    return null;',
+      '  }',
+      '}'
+    ].join('\n')
+
+    const out = toPlainText(`Adicione:\n\n\`\`\`ts\n${source}\n\`\`\``)
+
+    expect(out).toContain(source)
+  })
+
+  it.each(['\\', '&#x20;', '&amp;'])('never introduces %s, which was not typed', (poison) => {
+    const out = toPlainText(
+      "```ts\nconst NEWS_URL = 'https://a.com';\n  const t = `x ${y}`;\n  const i = a[0];\n```"
+    )
+
+    expect(out).not.toContain(poison)
   })
 
   it('drops the strikethrough marks and keeps the word', () => {

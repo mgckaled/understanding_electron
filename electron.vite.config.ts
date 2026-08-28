@@ -8,9 +8,9 @@ export default defineConfig({
   main: {
     // Dependencies are external by default, and for an ESM-only package that
     // breaks: rollup emits `require(pkg)` and uses the namespace as the default
-    // export, so `strip-markdown` arrived as `{ default }` instead of the
-    // function. The remark family is ESM-only throughout, so it is bundled.
-    plugins: [externalizeDepsPlugin({ exclude: ['remark', 'remark-gfm', 'strip-markdown'] })],
+    // export, so the plugin arrives as `{ default }` instead of the function
+    // (DE1D.9). The remark family is ESM-only throughout, so it is bundled.
+    plugins: [externalizeDepsPlugin({ exclude: ['remark', 'remark-gfm'] })],
     resolve: {
       alias: aliases
     },

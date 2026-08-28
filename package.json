@@ -46,7 +46,6 @@
     "rehype-highlight": "^7.0.2",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
-    "strip-markdown": "^6.0.0",
     "unpdf": "^1.8.1",
     "zod": "^4.4.3"
   },

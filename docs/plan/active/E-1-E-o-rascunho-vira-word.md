@@ -104,6 +104,19 @@ Para todo o resto — `html`, `footnote`, `image`, um nó que uma versão futura
 
 ⚠️ **`image` cai explicitamente aí**: vira o `alt` como parágrafo, não uma imagem embutida. O rascunho é texto puro, `core/` não resolve anexo, e um `attachment://hash` não tem bytes para embutir. Fora deste plano, registrado abaixo.
 
+### DE1E.9 — O `.txt` sai do mesmo `Block[]` do `.docx`, e o `strip-markdown` deixa o projeto
+
+**Achado na prova ao vivo do passo 5, e é a correção da DE1E.2.** O conserto daquela decisão — substituir `code`/`table` por parágrafos — funciona no nível da árvore e **cai no serializador**: `remark().use(strip)` é parse → transformar → *stringify*, e o `remark-stringify` escapa tudo que possa ser lido como marcação (`NEWS\_URL`, `https\://`, `` \` ``, `a\[0]`) e troca espaço à esquerda por `&#x20;`, porque indentação é significativa em markdown. Sobre prosa quase não aparece; sobre código, **acrescenta caracteres que ninguém digitou** — pior que remover.
+
+**A saída não é escapar melhor, é não serializar.** O passo 3 já produz `Block[]`, e um renderizador de texto sobre ele tem 20 linhas. Consequências, todas boas:
+
+- `.txt` e `.docx` passam a sair do **mesmo** mapeamento — consistentes por construção, não por disciplina;
+- nada volta a virar markdown, então não há o que escapar;
+- `strip-markdown` fica sem uso e **sai do `package.json`** (e do `exclude`, que volta a dois);
+- a `thematicBreak`, que o `strip` apagava, vira `---` — visível em vez de muda.
+
+⚠️ **O teste que eu tinha escrito para o sumiço de código passava com o defeito presente:** `toContain('const a = 1')` é verdadeiro mesmo com o texto escapado ao redor. **Asserção de presença não prova transformação; só igualdade prova.** Os casos novos comparam o bloco inteiro e proíbem `\`, `&#x20;` e `&amp;` por nome.
+
 ### DE1E.8 — O documento sai parecendo Word, não parecendo o crivo
 
 Os títulos usam `HeadingLevel.HEADING_1..6`, que são os estilos **nativos** do Word — então o tema, a fonte e a numeração automática do usuário se aplicam sozinhos, e o sumário do Word encontra os títulos.

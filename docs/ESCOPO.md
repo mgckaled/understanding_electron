@@ -340,7 +340,7 @@ Diferente do documento **anexado** — que só entra como contexto e nunca produ
 | Formato | Como se gera | Observação |
 |---|---|---|
 | `.md` | texto que o modelo já produziu, salvo direto | sem biblioteca — não é motor, é `writeFile` |
-| `.txt` | o texto sem a marcação | **usa** `remark` + `strip-markdown` (E-1-D), não é `replace` de símbolo. E os handlers de substituição de `code`/`table` não são opcionais: sem eles o pacote **apaga** os dois (E-1-E) |
+| `.txt` | o texto sem a marcação | **não** é `replace` de símbolo, nem serialização de volta ao markdown: sai do **mesmo mapeamento que o `.docx`** (`core/export/blocks.ts`), o que mantém os dois formatos consistentes por construção e impede que código exportado saia escapado (E-1-E) |
 | `.pdf` | `pdf-lib` | desenha texto/posição; sem paginação automática de prosa longa |
 | `.docx` | `docx` (dolanmiu) | API declarativa por parágrafo, Node puro, sem módulo nativo |
 
