@@ -22,7 +22,10 @@ export async function printPdf(html: string): Promise<Uint8Array> {
   })
 
   try {
-    await window.loadURL('data:text/html,<div></div>')
+    // The doctype belongs to the FIRST load: `innerHTML` cannot change a
+    // document's compat mode later, and without it the page renders in quirks
+    // mode, where line height and table sizing follow other rules (DE1F.8).
+    await window.loadURL('data:text/html,<!doctype html><div></div>')
     await window.webContents.executeJavaScript(
       `document.documentElement.innerHTML = ${JSON.stringify(html)}; true`
     )
