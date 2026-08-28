@@ -91,6 +91,57 @@ describe('saveExport', () => {
     expect(await readFile(join(dir, 'V.pdf'), 'utf-8')).toBe(`%PDF-${html.length}`)
   })
 
+  // DE2B.5: every other format parses the text as markdown, and markdown joins
+  // consecutive lines and reads four leading spaces as a nested block. The whole
+  // point of `source` is that NOTHING happens to the bytes.
+  const CODE = [
+    'class Person {',
+    '  name: string',
+    '',
+    '    greet() {',
+    '        return 1',
+    '    }',
+    '}'
+  ].join('\n')
+
+  it('writes code byte for byte, with no markdown parsing', async () => {
+    await saveExport(
+      { text: CODE, format: 'source', suggestedName: 'Person.ts' },
+      dialogChoosing('Person.ts'),
+      printer,
+      db
+    )
+
+    expect(await readFile(join(dir, 'Person.ts'), 'utf-8')).toBe(CODE)
+  })
+
+  it('takes the dialog filter from the suggested name, since the language is not sent', async () => {
+    const dialog = dialogChoosing('consulta.sql')
+
+    await saveExport(
+      { text: 'select 1', format: 'source', suggestedName: 'consulta.sql' },
+      dialog,
+      printer,
+      db
+    )
+
+    expect(dialog.mock.calls[0]?.[0].filters).toEqual([{ name: 'Código', extensions: ['sql'] }])
+  })
+
+  // DE2B.3: a whole-name language like Dockerfile arrives with no dot at all.
+  it('offers every extension when the suggested name carries none', async () => {
+    const dialog = dialogChoosing('Dockerfile')
+
+    await saveExport(
+      { text: 'FROM node', format: 'source', suggestedName: 'Dockerfile' },
+      dialog,
+      printer,
+      db
+    )
+
+    expect(dialog.mock.calls[0]?.[0].filters).toEqual([{ name: 'Código', extensions: ['*'] }])
+  })
+
   it('is a cancellation, not a failure, when the dialog is dismissed', async () => {
     const result = await saveExport(
       { text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' },

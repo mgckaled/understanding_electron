@@ -540,8 +540,12 @@ export type Draft = {
 export const themeSchema = z.enum(['system', 'light', 'dark'])
 export type Theme = z.infer<typeof themeSchema>
 
-/** What the footer offers; `.docx` and `.pdf` land in E-1-E and E-1-F. */
-export const exportFormatSchema = z.enum(['md', 'txt', 'docx', 'pdf'])
+/**
+ * What the footer offers. `source` is the code draft's only outcome (DE2B.5):
+ * bytes written verbatim, with the extension the language asks for — every
+ * other format parses the text as markdown, which destroys code.
+ */
+export const exportFormatSchema = z.enum(['md', 'txt', 'docx', 'pdf', 'source'])
 export type ExportFormat = z.infer<typeof exportFormatSchema>
 
 export const appSettingsSchema = z.object({

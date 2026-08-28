@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { FileDown, Trash2 } from 'lucide-react'
 import type { AppError, DraftKind, ExportFormat } from '@shared/ipc'
 import { draftTitle } from '@core/draft/title'
-import { exportFileName } from '@core/export/fileName'
+import { codeFileName, exportFileName } from '@core/export/fileName'
+import { FALLBACK_EXTENSION, resolveLanguage } from '@core/draft/languages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { errorMessage } from '../../shared/ui/messages'
@@ -16,15 +17,21 @@ type Notice = { kind: 'ok'; path: string } | { kind: 'error'; error: AppError }
 function DraftFooter({
   readText,
   kind,
+  language,
   onDelete
 }: {
   /** The live document, so exporting never races the blur that saves (DE1D.8). */
   readText: () => string
   /** Which dialect the open draft is, so the file name is derived by its rule. */
   kind: DraftKind
+  /** The fence's language, which names the file when `kind` is code. */
+  language: string | null
   onDelete: () => void
 }): React.JSX.Element {
   const [format, setFormat] = useState<ExportFormat>('md')
+  // Code has one outcome, so the picker's own state never reaches the dialog.
+  const isCode = kind === 'code'
+  const codeLanguage = resolveLanguage(language)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -44,8 +51,10 @@ function DraftFooter({
     const text = readText()
     const result = await window.api.export.save({
       text,
-      format,
-      suggestedName: exportFileName(draftTitle(text, kind), format)
+      format: isCode ? 'source' : format,
+      suggestedName: isCode
+        ? codeFileName(draftTitle(text, kind), codeLanguage)
+        : exportFileName(draftTitle(text, kind), format)
     })
     setSaving(false)
 
@@ -56,7 +65,11 @@ function DraftFooter({
 
   return (
     <footer className="flex flex-none items-center gap-3 border-t border-border px-5 py-3">
-      <FormatPicker current={format} onChange={setFormat} />
+      <FormatPicker
+        current={format}
+        onChange={setFormat}
+        fixed={isCode ? `.${codeLanguage?.extension ?? FALLBACK_EXTENSION}` : undefined}
+      />
       <Button variant="primary" size="sm" loading={saving} onClick={() => void exportNow()}>
         <span className="flex items-center gap-2">
           <FileDown size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />

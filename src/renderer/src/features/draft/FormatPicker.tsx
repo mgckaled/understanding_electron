@@ -20,19 +20,32 @@ const TRIGGER =
   'bg-surface-sunken px-5 font-ui text-xs text-text transition-colors ' +
   'duration-(--duration-fast) ease-initial hover:border-border-strong'
 
+const LABEL = 'flex h-(--control-height-sm) items-center px-5 font-ui text-xs text-text-muted'
+
 const ROW =
   'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-text ' +
   'hover:bg-surface disabled:cursor-not-allowed disabled:text-text-faint disabled:hover:bg-transparent'
 
 function FormatPicker({
   current,
-  onChange
+  onChange,
+  fixed
 }: {
   current: ExportFormat
   onChange: (format: ExportFormat) => void
+  /**
+   * The single outcome, when there is no choice to make — a code draft exports
+   * verbatim and nothing else (DE2B.5). Same rule the DraftPicker follows with
+   * one draft: an empty box with a chevron promises a list that is not there.
+   */
+  fixed?: string
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const anchorName = toAnchorName(useId())
+
+  if (fixed !== undefined) {
+    return <span className={LABEL}>{fixed}</span>
+  }
 
   return (
     <>

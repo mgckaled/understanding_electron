@@ -278,6 +278,36 @@ describe('enviar código para rascunho', () => {
     expect(tokenClasses(panel, 'pre [class*="tok-"]').size).toBe(0)
   })
 
+  // DE2B.5: code has one outcome, so the picker is not a control — the same
+  // rule the DraftPicker follows with a single draft.
+  it('shows the extension as a label, not a format picker, for code', async () => {
+    const panel = await openCodeDraft(CLASS_ANSWER)
+
+    expect(within(panel).queryByRole('button', { name: /^Formato:/ })).toBeNull()
+    expect(within(panel).getByText('.ts')).toBeVisible()
+  })
+
+  it('keeps the four-format picker for a prose draft', async () => {
+    await withAnswer([CODE_ANSWER])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Enviar para rascunho' })[1])
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    expect(within(panel).getByRole('button', { name: 'Formato: .md' })).toBeVisible()
+  })
+
+  it('exports a code draft with the language extension', async () => {
+    const panel = await openCodeDraft(CLASS_ANSWER)
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Exportar' }))
+
+    await waitFor(() =>
+      expect(vi.mocked(api.export.save)).toHaveBeenCalledWith(
+        expect.objectContaining({ format: 'source', suggestedName: 'class Person {.ts' })
+      )
+    )
+  })
+
   it('builds no nested code block in a code preview', async () => {
     const panel = await openCodeDraft(CLASS_ANSWER)
 

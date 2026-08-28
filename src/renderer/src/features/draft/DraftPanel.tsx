@@ -94,6 +94,7 @@ function DraftPanel(): React.JSX.Element | null {
       <DraftFooter
         readText={() => read.current()}
         kind={kind}
+        language={language}
         onDelete={() => setConfirming(true)}
       />
 

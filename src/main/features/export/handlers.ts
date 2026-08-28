@@ -11,11 +11,24 @@ import { readSettings, writeSettings } from '../settings/handlers'
 
 type ShowSaveDialog = (options: SaveDialogOptions) => Promise<SaveDialogReturnValue>
 
-const FILTERS: Record<ExportFormat, { name: string; extensions: string[] }> = {
+type Filter = { name: string; extensions: string[] }
+
+const FILTERS: Record<Exclude<ExportFormat, 'source'>, Filter> = {
   md: { name: 'Markdown', extensions: ['md'] },
   txt: { name: 'Texto', extensions: ['txt'] },
   docx: { name: 'Word', extensions: ['docx'] },
   pdf: { name: 'PDF', extensions: ['pdf'] }
+}
+
+// A code draft's extension comes from its language, which only the renderer
+// resolved — so it arrives already in `suggestedName` rather than as a second
+// field to keep in step. A name with no dot is a whole-name language like
+// Dockerfile (DE2B.3).
+function filterFor(format: ExportFormat, suggestedName: string): Filter {
+  if (format !== 'source') return FILTERS[format]
+  const dot = suggestedName.lastIndexOf('.')
+  const extension = dot === -1 ? '' : suggestedName.slice(dot + 1)
+  return { name: 'Código', extensions: extension === '' ? ['*'] : [extension] }
 }
 
 /** Turns HTML into pdf bytes — injected, because only `main` may open a window. */
@@ -26,6 +39,8 @@ function render(
   format: ExportFormat,
   printPdf: PrintPdf
 ): Promise<string | Uint8Array> | string {
+  // `md` and `source` both fall through to the verbatim return below: one is
+  // already markdown, the other must never be parsed as any (DE2B.5).
   if (format === 'txt') return toPlainText(text)
   if (format === 'docx') return toDocx(text)
   if (format === 'pdf') return printPdf(toHtml(text))
@@ -52,7 +67,7 @@ export async function saveExport(
     // one would be a second place to decide the same thing, and Electron's
     // extension handling with several filters plus defaultPath is a known
     // source of surprises (DE1D.1).
-    filters: [FILTERS[format]],
+    filters: [filterFor(format, suggestedName)],
     defaultPath: lastExportDir === undefined ? suggestedName : join(lastExportDir, suggestedName)
   })
 
