@@ -8,6 +8,8 @@ export type DraftApi = {
   current: Draft | null
   /** Whether this answer already produced a draft — the turn button's state (DE1A.3). */
   hasDraftOf: (messageId: string) => boolean
+  /** Whether this exact block already produced a code draft (DE2A.8). */
+  hasCodeDraftOf: (messageId: string, code: string) => boolean
   createFrom: (sourceMessageId: string, content: string, code?: { language: string | null }) => void
   /** Rewrites one draft; the title is re-derived from the text (DE1C.7). */
   update: (id: string, content: string) => void

@@ -6,6 +6,7 @@ import type { Components, Options } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { checkExternalUrl } from '@core/url'
+import { cx } from '../cx'
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { ICON_SIZE, ICON_STROKE } from '../icon'
 import styles from './MarkdownMessage.module.css'
@@ -58,17 +59,27 @@ function trimTrailingNewline(text: string): string {
  */
 export type SendCode = (code: string, language: string | null) => void
 
+/**
+ * What the transcript lets a code block do. One object, not two props: the
+ * button cannot be shown without knowing whether it was already used (DE2A.8).
+ */
+export type CodeActions = {
+  onSend: SendCode
+  /** Whether this exact block already produced a draft. */
+  isSent: (code: string) => boolean
+}
+
 // The language label sits OUTSIDE <pre> so a selection drag over the code does
 // not pick it up — the block is copyable data. The name comes off the fenced
 // code's `language-*` class; absent → no label, still correct (D11.5).
 function CodeBlock({
   children,
   node,
-  onSend
+  actions
 }: {
   children?: ReactNode
   node?: Element
-  onSend?: SendCode
+  actions?: CodeActions
 }): React.JSX.Element {
   const first = node?.children?.[0]
   const codeElement = first?.type === 'element' ? first : undefined
@@ -77,6 +88,8 @@ function CodeBlock({
     Array.isArray(className) ? className.join(' ') : ''
   )?.[1]
   const { copied, copy } = useCopyToClipboard()
+  const code = trimTrailingNewline(textOf(codeElement))
+  const sent = actions?.isSent(code) ?? false
 
   return (
     <div className={styles.codeBlock}>
@@ -86,10 +99,22 @@ function CodeBlock({
             {language}
           </span>
         )}
+        {actions !== undefined && (
+          <button
+            type="button"
+            className={styles.headerButton}
+            onClick={() => actions.onSend(code, language ?? null)}
+            disabled={sent}
+            title={sent ? 'Rascunho criado' : 'Enviar código para rascunho'}
+            aria-label={sent ? 'Rascunho criado' : 'Enviar código para rascunho'}
+          >
+            <NotebookPen size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          </button>
+        )}
         <button
           type="button"
-          className={styles.copyButton}
-          onClick={() => void copy(trimTrailingNewline(textOf(codeElement)))}
+          className={cx(styles.headerButton, styles.copyButton)}
+          onClick={() => void copy(code)}
           title={copied ? 'Copiado' : 'Copiar código'}
           aria-label={copied ? 'Copiado' : 'Copiar código'}
         >
@@ -99,17 +124,6 @@ function CodeBlock({
             <Copy size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           )}
         </button>
-        {onSend !== undefined && (
-          <button
-            type="button"
-            className={styles.copyButton}
-            onClick={() => onSend(trimTrailingNewline(textOf(codeElement)), language ?? null)}
-            title="Enviar código para rascunho"
-            aria-label="Enviar código para rascunho"
-          >
-            <NotebookPen size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-          </button>
-        )}
       </div>
       <pre>{children}</pre>
     </div>
@@ -141,12 +155,12 @@ const anchor: Components['a'] = ({ href, children }) => {
 function MarkdownMessage({
   text,
   highlight = true,
-  onSendCode
+  codeActions
 }: {
   text: string
   highlight?: boolean
-  /** Absent means no button on the code blocks — the case for three of the four callers (DE2A.6). */
-  onSendCode?: SendCode
+  /** Absent means no draft button on the code blocks — three of the four callers (DE2A.6). */
+  codeActions?: CodeActions
 }): React.JSX.Element {
   // Was a module constant until E-2-A; it now closes over a prop, so it is
   // memoised — a new object here rebuilds the whole rendered tree.
@@ -154,12 +168,12 @@ function MarkdownMessage({
     () => ({
       a: anchor,
       pre: ({ children, node }) => (
-        <CodeBlock node={node} onSend={onSendCode}>
+        <CodeBlock node={node} actions={codeActions}>
           {children}
         </CodeBlock>
       )
     }),
-    [onSendCode]
+    [codeActions]
   )
 
   return (

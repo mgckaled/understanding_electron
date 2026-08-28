@@ -137,8 +137,8 @@
 .codeBlockHeader {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -148,12 +148,11 @@
   font-size: var(--font-size-2xs);
 }
 
-.copyButton {
+.headerButton {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
   padding: var(--space-2);
   color: var(--color-text-muted);
   cursor: pointer;
@@ -162,9 +161,22 @@
   border-radius: var(--radius-sm);
 }
 
-.copyButton:hover {
+.headerButton:hover:not(:disabled) {
   color: var(--color-text);
   background: var(--color-surface-raised);
+}
+
+/* Disabled here means "already drafted", never "unavailable" — same signal the
+   turn button gives, so it reads as a state and not as a dead control. */
+.headerButton:disabled {
+  color: var(--color-accent-text);
+  cursor: default;
+}
+
+/* The only thing pushed to the far end; everything before it groups beside the
+   language label. */
+.copyButton {
+  margin-left: auto;
 }
 
 .codeBlock pre {

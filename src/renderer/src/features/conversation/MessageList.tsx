@@ -1,7 +1,7 @@
-import { useCallback } from 'react'
+import { useMemo } from 'react'
 import type { Message, MessageStopped } from '@shared/ipc'
 import { attachmentPartOf, messageText, stepProposalPartOf } from '@core/ai/messages'
-import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
+import MarkdownMessage, { type CodeActions } from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import AttachmentCard from '../attachment/AttachmentCard'
 import StepProposalLine from '../attachment/StepProposalLine'
 import { useDraft } from '../draft/draftContext'
@@ -25,12 +25,15 @@ function AssistantMarkdown({
   text: string
   messageId: string
 }): React.JSX.Element {
-  const { createFrom } = useDraft()
-  const onSendCode = useCallback(
-    (code: string, language: string | null) => createFrom(messageId, code, { language }),
-    [createFrom, messageId]
+  const { createFrom, hasCodeDraftOf } = useDraft()
+  const codeActions = useMemo<CodeActions>(
+    () => ({
+      onSend: (code, language) => createFrom(messageId, code, { language }),
+      isSent: (code) => hasCodeDraftOf(messageId, code)
+    }),
+    [createFrom, hasCodeDraftOf, messageId]
   )
-  return <MarkdownMessage text={text} onSendCode={onSendCode} />
+  return <MarkdownMessage text={text} codeActions={codeActions} />
 }
 
 // The transcript, and only it (DF3B.6): which shape a turn takes, and which

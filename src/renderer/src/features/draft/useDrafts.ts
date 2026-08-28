@@ -18,6 +18,14 @@ export type DraftsApi = {
    */
   hasDraftOf: (messageId: string) => boolean
   /**
+   * Whether this exact block already produced a code draft.
+   *
+   * Matched on content, not on position: a fence has no id, and the same rule
+   * as DE1A.3 applies — the list is the only source, so deleting the draft (or
+   * editing the code out of it) offers the block again with nothing to unset.
+   */
+  hasCodeDraftOf: (messageId: string, code: string) => boolean
+  /**
    * Adds a draft to this conversation.
    *
    * @param code - Absent for prose. Present makes it a code draft, and carries
@@ -104,8 +112,17 @@ export function useDrafts(conversationId: string | null): DraftsApi {
     [drafts]
   )
 
+  const hasCodeDraftOf = useCallback(
+    (messageId: string, code: string) =>
+      drafts.some(
+        (draft) =>
+          draft.sourceMessageId === messageId && draft.kind === 'code' && draft.content === code
+      ),
+    [drafts]
+  )
+
   return useMemo(
-    () => ({ drafts, hasDraftOf, create, update, remove }),
-    [drafts, hasDraftOf, create, update, remove]
+    () => ({ drafts, hasDraftOf, hasCodeDraftOf, create, update, remove }),
+    [drafts, hasDraftOf, hasCodeDraftOf, create, update, remove]
   )
 }

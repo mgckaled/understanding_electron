@@ -7,7 +7,7 @@ import { useDrafts } from './useDrafts'
 
 function DraftProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const { activeId } = useConversations()
-  const { drafts, hasDraftOf, create, update, remove } = useDrafts(activeId)
+  const { drafts, hasDraftOf, hasCodeDraftOf, create, update, remove } = useDrafts(activeId)
   const { showing, raise, toggle: toggleRegion, close, release, onShortcut } = usePanel()
   const [openId, setOpenId] = useState<string | null>(null)
 
@@ -50,6 +50,7 @@ function DraftProvider({ children }: { children: ReactNode }): React.JSX.Element
       drafts,
       current,
       hasDraftOf,
+      hasCodeDraftOf,
       createFrom: create,
       update,
       remove,
@@ -57,7 +58,18 @@ function DraftProvider({ children }: { children: ReactNode }): React.JSX.Element
       togglePanel,
       close
     }),
-    [drafts, current, hasDraftOf, create, update, remove, toggle, togglePanel, close]
+    [
+      drafts,
+      current,
+      hasDraftOf,
+      hasCodeDraftOf,
+      create,
+      update,
+      remove,
+      toggle,
+      togglePanel,
+      close
+    ]
   )
 
   return <DraftContext value={value}>{children}</DraftContext>

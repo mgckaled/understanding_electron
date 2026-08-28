@@ -140,6 +140,21 @@ describe('DraftCount', () => {
 describe('enviar código para rascunho', () => {
   const CODE_ANSWER = ['Use isto:', '', '```python', 'import pandas as pd', '```'].join('\n')
   const BARE_ANSWER = ['Ou isto:', '', '```', 'algo cru', '```'].join('\n')
+  // TWO fences in ONE answer — the case that forces matching on content, since
+  // both blocks share a sourceMessageId.
+  const TWO_BLOCKS = [
+    'Primeiro:',
+    '',
+    '```python',
+    'import pandas as pd',
+    '```',
+    '',
+    'Segundo:',
+    '',
+    '```sql',
+    'select 1',
+    '```'
+  ].join('\n')
 
   it('creates a code draft carrying the fence language', async () => {
     await withAnswer([CODE_ANSWER])
@@ -171,6 +186,30 @@ describe('enviar código para rascunho', () => {
         expect.objectContaining({ kind: 'code', language: null, content: 'algo cru' })
       ])
     )
+  })
+
+  // Found live: the block button had no state at all, so the same fence could be
+  // drafted without limit. Derived from the list like the turn button (DE1A.3),
+  // matched on content because a fence has no id (DE2A.8).
+  it('stops offering a block it already drafted', async () => {
+    await withAnswer([CODE_ANSWER])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))
+
+    expect(await screen.findByRole('button', { name: 'Rascunho criado' })).toBeDisabled()
+  })
+
+  // Two fences in the SAME answer, one drafted: the other must stay offered.
+  // They share a sourceMessageId, so this is what forces the content match —
+  // provoked, and the first version of this test used two separate answers and
+  // proved nothing, since the message id alone already told those apart.
+  it('leaves the other block of the same answer still offered', async () => {
+    await withAnswer([TWO_BLOCKS])
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Enviar código para rascunho' })[0])
+
+    await screen.findByRole('button', { name: 'Rascunho criado' })
+    expect(screen.getByRole('button', { name: 'Enviar código para rascunho' })).toBeEnabled()
   })
 
   it('marks the code draft in the panel header with its language', async () => {
