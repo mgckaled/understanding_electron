@@ -20,11 +20,7 @@ const theme = EditorView.theme({
     backgroundColor: 'var(--color-surface)'
   },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': {
-    fontFamily: 'var(--font-mono)',
-    lineHeight: '1.5',
-    padding: 'var(--space-7)'
-  },
+  '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.5' },
   '.cm-content': { caretColor: 'var(--color-accent-text)' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--color-accent-text)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
@@ -48,12 +44,23 @@ const markdownHighlight = HighlightStyle.define([
 
 // The DE1C.3 ruling that kept gutters out is not overridden — its premise was
 // "this is a field of prose", and a code draft is not one. Prose keeps it.
+/**
+ * Where a code line wraps, in characters.
+ *
+ * CodeMirror has no column wrap: `lineWrapping` breaks at the viewport, and a
+ * `max-width` in `ch` is what turns that into a column (checked — the CM6 docs
+ * offer nothing else). 90 rather than 80 because the panel is narrow and the
+ * reflow is what the reader sees, not a diff someone has to review.
+ */
+const WRAP_COLUMN = 90
+
 const codeTheme = EditorView.theme({
-  // The gutter is `position: sticky`, so it needs an OPAQUE background or the
-  // code scrolls visibly through the numbers. And the scroller's own left
-  // padding would leave a strip beside it for the text to pass through, so the
-  // padding moves onto the gutter, which then starts flush at zero.
-  '.cm-scroller': { paddingLeft: '0px' },
+  // Only the HORIZONTAL padding leaves the scroller, and that is load-bearing:
+  // the gutter is `position: sticky` against the scroller's left edge, so a
+  // padding-left there is a strip the gutter does not cover and the content
+  // scrolls through it. Vertical padding does not touch that, and keeping it
+  // here leaves CodeMirror's own line/gutter alignment alone.
+  '.cm-scroller': { padding: 'var(--space-7) 0px' },
   '.cm-gutters': {
     color: 'var(--color-text-faint)',
     backgroundColor: 'var(--color-surface)',
@@ -61,6 +68,7 @@ const codeTheme = EditorView.theme({
     paddingLeft: 'var(--space-7)',
     paddingRight: 'var(--space-4)'
   },
+  '.cm-content': { maxWidth: `${WRAP_COLUMN}ch`, paddingRight: 'var(--space-7)' },
   '.cm-activeLineGutter': {
     color: 'var(--color-text-muted)',
     backgroundColor: 'var(--color-surface-raised)'
@@ -74,6 +82,11 @@ export const editorTheme: Extension = theme
 
 /** Prose highlighting: inline colours, markdown's own tags. */
 export const markdownHighlighting: Extension = syntaxHighlighting(markdownHighlight)
+
+/** The padding the base theme no longer decides, since the two dialects differ. */
+export const proseTheme: Extension = EditorView.theme({
+  '.cm-scroller': { padding: 'var(--space-7)' }
+})
 
 /**
  * Code highlighting — the SAME `Highlighter` the panel's preview renders with

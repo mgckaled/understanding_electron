@@ -110,9 +110,13 @@ Ela **não é revogada** — a premissa dela deixou de valer para metade dos ras
 
 Medido: **+8.304 B**, e nenhuma dependência nova — `lineNumbers`, `highlightActiveLine` e `highlightActiveLineGutter` vêm do `@codemirror/view`, que o editor já usa. É 3% do que as gramáticas custaram.
 
-**A quebra de linha sai junto, e não é detalhe:** com `lineWrapping`, uma linha longa ocupa três alturas e carrega **um** número — a numeração fica ilegível justamente onde ela mais serve. Código rola na horizontal, como em qualquer editor de código; prosa continua quebrando.
+**A quebra é por COLUNA, não pela largura da janela.** `WRAP_COLUMN = 90`, aplicado como `max-width: 90ch` no `.cm-content`. O CodeMirror **não tem quebra por coluna** — verificado na doc e na comunidade: `lineWrapping` quebra no viewport, e o `max-width` em `ch` é o único caminho. Prosa continua quebrando na largura disponível.
 
-⚠️ **Um gutter `sticky` precisa de fundo opaco, e a rolagem lateral é quem cobra.** Achado ao vivo: com `background: transparent` o código rola **por cima dos números**, e o `padding-left` do `.cm-scroller` ainda deixa uma faixa à esquerda do gutter por onde o texto passa. O conserto é fundo `--color-surface` e o padding movido do scroller para o gutter, que passa a começar em zero. **Nenhum teste pega isto** — é CSS, e o jsdom não aplica CSS (skill `testing` § limites de ambiente).
+⚠️ **`padding-left` no `.cm-scroller` quebra o gutter fixo, e a causa é onde o `sticky` ancora.** O gutter já é fixo por padrão (`gutters({fixed})` é opt-out), e o plugin aplica `position: sticky` inline com `insetInlineStart: 0` (`@codemirror/view/dist/index.js:11398`). **`left: 0` é relativo à caixa de PADDING do scroller** — então um `padding-left` ali ancora o gutter depois da faixa, e o conteúdo rola visivelmente por ela. O conserto é o scroller só com padding **vertical** (que não toca a ancoragem), o horizontal indo para o gutter e para o conteúdo.
+
+Com a quebra por coluna não há rolagem horizontal nenhuma, então os dois consertos se reforçam: um remove a causa, o outro remove a oportunidade.
+
+⚠️ **Nada disto tem teste** — é CSS, e o jsdom não aplica CSS (skill [`testing`](../../../.claude/skills/testing/SKILL.md) § limites de ambiente). A verificação é ao vivo, e **duas tentativas minhas falharam antes desta**: a primeira deixou o gutter transparente, a segunda empilhou `paddingLeft: 0` por cima do padding em vez de tirar o padding do lugar errado. Consertar CSS por sintoma não converge.
 
 ⚠️ **Ordem de registro é carga.** `codeGutters` tem de vir **depois** de `editorTheme`, porque sobrescreve o `.cm-activeLine: transparent` que ele define. Trocar a ordem apaga o realce da linha do cursor sem erro nenhum.
 
