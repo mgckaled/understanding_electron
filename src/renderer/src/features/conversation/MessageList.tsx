@@ -1,8 +1,10 @@
+import { useCallback } from 'react'
 import type { Message, MessageStopped } from '@shared/ipc'
 import { attachmentPartOf, messageText, stepProposalPartOf } from '@core/ai/messages'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import AttachmentCard from '../attachment/AttachmentCard'
 import StepProposalLine from '../attachment/StepProposalLine'
+import { useDraft } from '../draft/draftContext'
 import TurnActions from './TurnActions'
 
 // Reading a saved conversation, "there is no answer here" and "the answer was
@@ -11,6 +13,24 @@ import TurnActions from './TurnActions'
 const STOPPED_LABEL: Record<MessageStopped, string> = {
   cancelled: 'interrompida por você',
   timeout: 'interrompida por tempo esgotado'
+}
+
+// Binds one answer's code blocks to the draft panel. Its own component so the
+// callback is stable per message: MarkdownMessage memoises its renderers on
+// this identity, and an inline arrow would rebuild the tree on every render.
+function AssistantMarkdown({
+  text,
+  messageId
+}: {
+  text: string
+  messageId: string
+}): React.JSX.Element {
+  const { createFrom } = useDraft()
+  const onSendCode = useCallback(
+    (code: string, language: string | null) => createFrom(messageId, code, { language }),
+    [createFrom, messageId]
+  )
+  return <MarkdownMessage text={text} onSendCode={onSendCode} />
 }
 
 // The transcript, and only it (DF3B.6): which shape a turn takes, and which
@@ -49,7 +69,7 @@ function MessageList({ messages }: { messages: Message[] }): React.JSX.Element {
               return proposal !== null ? (
                 <StepProposalLine part={proposal} messageId={message.id} />
               ) : (
-                <MarkdownMessage text={messageText(message)} />
+                <AssistantMarkdown text={messageText(message)} messageId={message.id} />
               )
             })()}
             {message.stopped !== undefined && (

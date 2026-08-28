@@ -137,6 +137,73 @@ describe('DraftCount', () => {
 
 // The counter only becomes a button in step 4, so the panel is driven through
 // the context here — the same probe shape artifact.test.tsx uses.
+describe('enviar código para rascunho', () => {
+  const CODE_ANSWER = ['Use isto:', '', '```python', 'import pandas as pd', '```'].join('\n')
+  const BARE_ANSWER = ['Ou isto:', '', '```', 'algo cru', '```'].join('\n')
+
+  it('creates a code draft carrying the fence language', async () => {
+    await withAnswer([CODE_ANSWER])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))
+
+    await waitFor(async () =>
+      expect(await api.draft.list('c1')).toEqual([
+        expect.objectContaining({
+          sourceMessageId: 'm2',
+          kind: 'code',
+          language: 'python',
+          content: 'import pandas as pd',
+          title: 'import pandas as pd'
+        })
+      ])
+    )
+  })
+
+  // A fence with no info string is a normal fence (D11.5), not a defect — it
+  // stores as code with no language, which is why the two are separate columns.
+  it('creates a code draft with no language when the fence named none', async () => {
+    await withAnswer([BARE_ANSWER])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))
+
+    await waitFor(async () =>
+      expect(await api.draft.list('c1')).toEqual([
+        expect.objectContaining({ kind: 'code', language: null, content: 'algo cru' })
+      ])
+    )
+  })
+
+  it('leaves the answer-level draft button alone', async () => {
+    await withAnswer([CODE_ANSWER])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))
+    await waitFor(async () => expect(await api.draft.list('c1')).toHaveLength(1))
+
+    expect(screen.getAllByRole('button', { name: 'Enviar para rascunho' })[1]).toBeEnabled()
+  })
+
+  // DE2A.6: MarkdownMessage has four callers and only the transcript passes the
+  // callback. The draft has to be the PROSE one for this to mean anything — a
+  // code draft stores the block bare, so its preview renders no fence at all and
+  // the assertion would hold with the button unconditional. Provoked: this fails
+  // when the guard on onSend is removed.
+  it('puts no send button inside the draft panel preview', async () => {
+    await withAnswer([CODE_ANSWER])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Enviar para rascunho' })[1])
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    await userEvent.click(within(panel).getByRole('tab', { name: 'Prévia' }))
+
+    // Proof that the preview really built a CodeBlock: its OTHER button, the
+    // sibling in the same header, is there. Matching the code text instead would
+    // hit the editor CodeMirror keeps mounted behind the tab (DE1C.4).
+    expect(within(panel).getByRole('button', { name: 'Copiar código' })).toBeVisible()
+    expect(within(panel).queryByRole('button', { name: 'Enviar código para rascunho' })).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Enviar código para rascunho' })).toHaveLength(1)
+  })
+})
+
 function Probe(): React.JSX.Element {
   const { drafts, togglePanel, createFrom } = useDraft()
   return (

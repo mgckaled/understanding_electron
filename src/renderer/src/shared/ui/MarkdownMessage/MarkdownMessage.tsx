@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { Element } from 'hast'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, NotebookPen } from 'lucide-react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
 import type { Components, Options } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -49,15 +49,26 @@ function trimTrailingNewline(text: string): string {
   return text.replace(/\n$/, '')
 }
 
+/**
+ * Hands one fenced block to whoever can store it.
+ *
+ * @param code - The block's text, without the fence's own trailing newline.
+ * @param language - The fence's info string, or `null` when it named none —
+ *   which is a normal fence, not a defect (D11.5, DE2A.2).
+ */
+export type SendCode = (code: string, language: string | null) => void
+
 // The language label sits OUTSIDE <pre> so a selection drag over the code does
 // not pick it up — the block is copyable data. The name comes off the fenced
 // code's `language-*` class; absent → no label, still correct (D11.5).
 function CodeBlock({
   children,
-  node
+  node,
+  onSend
 }: {
   children?: ReactNode
   node?: Element
+  onSend?: SendCode
 }): React.JSX.Element {
   const first = node?.children?.[0]
   const codeElement = first?.type === 'element' ? first : undefined
@@ -88,31 +99,39 @@ function CodeBlock({
             <Copy size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
           )}
         </button>
+        {onSend !== undefined && (
+          <button
+            type="button"
+            className={styles.copyButton}
+            onClick={() => onSend(trimTrailingNewline(textOf(codeElement)), language ?? null)}
+            title="Enviar código para rascunho"
+            aria-label="Enviar código para rascunho"
+          >
+            <NotebookPen size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+          </button>
+        )}
       </div>
       <pre>{children}</pre>
     </div>
   )
 }
 
-const components: Components = {
-  // A link renders as a clickable <a> only when checkExternalUrl approves it
-  // (D11.3) — the same pure function main uses, no copy of the allow-list here.
-  // Anything else renders as plain text, so no bad URL reaches the IPC schema.
-  a({ href, children }) {
-    if (href === undefined || !checkExternalUrl(href).ok) return <>{children}</>
-    return (
-      <a
-        href={href}
-        onClick={(event) => {
-          event.preventDefault()
-          void window.api.shell.openExternal(href)
-        }}
-      >
-        {children}
-      </a>
-    )
-  },
-  pre: CodeBlock
+// A link renders as a clickable <a> only when checkExternalUrl approves it
+// (D11.3) — the same pure function main uses, no copy of the allow-list here.
+// Anything else renders as plain text, so no bad URL reaches the IPC schema.
+const anchor: Components['a'] = ({ href, children }) => {
+  if (href === undefined || !checkExternalUrl(href).ok) return <>{children}</>
+  return (
+    <a
+      href={href}
+      onClick={(event) => {
+        event.preventDefault()
+        void window.api.shell.openExternal(href)
+      }}
+    >
+      {children}
+    </a>
+  )
 }
 
 // `highlight` is off for the still-streaming reply (D12.6): tokenising a growing
@@ -121,11 +140,28 @@ const components: Components = {
 // reply lands — one transition instead of many.
 function MarkdownMessage({
   text,
-  highlight = true
+  highlight = true,
+  onSendCode
 }: {
   text: string
   highlight?: boolean
+  /** Absent means no button on the code blocks — the case for three of the four callers (DE2A.6). */
+  onSendCode?: SendCode
 }): React.JSX.Element {
+  // Was a module constant until E-2-A; it now closes over a prop, so it is
+  // memoised — a new object here rebuilds the whole rendered tree.
+  const components = useMemo<Components>(
+    () => ({
+      a: anchor,
+      pre: ({ children, node }) => (
+        <CodeBlock node={node} onSend={onSendCode}>
+          {children}
+        </CodeBlock>
+      )
+    }),
+    [onSendCode]
+  )
+
   return (
     <div className={styles.markdown}>
       <Markdown
