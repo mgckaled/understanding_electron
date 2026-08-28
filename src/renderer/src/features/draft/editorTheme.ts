@@ -49,10 +49,16 @@ const markdownHighlight = HighlightStyle.define([
 // The DE1C.3 ruling that kept gutters out is not overridden — its premise was
 // "this is a field of prose", and a code draft is not one. Prose keeps it.
 const codeTheme = EditorView.theme({
+  // The gutter is `position: sticky`, so it needs an OPAQUE background or the
+  // code scrolls visibly through the numbers. And the scroller's own left
+  // padding would leave a strip beside it for the text to pass through, so the
+  // padding moves onto the gutter, which then starts flush at zero.
+  '.cm-scroller': { paddingLeft: '0px' },
   '.cm-gutters': {
     color: 'var(--color-text-faint)',
-    backgroundColor: 'transparent',
+    backgroundColor: 'var(--color-surface)',
     border: 'none',
+    paddingLeft: 'var(--space-7)',
     paddingRight: 'var(--space-4)'
   },
   '.cm-activeLineGutter': {

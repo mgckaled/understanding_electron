@@ -112,6 +112,8 @@ Medido: **+8.304 B**, e nenhuma dependência nova — `lineNumbers`, `highlightA
 
 **A quebra de linha sai junto, e não é detalhe:** com `lineWrapping`, uma linha longa ocupa três alturas e carrega **um** número — a numeração fica ilegível justamente onde ela mais serve. Código rola na horizontal, como em qualquer editor de código; prosa continua quebrando.
 
+⚠️ **Um gutter `sticky` precisa de fundo opaco, e a rolagem lateral é quem cobra.** Achado ao vivo: com `background: transparent` o código rola **por cima dos números**, e o `padding-left` do `.cm-scroller` ainda deixa uma faixa à esquerda do gutter por onde o texto passa. O conserto é fundo `--color-surface` e o padding movido do scroller para o gutter, que passa a começar em zero. **Nenhum teste pega isto** — é CSS, e o jsdom não aplica CSS (skill `testing` § limites de ambiente).
+
 ⚠️ **Ordem de registro é carga.** `codeGutters` tem de vir **depois** de `editorTheme`, porque sobrescreve o `.cm-activeLine: transparent` que ele define. Trocar a ordem apaga o realce da linha do cursor sem erro nenhum.
 
 ## O layout
