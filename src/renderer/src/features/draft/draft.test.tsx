@@ -242,6 +242,42 @@ describe('enviar código para rascunho', () => {
     expect(panel.querySelector('pre')?.textContent).toBe(CLASS_CODE)
   })
 
+  // The pair the whole design rests on (DE2B.1): editor and preview run the SAME
+  // classHighlighter, so they must emit the same classes over the same text. The
+  // COLOURS are what jsdom cannot prove — the classes it can, and they are what
+  // the one block of CSS in base.css keys on.
+  function tokenClasses(root: Element, selector: string): Set<string> {
+    return new Set(
+      [...root.querySelectorAll(selector)].flatMap((node) =>
+        [...node.classList].filter((name) => name.startsWith('tok-'))
+      )
+    )
+  }
+
+  it('colours the editor and the preview with the same classes', async () => {
+    // openCodeDraft leaves the preview showing; the editor stays mounted behind
+    // it (DE1C.4), so both are readable at once.
+    const panel = await openCodeDraft(CLASS_ANSWER)
+
+    const editor = tokenClasses(panel, '.cm-content [class*="tok-"]')
+    const preview = tokenClasses(panel, 'pre [class*="tok-"]')
+
+    expect(editor.size).toBeGreaterThan(0)
+    expect([...preview].sort()).toEqual([...editor].sort())
+  })
+
+  it('leaves an unknown language uncoloured in both', async () => {
+    // The body is deliberately code ANY grammar would colour — keywords and a
+    // string. Content that highlights nowhere would let this pass even if an
+    // unknown fence silently fell back to some grammar.
+    const unknown = ['Veja:', '', '```zzzunknown', 'def f():', '    return "x"', '```'].join('\n')
+
+    const panel = await openCodeDraft(unknown)
+
+    expect(tokenClasses(panel, '.cm-content [class*="tok-"]').size).toBe(0)
+    expect(tokenClasses(panel, 'pre [class*="tok-"]').size).toBe(0)
+  })
+
   it('builds no nested code block in a code preview', async () => {
     const panel = await openCodeDraft(CLASS_ANSWER)
 

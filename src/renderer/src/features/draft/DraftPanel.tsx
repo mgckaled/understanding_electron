@@ -11,16 +11,9 @@ import { useDraft } from './draftContext'
 import DraftPicker from './DraftPicker'
 import DraftEditor from './DraftEditor'
 import DraftFooter from './DraftFooter'
+import CodePreview from './CodePreview'
 
 const READING = 'min-h-[0px] flex-1 overflow-y-auto p-7 select-text'
-
-// Code previews as the file it will become, never through the markdown
-// renderer: markdown JOINS consecutive lines into a paragraph and reads four
-// leading spaces as a code block, so a class body came out as prose plus a
-// nested block, with the line breaks gone (DE2A.9). `whitespace-pre` keeps
-// every space; colour by language is E-2-B.
-const CODE_PREVIEW =
-  'min-h-[0px] flex-1 overflow-auto p-7 font-mono text-sm whitespace-pre text-text selectable'
 
 function DraftPanel(): React.JSX.Element | null {
   const { current, remove, update, close } = useDraft()
@@ -31,6 +24,9 @@ function DraftPanel(): React.JSX.Element | null {
   const read = useRef<() => string>(() => '')
 
   const id = current?.id ?? null
+  const kind = current?.kind ?? 'markdown'
+  const language = current?.language ?? null
+  const content = current?.content ?? ''
 
   const tabs = useMemo(
     () => [
@@ -39,10 +35,10 @@ function DraftPanel(): React.JSX.Element | null {
         label: 'Editar',
         render: () => (
           <DraftEditor
-            draftId={current?.id ?? ''}
-            kind={current?.kind ?? 'markdown'}
-            language={current?.language ?? null}
-            initialText={current?.content ?? ''}
+            draftId={id ?? ''}
+            kind={kind}
+            language={language}
+            initialText={content}
             onSave={(text) => (id === null ? undefined : update(id, text))}
             onReady={(reader) => (read.current = reader)}
           />
@@ -51,19 +47,17 @@ function DraftPanel(): React.JSX.Element | null {
       {
         id: 'previa',
         label: 'Prévia',
-        render: () => {
-          const text = tab === 'previa' ? read.current() : (current?.content ?? '')
-          return current?.kind === 'code' ? (
-            <pre className={CODE_PREVIEW}>{text}</pre>
+        render: () =>
+          kind === 'code' ? (
+            <CodePreview code={tab === 'previa' ? read.current() : content} language={language} />
           ) : (
             <div className={READING}>
-              <MarkdownMessage text={text} />
+              <MarkdownMessage text={tab === 'previa' ? read.current() : content} />
             </div>
           )
-        }
       }
     ],
-    [current?.id, current?.content, current?.kind, id, update, tab]
+    [content, kind, language, id, update, tab]
   )
 
   if (current === null) return null
@@ -99,7 +93,7 @@ function DraftPanel(): React.JSX.Element | null {
 
       <DraftFooter
         readText={() => read.current()}
-        kind={current?.kind ?? 'markdown'}
+        kind={kind}
         onDelete={() => setConfirming(true)}
       />
 
