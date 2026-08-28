@@ -1,0 +1,177 @@
+# E-1-F — O `.pdf`: o motor de layout que já está dentro do app
+
+> Sexto e último plano da trilha E, depois do [E-1-A](../implemented/E-1-A-o-rascunho-existe.md), [E-1-B](../implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md), [E-1-C](../implemented/E-1-C-o-rascunho-se-edita.md), [E-1-D](../implemented/E-1-D-o-caminho-de-saida.md) e [E-1-E](../implemented/E-1-E-o-rascunho-vira-word.md). Fecha o motor de exportação.
+
+**Origem:** o `.pdf` é o último item desabilitado do `FormatPicker`, e o único da trilha que ainda tinha bifurcação técnica em aberto.
+
+**Entrega:** `.pdf` de ponta a ponta, por `webContents.printToPDF` numa janela offscreen — **zero dependência nova** —, alimentado por um HTML gerado do mesmo `Block[]` que o `.txt` e o `.docx` já usam.
+
+---
+
+## A bifurcação, resolvida pelo dono do projeto
+
+| | `pdf-lib` | **`printToPDF`** |
+|---|---|---|
+| Dependências | `pdf-lib` + `@pdf-lib/fontkit` + fonte vendorizada | **nenhuma** |
+| Paginação de prosa longa | **por minha conta** — medir texto, quebrar linha, estourar página | Chromium |
+| Tabela com célula que quebra | por minha conta | Chromium |
+| Custo estrutural | nenhum — entra como renderizador do `Block[]` | ~~bifurca o pipeline~~ — **dissolvido, ver DE1F.1** |
+
+O `ESCOPO` já registrava o problema central ao escolher a biblioteca: *"`pdf-lib` — desenha texto/posição; **sem paginação automática de prosa longa**"*. Uma resposta de modelo é exatamente isso.
+
+E a objeção que restava contra o `printToPDF` — bifurcar o pipeline — **foi dissolvida pelo próprio usuário**, ao perguntar se o `.pdf` não podia sair "no mesmo esquema do `.docx`". Podia, e é melhor assim.
+
+---
+
+## O que foi checado antes de virar plano
+
+| Afirmação plausível | O que existe de fato |
+|---|---|
+| `printToPDF` obriga a abandonar o `Block[]` e imprimir o HTML do `react-markdown` | **Não.** O HTML pode ser **gerado do `Block[]`**, virando o **terceiro renderizador** do mesmo mapeamento. O pipeline não bifurca, e o HTML sendo string pura ainda me dá o que o `.docx` não deu: **asserção de igualdade no nível 1** |
+| Chromium bloqueia navegação de topo para `data:` URL | ⚠️ **Bloqueia na web, não aqui.** `await window.loadURL('data:text/html,…')` **já roda em produção** neste app, no `rasterizeToPng` (D17.7), verificado ao vivo. O padrão inteiro de janela offscreen sandboxed existe pronto para copiar |
+| O guarda de navegação do app barraria a janela offscreen | **Não.** `will-navigate` e `setWindowOpenHandler` são anexados a `mainWindow.webContents` em `src/main/index.ts` — **por janela, não globais**. O `rasterizeToPng` já prova isso funcionando |
+| Carregar e imprimir basta | ⚠️ **Não: imprimir antes de a carga terminar produz um PDF EM BRANCO**, sem erro nenhum. A doc do Electron avisa explicitamente. O `await` do `loadURL`/`executeJavaScript` é obrigatório, não higiene |
+| Gerar HTML de texto do modelo contradiz a D12.2 | **Contradiria se o texto passasse por HTML.** Ele não passa: **todo run é escapado** e só as minhas tags são emitidas. A D12.2 proíbe *transformar texto do modelo em HTML*, e escapar é o oposto disso. Reforço em profundidade na DE1F.3 |
+| A tipografia precisa de fonte embutida | **Não — decisão do dono:** *"o que o sistema oferece está ok, desde que diferencie tipografia normal de monoespaçada"* |
+| Títulos podem virar marcadores do PDF | ⚠️ **`generateDocumentOutline` é experimental e tem issue aberta** de não gerar o índice ([electron#45124](https://github.com/electron/electron/issues/45124)). Fica de fora, com gatilho |
+| `page-break-inside` é a propriedade a usar | É **legada**. A moderna é `break-inside`, e as legadas são tratadas como apelido. Uso a moderna |
+
+---
+
+## Decisões
+
+### DE1F.1 — `printToPDF`, e o HTML sai do `Block[]` — terceiro renderizador, não segundo pipeline
+
+```
+markdown → Block[] ─┬→ toPlainText  → .txt
+                    ├→ toDocx       → .docx
+                    └→ toHtml       → printToPDF → .pdf
+```
+
+Nasce `src/core/export/toHtml.ts`, puro, sem `electron`. É o que mantém a garantia conquistada na DE1E.9: **um mapeamento, agora três saídas**, consistentes por construção. Um bloco de código continua sendo o mesmo bloco de código nos três formatos, porque nenhum deles reinterpreta o markdown por conta própria.
+
+⚠️ **E é o formato que se testa melhor dos três.** HTML é string: o nível 1 compara o documento **inteiro**, por igualdade — exatamente a lição que a DE1E.9 cobrou (asserção de presença não prova transformação).
+
+### DE1F.2 — A janela offscreen copia o molde do `rasterizeToPng`, inclusive o `finally`
+
+`show: false`, `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false` — **escritos**, não deixados no default, pela mesma razão registrada no D17.7: esta janela nasce e morre dentro de um handler e o `security-boundary.spec.ts` nunca a vê.
+
+`window.destroy()` no `finally`, sem exceção. Janela offscreen vazada é processo vazado, e nenhum teste apanha isso sozinho.
+
+**A carga em dois tempos**, e não `data:` URL com o documento inteiro: `loadURL('data:text/html,')` mínimo, depois `executeJavaScript` escrevendo o documento. O motivo é tamanho — um rascunho longo percent-encodificado numa URL encosta no teto do Chromium, e o sintoma seria falhar só para documentos grandes.
+
+### DE1F.3 — Todo texto é escapado, e o documento gerado nasce com `default-src 'none'`
+
+`&`, `<`, `>` e `"` escapados em **todo** run, sem exceção. O que entra é texto do modelo; o que sai são as minhas tags e mais nada.
+
+⚠️ **O `Block` tem um caminho que parece contrariar isso e não contraria:** a DE1E.7 manda o nó `html` do markdown virar um parágrafo com o texto cru. Como ele chega **como run**, o escape o alcança naturalmente — HTML dentro do rascunho vira HTML **visível** no PDF, nunca HTML executado. Isso ganha teste próprio, porque é a linha entre um recurso e um vazamento.
+
+**Reforço em profundidade:** o documento gerado carrega `<meta http-equiv="Content-Security-Policy" content="default-src 'none'">`. Se o escape falhar um dia, a página ainda não busca nada da rede. Custa uma linha e fecha a exfiltração, que é o dano real possível numa janela já sem `preload` e sem Node.
+
+### DE1F.4 — Paginação é CSS, e são quatro regras que importam
+
+| Regra | Por quê |
+|---|---|
+| `@page { size: A4; margin: 2cm }` + `preferCSSPageSize: true` | o tamanho mora no CSS, num lugar só |
+| `break-inside: avoid` em código e tabela | bloco partido ao meio perde o sentido |
+| `break-after: avoid` em título | título não pode ser a última coisa da página |
+| `orphans: 2; widows: 2` | linha solta de parágrafo no pé ou no topo |
+
+Propriedades **modernas** (`break-*`), não as legadas `page-break-*`.
+
+### DE1F.5 — Tipografia do sistema, e a única distinção que precisa existir
+
+Decisão do dono, literal: *"tipografia não precisa — o que o sistema oferece está ok, desde que diferencie tipografia normal de monoespaçada"*.
+
+`system-ui, sans-serif` para o corpo; `ui-monospace, Consolas, monospace` para `code` e `inlineCode`. **Nada é embutido**, e nada da paleta do app viaja — mesma régua da DE1E.8, e aqui ela é ainda mais fácil de respeitar porque o preto no branco é o que se imprime.
+
+`printBackground: true`, para o fundo levíssimo do bloco de código sair no arquivo. É a única concessão a cor, e ela serve à leitura.
+
+### DE1F.6 — A impressão é injetada, como o diálogo já é
+
+`render` deixa de bastar sozinho: o `.pdf` precisa do Electron e `core/` não pode importá-lo. A divisão segue a régua da skill `architecture`:
+
+| Onde | O quê | Testável |
+|---|---|---|
+| `core/export/toHtml.ts` | `Block[]` → HTML | **nível 1, por igualdade** |
+| `main/features/export/printPdf.ts` | HTML → bytes, via janela offscreen | não — é Electron vivo, como o `rasterizeToPng` |
+
+`saveExport` recebe `printPdf` **por parâmetro**, exatamente como já recebe `showSaveDialog`. O nível 3 injeta um dublê e continua rodando sem Electron; o composition root injeta o real.
+
+### DE1F.7 — Sem `generateDocumentOutline` e sem `generateTaggedPDF`
+
+Os dois são marcados **experimentais** pelo próprio Electron, e o primeiro tem [issue aberta de não gerar o índice](https://github.com/electron/electron/issues/45124). Ligar um recurso experimental com defeito relatado para ganhar marcadores de navegação é trocar um PDF que funciona por um que talvez funcione.
+
+**Gatilho:** quando o Electron marcar `generateDocumentOutline` como estável, ele passa a ser uma linha — os `<h1>`–`<h6>` já estarão lá.
+
+---
+
+## O layout
+
+Uma linha em `FormatPicker.tsx`, a última:
+
+```diff
+-  { format: 'pdf', label: '.pdf', soon: true }
++  { format: 'pdf', label: '.pdf' }
+```
+
+O seletor deixa de ter item desabilitado pela primeira vez desde o E-1-D. **Este plano não tem outro passo de interface.**
+
+---
+
+## Passos
+
+### Passo 1 — A sonda, antes de qualquer código de conversão
+
+Uma janela offscreen, um HTML mínimo com `@page`, `printToPDF`, gravar, **abrir o arquivo**. Só isso.
+
+O que a sonda tem de responder, e que leitura de doc não responde: a carga em dois tempos funciona? o PDF sai com conteúdo ou em branco? o `preferCSSPageSize` respeita o `@page`? quanto custa em tempo, com a janela fria?
+
+⚠️ **É o passo 1 do E-1-E de novo, e ele se pagou duas vezes lá** — uma achando que o `check:bundle` passava vazio, outra confirmando o `remark-gfm`. Nada de `toHtml` antes disto.
+
+### Passo 2 — `core/export/toHtml.ts`
+
+`Block[]` → documento HTML completo, com o CSS de impressão embutido e todo texto escapado.
+
+**Teste:** nível 1, e **por igualdade do documento inteiro** — é o formato que permite isso, e a DE1E.9 já cobrou o preço de não fazer. Um caso por tipo de bloco; a tabela como `<table>` de verdade, no mesmo espírito da DE1E.10.
+
+⚠️ **Sabotagem obrigatória:** um rascunho contendo `<script>alert(1)</script>` e `<img src=x onerror=...>` tem de sair como **texto visível**. Removendo o escape, esse teste precisa cair — se ele passar dos dois jeitos, não estava provando nada.
+
+### Passo 3 — `main/features/export/printPdf.ts`, e o `.pdf` ligado
+
+A janela offscreen no molde do `rasterizeToPng`, `printPdf` injetado no `saveExport`, e o `soon: true` apagado.
+
+**Teste:** nível 3 com dublê — `saveExport` com `format: 'pdf'` chama `printPdf` com o HTML do `toHtml` e grava os bytes que ele devolver; o filtro oferecido ao diálogo é o do PDF. A impressão real fica para o passo 4, como o `.docx` ficou.
+
+### Passo 4 — Prova ao vivo
+
+1. Exportar `.pdf` e **abrir** — sem aviso de arquivo corrompido
+2. Um rascunho **longo**, que passe de uma página — a paginação acontece sozinha
+3. Título perto do fim da página **não** fica órfão da própria seção
+4. Bloco de código: monoespaçado, indentação preservada, **não partido** entre páginas
+5. Tabela: desenhada como tabela, e não partida no meio de uma linha
+6. Negrito, itálico, `código inline`, citação e régua
+7. Um rascunho com `<script>` escrito dentro — aparece como **texto**
+8. Acentuação portuguesa correta em tudo
+9. `.md`, `.txt` e `.docx` de novo — **nada regrediu**
+
+---
+
+## Fora deste plano
+
+| Item | Onde vai / por quê |
+|---|---|
+| Marcadores/índice no PDF | **gatilho** — `generateDocumentOutline` sair de experimental (DE1F.7) |
+| PDF acessível (tagged) | mesmo gatilho, mesmo motivo |
+| Cabeçalho, rodapé e número de página | fora — `displayHeaderFooter` existe e nenhum chamador pediu. Decisão de documento, não de conversão |
+| Escolher A4 × Carta, margem, retrato × paisagem | fora — seria configuração; o `@page` fixa A4 num lugar só, e mover para as Configurações é um plano de UI |
+| Imagem embutida no PDF | fora — mesmo motivo da DE1E.7: `core/` não resolve anexo. O `alt` vira texto |
+| `.pptx` | **E-2**, e depois do plano 20 (aproveita imagem de gráfico) |
+
+---
+
+## Diário de execução
+
+| Data | Passo(s) | Estado | Observação |
+|---|---|---|---|
+| 27/08/2026 | — | plano escrito, ainda não executado | **A objeção que eu tinha contra o `printToPDF` foi dissolvida pelo usuário, não por mim:** eu recomendava assumir a bifurcação do pipeline como custo; ele perguntou se não dava para sair "no mesmo esquema do `.docx`", e dá — o HTML gerado do `Block[]` faz o `.pdf` virar o **terceiro renderizador** em vez de um segundo caminho, e ainda entrega o formato mais testável dos três. **A pesquisa derrubou dois medos e confirmou um:** `data:` URL não é bloqueada aqui (o `rasterizeToPng` já a usa em produção, D17.7) e o guarda de navegação é por janela, não global; mas imprimir antes de a carga terminar produz **PDF em branco, sem erro**, então o `await` é obrigatório. **E tirou um recurso da mesa:** `generateDocumentOutline` é experimental e tem issue aberta de não gerar o índice — vira gatilho em vez de entrega. |
