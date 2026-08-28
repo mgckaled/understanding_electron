@@ -56,7 +56,7 @@ Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão
 
 - `scroll` é assíncrono — jsdom não tem cadência de token nem layout, nenhum teste de nível 2 poderia ter pego. § *O evento `scroll` é assíncrono*.
 - `<dialog>` não é implementado — `HTMLDialogElement` é subclasse vazia. § *O jsdom não implementa `<dialog>`*.
-- CSS não é aplicado — nível 2 clica em botão `visibility: hidden` que só o `:hover` revela. § *Teste de nível 2 clica em botão que o CSS esconde*.
+- CSS não é aplicado — nível 2 clica em botão `visibility: hidden` que só o `:hover` revela. § *Teste de nível 2 clica em botão que o CSS esconde*. ⚠️ **Mas o que a ausência de CSS impede é menos do que parece:** *classe* é atribuída normalmente. No E-2-B, editor e prévia emitem as classes `.tok-*` do destaque de sintaxe sob jsdom — o que **não** se prova é a cor delas. Antes de declarar algo "só ao vivo", verifique se a asserção pode ser feita sobre a classe em vez do estilo; eu havia escrito no plano que o editor não era testável, e metade dele era.
 - `prefers-color-scheme` — Playwright emula `'light'` por padrão, ganha do `nativeTheme`. § *O Playwright emula `prefers-color-scheme: light`*.
 - Eventos de animação não chegam ao React — `window.AnimationEvent` é `undefined`. § *`animationiteration` borbulha de 14 filhos*.
 - CodeMirror **lança ao montar** — mede texto por `Range`/`elementFromPoint`, que o jsdom não implementa; e digitação real (`contenteditable` + `beforeinput`) segue fora de alcance mesmo com os mocks. § *CodeMirror não monta sob jsdom*.

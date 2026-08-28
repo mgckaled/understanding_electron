@@ -47,23 +47,23 @@ Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao d
 
 ### Protocolo de leitura da documentação
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,8 MB / ~540k tokens** (95 arquivos) — os sete arquivos soltos são só ~113k dela, e `plan/implemented/` sozinho é mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,94 MB / ~525k tokens** (97 arquivos) — os sete arquivos soltos são só ~123k dela, e `plan/implemented/` sozinho é **~302k**, mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| `ARMADILHAS.md` | ~27k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
-| `HISTORY-archive.md` | ~28k | `Grep` no nome do plano/fase. **Nunca** `Read` |
-| `HISTORY.md` | ~18k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
+| `ARMADILHAS.md` | ~28k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
+| `HISTORY-archive.md` | ~35k | `Grep` no nome do plano/fase. **Nunca** `Read` |
+| `HISTORY.md` | ~15k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
 | `ESCOPO.md` | ~12k | `Grep` no pilar ou na operação |
-| `ROADMAP.md` | ~14k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
-| `DECISOES.md` | ~11k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
+| `ROADMAP.md` | ~16k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
+| `DECISOES.md` | ~14k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
 | `README.md` | ~4k | único que cabe inteiro |
-| **`plan/implemented/`** (55 arq.) | **~300k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
-| `reference/` (19 arq.) | ~56k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
-| `study/` (12 arq.) | ~42k | `Grep` no conceito; `Read` com `offset` na seção achada |
+| **`plan/implemented/`** (57 arq.) | **~302k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
+| `reference/` (19 arq.) | ~54k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| `study/` (12 arq.) | ~39k | `Grep` no conceito; `Read` com `offset` na seção achada |
 | `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
 
-⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** Foram remedidos em 27/08/2026; a ordem de grandeza é o que importa aqui, não o dígito. ⚠️ **Dois tetos estão estourados** (`ARMADILHAS.md`, este arquivo) — registrado com o conserto no [`ROADMAP § 2`](docs/ROADMAP.md).
+⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** Foram remedidos em 28/08/2026; a ordem de grandeza é o que importa aqui, não o dígito. ⚠️ **Cinco tetos estão estourados** (`ARMADILHAS.md`, este arquivo, e agora `ROADMAP.md`, `DECISOES.md` e `ESCOPO.md`) — registrado com o conserto no [`ROADMAP § 2`](docs/ROADMAP.md).
 
 **Como fazer certo, em ordem:** (1) `Grep -n` pelo termo → devolve linha e arquivo; (2) `Read` com `offset` = linha achada menos 5, `limit` 40–60; (3) se a seção continuar além, estenda o `limit`, não releia do zero. Um `Grep` com `-C 3` resolve a maioria das perguntas **sem nenhum `Read`**.
 
@@ -126,7 +126,7 @@ O que não é pacote npm comum, e a restrição que cada um impõe:
 | `unpdf` | zero dependências; o `peerDependency` `@napi-rs/canvas` **não entra** |
 | **remark** + **remark-gfm** | ESM-only, como toda a família remark — **embutidos** no bundle do `main` por `externalizeDepsPlugin({ exclude })`, porque externalizado um pacote ESM chega como `{ default }` e mata o app ao carregar (DE1D.9). ⚠️ **Usados só para `parse`, nunca para serializar:** o `remark-stringify` escapa o que pareça marcação e troca indentação por `&#x20;`, o que destrói código — `.txt` e `.docx` saem do mesmo `Block[]` de `core/export/`, não de um serializador (DE1E.9, [`ARMADILHAS.md`](docs/ARMADILHAS.md)). `strip-markdown` foi usado no E-1-D e **removido** no E-1-E |
 | **docx** (dolanmiu) | o contraexemplo da linha acima, e por isso registrado: publica CJS **e** ESM, e o `dist/index.cjs` **embute as próprias dependências** — inclusive o `nanoid@5`, que é ESM puro. Fica **externo**, sem entrar no `exclude`. Medido, não lido do `package.json` (DE1E.3) |
-| **CodeMirror 6** (`state`, `view`, `commands`, `language`, `lang-markdown`, `@lezer/highlight`) | seis entradas de **uma** biblioteca — ela é modular por desenho. Editor do rascunho (E-1-C). Composto à mão, **nunca `basicSetup`**; o tema é só `var(--color-*)`, porque o CSS que ele injeta fica fora do alcance do `guard`. `lang-markdown` arrasta `lang-html`: **352,8 kB** de bundle só pelo destaque de sintaxe, medido |
+| **CodeMirror 6** (`state`, `view`, `commands`, `language`, `lang-markdown`, `legacy-modes`, `@lezer/highlight`) | sete entradas de **uma** biblioteca — ela é modular por desenho. Editor do rascunho (E-1-C), com gramática por linguagem desde a E-2-B. Composto à mão, **nunca `basicSetup`**; o tema é só `var(--color-*)`, porque o CSS que ele injeta fica fora do alcance do `guard`. **Custo de bundle, medido no build e não estimado:** `lang-markdown` arrasta `lang-html` (352,8 kB no E-1-C); as ~27 gramáticas de código do `legacy-modes` somaram **+261,75 kB** no E-2-B — mais que o dobro do que a sonda daquele plano previu, e é o número do build que se cita. ⚠️ **Extensão do CodeMirror tem ORDEM: `syntaxHighlighting` aplica a UNIÃO dos highlighters registrados, e um tema posterior sobrescreve o anterior** — dois dialetos no mesmo editor não coexistem |
 
 ---
 
@@ -286,7 +286,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo — **95 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **97 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|

@@ -391,6 +391,21 @@ Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, a
 | E-1-F | [DE1F.7](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Sem `generateDocumentOutline`/`generateTaggedPDF` — experimentais, um com issue aberta |
 | E-1-F | [DE1F.8](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | O doctype pertence à **primeira** carga, ou o PDF sai em modo quirks |
 | E-1-F | [DE1F.9](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Número de página entra, e o template do Chromium não herda estilo nenhum |
+| E-2-A | [DE2A.1](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | Código é um rascunho, e a distinção viaja no item |
+| E-2-A | [DE2A.2](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | `kind` e `language` são duas colunas, não uma |
+| E-2-A | [DE2A.3](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | `hasDraftOf` filtra por `kind`, ou o botão do turno mente |
+| E-2-A | [DE2A.4](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O título de código não passa pelo `strip` da prosa |
+| E-2-A | [DE2A.5](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O seletor distingue por chip, e o contador não se divide |
+| E-2-A | [DE2A.6](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O botão chega ao `CodeBlock` por prop, e `components` deixa de ser constante |
+| E-2-A | [DE2A.7](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O canal não nasce novo; `draft:create` ganha dois campos |
+| E-2-A | [DE2A.8](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O botão do bloco tem estado, e a chave inclui o conteúdo |
+| E-2-A | [DE2A.9](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | Código não passa pelo renderizador de markdown, em nenhuma das duas abas |
+| E-2-B | [DE2B.1](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Um `Highlighter` só, duas renderizações |
+| E-2-B | [DE2B.2](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | `legacy-modes`, não os `lang-*` oficiais |
+| E-2-B | [DE2B.3](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | A cerca é texto livre, então a tabela normaliza e mapeia numa etapa |
+| E-2-B | [DE2B.4](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Cerca sem linguagem continua sem gramática e sai `.txt` |
+| E-2-B | [DE2B.5](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Rascunho de código exporta verbatim, e o seletor de formato vira rótulo |
+| E-2-B | [DE2B.6](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Numeração, rolagem lateral e linha do cursor: a premissa da DE1C.3 mudou |
 | 09 (ativo) | [D9.1](plan/active/09-camada-de-ia.md) | A chamada de LLM roda no main, não no `utilityProcess` |
 | 09 (ativo) | [D9.2](plan/active/09-camada-de-ia.md) | Uma fronteira de rede, injetável, exatamente como o `embed_fn` |
 | 09 (ativo) | [D9.3](plan/active/09-camada-de-ia.md) | Nuvem é opt-in, e o gate é o mesmo formato para os três |

@@ -12,6 +12,23 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### F-3-C — O painel como objeto de desktop: transição, janela estreita e arrasto (ago/2026)
+Origem: as quatro decisões que o usuário tomou ao fechar o F-3-A, e uma pesquisa ampla (Context7 + web) que ele pediu **antes** de o plano ser escrito. Entrega: o painel entra e sai com *fade*; a sidebar recolhe sozinha quando as três regiões não cabem; o painel ganha alça de arrasto. Copiar imagem saiu para o **F-3-E** — é o único item de contrato IPC do corte (toca `shared`/`main`/`preload`, testa no nível 3) e os outros três são renderer puro; juntá-los repetiria o erro de tamanho do plano 19.
+
+**A pesquisa mudou três coisas antes de existir código.** Derrubou um risco aberto desde o F-3-A: o `useStickToBottom` **não tem ouvinte de `scroll`** — `pinned` só é recalculado quando chega conteúdo, comparando a posição real contra o fundo —, então reflow de largura não é lido como rolagem do usuário; e a sidebar já animava largura em produção desde a trilha DS. Achou a armadilha do item mais barato: `@starting-style` só se aplica na **entrada** no DOM, então o fade de saída exige adiar o desmonte (DF3C.1). E deu nome ao arrasto — *window splitter* da WAI-ARIA APG, com ARIA e teclado especificados, o que torna metade do item testável no nível 2 apesar de jsdom não ter layout.
+
+Decisões (DF3C.1–DF3C.7). A estrutural é a **DF3C.2**: o `collapsed` sobe do `Sidebar.tsx` para o `App.tsx`, porque o painel precisa recolher a sidebar e `app/` não importa de `features/` — o painel só avisa que abriu, e a casca decide. A **DF3C.4** é a metade que faltava: `--sidebar-width-now` passa a ser publicada pelo `AppShell` e lida pelos dois lados, senão recolher liberaria 220px que o teto do painel continuaria descontando. Conversa na janela padrão: **271px → 416px**.
+
+**Contra-evidência registrada, e mantida:** VS Code e Slack **não** recolhem a barra sozinhos ao estreitar — mantêm o controle com o usuário, e o auto-collapse do VS Code é uma issue aberta, não um comportamento. A diferença aqui é que não é a janela que estreita, é o app que abre uma terceira região; o usuário viu a evidência e manteve a decisão, com três guardas (só na abertura, só quando não couber, nunca reexpandir — e expandir na mão desliga a regra pela sessão). Descartados antes disso: sobrepor em vez de empurrar, e aceitar a conversa em 271px.
+
+**Dois defeitos que só o nível 4 mostrou, ambos na alça.** `inset-y-0`/`left-0` **não geram CSS nenhum** neste projeto — a base `--spacing` do Tailwind está desligada, a mesma família do `min-w-0` do DS-2 —, então ela nascia com `height: 0` e nenhum evento de ponteiro chegava nela, com o teste de nível 2 verde o tempo todo. E montada a cavaleiro da borda (`left-[-5px]`) ficava metade fora do `overflow-hidden` do painel, morta para o ponteiro. Uma asserção minha do e2e também estava errada — comparava a conversa com o painel **fechado** contra ela com o painel aberto, o que só provava que o painel ocupa espaço; a DF3C.4 passou a se provar pelo acoplamento, expandindo a sidebar na mão e exigindo que a conversa encolha. [`plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md`](plan/implemented/F-3-C-o-painel-como-objeto-de-desktop.md).
+
+---
+
+## Decisões arquiteturais (justificativas citáveis)
+
+Decisões que valem além do plano onde nasceram. Cada uma é curta de propósito — o raciocínio completo mora no documento linkado.
+
 ### Manutenção de documentação: protocolo de leitura, `ARMADILHAS.md` e a fila de 10 marcos (ago/2026)
 Origem: o usuário mediu que sessões em que os arquivos soltos de `docs/` **não** foram lidos na íntegra saíam ~33% mais baratas, e pediu algo que o próprio `CLAUDE.md` comandasse. A medição de apoio mostrou o problema maior: `docs/` inteiro são ~1,7 MB / ~520k tokens, dos quais `plan/implemented/` responde por 58%.
 

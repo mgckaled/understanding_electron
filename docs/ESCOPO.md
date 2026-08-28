@@ -343,8 +343,11 @@ Diferente do documento **anexado** — que só entra como contexto e nunca produ
 | `.txt` | o texto sem a marcação | **não** é `replace` de símbolo, nem serialização de volta ao markdown: sai do **mesmo mapeamento que o `.docx`** (`core/export/blocks.ts`), o que mantém os dois formatos consistentes por construção e impede que código exportado saia escapado (E-1-E) |
 | `.pdf` | **`webContents.printToPDF`**, sem dependência | ⚠️ `pdf-lib` foi **descartado no E-1-F** exatamente pelo motivo que esta linha registrava: desenha texto em coordenadas, **sem paginação automática de prosa longa** — e resposta de modelo é isso. O Chromium que já está no app pagina de graça |
 | `.docx` | `docx` (dolanmiu) | API declarativa por parágrafo, Node puro, sem módulo nativo |
+| a extensão da linguagem (`.py`, `.sql`, …) | bytes escritos como estão | **Só para bloco de código** (trilha E-2). Os quatro formatos acima passam por `core/export/blocks.ts`, que lê o texto como markdown — e markdown junta linhas consecutivas e trata quatro espaços como bloco aninhado, o que **destrói código**. Por isso um trecho de código não escolhe formato: sai verbatim, com a extensão que a linguagem pede ou `.txt` quando a cerca não a nomeou |
 
 `.pptx` fica fora **desta** entrega — layout em slide pede um esquema de deck e uma decisão própria sobre catálogo de template, tratada em plano separado. `.odp` e `.ppt` ficam fora do escopo, registrado abaixo.
+
+**O objeto exportado pode ser a resposta inteira ou um bloco dela.** Desde a trilha E-2, um bloco de código da resposta vira rascunho pelo botão no cabeçalho do próprio bloco. Isso **não** alarga o veto de [exportar o documento anexado](#o-que-o-app-não-faz): o que sai continua sendo saída do modelo, nunca o que entrou como contexto — e as duas decisões exclusivas do usuário (caminho e formato) seguem intactas.
 
 **Herda, não reinventa.** As regras de [Escrita e segurança do dado](#escrita-e-segurança-do-dado) que fazem sentido aqui se aplicam sem mudança: escrita atômica (arquivo temporário + rename) e o erro claro de arquivo aberto em outro programa (`WinError 32`). **Não herda** a confirmação de "o que muda" — não há versão anterior para comparar; é sempre arquivo novo, nunca sobrescrita.
 
