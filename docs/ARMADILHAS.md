@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **94** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **95** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -362,6 +362,9 @@ Sem `types` em `compilerOptions`, o TypeScript inclui todo `@types/*` de `node_m
 
 ### Doc do `readline` diz que erros do stream "não são propagados" — na prática, o `for await` lança (ago/2026)
 A doc de `rl[Symbol.asyncIterator]()` afirma que erros do stream "não são propagados" — testado empiricamente, o `for await` **lança** normalmente para `ENOENT`/`EISDIR`. A implementação real ficou um `try/catch` de doze linhas, um terço do que a leitura direta da doc levaria a construir. `stream.on('error', ...)` continua obrigatório (evento sem ouvinte derruba o processo). Doc genérica pode não refletir o comportamento observado. [`study/04-diario-de-bordo.md` § Caso 5](study/04-diario-de-bordo.md)
+
+### Escrita por script não dispara hook nenhum — nem `format_fix`, nem `guard`, nem `test_related` (ago/2026)
+Os três hooks de `.claude/settings.json` são `PostToolUse` de **`Edit|Write`**. Editar por `node`/`sed`/heredoc via `Bash` os contorna inteiros: o Prettier não roda, as 11 invariantes do `guard` não são checadas, e o `vitest related` do arquivo tocado não dispara. Sintoma no E-2-A: 5112 avisos `Delete ␍` no `pnpm lint` depois de cinco arquivos editados por script. Conserto: rodar `pnpm exec prettier --write` nos arquivos tocados antes de commitar. Agravante que multiplica isso — **a árvore de trabalho tem finais de linha MISTOS** (`src/shared/ipc.ts` é CRLF, `src/main/jobs.ts` é LF), porque `core.autocrlf=true` é anterior ao `.gitattributes`; um script que normalize tudo para LF ou tudo para CRLF incha o diff, então ele precisa detectar e preservar **por arquivo**. O índice sempre foi LF, então `git diff` fica limpo de qualquer forma — o custo é só o ruído do lint.
 
 ### Hook que se desliga sozinho em silêncio (ago/2026)
 A primeira versão do `_shared.mjs` devolvia `null` quando não conseguia resolver o executável de uma dependência, e os hooks simplesmente não faziam nada — um "Prettier rodou e não alterou" era falso positivo por inação. Hook que se desliga sem avisar é pior que hook ausente. Conserto: duas estratégias de resolução e aviso no stderr quando o pacote está instalado mas não pôde ser resolvido; pacote genuinamente ausente segue silencioso (caso legítimo pré-fase 04).
