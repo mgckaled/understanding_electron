@@ -107,16 +107,28 @@ describe('toBlocks', () => {
     ])
   })
 
-  it('flattens a table into one block per row, header in bold', () => {
+  // DE1E.10: the cells stay cells, so Word can draw a real table and `.txt`
+  // can join them with a tab — one mapping, two renderings.
+  it('keeps a table as rows of cells, header in bold', () => {
     const blocks = toBlocks('| Mês | Vendas |\n| --- | --- |\n| Jan | 120 |')
 
     expect(blocks).toEqual([
       {
-        kind: 'paragraph',
-        runs: [{ text: 'Mês', bold: true }, { text: '\t' }, { text: 'Vendas', bold: true }]
-      },
-      { kind: 'paragraph', runs: [{ text: 'Jan' }, { text: '\t' }, { text: '120' }] }
+        kind: 'table',
+        runs: [],
+        rows: [
+          [[{ text: 'Mês', bold: true }], [{ text: 'Vendas', bold: true }]],
+          [[{ text: 'Jan' }], [{ text: '120' }]]
+        ]
+      }
     ])
+  })
+
+  it('pads a short row so the table stays rectangular', () => {
+    const [block] = toBlocks('| a | b | c |\n| --- | --- | --- |\n| 1 | 2 |')
+
+    expect(block.rows?.map((row) => row.length)).toEqual([3, 3])
+    expect(block.rows?.[1][2]).toEqual([])
   })
 
   it('turns a hard break into a new line inside the same block', () => {

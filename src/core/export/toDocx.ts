@@ -5,9 +5,13 @@ import {
   LevelFormat,
   Packer,
   Paragraph,
-  TextRun
+  Table,
+  TableCell,
+  TableRow,
+  TextRun,
+  WidthType
 } from 'docx'
-import { toBlocks, type Block, type Run } from './blocks'
+import { toBlocks, type Block, type Row, type Run } from './blocks'
 
 /** Present on every Windows since Vista, so the file opens looking right. */
 const MONO_FONT = 'Consolas'
@@ -16,6 +20,27 @@ const MONO_FONT = 'Consolas'
 const INDENT = 720
 
 const ORDERED = 'ordered'
+
+// docx ships a styles.xml with an EMPTY <w:docDefaults> and headings carrying
+// only colour and size, so Word lays everything out flush: paragraph against
+// paragraph, heading against the text above it. These are Word's own Normal
+// defaults, restored — layout hygiene, never the app's palette (DE1E.11).
+const BODY_SPACING = { after: 160, line: 259 }
+const HEADING_SPACING = { before: 280, after: 120 }
+const CODE_SPACING = { before: 160, after: 160, line: 240 }
+
+const DEFAULT_STYLES = {
+  document: { paragraph: { spacing: BODY_SPACING } },
+  heading1: { paragraph: { spacing: { before: 360, after: 160 } } },
+  heading2: { paragraph: { spacing: HEADING_SPACING } },
+  heading3: { paragraph: { spacing: HEADING_SPACING } },
+  heading4: { paragraph: { spacing: HEADING_SPACING } },
+  heading5: { paragraph: { spacing: HEADING_SPACING } },
+  heading6: { paragraph: { spacing: HEADING_SPACING } },
+  // Without contextualSpacing every bullet would take the full paragraph gap,
+  // and a list would read as a pile of separate paragraphs.
+  listParagraph: { paragraph: { spacing: { after: 60 }, contextualSpacing: true } }
+}
 
 // Word needs every level declared before a paragraph may ask for one, and the
 // mapping pins nesting to the last of these (DE1E.4).
@@ -41,16 +66,42 @@ function textRun(run: Run): TextRun {
   })
 }
 
-function paragraphOf(block: Block): Paragraph {
+// A real Word table, not text with tabs: Word's tab stops are fixed, so a
+// tabbed row ragged-aligns the moment one cell is longer than the stop (DE1E.10).
+function tableOf(rows: readonly Row[]): Table {
+  const width = { size: 100, type: WidthType.PERCENTAGE }
+
+  return new Table({
+    width,
+    rows: rows.map(
+      (cells, index) =>
+        new TableRow({
+          // Repeats the header when the table crosses a page.
+          tableHeader: index === 0 ? true : undefined,
+          children: cells.map(
+            (runs) =>
+              new TableCell({
+                width: { size: 100 / cells.length, type: WidthType.PERCENTAGE },
+                children: [new Paragraph({ children: runs.map(textRun) })]
+              })
+          )
+        })
+    )
+  })
+}
+
+function elementOf(block: Block): Paragraph | Table {
   const children = block.runs.map(textRun)
 
   switch (block.kind) {
+    case 'table':
+      return tableOf(block.rows ?? [])
     case 'rule':
       return new Paragraph({ thematicBreak: true })
     case 'heading':
       return new Paragraph({ children, heading: HEADINGS[Math.min(block.level ?? 1, 6) - 1] })
     case 'code':
-      return new Paragraph({ children, indent: { left: INDENT }, spacing: { before: 0, after: 0 } })
+      return new Paragraph({ children, indent: { left: INDENT }, spacing: CODE_SPACING })
     case 'quote':
       return new Paragraph({ children, indent: { left: INDENT }, run: { italics: true } })
     default:
@@ -71,6 +122,7 @@ function paragraphOf(block: Block): Paragraph {
  */
 export async function toDocx(markdown: string): Promise<Uint8Array> {
   const document = new Document({
+    styles: { default: DEFAULT_STYLES },
     numbering: {
       config: [
         {
@@ -85,7 +137,7 @@ export async function toDocx(markdown: string): Promise<Uint8Array> {
         }
       ]
     },
-    sections: [{ children: toBlocks(markdown).map(paragraphOf) }]
+    sections: [{ children: toBlocks(markdown).map(elementOf) }]
   })
 
   return Packer.toBuffer(document)

@@ -36,6 +36,14 @@ describe('toDocx', () => {
     await expect(toDocx(`${MARKDOWN}\n\n${deep}`)).resolves.toBeInstanceOf(Uint8Array)
   })
 
+  // DE1E.10: a Table is not a Paragraph, so the section has to accept both —
+  // a mistake here throws at construction, not in Word.
+  it('accepts a table alongside paragraphs in the same section', async () => {
+    const withTable = `${MARKDOWN}\n\n| Mês | Vendas |\n| --- | --- |\n| Jan | 120 |`
+
+    await expect(toDocx(withTable)).resolves.toBeInstanceOf(Uint8Array)
+  })
+
   it('still produces a valid file from an empty draft', async () => {
     const bytes = await toDocx('')
 

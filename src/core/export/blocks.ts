@@ -1,5 +1,5 @@
 import type { PhrasingContent, RootContent, Table } from 'mdast'
-import { CELL_SEPARATOR, parseMarkdown } from './markdown'
+import { parseMarkdown } from './markdown'
 
 export type Run = {
   text: string
@@ -11,12 +11,17 @@ export type Run = {
   newLine?: true
 }
 
+export type Cell = Run[]
+export type Row = Cell[]
+
 export type Block = {
-  kind: 'paragraph' | 'heading' | 'quote' | 'code' | 'rule'
+  kind: 'paragraph' | 'heading' | 'quote' | 'code' | 'rule' | 'table'
   runs: Run[]
   /** 1 to 6, only on a `heading`. */
   level?: number
   list?: { ordered: boolean; level: number }
+  /** Only on a `table`, and always rectangular. `runs` stays empty there. */
+  rows?: Row[]
 }
 
 // Markdown nests without a limit and Word does not: the levels have to be
@@ -63,14 +68,19 @@ function codeBlock(value: string): Block {
   }
 }
 
-function tableBlocks(node: Table): Block[] {
-  return node.children.map((row, rowIndex) => ({
-    kind: 'paragraph' as const,
-    runs: row.children.flatMap((cell, cellIndex) => {
-      const cellRuns = runsOf(cell.children, rowIndex === 0 ? { bold: true } : {})
-      return cellIndex === 0 ? cellRuns : [{ text: CELL_SEPARATOR }, ...cellRuns]
-    })
-  }))
+function tableBlock(node: Table): Block {
+  const rows = node.children.map((row, index) =>
+    row.children.map((cell) => runsOf(cell.children, index === 0 ? { bold: true } : {}))
+  )
+  // Rectangular even when the markdown is not: a short row would leave Word
+  // drawing a ragged table, and both renderers would have to guard separately.
+  const width = Math.max(0, ...rows.map((row) => row.length))
+
+  return {
+    kind: 'table',
+    runs: [],
+    rows: rows.map((row) => [...row, ...Array.from({ length: width - row.length }, (): Cell => [])])
+  }
 }
 
 function blocksOf(nodes: readonly RootContent[], context: Context): Block[] {
@@ -103,7 +113,7 @@ function blocksOf(nodes: readonly RootContent[], context: Context): Block[] {
       case 'listItem':
         return blocksOf(node.children, context)
       case 'table':
-        return tableBlocks(node)
+        return [tableBlock(node)]
       case 'html':
         return [{ kind: 'paragraph', runs: [{ text: node.value }] }]
       default:
@@ -112,15 +122,19 @@ function blocksOf(nodes: readonly RootContent[], context: Context): Block[] {
   })
 }
 
+function hasContent(block: Block): boolean {
+  if (block.kind === 'rule') return true
+  if (block.kind === 'table') return block.rows !== undefined && block.rows.length > 0
+  return block.runs.length > 0
+}
+
 /**
  * Turns `markdown` into the blocks an exporter draws, one decision per node.
  *
  * @param markdown - The draft as written.
- * @returns Blocks in reading order; a block with no runs is dropped unless it
- *   is a rule, which carries none by definition.
+ * @returns Blocks in reading order, the empty ones dropped — except a rule and
+ *   a table, which carry their content somewhere other than `runs`.
  */
 export function toBlocks(markdown: string): Block[] {
-  return blocksOf(parseMarkdown(markdown).children, {}).filter(
-    (block) => block.kind === 'rule' || block.runs.length > 0
-  )
+  return blocksOf(parseMarkdown(markdown).children, {}).filter(hasContent)
 }

@@ -1,11 +1,21 @@
-import { toBlocks, type Block } from './blocks'
+import { toBlocks, type Block, type Run } from './blocks'
 
 /** A rule has no runs, and vanishing silently is the defect this file exists to end. */
 const RULE = '---'
 
+/** Between cells of a flattened table — the plain-text convention for tabular data. */
+const CELL_SEPARATOR = '\t'
+
+function textOf(runs: readonly Run[]): string {
+  return runs.map((run) => (run.newLine === true ? `\n${run.text}` : run.text)).join('')
+}
+
 function lineOf(block: Block): string {
   if (block.kind === 'rule') return RULE
-  return block.runs.map((run) => (run.newLine === true ? `\n${run.text}` : run.text)).join('')
+  if (block.kind === 'table') {
+    return (block.rows ?? []).map((row) => row.map(textOf).join(CELL_SEPARATOR)).join('\n')
+  }
+  return textOf(block.runs)
 }
 
 /**

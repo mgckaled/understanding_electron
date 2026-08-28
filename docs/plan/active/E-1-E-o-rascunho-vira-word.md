@@ -104,6 +104,26 @@ Para todo o resto — `html`, `footnote`, `image`, um nó que uma versão futura
 
 ⚠️ **`image` cai explicitamente aí**: vira o `alt` como parágrafo, não uma imagem embutida. O rascunho é texto puro, `core/` não resolve anexo, e um `attachment://hash` não tem bytes para embutir. Fora deste plano, registrado abaixo.
 
+### DE1E.11 — O `styles.xml` do `docx` vem sem espaçamento nenhum, e é preciso repor
+
+**A maior causa do "desorganizado", e não era a tabela.** O `docx` gera `<w:docDefaults><w:rPrDefault/><w:pPrDefault/></w:docDefaults>` — **vazio** — e headings que declaram só cor e tamanho. Word então não põe folga alguma: parágrafo cola em parágrafo, título cola no texto acima, e uma resposta de modelo (que é quase toda título + lista) vira um bloco único.
+
+Repostos via `styles.default`, com os valores do **próprio Normal do Word**: corpo `after 160, line 259`; `heading1` `before 360, after 160`; `heading2`–`heading6` `before 280, after 120`; e `listParagraph` com `after 60` + **`contextualSpacing`**, sem o qual cada marcador levaria a folga inteira de parágrafo e a lista viraria uma pilha de textos soltos.
+
+⚠️ **Isto não contradiz a DE1E.8.** Espaçamento é higiene de layout — sem ele o arquivo não é legível em Word nenhum. Fonte, cor e tamanho continuam de fora: esses o tema do leitor decide.
+
+⚠️ **E consertou um erro meu de sinal:** o bloco de código levava `spacing: { before: 0, after: 0 }`, o que eu escrevi pensando em "linhas de código não se afastam". Mas o bloco é **um** parágrafo com quebras internas — o zero não apertava as linhas, tirava a folga em volta. Agora é `before/after 160` com `line 240`, que é o inverso do que eu tinha.
+
+### DE1E.10 — Tabela vira `Table` de verdade; o gatilho que eu adiei disparou na primeira exportação
+
+O corte declarava, em *Fora deste plano*, que tabela como `Table` do Word era "um plano de meia hora **quando alguém exportar uma tabela de verdade**". A primeira exportação real do usuário tinha uma, de 20 linhas.
+
+Vinte parágrafos separados por `\t` num Word cujas paradas de tabulação são fixas a cada 1,25 cm saem **desalinhados por construção**: cada célula mais longa que a parada empurra o resto da linha. Não é "o normal do `.docx`" — é o adiamento aparecendo.
+
+**A arquitetura da DE1E.9 absorveu isto sem se dobrar,** e é a prova de que a costura estava no lugar certo: o `Block` ganha o tipo `table` com `rows: Run[][][]`, e o que difere é só o **renderizador** — `.txt` junta as células com tabulação, `.docx` monta `Table`/`TableRow`/`TableCell` a 100% de largura, com a primeira linha marcada `tableHeader` (repete ao virar a página). **Uma travessia do markdown, duas saídas.**
+
+As linhas são preenchidas até ficarem **retangulares** já no mapeamento: markdown aceita linha curta, Word desenha tabela torta, e resolver nos dois renderizadores seria a mesma decisão em dois lugares.
+
 ### DE1E.9 — O `.txt` sai do mesmo `Block[]` do `.docx`, e o `strip-markdown` deixa o projeto
 
 **Achado na prova ao vivo do passo 5, e é a correção da DE1E.2.** O conserto daquela decisão — substituir `code`/`table` por parágrafos — funciona no nível da árvore e **cai no serializador**: `remark().use(strip)` é parse → transformar → *stringify*, e o `remark-stringify` escapa tudo que possa ser lido como marcação (`NEWS\_URL`, `https\://`, `` \` ``, `a\[0]`) e troca espaço à esquerda por `&#x20;`, porque indentação é significativa em markdown. Sobre prosa quase não aparece; sobre código, **acrescenta caracteres que ninguém digitou** — pior que remover.
@@ -190,7 +210,8 @@ O tradutor (`Block[]` → `Document` → `Packer.toBuffer`), o `numbering.config
 |---|---|
 | `.pdf` | **E-1-F** — a única bifurcação que a trilha ainda tem em aberto (`pdf-lib` com fonte vendorizada contra `printToPDF` sem dependência) |
 | Imagem embutida no `.docx` | fora — exigiria resolver `attachment://` dentro de `core/`, que hoje não conhece o disco do app. O `alt` vira parágrafo (DE1E.7) |
-| Tabela como **tabela do Word** (`Table`/`TableRow`/`TableCell`) | fora — o `docx` suporta, e é um plano de meia hora **quando alguém exportar uma tabela de verdade**. Neste corte ela vira texto legível, que é melhor que pipes |
+| ~~Tabela como **tabela do Word**~~ | **entrou** — o gatilho que esta linha declarava ("quando alguém exportar uma tabela de verdade") disparou na primeira exportação real, ver DE1E.10 |
+| Alinhamento de coluna (`\|---:\|` do GFM) | fora — o mdast entrega `node.align` de graça, mas modelo raramente escreve alinhamento explícito. Nasce quando aparecer um que escreva |
 | Cabeçalho, rodapé, número de página, sumário automático | fora — são decisões de documento, não de conversão. Nenhum chamador pediu |
 | Escolher fonte ou tamanho na exportação | fora — DE1E.8: quem veste o `.docx` é o Word do usuário |
 | `.odt`, `.rtf`, `.epub` | fora do escopo do produto — o `ESCOPO` fixa cinco formatos de saída |
