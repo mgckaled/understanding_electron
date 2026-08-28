@@ -1,5 +1,10 @@
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
-import { EditorView } from '@codemirror/view'
+import {
+  EditorView,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  lineNumbers
+} from '@codemirror/view'
 import { classHighlighter, tags } from '@lezer/highlight'
 import type { Extension } from '@codemirror/state'
 
@@ -41,6 +46,24 @@ const markdownHighlight = HighlightStyle.define([
   { tag: tags.strikethrough, color: 'var(--color-text-faint)', textDecoration: 'line-through' }
 ])
 
+// The DE1C.3 ruling that kept gutters out is not overridden — its premise was
+// "this is a field of prose", and a code draft is not one. Prose keeps it.
+const codeTheme = EditorView.theme({
+  '.cm-gutters': {
+    color: 'var(--color-text-faint)',
+    backgroundColor: 'transparent',
+    border: 'none',
+    paddingRight: 'var(--space-4)'
+  },
+  '.cm-activeLineGutter': {
+    color: 'var(--color-text-muted)',
+    backgroundColor: 'var(--color-surface-raised)'
+  },
+  // Wins over the transparent rule in `theme`, which is why this extension is
+  // registered after it.
+  '.cm-activeLine': { backgroundColor: 'var(--color-surface-raised)' }
+})
+
 export const editorTheme: Extension = theme
 
 /** Prose highlighting: inline colours, markdown's own tags. */
@@ -56,3 +79,17 @@ export const markdownHighlighting: Extension = syntaxHighlighting(markdownHighli
  * never both.
  */
 export const codeHighlighting: Extension = syntaxHighlighting(classHighlighter)
+
+/**
+ * The gutter and the caret's line — what a code editor has and a prose field
+ * does not (DE2B.6).
+ *
+ * `codeTheme` overrides the transparent active line in {@link editorTheme}, so
+ * this must be registered AFTER it.
+ */
+export const codeGutters: Extension = [
+  lineNumbers(),
+  highlightActiveLine(),
+  highlightActiveLineGutter(),
+  codeTheme
+]

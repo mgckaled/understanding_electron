@@ -100,6 +100,20 @@ Então código não escolhe formato: sai **verbatim**, com a extensão da lingua
 
 Descartado: oferecer `.docx`/`.pdf` de código. Não é conservadorismo — é que o caminho deles **é** o que mutila.
 
+### DE2B.6 — Numeração, rolagem lateral e linha do cursor: a premissa da DE1C.3 mudou
+
+Pedido do dono depois da prova ao vivo do passo 5. A DE1C.3 mantinha gutter fora com esta razão:
+
+> *"line numbers, gutters, folding, search and autocompletion belong to a **code editor**, and this is a field of **prose**"*
+
+Ela **não é revogada** — a premissa dela deixou de valer para metade dos rascunhos. Prosa continua sem nada disso; código ganha os três, pelo mesmo `kind` que já decide gramática e exportação.
+
+Medido: **+8.304 B**, e nenhuma dependência nova — `lineNumbers`, `highlightActiveLine` e `highlightActiveLineGutter` vêm do `@codemirror/view`, que o editor já usa. É 3% do que as gramáticas custaram.
+
+**A quebra de linha sai junto, e não é detalhe:** com `lineWrapping`, uma linha longa ocupa três alturas e carrega **um** número — a numeração fica ilegível justamente onde ela mais serve. Código rola na horizontal, como em qualquer editor de código; prosa continua quebrando.
+
+⚠️ **Ordem de registro é carga.** `codeGutters` tem de vir **depois** de `editorTheme`, porque sobrescreve o `.cm-activeLine: transparent` que ele define. Trocar a ordem apaga o realce da linha do cursor sem erro nenhum.
+
 ## O layout
 
 ```
@@ -136,7 +150,11 @@ Substitui o `[]` que o E-2-A deixou. ⚠️ **Não testável em jsdom** — mesm
 
 `ExportFormat` ganha o membro verbatim, `FormatPicker` vira rótulo para código, `exportFileName` usa a extensão da tabela. Teste: um `.py` exportado é **byte a byte** o que o editor tinha.
 
-### Passo 6 — Prova ao vivo
+### Passo 6 — Numeração, sem quebra, linha do cursor
+
+`lineNumbers()` + `highlightActiveLine()` + `highlightActiveLineGutter()` e o `codeTheme`, só para `kind === 'code'`; `lineWrapping` passa a ser exclusivo da prosa. Testado pelos dois lados da régua: código numera, prosa não.
+
+### Passo 7 — Prova ao vivo
 
 Do dono. Um trecho de cada: `python`, `sql`, `typescript`, um sem linguagem. Conferir que as cores do editor e da prévia são **as mesmas**, e que o arquivo salvo abre íntegro.
 

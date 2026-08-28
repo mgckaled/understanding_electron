@@ -5,7 +5,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import type { DraftKind } from '@shared/ipc'
 import { resolveLanguage } from '@core/draft/languages'
-import { codeHighlighting, editorTheme, markdownHighlighting } from './editorTheme'
+import { codeGutters, codeHighlighting, editorTheme, markdownHighlighting } from './editorTheme'
 import { grammarFor } from './codeHighlight'
 
 // Composed by hand, never `basicSetup`: line numbers, gutters, folding, search
@@ -17,17 +17,20 @@ import { grammarFor } from './codeHighlight'
 // syntaxHighlighting takes the UNION of every registered highlighter, so the
 // two styles cannot simply coexist.
 function extensionsFor(kind: DraftKind, language: string | null): Extension[] {
-  const base = [history(), keymap.of([...defaultKeymap, ...historyKeymap]), EditorView.lineWrapping]
+  const base = [history(), keymap.of([...defaultKeymap, ...historyKeymap])]
   if (kind !== 'code') {
-    // 353 kB of the bundle, measured, since lang-markdown pulls lang-html.
-    return [...base, markdown(), markdownHighlighting, editorTheme]
+    // Prose wraps; 353 kB of the bundle, measured, since lang-markdown pulls
+    // lang-html.
+    return [...base, EditorView.lineWrapping, markdown(), markdownHighlighting, editorTheme]
   }
+  // Code scrolls sideways instead of wrapping (DE2B.6): a wrapped line would
+  // take three heights and carry one number. `codeGutters` comes after
+  // `editorTheme` because it overrides the transparent active line in it.
   const grammar = grammarFor(resolveLanguage(language)?.id)
+  const code = [...base, editorTheme, codeGutters]
   // An unknown or absent fence stays plain text — a guess is the defect the
   // E-2-A had to undo (DE2B.4).
-  return grammar === null
-    ? [...base, editorTheme]
-    : [...base, grammar, codeHighlighting, editorTheme]
+  return grammar === null ? code : [...code, grammar, codeHighlighting]
 }
 
 type DraftEditorProps = {

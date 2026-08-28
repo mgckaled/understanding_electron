@@ -308,6 +308,24 @@ describe('enviar código para rascunho', () => {
     )
   })
 
+  // DE2B.6: the gutter is what DE1C.3 kept out of a PROSE field. Its premise,
+  // not its ruling, is what changed — so prose must still have none.
+  it('numbers the lines of a code draft', async () => {
+    const panel = await openCodeDraft(CLASS_ANSWER)
+
+    const numbers = [...panel.querySelectorAll('.cm-lineNumbers .cm-gutterElement')]
+    expect(numbers.map((node) => node.textContent)).toEqual(expect.arrayContaining(['1', '2', '3']))
+  })
+
+  it('leaves a prose draft without a gutter', async () => {
+    await withAnswer([CODE_ANSWER])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Enviar para rascunho' })[1])
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    expect(panel.querySelector('.cm-lineNumbers')).toBeNull()
+  })
+
   it('builds no nested code block in a code preview', async () => {
     const panel = await openCodeDraft(CLASS_ANSWER)
 
