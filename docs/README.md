@@ -100,7 +100,7 @@ Remedido em 28/08/2026, ao fechar a trilha E-2: **~1,94 MB / ~523k tokens** em 9
 | `HISTORY.md` | **10 marcos** | a mais antiga desce para `HISTORY-archive.md`, na mesma edição |
 | `ARMADILHAS.md` | ~80 KB | comprimir as mais antigas (número + mecanismo + conserto; a narrativa sai). ⚠️ **Estourado: 103,9 kB em 28/08/2026** — registrado no [`ROADMAP § 2`](ROADMAP.md) |
 | `HISTORY-archive.md` | — | sem teto: é fila de saída, nunca lido inteiro |
-| `ESCOPO.md`, `ROADMAP.md`, `DECISOES.md` | ~45 KB | desmembrar por assunto em `reference/`, com ponteiro. ⚠️ **Os três estouraram em 28/08/2026** — `ROADMAP` 57,6 kB, `DECISOES` 48,2, `ESCOPO` 45,8. Os dois primeiros crescem **por construção** (um gatilho, uma decisão por vez), então editar com cuidado não os segura: só desmembrar |
+| `ESCOPO.md`, `ROADMAP.md`, `DECISOES.md` | ~45 KB | desmembrar por assunto em `reference/`, com ponteiro. ⚠️ **Os três estouraram em 28/08/2026** — `ROADMAP` 59,4 kB, `DECISOES` 48,2, `ESCOPO` 45,8. Os dois primeiros crescem **por construção** (um gatilho, uma decisão por vez), então editar com cuidado não os segura: só desmembrar |
 | `CLAUDE.md` | **~25 KB** | é lido em **toda** sessão — o que tem outro dono sai e vira ponteiro. ⚠️ **Estourado: 31,7 kB em 28/08/2026** — registrado no [`ROADMAP § 2`](ROADMAP.md) |
 | plano individual (`plan/**`) | **~35 KB** | o excesso é quase sempre diário de execução: comprimir à régua de uma linha por sessão (abaixo). O `15` (94 KB) já nasceu violando |
 | skill (`SKILL.md`) | ~40 KB | dividir em arquivo auxiliar na pasta da skill |
