@@ -60,6 +60,9 @@ const BY_ALIAS = new Map<string, CodeLanguage>(
   )
 )
 
+/** Every canonical id, so a consumer can assert it covers all of them. */
+export const LANGUAGE_IDS: readonly string[] = LANGUAGES.map((language) => language.id)
+
 /** What an unknown or absent fence exports as — never a guess (DE2B.4). */
 export const FALLBACK_EXTENSION = 'txt'
 

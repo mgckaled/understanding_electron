@@ -4,26 +4,30 @@ import { EditorView, keymap } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import type { DraftKind } from '@shared/ipc'
-import { editorTheme } from './editorTheme'
+import { resolveLanguage } from '@core/draft/languages'
+import { codeHighlighting, editorTheme, markdownHighlighting } from './editorTheme'
+import { grammarFor } from './codeHighlight'
 
 // Composed by hand, never `basicSetup`: line numbers, gutters, folding, search
 // and autocompletion belong to a code editor, and this is a field of prose
 // (DE1C.3). `Tab` is absent on purpose — CodeMirror leaves it alone to pass the
 // WCAG no-keyboard-trap criterion, and that is the behaviour we want (DE1C.5).
-// Code gets NO language extension yet: markdown() over code is not merely the
-// wrong colours, it applies markdown's rules — four leading spaces read as a
-// code block, so an indented body came out uniformly tinted. Its own grammar
-// per language is E-2-B; until then, plain text is the honest state (DE2A.9).
-function extensionsFor(kind: DraftKind): Extension[] {
-  return [
-    history(),
-    keymap.of([...defaultKeymap, ...historyKeymap]),
-    EditorView.lineWrapping,
-    // 353 kB of the bundle, measured — the whole cost of syntax highlighting,
-    // since lang-markdown pulls lang-html for embedded blocks.
-    ...(kind === 'code' ? [] : [markdown()]),
-    editorTheme
-  ]
+// One dialect per editor, never both: markdown's rules over code read four
+// leading spaces as a code block and tint a whole indented body (DE2A.9), and
+// syntaxHighlighting takes the UNION of every registered highlighter, so the
+// two styles cannot simply coexist.
+function extensionsFor(kind: DraftKind, language: string | null): Extension[] {
+  const base = [history(), keymap.of([...defaultKeymap, ...historyKeymap]), EditorView.lineWrapping]
+  if (kind !== 'code') {
+    // 353 kB of the bundle, measured, since lang-markdown pulls lang-html.
+    return [...base, markdown(), markdownHighlighting, editorTheme]
+  }
+  const grammar = grammarFor(resolveLanguage(language)?.id)
+  // An unknown or absent fence stays plain text — a guess is the defect the
+  // E-2-A had to undo (DE2B.4).
+  return grammar === null
+    ? [...base, editorTheme]
+    : [...base, grammar, codeHighlighting, editorTheme]
 }
 
 type DraftEditorProps = {
@@ -31,6 +35,8 @@ type DraftEditorProps = {
   draftId: string
   /** Which dialect the document is, so the wrong grammar is not applied to it. */
   kind: DraftKind
+  /** The fence's language, which picks the grammar when `kind` is code. */
+  language: string | null
   initialText: string
   /** Called on blur with the current document (DE1C.6). */
   onSave: (text: string) => void
@@ -41,6 +47,7 @@ type DraftEditorProps = {
 function DraftEditor({
   draftId,
   kind,
+  language,
   initialText,
   onSave,
   onReady
@@ -57,7 +64,7 @@ function DraftEditor({
   useEffect(() => {
     if (host.current === null) return
     const editor = new EditorView({
-      state: EditorState.create({ doc: initialText, extensions: extensionsFor(kind) }),
+      state: EditorState.create({ doc: initialText, extensions: extensionsFor(kind, language) }),
       parent: host.current
     })
     view.current = editor
@@ -75,8 +82,10 @@ function DraftEditor({
   useEffect(() => {
     const editor = view.current
     if (editor === null || editor.state.doc.toString() === initialText) return
-    editor.setState(EditorState.create({ doc: initialText, extensions: extensionsFor(kind) }))
-  }, [draftId, initialText, kind])
+    editor.setState(
+      EditorState.create({ doc: initialText, extensions: extensionsFor(kind, language) })
+    )
+  }, [draftId, initialText, kind, language])
 
   return (
     <div

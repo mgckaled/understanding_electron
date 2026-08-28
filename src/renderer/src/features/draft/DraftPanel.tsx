@@ -41,6 +41,7 @@ function DraftPanel(): React.JSX.Element | null {
           <DraftEditor
             draftId={current?.id ?? ''}
             kind={current?.kind ?? 'markdown'}
+            language={current?.language ?? null}
             initialText={current?.content ?? ''}
             onSave={(text) => (id === null ? undefined : update(id, text))}
             onReady={(reader) => (read.current = reader)}

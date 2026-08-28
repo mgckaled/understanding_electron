@@ -1,6 +1,6 @@
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { EditorView } from '@codemirror/view'
-import { tags } from '@lezer/highlight'
+import { classHighlighter, tags } from '@lezer/highlight'
 import type { Extension } from '@codemirror/state'
 
 // Every value is a semantic token, never a literal (DE1C.2). CodeMirror injects
@@ -41,4 +41,18 @@ const markdownHighlight = HighlightStyle.define([
   { tag: tags.strikethrough, color: 'var(--color-text-faint)', textDecoration: 'line-through' }
 ])
 
-export const editorTheme: Extension = [theme, syntaxHighlighting(markdownHighlight)]
+export const editorTheme: Extension = theme
+
+/** Prose highlighting: inline colours, markdown's own tags. */
+export const markdownHighlighting: Extension = syntaxHighlighting(markdownHighlight)
+
+/**
+ * Code highlighting — the SAME `Highlighter` the panel's preview renders with
+ * (DE2B.1), so the two can never drift apart in colour. It emits `.tok-*`
+ * classes and carries no styles of its own; the rules live in `base.css`.
+ *
+ * Kept apart from {@link markdownHighlighting} because syntaxHighlighting takes
+ * the UNION of every registered highlighter — one editor gets one of the two,
+ * never both.
+ */
+export const codeHighlighting: Extension = syntaxHighlighting(classHighlighter)

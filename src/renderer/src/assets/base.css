@@ -169,3 +169,52 @@
     }
   }
 }
+
+/*
+ * Syntax highlighting, shared by the two places code is drawn: the CodeMirror
+ * editor and the panel's preview (DE2B.1). Global and unlayered on purpose —
+ * CodeMirror mounts its content outside any CSS Module, and the classes come
+ * from `classHighlighter`, so one block of rules serves both renderers and the
+ * two can never drift apart in colour. `guard` checks this file, so a #hex or
+ * an unknown token here is blocked like anywhere else.
+ *
+ * The ten classes are the whole vocabulary the 13 probed grammars emit.
+ */
+.tok-keyword {
+  color: var(--color-accent-text);
+}
+
+.tok-string {
+  color: var(--color-ok-text);
+}
+
+.tok-comment {
+  color: var(--color-text-faint);
+  font-style: italic;
+}
+
+.tok-number,
+.tok-atom {
+  color: var(--color-warn-text);
+}
+
+.tok-typeName {
+  color: var(--color-warn-text);
+}
+
+.tok-definition {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.tok-variableName {
+  color: var(--color-text);
+}
+
+.tok-operator {
+  color: var(--color-text-muted);
+}
+
+.tok-meta {
+  color: var(--color-text-muted);
+}
