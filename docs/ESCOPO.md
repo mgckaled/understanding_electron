@@ -341,7 +341,7 @@ Diferente do documento **anexado** — que só entra como contexto e nunca produ
 |---|---|---|
 | `.md` | texto que o modelo já produziu, salvo direto | sem biblioteca — não é motor, é `writeFile` |
 | `.txt` | o texto sem a marcação | **não** é `replace` de símbolo, nem serialização de volta ao markdown: sai do **mesmo mapeamento que o `.docx`** (`core/export/blocks.ts`), o que mantém os dois formatos consistentes por construção e impede que código exportado saia escapado (E-1-E) |
-| `.pdf` | `pdf-lib` | desenha texto/posição; sem paginação automática de prosa longa |
+| `.pdf` | **`webContents.printToPDF`**, sem dependência | ⚠️ `pdf-lib` foi **descartado no E-1-F** exatamente pelo motivo que esta linha registrava: desenha texto em coordenadas, **sem paginação automática de prosa longa** — e resposta de modelo é isso. O Chromium que já está no app pagina de graça |
 | `.docx` | `docx` (dolanmiu) | API declarativa por parágrafo, Node puro, sem módulo nativo |
 
 `.pptx` fica fora **desta** entrega — layout em slide pede um esquema de deck e uma decisão própria sobre catálogo de template, tratada em plano separado. `.odp` e `.ppt` ficam fora do escopo, registrado abaixo.

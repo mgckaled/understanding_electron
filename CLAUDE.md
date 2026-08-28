@@ -47,7 +47,7 @@ Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao d
 
 ### Protocolo de leitura da documentação
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,8 MB / ~540k tokens** (94 arquivos) — os sete arquivos soltos são só ~113k dela, e `plan/implemented/` sozinho é mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,8 MB / ~540k tokens** (95 arquivos) — os sete arquivos soltos são só ~113k dela, e `plan/implemented/` sozinho é mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
@@ -58,7 +58,7 @@ Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao d
 | `ROADMAP.md` | ~14k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
 | `DECISOES.md` | ~11k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
 | `README.md` | ~4k | único que cabe inteiro |
-| **`plan/implemented/`** (54 arq.) | **~300k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
+| **`plan/implemented/`** (55 arq.) | **~300k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
 | `reference/` (19 arq.) | ~56k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
 | `study/` (12 arq.) | ~42k | `Grep` no conceito; `Read` com `offset` na seção achada |
 | `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
@@ -286,7 +286,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo — **92 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **94 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|

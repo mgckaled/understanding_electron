@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **92** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **94** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -288,6 +288,14 @@ No F-3-C a alça do painel (`role="separator"`, 10px de área de acerto) não re
 ### CodeMirror não monta sob jsdom, e digitar nele continua fora de alcance depois do conserto (ago/2026)
 
 O CodeMirror mede texto para se posicionar, e chama `Range.prototype.getBoundingClientRect`, `Range.prototype.getClientRects` e `Document.prototype.elementFromPoint` — **os três ausentes no jsdom**. Sem eles, todo teste que monta o editor lança, inclusive os que não têm nada a ver com ele (um painel inteiro cai porque uma aba dentro dele monta um editor). Conserto: três *stubs* em `test/setup-renderer.ts`, ao lado dos shims de `<dialog>` e Popover — retângulos zerados bastam, porque *layout* nunca é asserido no nível 2. ⚠️ **O conserto não devolve a digitação.** O conteúdo é `contenteditable` e a edição chega por `beforeinput`, que o jsdom não reproduz de forma confiável: um teste que "digita" passa sem provar nada. A saída que **prova** é editar por transação via `EditorView.findFromDOM`, que é API pública — cobre "documento alterado é gravado ao sair", e deixa só o teclado real para a verificação ao vivo. [`test/setup-renderer.ts`](../test/setup-renderer.ts)
+
+### A segunda janela offscreen falha com `ERR_FAILED`, e a culpa é da primeira ter sido destruída (ago/2026)
+
+`window.destroy()` na **última** janela viva dispara `window-all-closed`, e o padrão do Electron fora do macOS é **encerrar o app**. A janela seguinte então falha ao carregar — em qualquer URL, de qualquer tamanho — e o processo morre logo depois, sem mensagem que aponte a causa. **Não afeta o app** (a `mainWindow` está sempre aberta), afeta **sondas e scripts**, que é justamente onde se mede antes de decidir. ⚠️ **O dano real é a conclusão errada, não a falha:** uma sonda que testava tamanhos crescentes de `data:` URL numa janela por vez fez a primeira (pequena) passar e a segunda (grande) falhar, e eu li como teto de tamanho — registrei "falha entre 128 e 192 KB" em fonte e em decisão. Com uma janela âncora viva, o número real é **1 MB passa, 2 MB morre com `ERR_INVALID_URL`**. **Conserto:** manter uma janela âncora na sonda. **Lição que generaliza:** medição que varia duas coisas ao mesmo tempo — aqui o tamanho **e** a ordem — mede a que não se está olhando. [`src/main/features/export/printPdf.ts`](../src/main/features/export/printPdf.ts)
+
+### `innerHTML` não muda o modo de compatibilidade — o doctype pertence à **primeira** carga (ago/2026)
+
+Carregar `data:text/html,<div></div>` e depois escrever o documento real por `document.documentElement.innerHTML` deixa `document.compatMode` em **`BackCompat`**: o doctype que vai **dentro** do HTML injetado não conta, porque quem decide o modo é a carga que criou o documento. Sintoma: nenhum. O conteúdo aparece, o layout renderiza — em **modo quirks**, onde altura de linha e dimensionamento de célula de tabela seguem outras regras. Custou todo PDF exportado renderizando errado, sem nada acusando. **Diagnóstico em um toque:** `executeJavaScript('document.compatMode')` — `CSS1Compat` é padrão, `BackCompat` é quirks. **Conserto:** o doctype na URL inicial (`data:text/html,<!doctype html><div></div>`). ⚠️ **Não é alcançável abaixo do Electron vivo**, então o que resta é o comentário no ponto de aplicação — a linha parece decorativa e não é. [`src/main/features/export/printPdf.ts`](../src/main/features/export/printPdf.ts)
 
 ### Pacote ESM-only chega ao bundle CJS do main como `{ default }`, e o app morre ao carregar (ago/2026)
 

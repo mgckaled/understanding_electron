@@ -382,6 +382,15 @@ Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, a
 | E-1-E | [DE1E.9](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `.txt` sai do mesmo `Block[]` do `.docx`, e o `strip-markdown` deixa o projeto |
 | E-1-E | [DE1E.10](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Tabela vira `Table` de verdade; o gatilho adiado disparou na primeira exportação |
 | E-1-E | [DE1E.11](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `styles.xml` do `docx` vem sem espaçamento nenhum, e é preciso repor |
+| E-1-F | [DE1F.1](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | `printToPDF`, e o HTML sai do `Block[]` — terceiro renderizador, não segundo pipeline |
+| E-1-F | [DE1F.2](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | A janela offscreen copia o molde do `rasterizeToPng`, e a carga é em dois tempos |
+| E-1-F | [DE1F.3](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Todo texto é escapado, e o documento nasce com `default-src 'none'` |
+| E-1-F | [DE1F.4](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Paginação é CSS, e são quatro regras que importam |
+| E-1-F | [DE1F.5](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Tipografia do sistema; só normal × monoespaçada precisam diferir |
+| E-1-F | [DE1F.6](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | A impressão é injetada, como o diálogo já era |
+| E-1-F | [DE1F.7](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Sem `generateDocumentOutline`/`generateTaggedPDF` — experimentais, um com issue aberta |
+| E-1-F | [DE1F.8](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | O doctype pertence à **primeira** carga, ou o PDF sai em modo quirks |
+| E-1-F | [DE1F.9](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Número de página entra, e o template do Chromium não herda estilo nenhum |
 | 09 (ativo) | [D9.1](plan/active/09-camada-de-ia.md) | A chamada de LLM roda no main, não no `utilityProcess` |
 | 09 (ativo) | [D9.2](plan/active/09-camada-de-ia.md) | Uma fronteira de rede, injetável, exatamente como o `embed_fn` |
 | 09 (ativo) | [D9.3](plan/active/09-camada-de-ia.md) | Nuvem é opt-in, e o gate é o mesmo formato para os três |
