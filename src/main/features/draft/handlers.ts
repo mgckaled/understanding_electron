@@ -10,7 +10,8 @@ import { toDraft } from './rows'
 export function listDrafts({ conversationId }: Args<'draft:list'>, db: DatabaseSync): Draft[] {
   return db
     .prepare(
-      `SELECT id, conversation_id, source_message_id, title, content, created_at, updated_at
+      `SELECT id, conversation_id, source_message_id, kind, language, title, content,
+              created_at, updated_at
        FROM drafts WHERE conversation_id = ? ORDER BY created_at, id`
     )
     .all(conversationId)
@@ -18,16 +19,26 @@ export function listDrafts({ conversationId }: Args<'draft:list'>, db: DatabaseS
 }
 
 export function createDraft(
-  { id, conversationId, sourceMessageId, title, content, createdAt }: Args<'draft:create'>,
+  {
+    id,
+    conversationId,
+    sourceMessageId,
+    kind,
+    language,
+    title,
+    content,
+    createdAt
+  }: Args<'draft:create'>,
   db: DatabaseSync
 ): void {
   // updated_at starts equal to created_at: nothing has edited it yet, and the
   // column has to be sortable from the first insert.
   db.prepare(
     `INSERT INTO drafts
-       (id, conversation_id, source_message_id, title, content, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, conversationId, sourceMessageId, title, content, createdAt, createdAt)
+       (id, conversation_id, source_message_id, kind, language, title, content,
+        created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(id, conversationId, sourceMessageId, kind, language, title, content, createdAt, createdAt)
 }
 
 export function updateDraft(

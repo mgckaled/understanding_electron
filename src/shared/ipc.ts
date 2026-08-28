@@ -515,10 +515,16 @@ export type Conversation = {
  * draft cannot reach the model from here even by accident. `sourceMessageId`
  * says where it came from and outlives that message (DE1A.2).
  */
+export const draftKindSchema = z.enum(['markdown', 'code'])
+export type DraftKind = z.infer<typeof draftKindSchema>
+
 export type Draft = {
   id: string
   conversationId: string
   sourceMessageId: string
+  kind: DraftKind
+  /** The fence's language, or `null` — which a code draft may also be (DE2A.2). */
+  language: string | null
   title: string
   content: string
   createdAt: number
@@ -676,6 +682,8 @@ export const argsSchema = {
     id: z.string().min(1),
     conversationId: z.string().min(1),
     sourceMessageId: z.string().min(1),
+    kind: draftKindSchema,
+    language: z.string().min(1).nullable(),
     title: z.string(),
     content: z.string(),
     createdAt: z.number().int().nonnegative()

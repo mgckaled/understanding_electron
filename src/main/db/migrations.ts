@@ -77,4 +77,14 @@ const v3: Migration = (db) => {
   `)
 }
 
-export const migrations: readonly Migration[] = [v1, v2, v3]
+// Code arrives as a draft of another dialect (DE2A.1), so the two columns land
+// here rather than in a table of their own. `language` is separate from `kind`
+// because a fence can omit the language and still be code (DE2A.2).
+const v4: Migration = (db) => {
+  db.exec(`
+    ALTER TABLE drafts ADD COLUMN kind TEXT NOT NULL DEFAULT 'markdown';
+    ALTER TABLE drafts ADD COLUMN language TEXT;
+  `)
+}
+
+export const migrations: readonly Migration[] = [v1, v2, v3, v4]

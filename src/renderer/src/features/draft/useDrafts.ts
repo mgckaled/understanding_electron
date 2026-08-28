@@ -11,7 +11,14 @@ export type DraftsApi = {
   drafts: Draft[]
   /** Whether this answer already produced a draft — the button's own state (DE1A.3). */
   hasDraftOf: (messageId: string) => boolean
-  create: (sourceMessageId: string, content: string) => void
+  /**
+   * Adds a draft to this conversation.
+   *
+   * @param code - Absent for prose. Present makes it a code draft, and carries
+   *   the fence's language, which may itself be `null` (DE2A.2) — the pairing
+   *   is one argument so neither half can be set without the other.
+   */
+  create: (sourceMessageId: string, content: string, code?: { language: string | null }) => void
   update: (id: string, content: string) => void
   remove: (id: string) => void
 }
@@ -54,13 +61,15 @@ export function useDrafts(conversationId: string | null): DraftsApi {
   })
 
   const create = useCallback(
-    (sourceMessageId: string, content: string) => {
+    (sourceMessageId: string, content: string, code?: { language: string | null }) => {
       if (conversationId === null) return
       // Identity and time are minted here, never by the handler (DE1A.6/D14.5).
       createMutation.mutate({
         id: crypto.randomUUID(),
         conversationId,
         sourceMessageId,
+        kind: code === undefined ? 'markdown' : 'code',
+        language: code?.language ?? null,
         title: draftTitle(content),
         content,
         createdAt: Date.now()

@@ -1,5 +1,6 @@
-import type { DatabaseSync } from 'node:sqlite'
-import { openDatabase } from './open'
+import { DatabaseSync } from 'node:sqlite'
+import { migrations } from './migrations'
+import { migrate, openDatabase } from './open'
 
 function withConversation(): DatabaseSync {
   const db = openDatabase(':memory:')
@@ -40,6 +41,40 @@ describe('schema v3', () => {
     db.prepare('DELETE FROM messages WHERE id = ?').run('m1')
 
     expect(db.prepare('SELECT COUNT(*) AS n FROM drafts').get()?.['n']).toBe(1)
+    db.close()
+  })
+})
+
+describe('schema v4', () => {
+  // The rung is what carries old rows across, so the test has to climb: build a
+  // v3 file, write a draft the way the app wrote them before E-2, then migrate.
+  function withV3Draft(): DatabaseSync {
+    const db = new DatabaseSync(':memory:')
+    migrate(db, migrations.slice(0, 3))
+    db.prepare(
+      'INSERT INTO conversations (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)'
+    ).run('c1', 'Vendas', 1000, 1000)
+    db.prepare(
+      'INSERT INTO drafts (id, conversation_id, source_message_id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run('d1', 'c1', 'm1', 'Vendas', 'Texto.', 1000, 1000)
+    return db
+  }
+
+  it('reads a draft written before v4 as prose', () => {
+    const db = withV3Draft()
+
+    migrate(db, migrations)
+
+    const row = db.prepare('SELECT kind, language FROM drafts WHERE id = ?').get('d1')
+    expect(row?.['kind']).toBe('markdown')
+    expect(row?.['language']).toBeNull()
+    db.close()
+  })
+
+  it('climbs to the top of the ladder', () => {
+    const db = withV3Draft()
+
+    expect(migrate(db, migrations)).toBe(migrations.length)
     db.close()
   })
 })

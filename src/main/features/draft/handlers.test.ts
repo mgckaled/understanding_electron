@@ -16,6 +16,8 @@ function draft(id: string, createdAt: number, conversationId = 'c1'): void {
       id,
       conversationId,
       sourceMessageId: `m-${id}`,
+      kind: 'markdown',
+      language: null,
       title: `Rascunho ${id}`,
       content: '# Vendas\n\nTexto.',
       createdAt
@@ -41,12 +43,58 @@ describe('draft handlers', () => {
         id: 'd1',
         conversationId: 'c1',
         sourceMessageId: 'm-d1',
+        kind: 'markdown',
+        language: null,
         title: 'Rascunho d1',
         content: '# Vendas\n\nTexto.',
         createdAt: 1000,
         updatedAt: 1000
       }
     ])
+  })
+
+  it('round-trips a code draft with its language', () => {
+    createDraft(
+      {
+        id: 'd9',
+        conversationId: 'c1',
+        sourceMessageId: 'm-d9',
+        kind: 'code',
+        language: 'python',
+        title: 'import pandas as pd',
+        content: 'import pandas as pd',
+        createdAt: 1000
+      },
+      db
+    )
+
+    expect(listDrafts({ conversationId: 'c1' }, db)[0]).toMatchObject({
+      kind: 'code',
+      language: 'python'
+    })
+  })
+
+  // A fence can omit the language and still be code — the reason kind and
+  // language are two columns (DE2A.2).
+  it('round-trips a code draft whose fence named no language', () => {
+    createDraft(
+      {
+        id: 'd10',
+        conversationId: 'c1',
+        sourceMessageId: 'm-d10',
+        kind: 'code',
+        language: null,
+        title: 'algo',
+        content: 'algo',
+        createdAt: 1000
+      },
+      db
+    )
+
+    expect(listDrafts({ conversationId: 'c1' }, db)[0]).toMatchObject({
+      kind: 'code',
+      language: null
+    })
   })
 
   it('lists oldest first', () => {
