@@ -371,6 +371,17 @@ Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, a
 | E-1-D | [DE1D.7](plan/implemented/E-1-D-o-caminho-de-saida.md) | A confirmação é uma linha `role="status"` no rodapé; o Toast vira **F-5** |
 | E-1-D | [DE1D.8](plan/implemented/E-1-D-o-caminho-de-saida.md) | O que se exporta é o documento do editor, não o gravado |
 | E-1-D | [DE1D.9](plan/implemented/E-1-D-o-caminho-de-saida.md) | O bundle do `main` ganha uma checagem, porque nenhum teste o alcança |
+| E-1-E | [DE1E.1](plan/implemented/E-1-E-o-rascunho-vira-word.md) | `docx` cru + emissor próprio, não conversor pronto |
+| E-1-E | [DE1E.2](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O parse vira fonte única, e GFM sozinho **não** bastava — corrigida pela DE1E.9 |
+| E-1-E | [DE1E.3](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Externo ou embutido é decidido por sonda, e é o passo 1 |
+| E-1-E | [DE1E.4](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Lista numerada custa configuração, e a profundidade é travada em 5 níveis |
+| E-1-E | [DE1E.5](plan/implemented/E-1-E-o-rascunho-vira-word.md) | `render` vira assíncrono; é a única costura no `main` |
+| E-1-E | [DE1E.6](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O que decide mora em dado plano; o `docx` só serializa |
+| E-1-E | [DE1E.7](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O emissor nunca perde texto: o que não mapeia vira parágrafo |
+| E-1-E | [DE1E.8](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O documento sai parecendo Word, não parecendo o crivo |
+| E-1-E | [DE1E.9](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `.txt` sai do mesmo `Block[]` do `.docx`, e o `strip-markdown` deixa o projeto |
+| E-1-E | [DE1E.10](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Tabela vira `Table` de verdade; o gatilho adiado disparou na primeira exportação |
+| E-1-E | [DE1E.11](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `styles.xml` do `docx` vem sem espaçamento nenhum, e é preciso repor |
 | 09 (ativo) | [D9.1](plan/active/09-camada-de-ia.md) | A chamada de LLM roda no main, não no `utilityProcess` |
 | 09 (ativo) | [D9.2](plan/active/09-camada-de-ia.md) | Uma fronteira de rede, injetável, exatamente como o `embed_fn` |
 | 09 (ativo) | [D9.3](plan/active/09-camada-de-ia.md) | Nuvem é opt-in, e o gate é o mesmo formato para os três |
