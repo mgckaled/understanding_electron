@@ -173,6 +173,38 @@ describe('enviar código para rascunho', () => {
     )
   })
 
+  it('marks the code draft in the panel header with its language', async () => {
+    await withAnswer([CODE_ANSWER])
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    expect(within(panel).getByText('python')).toBeVisible()
+  })
+
+  // The chip is what tells the two dialects apart in a mixed list, so the case
+  // with no language is exactly the one it must not skip (DE2A.5).
+  it('marks a code draft whose fence named no language', async () => {
+    await withAnswer([BARE_ANSWER])
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    expect(within(panel).getByText('código')).toBeVisible()
+  })
+
+  it('leaves a prose draft unmarked', async () => {
+    await withAnswer()
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar para rascunho' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+
+    expect(within(panel).queryByText('código')).toBeNull()
+  })
+
   it('leaves the answer-level draft button alone', async () => {
     await withAnswer([CODE_ANSWER])
 

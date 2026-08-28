@@ -19,6 +19,20 @@ const ROW =
 
 const NAME = 'min-w-[0px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap'
 
+// Same shape as CapabilityChip, without the icon: a label on the row, never a
+// control. Local rather than a shared primitive because all three call sites
+// are in this file — the second CALLER is what earns a primitive, not the third
+// usage. A code draft whose fence named no language still gets a chip, or the
+// one case the picker most needs to mark would be the one it leaves unmarked.
+function LanguageChip({ draft }: { draft: Draft }): React.JSX.Element | null {
+  if (draft.kind !== 'code') return null
+  return (
+    <span className="flex-none rounded-sm border border-border bg-surface-raised px-2 py-0.5 font-mono text-2xs whitespace-nowrap text-text-muted">
+      {draft.language ?? 'código'}
+    </span>
+  )
+}
+
 function DraftPicker({ current }: { current: Draft }): React.JSX.Element {
   const { drafts, toggle } = useDraft()
   const [open, setOpen] = useState(false)
@@ -42,6 +56,7 @@ function DraftPicker({ current }: { current: Draft }): React.JSX.Element {
           className="flex-none text-text-muted"
         />
         <span className={NAME}>{current.title}</span>
+        <LanguageChip draft={current} />
       </p>
     )
   }
@@ -62,6 +77,7 @@ function DraftPicker({ current }: { current: Draft }): React.JSX.Element {
           className="flex-none text-text-muted"
         />
         <span className={NAME}>{current.title}</span>
+        <LanguageChip draft={current} />
         <ChevronDown
           size={ICON_SIZE.sm}
           strokeWidth={ICON_STROKE}
@@ -85,6 +101,7 @@ function DraftPicker({ current }: { current: Draft }): React.JSX.Element {
               onClick={() => choose(draft)}
             >
               <span className={NAME}>{draft.title}</span>
+              <LanguageChip draft={draft} />
               {isCurrent && (
                 <Check
                   size={ICON_SIZE.sm}
