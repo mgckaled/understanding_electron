@@ -70,6 +70,7 @@ import {
 } from '../features/conversation/handlers'
 import { createDraft, listDrafts, removeDraft, updateDraft } from '../features/draft/handlers'
 import { saveExport } from '../features/export/handlers'
+import { printPdf } from '../features/export/printPdf'
 import { readSettings, writeSettings } from '../features/settings/handlers'
 import { hasSecret, removeSecret, writeSecret } from '../features/secrets/handlers'
 import { readSecretForUse } from '../features/secrets/read'
@@ -275,7 +276,7 @@ export async function registerAll(): Promise<() => void> {
   handle('draft:update', (args) => updateDraft(args, db))
   handle('draft:remove', (args) => removeDraft(args, db))
 
-  handle('export:save', (args) => saveExport(args, dialog.showSaveDialog, db))
+  handle('export:save', (args) => saveExport(args, dialog.showSaveDialog, printPdf, db))
 
   handle('settings:read', (args) => readSettings(args, db))
   handle('settings:write', (args) => {

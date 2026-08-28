@@ -369,7 +369,7 @@ describe('exportar', () => {
     return screen.findByRole('complementary', { name: 'Rascunho aberto' })
   }
 
-  it('offers four formats and wires three', async () => {
+  it('offers four formats and wires all four', async () => {
     const panel = await openDraft()
 
     await userEvent.click(within(panel).getByRole('button', { name: 'Formato: .md' }))
@@ -377,7 +377,7 @@ describe('exportar', () => {
     expect(screen.getByRole('button', { name: /Markdown/, hidden: true })).toBeEnabled()
     expect(screen.getByRole('button', { name: /Texto sem marcação/, hidden: true })).toBeEnabled()
     expect(screen.getByRole('button', { name: /Word/, hidden: true })).toBeEnabled()
-    expect(screen.getByRole('button', { name: /\.pdf/, hidden: true })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /\.pdf/, hidden: true })).toBeEnabled()
   })
 
   it('sends the chosen format down the channel', async () => {

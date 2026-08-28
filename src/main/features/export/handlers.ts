@@ -5,6 +5,7 @@ import type { Args, ExportFormat, Result } from '@shared/ipc'
 import { ok } from '@core/result'
 import { toPlainText } from '@core/export/toPlainText'
 import { toDocx } from '@core/export/toDocx'
+import { toHtml } from '@core/export/toHtml'
 import { writeAtomic } from '@core/export/write'
 import { readSettings, writeSettings } from '../settings/handlers'
 
@@ -17,9 +18,17 @@ const FILTERS: Record<ExportFormat, { name: string; extensions: string[] }> = {
   pdf: { name: 'PDF', extensions: ['pdf'] }
 }
 
-function render(text: string, format: ExportFormat): Promise<string | Uint8Array> | string {
+/** Turns HTML into pdf bytes — injected, because only `main` may open a window. */
+type PrintPdf = (html: string) => Promise<Uint8Array>
+
+function render(
+  text: string,
+  format: ExportFormat,
+  printPdf: PrintPdf
+): Promise<string | Uint8Array> | string {
   if (format === 'txt') return toPlainText(text)
   if (format === 'docx') return toDocx(text)
+  if (format === 'pdf') return printPdf(toHtml(text))
   return text
 }
 
@@ -27,11 +36,13 @@ function render(text: string, format: ExportFormat): Promise<string | Uint8Array
  * Asks where to save, writes there, and remembers the folder.
  *
  * @param showSaveDialog - Injected, like `pickDataset`'s open dialog.
+ * @param printPdf - Injected too, so level 3 runs without Electron (DE1F.6).
  * @returns The path written, or `null` when the dialog was cancelled.
  */
 export async function saveExport(
   { text, format, suggestedName }: Args<'export:save'>,
   showSaveDialog: ShowSaveDialog,
+  printPdf: PrintPdf,
   db: DatabaseSync
 ): Promise<Result<{ path: string } | null>> {
   const { lastExportDir } = readSettings(undefined, db)
@@ -47,7 +58,7 @@ export async function saveExport(
 
   if (canceled || filePath === undefined || filePath === '') return ok(null)
 
-  const written = await writeAtomic(filePath, await render(text, format))
+  const written = await writeAtomic(filePath, await render(text, format, printPdf))
   if (!written.ok) return written
 
   writeSettings({ lastExportDir: dirname(filePath) }, db)

@@ -22,6 +22,9 @@ function dialogChoosing(name: string): Dialog {
 
 const cancelled: Dialog = vi.fn(async () => ({ canceled: true, filePath: '' }))
 
+/** Stands in for the hidden window: level 3 must not need Electron (DE1F.6). */
+const printer = vi.fn(async (html: string) => new TextEncoder().encode(`%PDF-${html.length}`))
+
 beforeEach(async () => {
   db = openDatabase(':memory:')
   dir = await mkdtemp(join(tmpdir(), 'crivo-save-'))
@@ -36,6 +39,7 @@ describe('saveExport', () => {
     const result = await saveExport(
       { text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' },
       dialogChoosing('Vendas.md'),
+      printer,
       db
     )
 
@@ -47,6 +51,7 @@ describe('saveExport', () => {
     await saveExport(
       { text: MARKDOWN, format: 'txt', suggestedName: 'Vendas.txt' },
       dialogChoosing('Vendas.txt'),
+      printer,
       db
     )
 
@@ -60,6 +65,7 @@ describe('saveExport', () => {
     const result = await saveExport(
       { text: MARKDOWN, format: 'docx', suggestedName: 'Vendas.docx' },
       dialogChoosing('Vendas.docx'),
+      printer,
       db
     )
 
@@ -69,10 +75,27 @@ describe('saveExport', () => {
     expect([...bytes.subarray(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04])
   })
 
+  // DE1F.6: the window belongs to main, so the handler receives the printer
+  // instead of reaching for it — and what it hands over is the escaped HTML.
+  it('prints the html of the draft and writes whatever comes back', async () => {
+    await saveExport(
+      { text: '# Vendas\n\n<script>alert(1)</script>', format: 'pdf', suggestedName: 'V.pdf' },
+      dialogChoosing('V.pdf'),
+      printer,
+      db
+    )
+
+    const html = printer.mock.calls.at(-1)?.[0] ?? ''
+    expect(html).toContain('<h1>Vendas</h1>')
+    expect(html).not.toContain('<script>')
+    expect(await readFile(join(dir, 'V.pdf'), 'utf-8')).toBe(`%PDF-${html.length}`)
+  })
+
   it('is a cancellation, not a failure, when the dialog is dismissed', async () => {
     const result = await saveExport(
       { text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' },
       cancelled,
+      printer,
       db
     )
 
@@ -83,7 +106,12 @@ describe('saveExport', () => {
   it('offers exactly the chosen format to the dialog', async () => {
     const dialog = dialogChoosing('Vendas.txt')
 
-    await saveExport({ text: MARKDOWN, format: 'txt', suggestedName: 'Vendas.txt' }, dialog, db)
+    await saveExport(
+      { text: MARKDOWN, format: 'txt', suggestedName: 'Vendas.txt' },
+      dialog,
+      printer,
+      db
+    )
 
     const options = dialog.mock.calls[0][0]
     expect(options.filters).toEqual([{ name: 'Texto', extensions: ['txt'] }])
@@ -95,19 +123,30 @@ describe('saveExport', () => {
     await saveExport(
       { text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' },
       dialogChoosing('Vendas.md'),
+      printer,
       db
     )
     expect(readSettings(undefined, db).lastExportDir).toBe(dir)
 
     const second = dialogChoosing('Custos.md')
-    await saveExport({ text: MARKDOWN, format: 'md', suggestedName: 'Custos.md' }, second, db)
+    await saveExport(
+      { text: MARKDOWN, format: 'md', suggestedName: 'Custos.md' },
+      second,
+      printer,
+      db
+    )
 
     const options = second.mock.calls[0][0]
     expect(options.defaultPath).toBe(join(dir, 'Custos.md'))
   })
 
   it('remembers nothing when the dialog was cancelled', async () => {
-    await saveExport({ text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' }, cancelled, db)
+    await saveExport(
+      { text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' },
+      cancelled,
+      printer,
+      db
+    )
 
     expect(readSettings(undefined, db).lastExportDir).toBeUndefined()
   })
@@ -121,6 +160,7 @@ describe('saveExport', () => {
     const result = await saveExport(
       { text: MARKDOWN, format: 'md', suggestedName: 'Vendas.md' },
       intoAGhostFolder,
+      printer,
       db
     )
 
