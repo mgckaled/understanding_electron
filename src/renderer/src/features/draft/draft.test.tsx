@@ -212,6 +212,43 @@ describe('enviar código para rascunho', () => {
     expect(screen.getByRole('button', { name: 'Enviar código para rascunho' })).toBeEnabled()
   })
 
+  // Reported live. The preview ran the code through the markdown renderer, which
+  // JOINS consecutive lines into one paragraph and reads four leading spaces as
+  // a nested code block — the class body came back as prose plus a block, line
+  // breaks gone. The two assertions are the two halves of that defect (DE2A.9).
+  const CLASS_CODE = [
+    'class Person {',
+    '  name: string',
+    '',
+    '    greet() {',
+    '        return 1',
+    '    }',
+    '}'
+  ].join('\n')
+  const CLASS_ANSWER = ['Veja:', '', '```typescript', CLASS_CODE, '```'].join('\n')
+
+  async function openCodeDraft(answer: string): Promise<HTMLElement> {
+    await withAnswer([answer])
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))
+    await userEvent.click(await screen.findByRole('button', { name: /rascunhos da conversa/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Rascunho aberto' })
+    await userEvent.click(within(panel).getByRole('tab', { name: 'Prévia' }))
+    return panel
+  }
+
+  it('previews code verbatim, keeping every line break and indent', async () => {
+    const panel = await openCodeDraft(CLASS_ANSWER)
+
+    expect(panel.querySelector('pre')?.textContent).toBe(CLASS_CODE)
+  })
+
+  it('builds no nested code block in a code preview', async () => {
+    const panel = await openCodeDraft(CLASS_ANSWER)
+
+    // The CodeBlock header is what a markdown-rendered fence would produce.
+    expect(within(panel).queryByRole('button', { name: 'Copiar código' })).toBeNull()
+  })
+
   it('marks the code draft in the panel header with its language', async () => {
     await withAnswer([CODE_ANSWER])
     await userEvent.click(screen.getByRole('button', { name: 'Enviar código para rascunho' }))

@@ -107,6 +107,31 @@ Logo a prop é **opcional**, e ausente significa "sem botão". Três dos quatro 
 
 `draft:create` já existe e já recebe o rascunho montado no renderer, com identidade e tempo cunhados lá (DE1A.6/D14.5). Ele ganha `kind` e `language` no schema zod; nenhum canal novo, nenhum handler novo. O contrato IPC continua com os mesmos canais.
 
+### DE2A.8 — O botão do bloco tem estado, e a chave inclui o conteúdo
+
+Achado na prova ao vivo: o botão da resposta funcionava, o do bloco não tinha estado nenhum, e a mesma cerca virava rascunho sem limite. Derivado da lista como o do turno (DE1A.3), com a chave `(sourceMessageId, kind='code', content)`.
+
+**O `content` não é zelo, é necessidade:** uma cerca não tem id, e dois blocos da mesma resposta compartilham o `sourceMessageId` — casar só por mensagem desabilitaria os dois de uma vez.
+
+Consequência aceita: editar o rascunho a ponto de o conteúdo divergir volta a oferecer o bloco. É a mesma propriedade da DE1A.3 — a lista é a única fonte —, não um caso à parte.
+
+### DE2A.9 — Código não passa pelo renderizador de markdown, em nenhuma das duas abas
+
+Achado na prova ao vivo, e **pior que cor errada**: a aba Prévia rodava o código pelo `MarkdownMessage`, que **junta linhas consecutivas num parágrafo** e lê quatro espaços iniciais como bloco de código. Um corpo de classe voltava como prosa mais um bloco aninhado, com as quebras de linha perdidas.
+
+É a mesma família do defeito do `remark-stringify` no E-1-E (registrado no [`ARMADILHAS.md`](../../ARMADILHAS.md)): **tratar código como markdown destrói código**. Ali era a serialização, aqui é a renderização.
+
+Os dois lados:
+
+| Aba | Antes | Agora |
+|---|---|---|
+| Prévia | `MarkdownMessage` | `<pre>` literal, `whitespace-pre` |
+| Editar | `markdown()` do CodeMirror | nenhuma gramática |
+
+A gramática por linguagem é o E-2-B. Até lá, **texto puro é o estado honesto** — colorir errado é pior que não colorir.
+
+⚠️ **A metade do editor não tem teste**, e é deliberado: o que mudou é qual gramática o CodeMirror carrega, e o jsdom não aplica CSS nem prova destaque de sintaxe (skill [`testing`](../../../.claude/skills/testing/SKILL.md) § limites de ambiente). A prova é ao vivo. A metade da prévia **tem** teste, e provocado.
+
 ## O layout
 
 ```

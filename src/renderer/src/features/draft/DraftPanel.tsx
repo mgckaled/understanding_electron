@@ -14,6 +14,14 @@ import DraftFooter from './DraftFooter'
 
 const READING = 'min-h-[0px] flex-1 overflow-y-auto p-7 select-text'
 
+// Code previews as the file it will become, never through the markdown
+// renderer: markdown JOINS consecutive lines into a paragraph and reads four
+// leading spaces as a code block, so a class body came out as prose plus a
+// nested block, with the line breaks gone (DE2A.9). `whitespace-pre` keeps
+// every space; colour by language is E-2-B.
+const CODE_PREVIEW =
+  'min-h-[0px] flex-1 overflow-auto p-7 font-mono text-sm whitespace-pre text-text selectable'
+
 function DraftPanel(): React.JSX.Element | null {
   const { current, remove, update, close } = useDraft()
   const { closing, width, setWidth } = usePanel()
@@ -32,6 +40,7 @@ function DraftPanel(): React.JSX.Element | null {
         render: () => (
           <DraftEditor
             draftId={current?.id ?? ''}
+            kind={current?.kind ?? 'markdown'}
             initialText={current?.content ?? ''}
             onSave={(text) => (id === null ? undefined : update(id, text))}
             onReady={(reader) => (read.current = reader)}
@@ -41,14 +50,19 @@ function DraftPanel(): React.JSX.Element | null {
       {
         id: 'previa',
         label: 'Prévia',
-        render: () => (
-          <div className={READING}>
-            <MarkdownMessage text={tab === 'previa' ? read.current() : (current?.content ?? '')} />
-          </div>
-        )
+        render: () => {
+          const text = tab === 'previa' ? read.current() : (current?.content ?? '')
+          return current?.kind === 'code' ? (
+            <pre className={CODE_PREVIEW}>{text}</pre>
+          ) : (
+            <div className={READING}>
+              <MarkdownMessage text={text} />
+            </div>
+          )
+        }
       }
     ],
-    [current?.id, current?.content, id, update, tab]
+    [current?.id, current?.content, current?.kind, id, update, tab]
   )
 
   if (current === null) return null
@@ -78,7 +92,8 @@ function DraftPanel(): React.JSX.Element | null {
       }
     >
       {/* Reading density (D13.5) — a draft is prose read for a minute, and the
-          preview is markdown because four of the export formats are. */}
+          preview is markdown because four of the export formats are. A code
+          draft is the exception, and previews verbatim (DE2A.9). */}
       <Tabs tabs={tabs} active={tab} onChange={setTab} label="Modo do rascunho" keepMounted />
 
       <DraftFooter
