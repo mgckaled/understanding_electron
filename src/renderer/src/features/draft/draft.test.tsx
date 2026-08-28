@@ -76,6 +76,17 @@ describe('enviar para rascunho', () => {
     expect(await screen.findByRole('button', { name: 'Rascunho criado' })).toBeDisabled()
   })
 
+  // DE2A.3: a code block sends a draft carrying the SAME sourceMessageId, so an
+  // unfiltered hasDraftOf would report the whole answer as already drafted.
+  it('keeps offering to draft the answer after a code block from it was sent', async () => {
+    await withAnswer()
+
+    await userEvent.click(screen.getByRole('button', { name: 'enviar código de m1' }))
+    await waitFor(async () => expect(await api.draft.list('c1')).toHaveLength(1))
+
+    expect(screen.getByRole('button', { name: 'Enviar para rascunho' })).toBeEnabled()
+  })
+
   it('offers to draft again once the draft is deleted', async () => {
     await withAnswer()
     await userEvent.click(screen.getByRole('button', { name: 'Enviar para rascunho' }))
@@ -127,11 +138,20 @@ describe('DraftCount', () => {
 // The counter only becomes a button in step 4, so the panel is driven through
 // the context here — the same probe shape artifact.test.tsx uses.
 function Probe(): React.JSX.Element {
-  const { drafts, togglePanel } = useDraft()
+  const { drafts, togglePanel, createFrom } = useDraft()
   return (
-    <button type="button" onClick={(event) => togglePanel(event.currentTarget)}>
-      abrir rascunho ({drafts.length})
-    </button>
+    <>
+      <button type="button" onClick={(event) => togglePanel(event.currentTarget)}>
+        abrir rascunho ({drafts.length})
+      </button>
+      {/* Stands in for the button E-2-A puts on the code block's own header. */}
+      <button
+        type="button"
+        onClick={() => createFrom('m1', 'import pandas as pd', { language: 'python' })}
+      >
+        enviar código de m1
+      </button>
+    </>
   )
 }
 

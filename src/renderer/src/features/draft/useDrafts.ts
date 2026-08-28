@@ -9,7 +9,13 @@ function draftsKey(conversationId: string): readonly ['drafts', string] {
 
 export type DraftsApi = {
   drafts: Draft[]
-  /** Whether this answer already produced a draft — the button's own state (DE1A.3). */
+  /**
+   * Whether this answer already produced a draft of its own prose (DE1A.3).
+   *
+   * Code drafts are excluded on purpose: they share the `sourceMessageId` with
+   * the answer that carried the fence, so counting them would report the whole
+   * answer as drafted the moment one of its code blocks was sent (DE2A.3).
+   */
   hasDraftOf: (messageId: string) => boolean
   /**
    * Adds a draft to this conversation.
@@ -93,7 +99,8 @@ export function useDrafts(conversationId: string | null): DraftsApi {
   const remove = useCallback((id: string) => removeMutation.mutate(id), [removeMutation])
 
   const hasDraftOf = useCallback(
-    (messageId: string) => drafts.some((draft) => draft.sourceMessageId === messageId),
+    (messageId: string) =>
+      drafts.some((draft) => draft.sourceMessageId === messageId && draft.kind === 'markdown'),
     [drafts]
   )
 
