@@ -32,6 +32,13 @@
   max-height: min(640px, 85vh);
 }
 
+/* Same single-class specificity as .dialog, so source order is what makes it
+   win — it must stay below. DO1.9. */
+.wide {
+  width: min(1040px, 92vw);
+  max-height: min(720px, 88vh);
+}
+
 .dialog[open] {
   display: flex;
   flex-direction: column;

@@ -18,10 +18,20 @@ type DialogProps = {
   /** Id of an element (typically the caller's own intro paragraph) that
    *  describes the dialog's purpose beyond its title. */
   describedBy?: string
+  /** `wide` is the observatory's shape: a nav column beside a scrolling
+   *  panel, which is why it also drops the padded single scroller (DO1.9). */
+  size?: 'default' | 'wide'
   children: ReactNode
 }
 
-function Dialog({ open, title, onClose, describedBy, children }: DialogProps): React.JSX.Element {
+function Dialog({
+  open,
+  title,
+  onClose,
+  describedBy,
+  size = 'default',
+  children
+}: DialogProps): React.JSX.Element {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -41,7 +51,7 @@ function Dialog({ open, title, onClose, describedBy, children }: DialogProps): R
       // The module carries only what a class cannot reach — ::backdrop, the
       // @starting-style fade, the width/max-height the fade's rule targets,
       // and display (must stay [open]-scoped, see Dialog.module.css).
-      className={`${styles.dialog} rounded-lg border border-border bg-surface p-0 font-ui text-sm text-text`}
+      className={`${styles.dialog} ${size === 'wide' ? styles.wide : ''} rounded-lg border border-border bg-surface p-0 font-ui text-sm text-text`}
       closedby="any"
       aria-labelledby={titleId}
       aria-describedby={describedBy}
@@ -64,8 +74,11 @@ function Dialog({ open, title, onClose, describedBy, children }: DialogProps): R
         </Button>
       </div>
       {/* flex-1 + overflow-y-auto is what keeps the header fixed and lets only
-          long content scroll, capped by the module's own max-height. */}
-      <div className="flex-1 overflow-y-auto p-6">{children}</div>
+          long content scroll, capped by the module's own max-height. A wide
+          dialog hands that scrolling to its own columns instead. */}
+      <div className={size === 'wide' ? 'flex min-h-0 flex-1' : 'flex-1 overflow-y-auto p-6'}>
+        {children}
+      </div>
     </dialog>
   )
 }
