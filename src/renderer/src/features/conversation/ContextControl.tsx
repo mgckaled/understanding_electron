@@ -7,7 +7,8 @@ import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
 import Slider, { type SliderTick } from '../../shared/ui/Slider/Slider'
-import { formatContext, formatSize } from './modelFormat'
+import { formatSize } from '../../shared/format'
+import { formatContext } from './modelFormat'
 
 // Split out of ModelSelector.tsx once that file crossed the design system's
 // line-count ceiling (F2.7) — ModelPicker and ContextControl still read the

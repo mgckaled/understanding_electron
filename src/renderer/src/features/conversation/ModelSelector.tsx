@@ -10,7 +10,8 @@ import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
 import CapabilityChip from './CapabilityChip'
 import { capabilityChips } from './capabilities'
-import { formatContext, formatRateLimit, formatSize } from './modelFormat'
+import { formatSize } from '../../shared/format'
+import { formatContext, formatRateLimit } from './modelFormat'
 
 // ModelPicker (this file) and ContextControl (own file, F2.7) replaced a
 // single popover that mixed model choice with context-window admin (DS5.6,

@@ -2,11 +2,8 @@ import type { CloudRateLimit } from '@shared/ipc'
 
 // Shared by ModelPicker and ContextControl (F2.7) — the two pills split by
 // concern into separate modules once ModelSelector.tsx crossed the design
-// system's line-count ceiling, but both still format the same two numbers.
-
-export function formatSize(bytes: number): string {
-  return `${(bytes / 1024 ** 3).toFixed(1).replace('.', ',')} GB`
-}
+// system's line-count ceiling. `formatSize` left for shared/format.ts once a
+// fourth consumer outside this feature appeared (O-1).
 
 /**
  * 131072 → "128k", 32768 → "32k". Binary thousands — what the number is and how

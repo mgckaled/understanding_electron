@@ -1,3 +1,4 @@
+import { formatSize } from '../../shared/format'
 import Button from '../../shared/ui/Button/Button'
 import StateView from '../../shared/ui/StateView'
 import { useLoadedModels } from './useLoadedModels'
@@ -8,10 +9,6 @@ import { useLoadedModels } from './useLoadedModels'
 // and the ceiling is computed from free memory, so the honest fix is to free it.
 // NOT automatic on switch — the provider loads on a REQUEST, so switching costs
 // nothing until a send.
-
-function formatSize(bytes: number): string {
-  return `${(bytes / 1024 ** 3).toFixed(1).replace('.', ',')} GB`
-}
 
 /** Minutes until the provider drops it on its own; null when already due. */
 function minutesLeft(expiresAt: number): number | null {
