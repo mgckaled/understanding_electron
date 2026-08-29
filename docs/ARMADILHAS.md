@@ -374,3 +374,11 @@ Os três hooks de `.claude/settings.json` são `PostToolUse` de **`Edit|Write`**
 
 ### Hook que se desliga sozinho em silêncio (ago/2026)
 A primeira versão do `_shared.mjs` devolvia `null` quando não conseguia resolver o executável de uma dependência, e os hooks simplesmente não faziam nada — um "Prettier rodou e não alterou" era falso positivo por inação. Hook que se desliga sem avisar é pior que hook ausente. Conserto: duas estratégias de resolução e aviso no stderr quando o pacote está instalado mas não pôde ser resolvido; pacote genuinamente ausente segue silencioso (caso legítimo pré-fase 04).
+
+### Sabotar um handler com `import electron` não reprova teste nenhum — a provocação dá falso negativo (ago/2026)
+
+A regra "nenhum handler testável importa `electron` por valor" é real, mas a **provocação** que se escreve para prová-la não funciona: sondado sob o Vitest no O-1, `import * as electron from 'electron'` fora do binário devolve um módulo cujo `default` é uma **string** (o caminho do executável) e cujo export nomeado é `undefined` — **sem lançar**. O módulo carrega, e todo teste que passa a dependência explicitamente continua verde com o defeito presente. Foi exatamente o que aconteceu: com `import { app } from 'electron'` e `getMetrics = () => app.getAppMetrics()` como default, os cinco testes do handler passaram.
+
+O modo de falha real não é o import, é o **parâmetro com default** — e esse é capturável de forma mecânica: `Function.length` conta os parâmetros **antes do primeiro default**, então `handler.length` cai de 1 para 0 assim que alguém pendura um default de `electron`. Uma asserção de uma linha (`expect(readProcesses.length).toBe(1)`) reprova sob a sabotagem exata e passa sem ela.
+
+Vale além deste handler: sempre que a invariante for "a dependência entra por parâmetro, sem default", `Function.length` é o instrumento; esperar que o import exploda é confiar num erro que não acontece.

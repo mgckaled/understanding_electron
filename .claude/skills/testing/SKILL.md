@@ -27,6 +27,8 @@ Handler como **função exportada**, registrada por um `handle()` genérico (ski
 
 ⚠️ **Nenhum handler testável importa `electron` por valor — nem como default de parâmetro.** Fora do binário, `node_modules/electron/index.js` exporta uma *string*. Só o composition root (`register-all.ts`, que nenhum teste alcança) importa o pacote real.
 
+⚠️ **E a provocação óbvia para isso dá falso negativo** — o import **não** lança, o export nomeado só vira `undefined`, então sabotar um handler assim deixa a suíte verde. O que reprova é `expect(handler.length).toBe(1)`: `Function.length` conta os parâmetros antes do primeiro default. Medido no O-1, ver [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md).
+
 ## Níveis 4–5: Playwright dirige o Electron de verdade
 
 `_electron.launch({ args: ['.'] })` lança o app contra o `main` do `package.json` (`./out/main/index.js`) — precisa de `pnpm build` antes, nunca roda contra o dev server do Vite. `electronApp.firstWindow()` devolve a `Page`; **dois `evaluate` diferentes, dois contextos diferentes**: `electronApp.evaluate(({ dialog }) => ...)` roda no processo **main** (é como se estuba `dialog.showOpenDialog` — funciona porque o handler real lê a propriedade dentro do corpo da função, late-bound, não capturada no registro), `page.evaluate(() => window...)` roda no **renderer**.
