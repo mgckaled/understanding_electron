@@ -40,7 +40,10 @@ export function createApiMock(): Api {
       // real catalog: `undefined` here would make every context ceiling NaN,
       // breaking tests that have nothing to do with memory. ~6 GB free of 16 is
       // the development machine in its working environment.
-      memory: vi.fn().mockResolvedValue({ freeBytes: 6 * 1024 ** 3, totalBytes: 16 * 1024 ** 3 })
+      memory: vi.fn().mockResolvedValue({ freeBytes: 6 * 1024 ** 3, totalBytes: 16 * 1024 ** 3 }),
+      // Empty, not a bare vi.fn(): the observatory's Processos panel reads this
+      // on mount, and `undefined` would throw where the list merely renders.
+      processes: vi.fn().mockResolvedValue([])
     },
     shell: { openExternal: vi.fn() },
     dataset: {

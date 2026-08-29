@@ -8,7 +8,7 @@ import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/typ
 import { handle } from './registry'
 import { DATABASE_FILE, openDatabase } from '../db/open'
 import { freemem, totalmem } from 'node:os'
-import { getAppInfo, getSystemMemory } from '../features/app/handlers'
+import { getAppInfo, getSystemMemory, readProcesses } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
 import {
   attachDataset,
@@ -161,6 +161,7 @@ export async function registerAll(): Promise<() => void> {
 
   handle('app:info', () => getAppInfo(app.getVersion, is.dev))
   handle('app:memory', () => getSystemMemory(freemem, totalmem))
+  handle('app:processes', () => readProcesses(() => app.getAppMetrics()))
   handle('shell:openExternal', (args) => openExternal(args, shell.openExternal))
   handle('dataset:pick', (args) => pickDataset(args, dialog.showOpenDialog))
   handle('dataset:attach', (args) =>

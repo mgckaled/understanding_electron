@@ -1,4 +1,5 @@
-import type { AppInfo, SystemMemory } from '@shared/ipc'
+import type { AppInfo, AppProcess, SystemMemory } from '@shared/ipc'
+import { summarizeProcesses, type ProcessMetricLike } from '@core/observatory/processes'
 
 export function getAppInfo(getVersion: () => string, isDev: boolean): AppInfo {
   return {
@@ -21,4 +22,13 @@ export function getAppInfo(getVersion: () => string, isDev: boolean): AppInfo {
  */
 export function getSystemMemory(freemem: () => number, totalmem: () => number): SystemMemory {
   return { freeBytes: freemem(), totalBytes: totalmem() }
+}
+
+/**
+ * Every process this app keeps open, heaviest first (DO1.5). No `Result`:
+ * reading the runtime's own counters cannot fail in a way the UI must
+ * distinguish, the same reasoning `app:info` and `app:memory` already carry.
+ */
+export function readProcesses(getMetrics: () => ProcessMetricLike[]): AppProcess[] {
+  return summarizeProcesses(getMetrics())
 }

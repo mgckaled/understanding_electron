@@ -105,11 +105,11 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**38 canais em `IpcContract`**, conferidos contra o código em 27/08/2026.
+**39 canais em `IpcContract`**, conferidos contra o código em 29/08/2026.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
-| `app` | `info`, `memory` | não |
+| `app` | `info`, `memory`, `processes` | não |
 | `shell` | `openExternal` | sim |
 | `dataset` | `pick`, `attach`, `query`, `profile`, `transform` | sim |
 | `document` | `pick`, `attach` | sim |

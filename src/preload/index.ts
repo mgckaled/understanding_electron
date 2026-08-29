@@ -10,7 +10,8 @@ function invoke<C extends Channel>(channel: C, args?: Args<C>): Promise<ResultOf
 const api: Api = {
   app: {
     info: () => invoke('app:info'),
-    memory: () => invoke('app:memory')
+    memory: () => invoke('app:memory'),
+    processes: () => invoke('app:processes')
   },
   shell: {
     openExternal: (url) => invoke('shell:openExternal', { url })

@@ -43,6 +43,36 @@ export type SystemMemory = {
   totalBytes: number
 }
 
+/**
+ * Electron's own process-type union, restated because shared/ may import
+ * nothing but zod. A value added upstream stops assigning at the one place that
+ * knows electron (register-all.ts), which is where the decision belongs.
+ */
+export type AppProcessType =
+  | 'Browser'
+  | 'Tab'
+  | 'Utility'
+  | 'Zygote'
+  | 'Sandbox helper'
+  | 'GPU'
+  | 'Pepper Plugin'
+  | 'Pepper Plugin Broker'
+  | 'Unknown'
+
+/**
+ * One live process of this app, as the observatory shows it (DO1.6).
+ * `idleWakeupsPerSecond` is deliberately absent: Windows always reports 0.
+ */
+export type AppProcess = {
+  pid: number
+  type: AppProcessType
+  /** `Node Utility Process` unless the fork named itself. */
+  name?: string
+  cpuPercent: number
+  /** Working set, in bytes — Electron reports it in kilobytes (DO1.7). */
+  memoryBytes: number
+}
+
 export type JobId = string
 
 export type JobEvent =
@@ -582,6 +612,7 @@ export const cloudProviderSchema = z.enum(CLOUD_PROVIDERS)
 export const argsSchema = {
   'app:info': z.void(),
   'app:memory': z.void(),
+  'app:processes': z.void(),
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
   'dataset:attach': z.object({ path: z.string(), jobId: z.string() }),
@@ -724,6 +755,10 @@ export type IpcContract = {
   // the UI has to distinguish, and wrapping it would train the reader to ignore
   // `ok` — the same reasoning app:info already carries.
   'app:memory': { args: z.infer<(typeof argsSchema)['app:memory']>; result: SystemMemory }
+  'app:processes': {
+    args: z.infer<(typeof argsSchema)['app:processes']>
+    result: AppProcess[]
+  }
   'shell:openExternal': {
     args: z.infer<(typeof argsSchema)['shell:openExternal']>
     result: Result<void>
@@ -873,6 +908,7 @@ export type Api = {
     info(): Promise<AppInfo>
     /** Read fresh each call — see SystemMemory for why it is never cached. */
     memory(): Promise<SystemMemory>
+    processes(): Promise<AppProcess[]>
   }
   shell: { openExternal(url: string): Promise<Result<void>> }
   dataset: {

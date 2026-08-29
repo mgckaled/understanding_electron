@@ -1,4 +1,5 @@
-import { getAppInfo, getSystemMemory } from './handlers'
+import type { ProcessMetricLike } from '@core/observatory/processes'
+import { getAppInfo, getSystemMemory, readProcesses } from './handlers'
 
 describe('getSystemMemory', () => {
   it('reports what the readers return, in bytes', () => {
@@ -41,5 +42,50 @@ describe('getAppInfo', () => {
       platform: process.platform,
       isDev: true
     })
+  })
+})
+
+describe('readProcesses', () => {
+  const metrics: ProcessMetricLike[] = [
+    {
+      pid: 10,
+      type: 'Browser',
+      cpu: { percentCPUUsage: 1.5 },
+      memory: { workingSetSize: 100 }
+    },
+    {
+      pid: 20,
+      type: 'Utility',
+      name: 'DuckDB',
+      cpu: { percentCPUUsage: 0 },
+      memory: { workingSetSize: 900 }
+    }
+  ]
+
+  it('reports the metrics source in bytes, heaviest first', () => {
+    const getMetrics = vi.fn().mockReturnValue(metrics)
+
+    expect(readProcesses(getMetrics)).toEqual([
+      { pid: 20, type: 'Utility', name: 'DuckDB', cpuPercent: 0, memoryBytes: 900 * 1024 },
+      { pid: 10, type: 'Browser', name: undefined, cpuPercent: 1.5, memoryBytes: 100 * 1024 }
+    ])
+  })
+
+  // Function.length counts parameters before the first default, so a
+  // `= () => app.getAppMetrics()` default would read 0 here. That default is the
+  // one way `electron` gets imported by value into a testable handler, and
+  // nothing else catches it: outside the binary the named export is `undefined`,
+  // not an error, so the module still loads and every explicit call still passes.
+  it('takes its metrics source by parameter, with no electron default', () => {
+    expect(readProcesses.length).toBe(1)
+  })
+
+  it('asks the source on every call, never caching a snapshot', () => {
+    const getMetrics = vi.fn().mockReturnValue([])
+
+    readProcesses(getMetrics)
+    readProcesses(getMetrics)
+
+    expect(getMetrics).toHaveBeenCalledTimes(2)
   })
 })

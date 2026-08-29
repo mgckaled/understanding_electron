@@ -13,7 +13,10 @@ export function spawnDuckdbWorker(userDataPath: string, extensionPath: string): 
   const worker = utilityProcess.fork(
     join(__dirname, 'duckdbWorker.js'),
     [userDataPath, extensionPath],
-    { stdio: 'pipe' }
+    // serviceName fills `name` in app.getAppMetrics (and in child-process-gone);
+    // without it every utility process reports as `Node Utility Process`, and
+    // the observatory could not tell this one apart (O-1, passo 4).
+    { stdio: 'pipe', serviceName: 'DuckDB' }
   )
   // 'inherit' (the default) did not surface worker output through electron-vite's
   // spawn chain on Windows — piping and forwarding explicitly is the reliable path.
