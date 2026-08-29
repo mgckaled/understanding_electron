@@ -13,13 +13,7 @@ function mount(width = DEFAULT_WIDTH): {
   const commit = vi.fn()
   const close = vi.fn()
   render(
-    <PanelResizer
-      panelId="panel-1"
-      width={width}
-      apply={vi.fn()}
-      commit={commit}
-      close={close}
-    />
+    <PanelResizer panelId="panel-1" width={width} apply={vi.fn()} commit={commit} close={close} />
   )
   return { commit, close }
 }

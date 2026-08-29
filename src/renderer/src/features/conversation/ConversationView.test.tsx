@@ -875,8 +875,9 @@ describe('ConversationView — proposta de passos (plano 19)', () => {
     renderView()
     await whenReady()
 
-    expect(await screen.findByRole('button', { name: /Propus 1 passo para vendas\.csv/ }))
-      .toBeVisible()
+    expect(
+      await screen.findByRole('button', { name: /Propus 1 passo para vendas\.csv/ })
+    ).toBeVisible()
     expect(screen.queryByText('limitar a 10 linhas')).toBeNull()
   })
 })

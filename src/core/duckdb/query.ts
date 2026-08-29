@@ -3,7 +3,6 @@ import type { DatasetFormat } from '../dataset/format'
 import { sqlPath } from './config'
 import { isAttachmentHash } from '../attachments/hash'
 
-
 /**
  * Rejects anything that is not a single read-only statement (D18B.2) — best
  * effort, sitting in front of the real boundary, which is the restricted

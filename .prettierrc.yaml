@@ -2,3 +2,8 @@ singleQuote: true
 semi: false
 printWidth: 100
 trailingComma: none
+# Line endings are a repository property, owned by .gitattributes (eol=lf), not
+# a formatting one. `auto` stops Prettier from second-guessing the working copy
+# on Windows, where a stale CRLF checkout raised one "Delete CR" warning per
+# line of every file and buried real lint findings under thousands of them.
+endOfLine: auto

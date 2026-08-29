@@ -31,12 +31,7 @@ type AppShellProps = {
 // base, so the numeric form emits nothing (measured); the arbitrary value does.
 // The third track is `auto`, so the shell never learns the panel's width — the
 // panel sizes itself (DF3A.4), and a closed one collapses the track to zero.
-function AppShell({
-  sidebar,
-  sidebarCollapsed,
-  main,
-  panel
-}: AppShellProps): React.JSX.Element {
+function AppShell({ sidebar, sidebarCollapsed, main, panel }: AppShellProps): React.JSX.Element {
   return (
     // --sidebar-width-now is set here and nowhere else: the sidebar's own width
     // and the panel's ceiling both read it, so they cannot disagree (DF3C.4).

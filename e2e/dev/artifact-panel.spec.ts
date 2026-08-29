@@ -40,7 +40,6 @@ test('opens an attached document in the artifact panel, and lets the CSP reach t
       parts: [result.value],
       createdAt: Date.now()
     })
-
   }, fixturePath)
 
   // The card is in the transcript of the conversation just created, which the
@@ -120,31 +119,34 @@ test('opens an attached document in the artifact panel, and lets the CSP reach t
 // that matters — the clip reads a real transcript, the picker's popover is
 // `display:none` under jsdom, and a keyboard accelerator is a keyboard.
 test('reaches the panel through the header clip, the picker and Ctrl+B', async () => {
-  const two = await page.evaluate(async (paths) => {
-    const api = (window as unknown as { api: Api }).api
-    const first = await api.document.attach(paths.doc, 'e2e-clip-1')
-    const second = await api.image.attach(paths.img, 'e2e-clip-2')
-    if (!first.ok || !second.ok) throw new Error('attach failed')
+  const two = await page.evaluate(
+    async (paths) => {
+      const api = (window as unknown as { api: Api }).api
+      const first = await api.document.attach(paths.doc, 'e2e-clip-1')
+      const second = await api.image.attach(paths.img, 'e2e-clip-2')
+      if (!first.ok || !second.ok) throw new Error('attach failed')
 
-    const id = `c-clip-${Date.now()}`
-    await api.conversation.create({ id, title: 'Dois anexos', createdAt: Date.now() })
-    await api.conversation.append(id, {
-      id: `m1-${Date.now()}`,
-      role: 'user',
-      parts: [first.value],
-      createdAt: Date.now()
-    })
-    await api.conversation.append(id, {
-      id: `m2-${Date.now()}`,
-      role: 'user',
-      parts: [second.value],
-      createdAt: Date.now() + 1
-    })
-    return { doc: first.value.fileName, img: second.value.fileName }
-  }, {
-    doc: join(process.cwd(), 'e2e/fixtures/especificacao.md'),
-    img: join(process.cwd(), 'e2e/fixtures/quadrado.png')
-  })
+      const id = `c-clip-${Date.now()}`
+      await api.conversation.create({ id, title: 'Dois anexos', createdAt: Date.now() })
+      await api.conversation.append(id, {
+        id: `m1-${Date.now()}`,
+        role: 'user',
+        parts: [first.value],
+        createdAt: Date.now()
+      })
+      await api.conversation.append(id, {
+        id: `m2-${Date.now()}`,
+        role: 'user',
+        parts: [second.value],
+        createdAt: Date.now() + 1
+      })
+      return { doc: first.value.fileName, img: second.value.fileName }
+    },
+    {
+      doc: join(process.cwd(), 'e2e/fixtures/especificacao.md'),
+      img: join(process.cwd(), 'e2e/fixtures/quadrado.png')
+    }
+  )
 
   await page.reload()
   const panel = page.getByRole('complementary', { name: 'Anexo aberto' })

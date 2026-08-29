@@ -6,7 +6,9 @@ import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
 
 export default defineConfig(
-  { ignores: ['**/node_modules', '**/dist', '**/out'] },
+  // `descarte` is gitignored scratch from the design handoff; ESLint does not
+  // read .gitignore, so it has to be named here or it is linted like source.
+  { ignores: ['**/node_modules', '**/dist', '**/out', '**/descarte'] },
   tseslint.configs.recommended,
   eslintPluginReact.configs.flat.recommended,
   eslintPluginReact.configs.flat['jsx-runtime'],
