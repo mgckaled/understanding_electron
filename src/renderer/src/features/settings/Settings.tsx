@@ -4,7 +4,6 @@ import type { Theme } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
-import Versions from '../../components/Versions'
 import { useSettings } from './settingsContext'
 import LoadedModels from './LoadedModels'
 import CloudSecrets from './CloudSecrets'
@@ -146,14 +145,6 @@ function Settings(): React.JSX.Element {
         {/* Same reason: secrets:has fires on mount, and <dialog> keeps closed
             children mounted (DN1A.3, passo 6). */}
         {open && <CloudSecrets />}
-        {/* The build versions moved here from the sidebar footer, which the DS-3
-            target gives to the Ollama status. Gated on `open` so app:info does
-            not fetch at boot. */}
-        {open && (
-          <div className="mt-6 border-t border-border pt-5">
-            <Versions />
-          </div>
-        )}
       </Dialog>
     </>
   )

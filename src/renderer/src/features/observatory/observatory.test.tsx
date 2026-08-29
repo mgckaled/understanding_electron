@@ -1,7 +1,17 @@
+import { QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
+import { createQueryClient } from '../../shared/queryClient'
 import Observatory from './Observatory'
+
+function renderObservatory(): void {
+  render(
+    <QueryClientProvider client={createQueryClient()}>
+      <Observatory />
+    </QueryClientProvider>
+  )
+}
 
 describe('Observatory', () => {
   beforeEach(() => {
@@ -9,7 +19,7 @@ describe('Observatory', () => {
   })
 
   it('renders no panel while the modal is closed', () => {
-    render(<Observatory />)
+    renderObservatory()
 
     expect(screen.queryByRole('navigation', { name: 'Painéis' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Runtime' })).not.toBeInTheDocument()
@@ -17,7 +27,7 @@ describe('Observatory', () => {
 
   it('opens on the first panel and lists only groups that have one', async () => {
     const user = userEvent.setup()
-    render(<Observatory />)
+    renderObservatory()
 
     await user.click(screen.getByRole('button', { name: 'Observatório' }))
 
@@ -33,7 +43,7 @@ describe('Observatory', () => {
   // pass every assertion but this one.
   it('unmounts the previous panel when another is selected', async () => {
     const user = userEvent.setup()
-    render(<Observatory />)
+    renderObservatory()
 
     await user.click(screen.getByRole('button', { name: 'Observatório' }))
     await user.click(await screen.findByRole('button', { name: 'Processos' }))
@@ -44,7 +54,7 @@ describe('Observatory', () => {
 
   it('marks the current panel with aria-current', async () => {
     const user = userEvent.setup()
-    render(<Observatory />)
+    renderObservatory()
 
     await user.click(screen.getByRole('button', { name: 'Observatório' }))
 

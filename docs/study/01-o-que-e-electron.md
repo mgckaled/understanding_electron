@@ -93,10 +93,10 @@ O nome `exposeInMainWorld` merece explicação. O Electron mantém dois "mundos"
 
 Repare no formato do que atravessa: **uma função de domínio** (`api.app.info()`), não um `invoke` genérico. A diferença parece cosmética e não é. Se o preload expusesse `api.invoke(canal, args)`, o renderer poderia chamar qualquer canal registrado, e a ponte deixaria de ser uma lista de permissões para virar uma porta aberta com um nome.
 
-**Passo 2 — o renderer usa a ponte** (`src/renderer/src/components/Versions.tsx`):
+**Passo 2 — o renderer usa a ponte** (`src/renderer/src/features/observatory/RuntimePanel.tsx`):
 
 ```tsx
-window.api.app.info().then(setInfo)
+useQuery({ queryKey: ['app', 'info'], queryFn: () => window.api.app.info() })
 ```
 
 O React não sabe nada sobre Electron. Ele só vê um objeto global chamado `window.api`, que apareceu ali graças ao preload. A chamada devolve uma `Promise` — a resposta vem de outro processo, e isso leva tempo, então o componente desenha primeiro e preenche depois.

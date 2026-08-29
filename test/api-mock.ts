@@ -25,10 +25,9 @@ export function createApiMock(): Api {
   return {
     app: {
       // Resolves a realistic AppInfo by default, for the same reason memory and
-      // ai.models do below: Versions now renders inside the Settings modal, so
-      // any test that opens Configurações mounts it, and a bare vi.fn() resolving
-      // `undefined` would make `.info().then(...)` throw in tests that have
-      // nothing to do with build versions.
+      // ai.models do below: the observatory's Runtime panel reads it on mount
+      // (O-1), and a bare vi.fn() resolving `undefined` would break tests that
+      // have nothing to do with build versions.
       info: vi.fn().mockResolvedValue({
         electron: '42.8.0',
         chrome: '148.0.0',
