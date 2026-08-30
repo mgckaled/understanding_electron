@@ -98,6 +98,85 @@ Este arquivo registra o que **não** se deduz do código nem cabe nos donos acim
 
 ---
 
+## Operações de arquivo — leitura, busca, escrita, verificação e mapeamento
+
+> **Nunca passe para o LLM o que uma ferramenta de shell pode filtrar primeiro.**
+
+Mesmo princípio do protocolo de leitura de documentação acima, estendido a código-fonte, saída de comando e navegação entre camadas — grep antes de abrir, `offset` antes de reler do zero.
+
+| Operação | Estratégia de economia |
+|---|---|
+| Ler | `sed -n`, `head`/`tail`, `grep -A/-B`, `offset`/`limit` |
+| Escrever | `sed -i`, `>>`, heredoc, patch |
+| Buscar | `rg -l`, `fd`, `ctags`, funil (arquivo → linha → bloco) |
+| Verificar | `vitest related`, `grep "Error:"`, `--reporter=dot`, filtrar antes de entregar |
+| Mapear | `grep` de definição (não ocorrência), imports só no `head`, respeitar camadas de `architecture` |
+
+### Ler
+
+| Situação | Regra |
+|---|---|
+| Arquivo de código dentro da régua de tamanho (tabela acima) | `Read` direto — 400 linhas (teto de componente) já é pouco |
+| Arquivo de código acima do próprio teto (já é sintoma por si só) | `grep -n` pelo símbolo primeiro; `Read` com `offset` = linha achada − 5, `limit` 40–60 |
+| Log, saída de comando salva em arquivo, config grande | acima de ~150 linhas, nunca inteiro — no Bash, `sed -n 'N,Mp'`, `head -n`/`tail -n`, `grep -n -A/-B`; no PowerShell, `Select-String`, `Get-Content -TotalCount`/`-Tail` |
+| Arquivo de dataset (CSV/Excel/JSON anexado) | nunca lido bruto — nível 1 (schema) e nível 2 (perfil agregado) via DuckDB, nível 3 é amostra de linhas, nunca o arquivo inteiro. Dono: skill [`data`](.claude/skills/data/SKILL.md) |
+| `docs/` | protocolo próprio, já fixado acima — não repetir aqui |
+
+⚠️ Um `limit`/`-n` que não bastou não se resolve relendo do zero — aumenta-se mantendo o mesmo ponto de partida.
+
+### Escrever
+
+| Ferramenta | Quando |
+|---|---|
+| `Edit` | padrão para todo arquivo já versionado, inclusive troca pontual num arquivo grande — nunca reescrever o arquivo inteiro só para mudar uma linha |
+| Heredoc | só para conteúdo **novo** de uma vez — arquivo criado do zero, corpo de commit multi-linha — nunca para reintroduzir um trecho apagado de um arquivo existente |
+| `sed -i` / `-replace` do PowerShell | renomeação mecânica que atravessa **muitos arquivos** e o `replace_all` do `Edit` não cobre sozinho (opera um arquivo por vez); confirmar com `git status`/`git diff` logo depois, nunca em lote sem checar |
+| `>>` (append) | só quando a mudança é **estritamente** o fim do arquivo — nova linha de log, última entrada de uma lista. Qualquer edição no meio do arquivo não é isto |
+| `git apply --cached --recount` / patch | para dividir um diff grande em commits menores — nunca apagar um trecho e colar de volta só para separar em dois commits |
+
+⚠️ Reescrever um arquivo tocado na sessão para "deixar mais limpo" não é a mesma operação que corrigir um erro — conteúdo já correto não se regenera do zero.
+
+### Buscar
+
+Funil obrigatório: **arquivo → linha → bloco**. `rg -l` decide o arquivo, `-n` decide a linha, `-A`/`-B`/`Read` decide o bloco. Nunca abrir um arquivo inteiro para confirmar o que uma linha de contexto já mostrou.
+
+| Situação | Regra |
+|---|---|
+| `rg -l` devolve mais de ~15 arquivos | refinar antes de abrir qualquer um: `--type`/`--glob` restringe pasta ou extensão, termo mais específico, ou `-C 3` decide pela linha sem abrir nada |
+| Procurando onde um símbolo é **definido** | `rg` sem escapar o `\|`: `export (function|const|class|interface|type) Nome` — o `\|` **não** é alternação no regex do `rg`/`Grep` (Rust), é barra literal, e a busca some silenciosamente. Não confundir com a linha de `pnpm lint` abaixo, que é `grep` de verdade |
+| `ctags`, `fd` | nenhum dos dois está instalado nesta máquina (checado 30/08/2026) — o funil de `rg` (arquivo → linha → bloco) e o grep de definição acima são o substituto de fato, não uma alternativa em segundo plano; se instalados depois, `fd` some com o passo de refinar `rg -l --files` por nome de arquivo |
+| Import por caminho relativo longo (`../../../../core/...`) | grep pelo **alias** (`@core`, `@shared`, `@renderer`), nunca pela cadeia de pontos — skill [`architecture`](.claude/skills/architecture/SKILL.md) |
+| Canal IPC e seus seis pontos de toque | grep pelo **nome do canal** (ex.: `dataset:attach`) em vez de abrir os seis arquivos da lista — skill [`ipc`](.claude/skills/ipc/SKILL.md) |
+| Levantamento aberto ("onde X é tratado no app inteiro", "que arquivos usam Y") | `Agent` com `subagent_type: "fork"` quando o resultado intermediário não precisa voltar ao contexto principal — o ruído da busca fica fora do fork, só a síntese retorna |
+
+### Verificar
+
+Saída bruta de `pnpm` é o caso mais comum de contexto desperdiçado: os comandos abaixo já são verbosos por padrão, mesmo quando passam.
+
+| Comando | Filtro |
+|---|---|
+| `pnpm test` | tocar só o módulo editado — `pnpm exec vitest related <file>` (o mesmo que o hook `test_related` já roda) em vez da suíte inteira; `--reporter=dot` quando a suíte inteira precisa mesmo rodar; em falha, ler o bloco entre `Error:`/`FAIL` e o próximo `PASS`/`FAIL`, não o relatório completo. Nível a rodar e o que não vale mock: skill [`testing`](.claude/skills/testing/SKILL.md) |
+| `pnpm test:coverage` | só quando a meta de 85% em `core`/`shared` está em jogo — não rodar para confirmar um teste isolado |
+| `pnpm typecheck` | sucesso imprime só o banner de cada script encadeado (`$ tsc --noEmit ...`), sem lista de arquivo — nada a ler além disso; em falha, `grep "error TS"` localiza e conta sem repetir o contexto do compilador |
+| `pnpm lint` | `--quiet` restringe a erro e descarta aviso quando o que importa é o portão de commit; senão, `grep -E "error|warning"` na saída antes de decidir abrir algum arquivo — `-E` para não depender de `\|` como alternação (BRE do `grep` aceita, o regex do `rg` não) |
+| `pnpm dev` | sempre `run_in_background` — nunca esperar o processo terminar; filtrar só a confirmação de subida (porta, "ready"), não o stream inteiro |
+| `pnpm list` / `pnpm why` | escopar ao pacote (`pnpm list <pkg>`, `--depth 0`) — nunca a árvore inteira para confirmar uma versão |
+| Qualquer chamada de ferramenta, não só `pnpm` | resultado acima de ~200 linhas não se aceita bruto — rodar de novo mais estreito (mais filtro, termo mais específico) em vez de ler o que voltou |
+
+⚠️ "Passou" não dispensa olhar a saída — mas olhar é **grep no resumo final** (contagem de suites/testes), não rolar o log inteiro atrás de um `FAIL` que o grep já teria achado.
+
+### Mapear
+
+| Situação | Regra |
+|---|---|
+| "Onde X é usado" | grep pelo nome, mas separar **definição** (um resultado, quase sempre) de **uso** (muitos) — comece pela definição |
+| "O que este arquivo importa" | `Read` com `limit` ~30 (ou `head -n 30`) — o bloco de import já responde a camada, sem ler o corpo inteiro |
+| Atravessar camada ao mapear | a tabela de importação é lei, não convenção: `shared → core → main/workers/preload → renderer`. Resultado de grep que cruza uma seta proibida (ex.: `renderer` importando de `main`) é violação já pega pelo `no-restricted-imports`, não um caminho legítimo a seguir — skill [`architecture`](.claude/skills/architecture/SKILL.md) |
+| Mapear canal IPC | grep pelo nome do canal em `src/shared/ipc.ts`, depois nos seis lugares que a skill lista — nunca abrir os seis para descobrir qual toca o canal — skill [`ipc`](.claude/skills/ipc/SKILL.md) |
+| Mapear passo do pipeline de dados | grep pelo nome do passo em `src/core/pipeline/` (`compile.ts` é quem compila para SQL) — skill [`data`](.claude/skills/data/SKILL.md) |
+
+---
+
 ## Stack fixada
 
 Estas versões foram escolhidas deliberadamente, não por padrão do template. Os porquês estão em [`docs/study/02-a-stack-e-o-porque.md`](docs/study/02-a-stack-e-o-porque.md).
