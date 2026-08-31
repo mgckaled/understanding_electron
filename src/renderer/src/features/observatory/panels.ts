@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import ActivityPanel from './ActivityPanel'
 import ProcessesPanel from './ProcessesPanel'
 import RuntimePanel from './RuntimePanel'
 
@@ -26,5 +27,9 @@ export type ObservatoryPanel = {
 
 export const PANELS: ObservatoryPanel[] = [
   { id: 'runtime', group: 'state', label: 'Runtime', Panel: RuntimePanel },
-  { id: 'processes', group: 'state', label: 'Processos', Panel: ProcessesPanel }
+  { id: 'processes', group: 'state', label: 'Processos', Panel: ProcessesPanel },
+  // IPC channels, jobs and the DuckDB worker queue read live state with no
+  // history, same as the two above — not the persisted, historical sense of
+  // "Atividade" this group's label suggests for later plans (O-2).
+  { id: 'inFlight', group: 'state', label: 'Em andamento', Panel: ActivityPanel }
 ]
