@@ -35,10 +35,12 @@ export function spawnDuckdbWorker(userDataPath: string, extensionPath: string): 
  * *next* `'message'`), so a query and a profile request in flight at once
  * would otherwise race for each other's reply (D18D.1).
  */
-function createEnqueue(
-  worker: UtilityProcess
-): (request: WorkerRequest) => Promise<WorkerResponse> {
+function createEnqueue(worker: UtilityProcess): {
+  enqueue: (request: WorkerRequest) => Promise<WorkerResponse>
+  queueDepth: () => number
+} {
   let tail = Promise.resolve()
+  let depth = 0
 
   function sendOne(request: WorkerRequest): Promise<WorkerResponse> {
     return new Promise((resolve, reject) => {
@@ -63,14 +65,24 @@ function createEnqueue(
     })
   }
 
-  return (request) => {
-    const settled = tail.then(() => sendOne(request))
-    // Swallow so one request's rejection doesn't poison the tail for the next.
-    tail = settled.then(
-      () => undefined,
-      () => undefined
-    )
-    return settled
+  return {
+    enqueue(request) {
+      depth++
+      const settled = tail.then(() => sendOne(request))
+      // Decrements on the same chain that already swallows the rejection
+      // (O-2) — a separate settled.finally() would leave an unhandled
+      // rejection on worker death, the exact path this counter watches for.
+      tail = settled.then(
+        () => {
+          depth--
+        },
+        () => {
+          depth--
+        }
+      )
+      return settled
+    },
+    queueDepth: () => depth
   }
 }
 
@@ -89,8 +101,9 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
     hash: string,
     sql: string
   ) => Promise<{ bytes: Uint8Array; before: ColumnProfile[]; after: ColumnProfile[] }>
+  queueDepth: () => number
 } {
-  const enqueue = createEnqueue(worker)
+  const { enqueue, queueDepth } = createEnqueue(worker)
 
   return {
     async runQuery(hash, sql) {
@@ -124,6 +137,7 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
       }
       if (!response.ok) throw new Error(response.message)
       return { bytes: response.bytes, before: response.before, after: response.after }
-    }
+    },
+    queueDepth
   }
 }

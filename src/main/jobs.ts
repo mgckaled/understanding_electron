@@ -15,3 +15,7 @@ export function cancel(jobId: JobId): void {
 export function finish(jobId: JobId): void {
   controllers.delete(jobId)
 }
+
+export function list(): JobId[] {
+  return [...controllers.keys()]
+}

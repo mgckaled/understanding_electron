@@ -23,4 +23,13 @@ describe('jobs', () => {
 
     expect(controller.signal.aborted).toBe(false)
   })
+
+  it('list returns the ids of jobs not yet finished', () => {
+    jobs.create('job-list-a')
+    jobs.create('job-list-b')
+    jobs.finish('job-list-b')
+
+    expect(jobs.list()).toContain('job-list-a')
+    expect(jobs.list()).not.toContain('job-list-b')
+  })
 })
