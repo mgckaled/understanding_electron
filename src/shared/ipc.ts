@@ -73,6 +73,16 @@ export type AppProcess = {
   memoryBytes: number
 }
 
+/** Per-channel call counters kept by `registry.ts`'s `handle()` wrapper (DO2.3). */
+export type AppIpcStat = {
+  channel: string
+  callCount: number
+  errorCount: number
+  lastDurationMs: number
+  /** Sticky — a later success does not clear it (DO2.4). */
+  lastError: string | null
+}
+
 export type JobId = string
 
 export type JobEvent =
@@ -613,6 +623,7 @@ export const argsSchema = {
   'app:info': z.void(),
   'app:memory': z.void(),
   'app:processes': z.void(),
+  'app:ipcStats': z.void(),
   'shell:openExternal': z.object({ url: z.string().url() }),
   'dataset:pick': z.void(),
   'dataset:attach': z.object({ path: z.string(), jobId: z.string() }),
@@ -626,6 +637,7 @@ export const argsSchema = {
   // the compiler (core/pipeline/compile.ts) runs on the main side, over a
   // payload with no free-text SQL surface to inject through.
   'dataset:transform': z.object({ hash: z.string().min(1), steps: z.array(stepSchema).min(1) }),
+  'dataset:queueDepth': z.void(),
   // Its own pair (D17.1): dataset:pick's file filter (csv/tsv/txt) does not
   // serve a document dialog, so a shared channel would need an internal
   // dispatch register-all.ts already gets for free by picking the function.
@@ -635,6 +647,7 @@ export const argsSchema = {
   'image:attach': z.object({ path: z.string(), jobId: z.string() }),
   'image:bytes': z.object({ hash: z.string().min(1) }),
   'job:cancel': z.object({ jobId: z.string() }),
+  'job:list': z.void(),
   'ai:isAvailable': z.object({ service: aiServiceSchema }),
   // N+1 behind one channel (D15.1): /api/tags omits `vision` and the context
   // ceiling, so each model needs its own /api/show (~4,9 s for 14, loads
@@ -759,6 +772,11 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['app:processes']>
     result: AppProcess[]
   }
+  // No Result: an in-memory Map read cannot fail (DO2.3).
+  'app:ipcStats': {
+    args: z.infer<(typeof argsSchema)['app:ipcStats']>
+    result: AppIpcStat[]
+  }
   'shell:openExternal': {
     args: z.infer<(typeof argsSchema)['shell:openExternal']>
     result: Result<void>
@@ -788,6 +806,11 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['dataset:transform']>
     result: Result<DatasetTransformResult>
   }
+  // No Result: the worker client's in-memory counter cannot fail (DO2.6).
+  'dataset:queueDepth': {
+    args: z.infer<(typeof argsSchema)['dataset:queueDepth']>
+    result: number
+  }
   'document:pick': {
     args: z.infer<(typeof argsSchema)['document:pick']>
     result: Result<DatasetRef | null>
@@ -809,6 +832,8 @@ export type IpcContract = {
     result: Result<Uint8Array>
   }
   'job:cancel': { args: z.infer<(typeof argsSchema)['job:cancel']>; result: void }
+  // No Result: reading the Map's own keys cannot fail (DO2.5).
+  'job:list': { args: z.infer<(typeof argsSchema)['job:list']>; result: JobId[] }
   'ai:isAvailable': {
     args: z.infer<(typeof argsSchema)['ai:isAvailable']>
     result: Result<AiAvailability>
@@ -909,6 +934,8 @@ export type Api = {
     /** Read fresh each call — see SystemMemory for why it is never cached. */
     memory(): Promise<SystemMemory>
     processes(): Promise<AppProcess[]>
+    /** Per-channel call counters kept by `registry.ts`'s `handle()` wrapper (DO2.3). */
+    ipcStats(): Promise<AppIpcStat[]>
   }
   shell: { openExternal(url: string): Promise<Result<void>> }
   dataset: {
@@ -921,6 +948,8 @@ export type Api = {
     profile(hash: string): Promise<Result<ColumnProfile[]>>
     /** Compiles `steps` (D19.1) and previews the result, capped at 200 rows, alongside the before/after column profile (D19.6). */
     transform(hash: string, steps: Step[]): Promise<Result<DatasetTransformResult>>
+    /** In-flight requests on the DuckDB worker's single queue right now (DO2.6). */
+    queueDepth(): Promise<number>
   }
   document: {
     pick(): Promise<Result<DatasetRef | null>>
@@ -942,6 +971,8 @@ export type Api = {
   }
   job: {
     cancel(jobId: JobId): Promise<void>
+    /** Ids currently in `jobs.ts`'s Map — no label, only what the source has (DO2.5). */
+    list(): Promise<JobId[]>
     onEvent(cb: (event: JobEvent) => void): () => void
   }
   ai: {

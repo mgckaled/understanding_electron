@@ -11,7 +11,8 @@ const api: Api = {
   app: {
     info: () => invoke('app:info'),
     memory: () => invoke('app:memory'),
-    processes: () => invoke('app:processes')
+    processes: () => invoke('app:processes'),
+    ipcStats: () => invoke('app:ipcStats')
   },
   shell: {
     openExternal: (url) => invoke('shell:openExternal', { url })
@@ -21,7 +22,8 @@ const api: Api = {
     attach: (path, jobId) => invoke('dataset:attach', { path, jobId }),
     query: (hash, sql) => invoke('dataset:query', { hash, sql }),
     profile: (hash) => invoke('dataset:profile', { hash }),
-    transform: (hash, steps) => invoke('dataset:transform', { hash, steps })
+    transform: (hash, steps) => invoke('dataset:transform', { hash, steps }),
+    queueDepth: () => invoke('dataset:queueDepth')
   },
   document: {
     pick: () => invoke('document:pick'),
@@ -34,6 +36,7 @@ const api: Api = {
   },
   job: {
     cancel: (jobId) => invoke('job:cancel', { jobId }),
+    list: () => invoke('job:list'),
     onEvent: (cb) => {
       const listener = (_event: IpcRendererEvent, payload: JobEvent): void => cb(payload)
       ipcRenderer.on(JOB_EVENT_CHANNEL, listener)

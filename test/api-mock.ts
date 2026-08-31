@@ -43,7 +43,10 @@ export function createApiMock(): Api {
       memory: vi.fn().mockResolvedValue({ freeBytes: 6 * 1024 ** 3, totalBytes: 16 * 1024 ** 3 }),
       // Empty, not a bare vi.fn(): the observatory's Processos panel reads this
       // on mount, and `undefined` would throw where the list merely renders.
-      processes: vi.fn().mockResolvedValue([])
+      processes: vi.fn().mockResolvedValue([]),
+      // Same reasoning: the observatory's Em andamento panel (O-2) reads this
+      // on mount.
+      ipcStats: vi.fn().mockResolvedValue([])
     },
     shell: { openExternal: vi.fn() },
     dataset: {
@@ -61,7 +64,10 @@ export function createApiMock(): Api {
       profile: vi.fn(),
       // Same reasoning as profile — nothing fires this on mount, it only runs
       // when a proposal is applied (plano 19).
-      transform: vi.fn()
+      transform: vi.fn(),
+      // Same reasoning as processes above: the Em andamento panel (O-2) reads
+      // this on mount.
+      queueDepth: vi.fn().mockResolvedValue(0)
     },
     document: { pick: vi.fn(), attach: vi.fn() },
     image: { pick: vi.fn(), attach: vi.fn(), bytes: vi.fn() },
@@ -69,7 +75,13 @@ export function createApiMock(): Api {
     // cleanup calls the returned function would otherwise call undefined()
     // and throw, breaking every test that mounts it — not just the ones
     // about unsubscribing.
-    job: { cancel: vi.fn(), onEvent: vi.fn().mockReturnValue(vi.fn()) },
+    job: {
+      cancel: vi.fn(),
+      // Empty, same reasoning as app.processes: the Em andamento panel (O-2)
+      // reads this on mount.
+      list: vi.fn().mockResolvedValue([]),
+      onEvent: vi.fn().mockReturnValue(vi.fn())
+    },
     ai: {
       isAvailable: vi.fn(),
       // Resolves a real catalog by default, for exactly the reason job.onEvent
