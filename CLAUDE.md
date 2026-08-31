@@ -27,6 +27,19 @@ Regra completa e formato em [`docs/README.md`](docs/README.md#os-dois-registros-
 
 ---
 
+## Princípio: funil antes de abrir
+
+**Nunca passe para o LLM o que uma ferramenta de shell pode filtrar primeiro.** É o guarda-chuva das duas seções abaixo — vale para ler, buscar, mapear, escrever e verificar, em documentação e em código-fonte/saída de comando igualmente. Dono desta frase é esta seção; as duas abaixo apontam para ela, não a repetem.
+
+Para **ler, buscar e mapear**, o guarda-chuva vira um mecanismo concreto, sempre em três passos — o **funil arquivo → linha → bloco**: `Grep`/`rg -l` decide o arquivo, `-n` decide a linha, `-A`/`-B`/`offset`+`limit` decide o bloco — nunca abrir um arquivo inteiro para confirmar o que uma linha de contexto já mostraria, nem reler do zero quando o `limit` não bastou. **Escrever e verificar não têm bloco a decidir**; seguem o mesmo guarda-chuva por outro caminho (ferramenta certa para a escrita, filtro na saída do comando) — cada um com tabela própria, não com o funil.
+
+As duas seções abaixo aplicam o guarda-chuva a domínios diferentes, e cada uma guarda só a particularidade que ele não cobre:
+
+- **Protocolo de leitura da documentação** (a seguir) — a tabela por-arquivo, porque cada arquivo de `docs/` tem uma exceção própria ao funil (alguns vetam até o `Read` com `offset`).
+- **Operações de arquivo** (mais abaixo) — a tabela por-ferramenta para as cinco operações (ler, buscar, escrever, verificar, mapear) sobre código-fonte, log e saída de comando.
+
+---
+
 ## Organização da documentação
 
 ```text
@@ -46,6 +59,8 @@ docs/
 Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao diário dele → ao concluir, **move** para `implemented/` e ganha uma entrada em `HISTORY.md`. Plano abandonado vai para `archive/` **com o motivo** registrado no histórico.
 
 ### Protocolo de leitura da documentação
+
+Aplica o funil arquivo → linha → bloco do princípio acima; a tabela abaixo é a particularidade de `docs/` — qual exceção cada arquivo específico impõe ao funil geral.
 
 **Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,94 MB / ~525k tokens** (97 arquivos) — os sete arquivos soltos são só ~123k dela, e `plan/implemented/` sozinho é **~302k**, mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
 
@@ -100,9 +115,7 @@ Este arquivo registra o que **não** se deduz do código nem cabe nos donos acim
 
 ## Operações de arquivo — leitura, busca, escrita, verificação e mapeamento
 
-> **Nunca passe para o LLM o que uma ferramenta de shell pode filtrar primeiro.**
-
-Mesmo princípio do protocolo de leitura de documentação acima, estendido a código-fonte, saída de comando e navegação entre camadas — grep antes de abrir, `offset` antes de reler do zero.
+Estende o guarda-chuva do princípio no topo do arquivo às cinco operações abaixo, sobre código-fonte, log e saída de comando: ler, buscar e mapear aplicam o funil arquivo → linha → bloco; escrever e verificar seguem o mesmo guarda-chuva por outro caminho. A tabela abaixo é a particularidade deste domínio: qual ferramenta cobre cada operação.
 
 | Operação | Estratégia de economia |
 |---|---|
@@ -120,7 +133,7 @@ Mesmo princípio do protocolo de leitura de documentação acima, estendido a c�
 | Arquivo de código acima do próprio teto (já é sintoma por si só) | `grep -n` pelo símbolo primeiro; `Read` com `offset` = linha achada − 5, `limit` 40–60 |
 | Log, saída de comando salva em arquivo, config grande | acima de ~150 linhas, nunca inteiro — no Bash, `sed -n 'N,Mp'`, `head -n`/`tail -n`, `grep -n -A/-B`; no PowerShell, `Select-String`, `Get-Content -TotalCount`/`-Tail` |
 | Arquivo de dataset (CSV/Excel/JSON anexado) | nunca lido bruto — nível 1 (schema) e nível 2 (perfil agregado) via DuckDB, nível 3 é amostra de linhas, nunca o arquivo inteiro. Dono: skill [`data`](.claude/skills/data/SKILL.md) |
-| `docs/` | protocolo próprio, já fixado acima — não repetir aqui |
+| `docs/` | mesmo funil, exceções próprias — tabela já fixada acima, não repetir aqui |
 
 ⚠️ Um `limit`/`-n` que não bastou não se resolve relendo do zero — aumenta-se mantendo o mesmo ponto de partida.
 
@@ -138,7 +151,7 @@ Mesmo princípio do protocolo de leitura de documentação acima, estendido a c�
 
 ### Buscar
 
-Funil obrigatório: **arquivo → linha → bloco**. `rg -l` decide o arquivo, `-n` decide a linha, `-A`/`-B`/`Read` decide o bloco. Nunca abrir um arquivo inteiro para confirmar o que uma linha de contexto já mostrou.
+Aplica o funil arquivo → linha → bloco do princípio no topo do arquivo. Nunca abrir um arquivo inteiro para confirmar o que uma linha de contexto já mostrou.
 
 | Situação | Regra |
 |---|---|
