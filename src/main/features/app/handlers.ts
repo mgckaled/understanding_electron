@@ -1,4 +1,4 @@
-import type { AppInfo, AppProcess, SystemMemory } from '@shared/ipc'
+import type { AppInfo, AppIpcStat, AppProcess, SystemMemory } from '@shared/ipc'
 import { summarizeProcesses, type ProcessMetricLike } from '@core/observatory/processes'
 
 export function getAppInfo(getVersion: () => string, isDev: boolean): AppInfo {
@@ -31,4 +31,9 @@ export function getSystemMemory(freemem: () => number, totalmem: () => number): 
  */
 export function readProcesses(getMetrics: () => ProcessMetricLike[]): AppProcess[] {
   return summarizeProcesses(getMetrics())
+}
+
+/** Per-channel IPC counters kept by `registry.ts` (DO2.3). No `Result`, same reasoning as `readProcesses`. */
+export function readIpcStats(getStats: () => AppIpcStat[]): AppIpcStat[] {
+  return getStats()
 }

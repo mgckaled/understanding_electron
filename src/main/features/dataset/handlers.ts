@@ -167,3 +167,8 @@ export async function profileDataset(
     return err({ kind: 'invalidQuery', message: (error as Error).message })
   }
 }
+
+/** In-flight requests on the worker's single queue right now (DO2.6). No `Result`: the in-memory counter cannot fail. */
+export function readQueueDepth(getDepth: () => number): number {
+  return getDepth()
+}

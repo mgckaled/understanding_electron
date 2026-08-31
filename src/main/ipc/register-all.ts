@@ -5,21 +5,22 @@ import { is } from '@electron-toolkit/utils'
 import type { AiService, JobEvent } from '@shared/ipc'
 import { JOB_EVENT_CHANNEL } from '@shared/channels'
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
-import { handle } from './registry'
+import { handle, getIpcStats } from './registry'
 import { DATABASE_FILE, openDatabase } from '../db/open'
 import { freemem, totalmem } from 'node:os'
-import { getAppInfo, getSystemMemory, readProcesses } from '../features/app/handlers'
+import { getAppInfo, getSystemMemory, readIpcStats, readProcesses } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
 import {
   attachDataset,
   queryDataset,
   profileDataset,
+  readQueueDepth,
   transformDataset
 } from '../features/dataset/handlers'
 import { pickDataset } from '../features/dataset/pick'
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage, readImageBytes } from '../features/image/handlers'
-import { cancelJob } from '../features/job/handlers'
+import { cancelJob, listJobs } from '../features/job/handlers'
 import { readHashedFile, hashOnlyFile, sniffFileFormat } from '../features/dataset/lines'
 import { readDocumentFile, statDocumentSize } from '../features/document/readFile'
 import { readImageFile } from '../features/image/readFile'
@@ -162,6 +163,7 @@ export async function registerAll(): Promise<() => void> {
   handle('app:info', () => getAppInfo(app.getVersion, is.dev))
   handle('app:memory', () => getSystemMemory(freemem, totalmem))
   handle('app:processes', () => readProcesses(() => app.getAppMetrics()))
+  handle('app:ipcStats', () => readIpcStats(getIpcStats))
   handle('shell:openExternal', (args) => openExternal(args, shell.openExternal))
   handle('dataset:pick', (args) => pickDataset(args, dialog.showOpenDialog))
   handle('dataset:attach', (args) =>
@@ -180,6 +182,7 @@ export async function registerAll(): Promise<() => void> {
   handle('dataset:transform', (args) =>
     transformDataset(args, duckdbClient.runSchema, duckdbClient.runTransform)
   )
+  handle('dataset:queueDepth', () => readQueueDepth(duckdbClient.queueDepth))
   handle('document:pick', (args) => pickDocument(args, dialog.showOpenDialog, statDocumentSize))
   handle('document:attach', (args) =>
     attachDocument(args, readDocumentFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
@@ -198,6 +201,7 @@ export async function registerAll(): Promise<() => void> {
   )
   handle('image:bytes', (args) => readImageBytes(args, attachmentsDir, readFile))
   handle('job:cancel', (args) => cancelJob(args))
+  handle('job:list', () => listJobs())
 
   const ollamaAdapter: ProviderAdapter = {
     probe: ollamaProbe,

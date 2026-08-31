@@ -1,5 +1,11 @@
 import type { ColumnProfile, Step } from '@shared/ipc'
-import { attachDataset, queryDataset, profileDataset, transformDataset } from './handlers'
+import {
+  attachDataset,
+  queryDataset,
+  profileDataset,
+  readQueueDepth,
+  transformDataset
+} from './handlers'
 
 // attachDataset itself only dispatches on sniffFormat (D18E.1/D18E.3) — each
 // path's own behavior (delimited: attachDelimited.test.ts, JSON:
@@ -300,5 +306,13 @@ describe('transformDataset', () => {
       ok: false,
       error: { kind: 'invalidQuery', message: 'Out of Memory Error' }
     })
+  })
+})
+
+describe('readQueueDepth', () => {
+  it('reports what the source returns', () => {
+    const getDepth = vi.fn().mockReturnValue(2)
+
+    expect(readQueueDepth(getDepth)).toBe(2)
   })
 })

@@ -1,5 +1,6 @@
+import type { AppIpcStat } from '@shared/ipc'
 import type { ProcessMetricLike } from '@core/observatory/processes'
-import { getAppInfo, getSystemMemory, readProcesses } from './handlers'
+import { getAppInfo, getSystemMemory, readIpcStats, readProcesses } from './handlers'
 
 describe('getSystemMemory', () => {
   it('reports what the readers return, in bytes', () => {
@@ -87,5 +88,26 @@ describe('readProcesses', () => {
     readProcesses(getMetrics)
 
     expect(getMetrics).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('readIpcStats', () => {
+  it('reports what the source returns, unchanged', () => {
+    const stats: AppIpcStat[] = [
+      {
+        channel: 'dataset:query',
+        callCount: 3,
+        errorCount: 1,
+        lastDurationMs: 42,
+        lastError: 'boom'
+      }
+    ]
+    const getStats = vi.fn().mockReturnValue(stats)
+
+    expect(readIpcStats(getStats)).toBe(stats)
+  })
+
+  it('takes its stats source by parameter, with no electron default', () => {
+    expect(readIpcStats.length).toBe(1)
   })
 })
