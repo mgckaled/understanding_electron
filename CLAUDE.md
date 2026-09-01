@@ -73,12 +73,12 @@ Aplica o funil arquivo → linha → bloco do princípio acima; a tabela abaixo 
 | `ROADMAP.md` | ~16k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
 | `DECISOES.md` | ~14k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
 | `README.md` | ~4k | único que cabe inteiro |
-| **`plan/implemented/`** (57 arq.) | **~302k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
+| **`plan/implemented/`** (60 arq.) | **~291k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
 | `reference/` (19 arq.) | ~54k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
 | `study/` (12 arq.) | ~39k | `Grep` no conceito; `Read` com `offset` na seção achada |
-| `plan/active/` (4 arq.) | ~16k | o plano **em execução** se lê inteiro; os demais, `Grep` |
+| `plan/active/` (1 arq.) | ~3k | o plano **em execução** se lê inteiro; os demais, `Grep` |
 
-⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** Foram remedidos em 28/08/2026; a ordem de grandeza é o que importa aqui, não o dígito. ⚠️ **Cinco tetos estão estourados** (`ARMADILHAS.md`, este arquivo, e agora `ROADMAP.md`, `DECISOES.md` e `ESCOPO.md`) — registrado com o conserto no [`ROADMAP § 2`](docs/ROADMAP.md).
+⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** `plan/active/`/`plan/implemented/` remedidos em 31/08/2026, ao fechar a trilha O (§ 6); os demais seguem datados de 28/08/2026 — a ordem de grandeza é o que importa aqui, não o dígito. ⚠️ **Cinco tetos estão estourados** (`ARMADILHAS.md`, este arquivo, e agora `ROADMAP.md`, `DECISOES.md` e `ESCOPO.md`) — registrado com o conserto no [`ROADMAP § 2`](docs/ROADMAP.md).
 
 **Como fazer certo, em ordem:** (1) `Grep -n` pelo termo → devolve linha e arquivo; (2) `Read` com `offset` = linha achada menos 5, `limit` 40–60; (3) se a seção continuar além, estenda o `limit`, não releia do zero. Um `Grep` com `-C 3` resolve a maioria das perguntas **sem nenhum `Read`**.
 
