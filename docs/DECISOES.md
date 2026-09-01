@@ -371,6 +371,15 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | O-6 | [DO6.9](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Duas correções da revisão do advisor, achadas antes do teste ao vivo |
 | O-6 | [DO6.10](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | O sink também enxerga `Result.ok:false`, não só exceção — achado no teste ao vivo |
 | O-6 | [DO6.11](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Canais IPC (O-2) também passa a contar `Result.ok:false` — pedido do usuário, mesma sessão |
+| O-7 | [DO7.1](plan/implemented/O-7-desempenho-por-modelo.md) | Três marcas de tempo por wall-clock, não os campos nativos como métrica primária |
+| O-7 | [DO7.2](plan/implemented/O-7-desempenho-por-modelo.md) | Campos nativos do Ollama entram como colunas extras, não como segunda métrica de decode |
+| O-7 | [DO7.3](plan/implemented/O-7-desempenho-por-modelo.md) | Tabela própria, não uma coluna a mais em `events` (O-6) |
+| O-7 | [DO7.4](plan/implemented/O-7-desempenho-por-modelo.md) | Só registra quando `evalTokens` chega, nunca fabrica linha parcial |
+| O-7 | [DO7.5](plan/implemented/O-7-desempenho-por-modelo.md) | `performance:list` devolve o resumo já agregado; a linha crua nunca sai do main |
+| O-7 | [DO7.6](plan/implemented/O-7-desempenho-por-modelo.md) | Retenção reaproveita `eventRetentionDays`, com o texto de Configurações ampliado |
+| O-7 | [DO7.7](plan/implemented/O-7-desempenho-por-modelo.md) | `performance:list` entra na mesma exclusão do sink que `events:list` |
+| O-7 | [DO7.8](plan/implemented/O-7-desempenho-por-modelo.md) | Resposta curta demais não produz taxa: piso de 5 tokens, decidido com dado real, não com correção matemática |
+| O-7 | [DO7.9](plan/implemented/O-7-desempenho-por-modelo.md) | A decomposição em três vira quatro números: rede+prefill, decode, tokens/s de entrada e de saída |
 
 ---
 
