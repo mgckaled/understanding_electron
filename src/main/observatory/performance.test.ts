@@ -59,4 +59,25 @@ describe('recordPerformanceEvent / listPerformanceEvents', () => {
     expect(listPerformanceEvents(db, 30)).toHaveLength(0)
     expect(listPerformanceEvents(db, 90)).toHaveLength(1)
   })
+
+  it('v3 climbs over a database that already ran v1+v2 with a real row in it (ALTER TABLE, not a rewrite)', () => {
+    const db = new DatabaseSync(':memory:')
+    migrate(db, migrations.slice(0, 2)) // v1 + v2 only — the shape the user's machine already had
+
+    // Raw INSERT against the pre-v3 shape: recordPerformanceEvent already
+    // assumes prompt_tokens exists, which is exactly what this row predates.
+    db.prepare(
+      `INSERT INTO performance_events (service, model, eval_tokens, ttft_ms, decode_ms, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run('ollama', 'qwen2.5-coder:3b', 100, 400, 1500, Date.now())
+
+    migrate(db, migrations) // climbs to v3 on the SAME connection, row already present
+
+    const rows = listPerformanceEvents(db, 30)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ model: 'qwen2.5-coder:3b', evalTokens: 100 })
+    // Backfilled NULL, not an error and not a fabricated 0 — the row predates
+    // promptTokens existing at all.
+    expect(rows[0].promptTokens).toBeUndefined()
+  })
 })

@@ -97,7 +97,7 @@ export type EventRow = {
  * Timing and tokens/s summary for one `(service, model)` bucket, already
  * aggregated in the main process — the raw `performance_events` rows never
  * cross IPC (O-7, DO7.5). The three-way split promised by
- * `reference/observatory/README.md` § 9.2: `avgTtftMs` (network + prefill),
+ * `reference/observatory/README.md` § 9.2: `avgNetworkPrefillMs` (network + prefill),
  * `avgDecodeMs`, and tokens/s split into input (prefill) and output (decode).
  * `avgInputTokensPerSec` and `maxLoadDurationMs` are `null`, never `0`, when
  * no row in the bucket carried the underlying native field — every
@@ -107,8 +107,9 @@ export type EventRow = {
 export type PerformanceSummary = {
   service: AiService
   model: string
+  /** Replies with a measurable output rate (DO7.8) — `avgNetworkPrefillMs`/`avgDecodeMs` average over EVERY row in the bucket, which can outnumber `n`. */
   n: number
-  avgTtftMs: number
+  avgNetworkPrefillMs: number
   avgDecodeMs: number
   avgInputTokensPerSec: number | null
   avgOutputTokensPerSec: number

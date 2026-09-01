@@ -52,7 +52,7 @@ function PerformanceTable({ summaries }: { summaries: PerformanceSummary[] }): R
               <td className={`${CELL} text-right font-mono text-text-muted`}>{summary.n}</td>
               <td className={`${CELL} text-right`}>
                 <StackedCell
-                  top={formatDurationMs(summary.avgTtftMs)}
+                  top={formatDurationMs(summary.avgNetworkPrefillMs)}
                   bottom={formatDurationMs(summary.avgDecodeMs)}
                 />
               </td>

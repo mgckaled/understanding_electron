@@ -34,6 +34,15 @@ function outputTokensPerSec(row: PerformanceRow): number | null {
   return row.evalTokens / (row.decodeMs / 1000)
 }
 
+// ttftMs spans network + model load + prefill (t1-t0) — the same
+// contamination DO7.2 named for the load column, one column over. Removing
+// loadDurationMs when present leaves network+prefill; a cloud row has no
+// load phase to remove, so its raw ttftMs is already the right number
+// (O-7, DO7.9 revisited).
+function networkPlusPrefillMs(row: PerformanceRow): number {
+  return row.loadDurationMs === undefined ? row.ttftMs : row.ttftMs - row.loadDurationMs
+}
+
 // Unlike decode, prefill is never derived from our own onChunk marks — both
 // promptTokens and promptEvalDurationMs are the provider's own exact count
 // and duration for the SAME call, so there is no first-chunk bias to guard
@@ -101,7 +110,7 @@ export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
       service: bucket[0].service,
       model: bucket[0].model,
       n: outputRates.length,
-      avgTtftMs: average(bucket.map((row) => row.ttftMs)),
+      avgNetworkPrefillMs: average(bucket.map(networkPlusPrefillMs)),
       avgDecodeMs: average(bucket.map((row) => row.decodeMs)),
       avgInputTokensPerSec: avgOf(bucket.map(inputTokensPerSec)),
       avgOutputTokensPerSec: average(outputRates),

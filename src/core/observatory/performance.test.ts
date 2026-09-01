@@ -32,11 +32,31 @@ describe('summarizeByModel', () => {
     })
   })
 
-  it('averages ttftMs and decodeMs across every row in the bucket, not just the ones with a stable rate', () => {
+  it('averages decodeMs across every row in the bucket, not just the ones with a stable rate', () => {
     const rows = [row({ ttftMs: 100, decodeMs: 2000 }), row({ ttftMs: 300, decodeMs: 1000 })]
     const [summary] = summarizeByModel(rows)
-    expect(summary.avgTtftMs).toBe(200)
     expect(summary.avgDecodeMs).toBe(1500)
+  })
+
+  it('avgNetworkPrefillMs removes loadDurationMs from ttftMs when present — same contamination as DO7.2, one column over', () => {
+    // Measured live against qwen2.5-coder:3b (01/09/2026): ttftMs decomposes
+    // as load_duration + prompt_eval_duration + a small residual (24-66ms of
+    // local transport/overhead), confirmed with load_duration/prompt_eval_duration
+    // read straight from the same /api/chat response. A raw ttftMs average
+    // would mix cold-load calls with warm ones, the exact defect the load
+    // column already had to fix.
+    const rows = [
+      row({ ttftMs: 7785, loadDurationMs: 6968 }), // cold: 817ms network+prefill
+      row({ ttftMs: 421, loadDurationMs: 7 }) //      warm: 414ms network+prefill
+    ]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.avgNetworkPrefillMs).toBeCloseTo((817 + 414) / 2, 0)
+  })
+
+  it('avgNetworkPrefillMs uses raw ttftMs when there is no load phase to remove (cloud)', () => {
+    const rows = [row({ ttftMs: 900, loadDurationMs: undefined })]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.avgNetworkPrefillMs).toBe(900)
   })
 
   it('never mixes buckets from different (service, model) pairs', () => {
