@@ -8,12 +8,14 @@ const QUERY_KEY = ['session', 'cacheSize']
 
 function ChromiumCachePanel(): React.JSX.Element {
   const queryClient = useQueryClient()
-  // Acessível (§ 5.1): cache obrigatório, staleTime > 0, so switching panels
-  // and back inside the same modal session does not re-pay the read.
+  // Acessível (§ 5.1): cache obrigatório — no staleTime override, so this
+  // inherits the QueryClient's global staleTime: Infinity (createQueryClient
+  // comment) instead of DatabasePanel/EnginePanel's staleTime: 0. Switching
+  // panels and back never re-pays the read; only clearCache's own
+  // invalidateQueries forces a fresh one.
   const { data, isPending, isError } = useQuery({
     queryKey: QUERY_KEY,
-    queryFn: () => window.api.session.cacheSize(),
-    staleTime: 60_000
+    queryFn: () => window.api.session.cacheSize()
   })
   const clear = useMutation({
     mutationFn: () => window.api.session.clearCache(),

@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react'
-import type { DiskUsage, JobId } from '@shared/ipc'
-import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
+import { useQuery } from '@tanstack/react-query'
+import type { AppError, DiskUsage, JobId, JobProgress } from '@shared/ipc'
 import { useJobProgress } from '../../shared/hooks/useJobProgress'
 import { formatBytes, formatAge } from '../../shared/format'
 import Button from '../../shared/ui/Button/Button'
 import StateView from '../../shared/ui/StateView'
+import type { ViewState } from '../../shared/ui/state'
 
 const CELL = 'px-3 py-2 text-xs'
+const QUERY_KEY = ['disk', 'usage']
 
 function PartialNote(): React.JSX.Element {
   return <span className="ml-2 text-2xs text-warn-text">leitura parcial</span>
@@ -53,35 +55,60 @@ function DiskTable({ usage }: { usage: DiskUsage }): React.JSX.Element {
   )
 }
 
-/** The trilha's second Caro/sob-botão panel (§ 5.1, after Capacidades) — a job, not a query (O-5). */
-function DiskUsagePanel(): React.JSX.Element {
-  const { state, run, setProgress } = useAsyncAction<DiskUsage>()
-  const [jobId, setJobId] = useState<JobId | null>(null)
-  const [measuredAt, setMeasuredAt] = useState<number | null>(null)
+async function fetchDiskUsage(jobId: JobId): Promise<DiskUsage> {
+  const result = await window.api.disk.usage(jobId)
+  if (!result.ok) throw result.error
+  return result.value
+}
 
+/**
+ * The trilha's second Caro/sob-botão panel (§ 5.1, after Capacidades) — a
+ * job, not a plain sondagem, but backed by the same `enabled: false` +
+ * `refetch()` query as `useCapabilities` (O-5): the result and its
+ * `dataUpdatedAt` live in the QueryClient cache, so switching to another
+ * panel and back still shows the last measurement instead of resetting to
+ * the button — `useState` alone would lose it on unmount (§ 4.2).
+ */
+function DiskUsagePanel(): React.JSX.Element {
+  const [jobId, setJobId] = useState<JobId | null>(null)
+  const [progress, setProgress] = useState<JobProgress | null>(null)
   useJobProgress(jobId, setProgress)
 
-  const probe = useCallback(async (): Promise<void> => {
-    const newJobId = crypto.randomUUID()
-    setJobId(newJobId)
-    const result = await run(() => window.api.disk.usage(newJobId))
-    setJobId(null)
-    if (result.ok) setMeasuredAt(Date.now())
-  }, [run])
+  const { data, error, status, isFetching, dataUpdatedAt, refetch } = useQuery<DiskUsage, AppError>(
+    {
+      queryKey: QUERY_KEY,
+      queryFn: () => {
+        const newJobId = crypto.randomUUID()
+        setJobId(newJobId)
+        return fetchDiskUsage(newJobId).finally(() => setJobId(null))
+      },
+      enabled: false
+    }
+  )
 
   const cancel = useCallback((): void => {
     if (jobId !== null) void window.api.job.cancel(jobId)
   }, [jobId])
 
+  const state: ViewState<DiskUsage> = isFetching
+    ? { status: 'loading', progress: progress ?? undefined }
+    : status === 'error'
+      ? error.kind === 'cancelled'
+        ? { status: 'cancelled' }
+        : { status: 'error', error }
+      : data !== undefined
+        ? { status: 'ready', data }
+        : { status: 'idle' }
+
   return (
     <section>
       <h3 className="mb-4 text-sm text-text">Uso de disco</h3>
-      {state.status === 'idle' && (
-        <Button variant="primary" onClick={probe}>
+      {data === undefined && !isFetching && (
+        <Button variant="primary" onClick={() => void refetch()}>
           Sondar uso de disco
         </Button>
       )}
-      {state.status === 'loading' && (
+      {isFetching && (
         <Button variant="ghost" size="sm" onClick={cancel} className="mb-3">
           Cancelar
         </Button>
@@ -91,20 +118,19 @@ function DiskUsagePanel(): React.JSX.Element {
         render={(usage) => (
           <div className="flex flex-col gap-4">
             <DiskTable usage={usage} />
-            {measuredAt !== null && (
-              <div className="flex items-center gap-2 text-2xs text-text-faint">
-                <span>Medido {formatAge(measuredAt)}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  shape="square"
-                  onClick={probe}
-                  aria-label="Sondar uso de disco de novo"
-                >
-                  ↻
-                </Button>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-2xs text-text-faint">
+              <span>Medido {formatAge(dataUpdatedAt)}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                shape="square"
+                loading={isFetching}
+                onClick={() => void refetch()}
+                aria-label="Sondar uso de disco de novo"
+              >
+                ↻
+              </Button>
+            </div>
           </div>
         )}
       />
