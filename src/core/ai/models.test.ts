@@ -2,6 +2,7 @@ import type { AiModel } from '@shared/ipc'
 import {
   GEMINI_MODELS,
   GLM_MODELS,
+  dropRedundantVariants,
   findEmbedders,
   hasCapability,
   normalizeOllamaModel,
@@ -346,5 +347,31 @@ describe('findEmbedders', () => {
 
   it('keeps the embedder and drops the chat model', () => {
     expect(findEmbedders([embedder, chatModel])).toEqual([embedder])
+  })
+})
+
+describe('dropRedundantVariants', () => {
+  const gemma3_4b: AiModel = {
+    provider: 'ollama',
+    name: 'gemma3:4b',
+    parameterSize: '4.3B',
+    sizeBytes: 3_338_801_804,
+    capabilities: ['completion', 'vision'],
+    contextLength: 131072,
+    attention: null,
+    variantOf: null
+  }
+  const gemma3_4b_custom: AiModel = {
+    ...gemma3_4b,
+    name: 'gemma3-4b-custom:latest',
+    variantOf: 'gemma3:4b'
+  }
+
+  it('drops a variant whose parent is present — a mill.tools Modelfile clone, not a second install', () => {
+    expect(dropRedundantVariants([gemma3_4b, gemma3_4b_custom])).toEqual([gemma3_4b])
+  })
+
+  it('keeps a variant when its parent is absent from the catalog', () => {
+    expect(dropRedundantVariants([gemma3_4b_custom])).toEqual([gemma3_4b_custom])
   })
 })

@@ -164,7 +164,18 @@ export function hasCapability(model: AiModel, capability: string): boolean {
   return model.capabilities.includes(capability)
 }
 
-/** Models the catalog declares `embedding` for (O-4, DO4.5) — the raw catalog, not `selectableModels`, which filters embedders out by design (D15.11). */
+/**
+ * Drops a variant whose parent is also present in `models` (D15.11) — a
+ * Modelfile clone made for a sibling app (mill.tools) sharing this Ollama, not
+ * a second install. Keeps a variant when its parent is absent, since it is
+ * then the only way left to run those weights.
+ */
+export function dropRedundantVariants(models: AiModel[]): AiModel[] {
+  const installed = new Set(models.map((model) => model.name))
+  return models.filter((model) => model.variantOf === null || !installed.has(model.variantOf))
+}
+
+/** Models the catalog declares `embedding` for (O-4, DO4.5) — takes whatever catalog the caller passes; it is the caller's job to have already dropped redundant variants (`dropRedundantVariants`), not this function's. */
 export function findEmbedders(models: AiModel[]): AiModel[] {
   return models.filter((model) => hasCapability(model, 'embedding'))
 }

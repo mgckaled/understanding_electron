@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { dropRedundantVariants } from '@core/ai/models'
 import { CLOUD_PROVIDERS } from '@shared/ipc'
 import type {
   AiAvailability,
@@ -46,9 +47,15 @@ async function fetchCapabilities(): Promise<CapabilitiesData> {
 
   const services = {} as Record<AiService, ServiceCapability>
   AI_SERVICES.forEach((service, index) => {
+    const modelsState = settledResultState(models[index]!, 'ai:models')
     services[service] = {
       availability: settledResultState(availabilities[index]!, 'ai:isAvailable'),
-      models: settledResultState(models[index]!, 'ai:models')
+      // A Modelfile clone made for mill.tools (sibling app, same Ollama) is not
+      // a second installed model — dropped here so it never reaches a table.
+      models:
+        modelsState.status === 'ready'
+          ? { ...modelsState, data: dropRedundantVariants(modelsState.data) }
+          : modelsState
     }
   })
 

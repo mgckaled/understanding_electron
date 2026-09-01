@@ -1,5 +1,5 @@
 import type { AiModel, AppError, Conversation, Message, MessageStopped } from '@shared/ipc'
-import { hasCapability } from '@core/ai/models'
+import { dropRedundantVariants, hasCapability } from '@core/ai/models'
 
 // What survived the move to storage (plano 14): the reducer is gone — the list
 // and transcripts are a server cache now, and a client reducer holding them
@@ -58,12 +58,7 @@ export function stoppedFromError(error: AppError): MessageStopped | null {
  * what is worth offering is a judgement about a UI.
  */
 export function selectableModels(catalog: AiModel[]): AiModel[] {
-  const installed = new Set(catalog.map((model) => model.name))
-  return catalog.filter(
-    (model) =>
-      hasCapability(model, 'completion') &&
-      (model.variantOf === null || !installed.has(model.variantOf))
-  )
+  return dropRedundantVariants(catalog).filter((model) => hasCapability(model, 'completion'))
 }
 
 /**
