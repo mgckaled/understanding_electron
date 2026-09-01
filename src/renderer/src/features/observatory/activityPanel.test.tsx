@@ -71,3 +71,53 @@ describe('ActivityPanel', () => {
     expect(await screen.findByText('Nenhum canal chamado ainda.')).toBeInTheDocument()
   })
 })
+
+describe('ActivityPanel — pending/error must not read as zero', () => {
+  it('surfaces the last error message on a failed channel, not just a count', async () => {
+    const api = installApiMock()
+    const stats: AppIpcStat[] = [
+      {
+        channel: 'ai:chat',
+        callCount: 2,
+        errorCount: 1,
+        lastDurationMs: 3.2,
+        lastError: 'provider down'
+      }
+    ]
+    vi.mocked(api.app.ipcStats).mockResolvedValue(stats)
+
+    renderPanel()
+
+    expect(await screen.findByText('provider down')).toBeInTheDocument()
+  })
+
+  it('does not show "0 em andamento" when job:list fails', async () => {
+    const api = installApiMock()
+    vi.mocked(api.job.list).mockRejectedValue(new Error('boom'))
+
+    renderPanel()
+
+    await screen.findAllByRole('alert')
+    expect(screen.queryByText('0 em andamento')).not.toBeInTheDocument()
+  })
+
+  it('does not show "0 requisições em voo" when dataset:queueDepth fails', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.queueDepth).mockRejectedValue(new Error('boom'))
+
+    renderPanel()
+
+    await screen.findAllByRole('alert')
+    expect(screen.queryByText('0 requisições em voo')).not.toBeInTheDocument()
+  })
+
+  it('does not render an empty channel list when app:ipcStats fails', async () => {
+    const api = installApiMock()
+    vi.mocked(api.app.ipcStats).mockRejectedValue(new Error('boom'))
+
+    renderPanel()
+
+    await screen.findAllByRole('alert')
+    expect(screen.queryByText('Nenhum canal chamado ainda.')).not.toBeInTheDocument()
+  })
+})

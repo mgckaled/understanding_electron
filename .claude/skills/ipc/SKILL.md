@@ -105,16 +105,16 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**39 canais em `IpcContract`**, conferidos contra o código em 29/08/2026.
+**42 canais em `IpcContract`**, conferidos contra o código em 31/08/2026 (`grep -c "^  '[a-zA-Z]*:" src/shared/ipc.ts` dá 84 — dois blocos, metade disso).
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
-| `app` | `info`, `memory`, `processes` | não |
+| `app` | `info`, `memory`, `processes`, `ipcStats` | não |
 | `shell` | `openExternal` | sim |
-| `dataset` | `pick`, `attach`, `query`, `profile`, `transform` | sim |
+| `dataset` | `pick`, `attach`, `query`, `profile`, `transform`, `queueDepth` | sim — exceto `queueDepth`, leitura de contador em memória (O-2) |
 | `document` | `pick`, `attach` | sim |
 | `image` | `pick`, `attach`, `bytes` | sim |
-| `job` | `cancel` | não |
+| `job` | `cancel`, `list` | não |
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` | sim |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings` | não |
 | `draft` | `list`, `create`, `update`, `remove` | não |
