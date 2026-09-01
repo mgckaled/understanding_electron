@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import ActivityPanel from './ActivityPanel'
+import CapabilitiesPanel from './CapabilitiesPanel'
 import DatabasePanel from './DatabasePanel'
 import EnginePanel from './EnginePanel'
 import ProcessesPanel from './ProcessesPanel'
@@ -37,6 +38,9 @@ export const PANELS: ObservatoryPanel[] = [
   // Grátis/Moderado (§ 6) — live engine config, same family as Runtime, not
   // the storage group below (DO3.1).
   { id: 'engine', group: 'state', label: 'Motor DuckDB', Panel: EnginePanel },
+  // Caro/Leve (§ 6, DO4.1) — the trilha's first sob-botão panel; the other
+  // four in this group read on every open (DO4.2).
+  { id: 'capabilities', group: 'state', label: 'Capacidades', Panel: CapabilitiesPanel },
   // First panel in "storage" — the group has existed since O-1 with nothing
   // in it (DO1.10: a group only shows once it has a panel).
   { id: 'database', group: 'storage', label: 'Banco de dados', Panel: DatabasePanel }

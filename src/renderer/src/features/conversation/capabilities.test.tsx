@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { TEST_MODEL } from '@test/api-mock'
 import type { AiModel } from '@shared/ipc'
-import CapabilityChip from './CapabilityChip'
+import CapabilityChip from '../../shared/ui/CapabilityChip/CapabilityChip'
 import { capabilityChips } from './capabilities'
 
 describe('capabilityChips', () => {

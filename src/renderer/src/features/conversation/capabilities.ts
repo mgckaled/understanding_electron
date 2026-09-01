@@ -1,14 +1,6 @@
-import {
-  HelpCircle,
-  Image,
-  Lightbulb,
-  Mic,
-  Network,
-  PenLine,
-  Wrench,
-  type LucideIcon
-} from 'lucide-react'
+import { HelpCircle, Image, Lightbulb, Mic, Network, PenLine, Wrench } from 'lucide-react'
 import type { AiModel } from '@shared/ipc'
+import type { CapabilityMeta } from '../../shared/ui/CapabilityChip/CapabilityChip'
 
 // The sigla+icon scheme the rascunho asked for, condensing the 6 capabilities
 // Ollama classifies today — validated against ollama/ollama's own
@@ -16,7 +8,6 @@ import type { AiModel } from '@shared/ipc'
 // out: it is on every model, says nothing, and was already dropped before
 // this scheme existed (ModelPicker's old `badges()`). `tools`/`thinking` get
 // two letters, not one — a single "T" collides between them.
-export type CapabilityMeta = { sigla: string; Icon: LucideIcon; label: string }
 
 const CAPABILITY_META: Record<string, CapabilityMeta> = {
   vision: { sigla: 'IM', Icon: Image, label: 'Imagem — entende imagens anexadas' },

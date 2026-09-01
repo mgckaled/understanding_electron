@@ -1,5 +1,7 @@
-import type { CapabilityMeta } from './capabilities'
-import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
+import type { LucideIcon } from 'lucide-react'
+import { ICON_SIZE, ICON_STROKE } from '../icon'
+
+export type CapabilityMeta = { sigla: string; Icon: LucideIcon; label: string }
 
 /** Sigla in bold beside its icon, in a shape — the hover title carries the
  *  name in full (§ Capabilities of the rascunho). */

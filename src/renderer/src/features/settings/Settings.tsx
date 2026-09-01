@@ -5,7 +5,6 @@ import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useSettings } from './settingsContext'
-import LoadedModels from './LoadedModels'
 import CloudSecrets from './CloudSecrets'
 
 // Settings is a detour, not a destination (D13.8): a navigation destination would
@@ -139,11 +138,8 @@ function Settings(): React.JSX.Element {
           </div>
         )}
         {open && loaded && <ThreadsField />}
-        {/* Only while open: its query refetches on mount, and mounting it with
-            the modal closed would poll the provider from boot onwards. */}
-        {open && <LoadedModels />}
-        {/* Same reason: secrets:has fires on mount, and <dialog> keeps closed
-            children mounted (DN1A.3, passo 6). */}
+        {/* secrets:has fires on mount, and <dialog> keeps closed children
+            mounted (DN1A.3, passo 6). */}
         {open && <CloudSecrets />}
       </Dialog>
     </>
