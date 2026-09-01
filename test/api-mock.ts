@@ -138,6 +138,9 @@ export function createApiMock(): Api {
     },
     events: {
       list: vi.fn().mockResolvedValue([])
+    },
+    performance: {
+      list: vi.fn().mockResolvedValue([])
     }
   } satisfies Api
 }

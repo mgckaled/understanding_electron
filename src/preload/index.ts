@@ -14,9 +14,7 @@ const api: Api = {
     processes: () => invoke('app:processes'),
     ipcStats: () => invoke('app:ipcStats')
   },
-  shell: {
-    openExternal: (url) => invoke('shell:openExternal', { url })
-  },
+  shell: { openExternal: (url) => invoke('shell:openExternal', { url }) },
   dataset: {
     pick: () => invoke('dataset:pick'),
     attach: (path, jobId) => invoke('dataset:attach', { path, jobId }),
@@ -90,7 +88,8 @@ const api: Api = {
     clearCache: () => invoke('session:clearCache')
   },
   disk: { usage: (jobId) => invoke('disk:usage', { jobId }) },
-  events: { list: () => invoke('events:list') }
+  events: { list: () => invoke('events:list') },
+  performance: { list: () => invoke('performance:list') }
 }
 
 try {

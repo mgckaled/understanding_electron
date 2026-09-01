@@ -93,6 +93,23 @@ export type EventRow = {
   createdAt: number
 }
 
+/**
+ * Tokens/s summary for one `(service, model)` bucket, already aggregated in
+ * the main process — the raw `performance_events` rows never cross IPC
+ * (O-7, DO7.5). `avgLoadDurationMs` is `null`, never `0`, when no row in the
+ * bucket carried it (every cloud-provider bucket, and any Ollama bucket
+ * measured while the model was already resident).
+ */
+export type PerformanceSummary = {
+  service: AiService
+  model: string
+  n: number
+  avgTokensPerSec: number
+  medianTokensPerSec: number
+  p90TokensPerSec: number
+  avgLoadDurationMs: number | null
+}
+
 export type JobId = string
 
 export type JobEvent =
@@ -834,7 +851,8 @@ export const argsSchema = {
   'session:cacheSize': z.void(),
   'session:clearCache': z.void(),
   'disk:usage': z.object({ jobId: z.string() }),
-  'events:list': z.void()
+  'events:list': z.void(),
+  'performance:list': z.void()
 } as const
 
 export type IpcContract = {
@@ -1018,6 +1036,10 @@ export type IpcContract = {
   // only reads a database the composition root already opened (DO3.3-style
   // precedent), never anything the UI needs to distinguish a failure mode for.
   'events:list': { args: z.infer<(typeof argsSchema)['events:list']>; result: EventRow[] }
+  'performance:list': {
+    args: z.infer<(typeof argsSchema)['performance:list']>
+    result: PerformanceSummary[]
+  }
 }
 
 export type Channel = keyof IpcContract
@@ -1146,5 +1168,9 @@ export type Api = {
   events: {
     /** Last 200 completed IPC calls, newest first — observatory.db (O-6). */
     list(): Promise<EventRow[]>
+  }
+  performance: {
+    /** Tokens/s summary per (service, model), aggregated in the main process (O-7). */
+    list(): Promise<PerformanceSummary[]>
   }
 }
