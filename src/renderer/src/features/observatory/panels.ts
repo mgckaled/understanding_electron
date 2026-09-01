@@ -7,6 +7,7 @@ import DiskUsagePanel from './DiskUsagePanel'
 import EnginePanel from './EnginePanel'
 import EventsPanel from './EventsPanel'
 import PerformancePanel from './PerformancePanel'
+import PrivacyPanel from './PrivacyPanel'
 import ProcessesPanel from './ProcessesPanel'
 import RuntimePanel from './RuntimePanel'
 
@@ -59,5 +60,8 @@ export const PANELS: ObservatoryPanel[] = [
   { id: 'events', group: 'activity', label: 'Eventos', Panel: EventsPanel },
   // Second inhabitant of "activity" (O-7) — tokens/s per (service, model),
   // aggregated in the main process from the same observatory.db.
-  { id: 'performance', group: 'activity', label: 'Desempenho', Panel: PerformancePanel }
+  { id: 'performance', group: 'activity', label: 'Desempenho', Panel: PerformancePanel },
+  // Third inhabitant of "activity" (O-8) — an audit ledger, one row per real
+  // cloud call, unlike the aggregate above.
+  { id: 'privacy', group: 'activity', label: 'Privacidade', Panel: PrivacyPanel }
 ]
