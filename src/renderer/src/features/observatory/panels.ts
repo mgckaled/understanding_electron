@@ -5,6 +5,7 @@ import ChromiumCachePanel from './ChromiumCachePanel'
 import DatabasePanel from './DatabasePanel'
 import DiskUsagePanel from './DiskUsagePanel'
 import EnginePanel from './EnginePanel'
+import EventsPanel from './EventsPanel'
 import ProcessesPanel from './ProcessesPanel'
 import RuntimePanel from './RuntimePanel'
 
@@ -51,5 +52,8 @@ export const PANELS: ObservatoryPanel[] = [
   { id: 'chromiumCache', group: 'storage', label: 'Cache do Chromium', Panel: ChromiumCachePanel },
   // Caro/Pesado (§ 6, O-5) — the trilha's second sob-botão panel, this one a
   // cancellable job instead of a one-shot sondagem (DO5.1).
-  { id: 'diskUsage', group: 'storage', label: 'Uso de disco', Panel: DiskUsagePanel }
+  { id: 'diskUsage', group: 'storage', label: 'Uso de disco', Panel: DiskUsagePanel },
+  // First panel in "activity" — the persisted, historical sense the group's
+  // label promises, unlike "Em andamento" above (O-6, DO6.6).
+  { id: 'events', group: 'activity', label: 'Eventos', Panel: EventsPanel }
 ]

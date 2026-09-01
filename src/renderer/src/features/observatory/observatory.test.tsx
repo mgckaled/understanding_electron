@@ -31,7 +31,7 @@ describe('Observatory', () => {
 
     await user.click(screen.getByRole('button', { name: 'Observatório' }))
 
-    // Five panel modules now load in this one lazy chunk (O-3 added two) —
+    // Nine panel modules now load in this one lazy chunk (O-6 added Eventos) —
     // RTL's default findBy timeout (1s) flakes under a full-suite parallel
     // run; the explicit timeouts match ArtifactPanel.test.tsx's precedent.
     expect(
@@ -42,7 +42,8 @@ describe('Observatory', () => {
     // working as designed, not a regression of the O-1 assertion.
     expect(screen.getByRole('heading', { name: 'Armazenamento' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Índices' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Atividade' })).not.toBeInTheDocument()
+    // Atividade now has a panel too (O-6, Eventos) — same DO1.10 mechanism.
+    expect(screen.getByRole('heading', { name: 'Atividade' })).toBeInTheDocument()
   }, 10000)
 
   // The invariant the whole modal's lightness rests on (§ 4.2): switching must
