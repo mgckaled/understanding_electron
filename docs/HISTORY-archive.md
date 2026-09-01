@@ -12,6 +12,17 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### E-1-B — A região da direita ganha um segundo inquilino: o painel de rascunho (ago/2026)
+Origem: o usuário fixou a restrição na primeira rodada de esboço — *"os dois painéis podem sobreviver ao mesmo tempo desde que não ocupem o mesmo espaço em tela"*. A aritmética confirmou a intuição: dois painéis no piso (352px cada) mais a sidebar (264px) e o piso da conversa (416px) somam **1384px** — cabe em 1920, não cabe em 1366. Entrega: `SidePanel` extraído para `shared/ui/` (5º primitivo em CSS Modules), `features/panel/` como dono da região, o painel de rascunho em prévia, seletor, contador clicável, `Ctrl+D` e o rodapé com excluir.
+
+**A decisão que estruturou tudo (DE1B.1): um `showing`, duas seleções.** Duas features com dois providers deixariam "só um aberto por vez" como regra que nenhuma das duas é dona — o padrão que o `CLAUDE.md § Segurança` já condena em outro contexto. Com um alvo só, dois painéis desenhados juntos vira estado **inexpressável**. A quarta faixa no grid (os dois lado a lado) ficou fora com gatilho registrado: é um modo responsivo inteiro, e a aritmética diz que só cabe acima de ~1400px.
+
+⚠️ **A pesquisa achou um defeito em produção antes de existir código.** `cancel` e `close` do `<dialog>` **não borbulham** — e é fácil concluir daí que a tecla está contida. **O `keydown` que os produziu borbulha**, mesmo da camada superior: desde o F-3-F, apagar uma proposta de passos pelo teclado fechava o painel de artefato junto. Sobreviveu meses porque o mouse é o caminho comum e o jsdom não implementa `<dialog>`. Conserto no primitivo (`stopPropagation`), nunca no container — e **é testável no nível 2 apesar do jsdom**, porque o que se testa é propagação, que é DOM puro. Virou a 89ª armadilha.
+
+**Uma peça que o plano não previu, e o teste exigiu:** `release` separado de `close`. Trocar de conversa esvazia a seleção, mas fechar com fade deixa a região marcada como nossa por 200ms — e o `raise` seguinte pulava o `onOpen`, então a sidebar não abriria espaço. Navegação não é fechamento.
+
+**Duas correções do corte anunciado, ambas para menos trabalho:** `Tabs` **não** subiu para `shared/ui/` (sem a aba `Editar`, que é do E-1-C, continua com um chamador só — prever o segundo é o que a régua proíbe), e a largura virou uma por inquilino em vez de compartilhada. A extração do passo 1 provou-se **pelo negativo**: 70 testes de painel e resizer passaram sem uma asserção editada. Dois defeitos do próprio teste, que enganam por falharem como *timeout* e não como asserção: `append` depois do render escreve no banco sem invalidar a consulta, e `findByRole` no singular estoura com dois botões iguais. `check:fast`: 952 testes, 108 arquivos. [`plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md`](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md)
+
 ### E-1-A — O rascunho existe: tabela própria, e o quarto ícone que o cria (ago/2026)
 Origem: o `ROADMAP` previa E-1 como "motor de exportação de documento", e o levantamento mostrou que metade do trabalho não é sobre formato nenhum. O usuário propôs o **painel de rascunho** — a saída do modelo vira material editável antes de virar arquivo —, e a frase dele fixou o desenho: *"meus rascunhos não devem ser reinjetados para o contexto do modelo. São coisas separadas."* **Abre a trilha E**, em seis planos (`E-1-A..F`). Entrega: a tabela `drafts` (degrau v3), três canais `draft:*`, o quarto ícone no `TurnActions` e o contador no cabeçalho.
 

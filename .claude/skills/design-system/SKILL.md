@@ -1,6 +1,6 @@
 ---
 name: design-system
-description: Tokens de design do crivo — o design system como envelope (veste o que já existe; feature nova nasce vestida no próprio plano), os dois níveis de token (primitivo/semântico), Tailwind v4 sobre `tokens.css`, as duas densidades (chrome vs leitura), tema por `nativeTheme`, e os sete primitivos de `shared/ui/`. Use ao criar um componente, escolher cor/medida/texto, abrir modal/popover, decidir onde um estado de UI mora, ou tratar um `AppError` na interface.
+description: Tokens de design do crivo — o design system como envelope (veste o que já existe; feature nova nasce vestida no próprio plano), os dois níveis de token (primitivo/semântico), Tailwind v4 sobre `tokens.css`, as duas densidades (chrome vs leitura), tema por `nativeTheme`, e os dez primitivos de `shared/ui/`. Use ao criar um componente, escolher cor/medida/texto, abrir modal/popover, decidir onde um estado de UI mora, ou tratar um `AppError` na interface.
 ---
 
 # Design tokens — crivo
@@ -110,11 +110,13 @@ Vive em `src/renderer/src/shared/ui/state.ts`. `src/shared/` (raiz) é o que atr
 
 **Quatro componentes ficam em CSS Modules, por limite físico real, não por não terem sido migrados:** `Dialog`, `Popover`, `MarkdownMessage` e `SidePanel`. Os dois primeiros porque a plataforma (`<dialog>`, `popover="auto"`) exige seletor que o Tailwind não alcança (`::backdrop`, `[popover]:not(:popover-open)`); o terceiro porque o conteúdo é HTML gerado pelo `react-markdown`, sem className previsível; o quarto porque `@starting-style` precisa de **regra**, não de classe (DF3C.1) — ele nasceu como `ArtifactPanel`, fora de `shared/ui/`, e virou primitivo no E-1-B ao ganhar o segundo inquilino. `Button`, `Field`, `Switch` e `Slider` são 100% utilitários.
 
-## Os nove primitivos: um diretório por componente
+## Os dez primitivos: um diretório por componente
 
-`Button`, `Field`, `Dialog`, `Popover`, `MarkdownMessage`, `Switch`, `Slider`, `SidePanel` e `Tabs` em `src/renderer/src/shared/ui/<Nome>/`.
+`Button`, `Field`, `Dialog`, `Popover`, `MarkdownMessage`, `Switch`, `Slider`, `SidePanel`, `Tabs` e `CapabilityChip` em `src/renderer/src/shared/ui/<Nome>/`.
 
-`SidePanel` é o mais novo e o exemplo da régua funcionando nos dois sentidos: nasceu como `ArtifactPanel` dentro de `features/`, e só subiu no E-1-B, quando o painel de rascunho virou o **segundo** chamador. Ele carrega a casca da região da direita — `<aside>`, fade, resizer, foco ao abrir, `Esc` com foco dentro — e recebe `header`/`children` por slot, sem conhecer artefato nem rascunho. `Tabs` subiu no E-1-C pela mesma régua, e trouxe uma opção junto: `keepMounted` renderiza todos os painéis e esconde o inativo, para um corpo que **não sobrevive a desmontar** — a história de desfazer do CodeMirror morre com a `EditorView`. Desligada por padrão, e o dataset não liga: sua aba `Consulta` fala com o motor.
+`SidePanel` é o exemplo da régua funcionando nos dois sentidos: nasceu como `ArtifactPanel` dentro de `features/`, e só subiu no E-1-B, quando o painel de rascunho virou o **segundo** chamador. Ele carrega a casca da região da direita — `<aside>`, fade, resizer, foco ao abrir, `Esc` com foco dentro — e recebe `header`/`children` por slot, sem conhecer artefato nem rascunho. `Tabs` subiu no E-1-C pela mesma régua, e trouxe uma opção junto: `keepMounted` renderiza todos os painéis e esconde o inativo, para um corpo que **não sobrevive a desmontar** — a história de desfazer do CodeMirror morre com a `EditorView`. Desligada por padrão, e o dataset não liga: sua aba `Consulta` fala com o motor.
+
+`CapabilityChip` é o mais novo, subido no O-4: nasceu em `features/conversation/` para o `ModelSelector`, e só subiu quando o painel Capacidades (Observatório) virou o **segundo** chamador real. A correção que a régua cobrou na hora: o tipo `CapabilityMeta` (`{ sigla, Icon, label }`) migrou para dentro do primitivo em vez de continuar em `features/conversation/capabilities.ts` sendo importado de baixo para cima — o mapeamento de domínio (`AiModel` → `CapabilityMeta`) é quem importa a forma do primitivo, nunca o inverso.
 
 ⚠️ **O que decide se um décimo nasce não é a contagem, é ter mais de um chamador.** `Panel` e `Toolbar` existiram e foram apagados no DS-8 por ficarem sem nenhum — sobreviveram duas migrações inteiras sem que ninguém remedisse. Se um layout de ações ou uma superfície com borda precisar existir de novo, nasce quando o **segundo** chamador aparecer, não antes.
 
