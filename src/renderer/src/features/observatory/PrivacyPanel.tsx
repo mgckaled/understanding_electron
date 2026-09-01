@@ -43,14 +43,7 @@ function PrivacyTable({ rows }: { rows: PrivacyRow[] }): React.JSX.Element {
   )
 }
 
-/**
- * Fourth inhabitant of "activity" (O-8) — an audit ledger, not an aggregate
- * like PerformancePanel: every row is one real cloud call. `totalCalls`/
- * `callsWithAttachment` sum over the whole retention window, not just the
- * 200 rows shown below (DO8.8) — most cloud calls carry no attachment, so
- * the header is what keeps that fact visible even when the table itself is
- * dominated by zero-attachment rows.
- */
+/** Third inhabitant of "activity" (O-8) — an audit ledger (DO8.7/DO8.8), not an aggregate like PerformancePanel. */
 function PrivacyPanel(): React.JSX.Element {
   const { settings } = useSettings()
   const retentionDays = settings.eventRetentionDays ?? 30
