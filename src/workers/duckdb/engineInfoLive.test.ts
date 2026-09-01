@@ -1,4 +1,8 @@
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { DuckDBInstance } from '@duckdb/node-api'
+import { buildDuckDbStartupCommands } from '@core/duckdb/config'
 import {
   buildMemoryLimitSql,
   buildExtensionsSql,
@@ -36,5 +40,31 @@ describe('engine info SQL against the real, installed DuckDB engine', () => {
     const connection = await instance.connect()
     const reader = await connection.runAndReadAll(buildMemoryByTagSql())
     expect(Array.isArray(reader.getRowObjectsJS())).toBe(true)
+  })
+})
+
+// The three tests above use a bare :memory: instance — none of them would
+// have caught the Permission Error a locked-down worker hits for real
+// (extension_directory left at its OS default, outside allowed_directories).
+describe('engine info SQL under the real worker startup sequence', () => {
+  it('lists extensions without a Permission Error once external access is off', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'crivo-engine-info-'))
+    try {
+      const instance = await DuckDBInstance.create(':memory:')
+      const connection = await instance.connect()
+      for (const sql of buildDuckDbStartupCommands({
+        extensionPaths: [],
+        allowedDirectories: [tempDir],
+        memoryLimit: '512MB',
+        tempDirectory: tempDir
+      })) {
+        await connection.run(sql)
+      }
+
+      const reader = await connection.runAndReadAll(buildExtensionsSql())
+      expect(Array.isArray(reader.getRowObjectsJS())).toBe(true)
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 })

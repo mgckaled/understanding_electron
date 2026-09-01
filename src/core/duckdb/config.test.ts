@@ -46,6 +46,7 @@ describe('buildDuckDbStartupCommands', () => {
     expect(commands).toEqual([
       "SET allowed_directories = ['C:/Users/dev/AppData/Roaming/crivo/attachments'];",
       "SET temp_directory = 'C:/Users/dev/AppData/Roaming/crivo/duckdb-tmp';",
+      "SET extension_directory = 'C:/Users/dev/AppData/Roaming/crivo/duckdb-tmp';",
       'SET enable_external_access = false;',
       'SET autoinstall_known_extensions = false;',
       'SET autoload_known_extensions = false;',
@@ -66,6 +67,7 @@ describe('buildDuckDbStartupCommands', () => {
       "LOAD 'C:/ext/excel.duckdb_extension';",
       "SET allowed_directories = ['C:/Users/dev/AppData/Roaming/crivo/attachments'];",
       "SET temp_directory = 'C:/Users/dev/AppData/Roaming/crivo/duckdb-tmp';",
+      "SET extension_directory = 'C:/Users/dev/AppData/Roaming/crivo/duckdb-tmp';",
       'SET enable_external_access = false;',
       'SET autoinstall_known_extensions = false;',
       'SET autoload_known_extensions = false;',

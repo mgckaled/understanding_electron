@@ -30,6 +30,10 @@ function sqlStringList(paths: string[]): string {
  * been disabled by configuration"). Two live-verified corrections to the
  * order D18A.3 first proposed; `memory_limit` has no such constraint.
  *
+ * `extension_directory` joins them for the same reason (O-3, live-verified):
+ * left at its OS default, `duckdb_extensions()` probes a path outside
+ * `allowed_directories` and throws a Permission Error once access is off.
+ *
  * @param options - Paths and limits already resolved by the caller; this
  *   function stays pure and never touches `electron` or the file system.
  * @returns SQL statements to run, in the order they must run.
@@ -40,6 +44,7 @@ export function buildDuckDbStartupCommands(options: DuckDbStartupOptions): strin
     ...extensionPaths.map((path) => `LOAD '${sqlPath(path)}';`),
     `SET allowed_directories = ${sqlStringList(allowedDirectories)};`,
     `SET temp_directory = '${sqlPath(tempDirectory)}';`,
+    `SET extension_directory = '${sqlPath(tempDirectory)}';`,
     `SET enable_external_access = false;`,
     `SET autoinstall_known_extensions = false;`,
     `SET autoload_known_extensions = false;`,
