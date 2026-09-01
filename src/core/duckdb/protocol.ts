@@ -4,9 +4,12 @@
 // main/duckdb and workers/duckdb import this one definition instead of
 // agreeing on the shape by convention.
 import type { ColumnProfile } from './profile'
+import type { DuckDbEngineInfo } from '@shared/ipc'
 
 export type WorkerRequest =
   | { kind: 'query'; hash: string; sql: string }
+  // No args — the engine already knows what to report about itself (O-3).
+  | { kind: 'engineInfo' }
   // includeTopValues defaults true in the worker — omitted by dataset:profile
   // (the level-2 card needs it), passed false by ai:propose, which is
   // forbidden from seeing cell values at all (D19.7-4).
@@ -31,3 +34,5 @@ export type WorkerResponse =
       after: ColumnProfile[]
     }
   | { kind: 'transform'; ok: false; message: string }
+  | { kind: 'engineInfo'; ok: true; info: DuckDbEngineInfo }
+  | { kind: 'engineInfo'; ok: false; message: string }

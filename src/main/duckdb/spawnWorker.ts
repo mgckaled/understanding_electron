@@ -2,6 +2,7 @@ import { utilityProcess, type UtilityProcess } from 'electron'
 import { join } from 'node:path'
 import type { ColumnProfile } from '@core/duckdb/profile'
 import type { WorkerRequest, WorkerResponse } from '@core/duckdb/protocol'
+import type { DuckDbEngineInfo } from '@shared/ipc'
 
 /**
  * Forks the DuckDB worker built next to main/index.js (D18A.1). `userDataPath`
@@ -102,6 +103,7 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
     sql: string
   ) => Promise<{ bytes: Uint8Array; before: ColumnProfile[]; after: ColumnProfile[] }>
   queueDepth: () => number
+  runEngineInfo: () => Promise<DuckDbEngineInfo>
 } {
   const { enqueue, queueDepth } = createEnqueue(worker)
 
@@ -137,6 +139,14 @@ export function createDuckdbWorkerClient(worker: UtilityProcess): {
       }
       if (!response.ok) throw new Error(response.message)
       return { bytes: response.bytes, before: response.before, after: response.after }
+    },
+    async runEngineInfo() {
+      const response = await enqueue({ kind: 'engineInfo' })
+      if (response.kind !== 'engineInfo') {
+        throw new Error(`DuckDB worker replied with kind "${response.kind}", expected "engineInfo"`)
+      }
+      if (!response.ok) throw new Error(response.message)
+      return response.info
     },
     queueDepth
   }

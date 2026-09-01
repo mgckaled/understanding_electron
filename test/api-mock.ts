@@ -67,7 +67,12 @@ export function createApiMock(): Api {
       transform: vi.fn(),
       // Same reasoning as processes above: the Em andamento panel (O-2) reads
       // this on mount.
-      queueDepth: vi.fn().mockResolvedValue(0)
+      queueDepth: vi.fn().mockResolvedValue(0),
+      // Same reasoning: the Motor DuckDB panel (O-3) reads this on mount.
+      engineInfo: vi.fn().mockResolvedValue({
+        ok: true,
+        value: { memoryLimit: '2.0GiB', extensions: [], memoryByTag: [] }
+      })
     },
     document: { pick: vi.fn(), attach: vi.fn() },
     image: { pick: vi.fn(), attach: vi.fn(), bytes: vi.fn() },
@@ -110,6 +115,16 @@ export function createApiMock(): Api {
       // states, the same trap ai.models' own comment above describes.
       has: vi.fn().mockResolvedValue(false),
       remove: vi.fn()
+    },
+    // Empty, not a bare vi.fn(): the Banco de dados panel (O-3) reads this
+    // on mount, same reasoning as app.processes above.
+    database: {
+      info: vi.fn().mockResolvedValue({
+        migrationVersion: 0,
+        sizeBytes: 0,
+        freelistCount: 0,
+        tables: []
+      })
     }
   } satisfies Api
 }

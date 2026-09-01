@@ -16,6 +16,11 @@ import {
   type ColumnProfile
 } from '@core/duckdb/profile'
 import { buildDescribeSql, hasNestedType } from '@core/duckdb/schema'
+import {
+  buildMemoryLimitSql,
+  buildExtensionsSql,
+  buildMemoryByTagSql
+} from '@core/duckdb/engineInfo'
 import type { WorkerRequest, WorkerResponse } from '@core/duckdb/protocol'
 import { normalizeColumns } from './normalizeColumns'
 import { columnsObjectWithSchema } from './columnsObjectWithSchema'
@@ -265,6 +270,44 @@ async function main(): Promise<void> {
     }
   }
 
+  /** Reads memory_limit, loaded/installed extensions and memory by tag from the engine's own catalog — never copied from config.ts (O-3). */
+  async function handleEngineInfo(): Promise<WorkerResponse> {
+    try {
+      const limitReader = await connection.runAndReadAll(buildMemoryLimitSql())
+      const [limitRow] = limitReader.getRowObjectsJS() as [{ value: string }]
+
+      const extensionsReader = await connection.runAndReadAll(buildExtensionsSql())
+      const extensions = extensionsReader.getRowObjectsJS().map((row) => {
+        const typed = row as {
+          extension_name: string
+          loaded: boolean
+          installed: boolean
+          extension_version: string | null
+        }
+        return {
+          name: typed.extension_name,
+          loaded: typed.loaded,
+          installed: typed.installed,
+          version: typed.extension_version
+        }
+      })
+
+      const memoryReader = await connection.runAndReadAll(buildMemoryByTagSql())
+      const memoryByTag = memoryReader.getRowObjectsJS().map((row) => {
+        const typed = row as { tag: string; memory_usage_bytes: bigint | number }
+        return { tag: typed.tag, bytes: Number(typed.memory_usage_bytes) }
+      })
+
+      return {
+        kind: 'engineInfo',
+        ok: true,
+        info: { memoryLimit: limitRow.value, extensions, memoryByTag }
+      }
+    } catch (error) {
+      return { kind: 'engineInfo', ok: false, message: (error as Error).message }
+    }
+  }
+
   function handleRequest(request: WorkerRequest): Promise<WorkerResponse> {
     switch (request.kind) {
       case 'query':
@@ -275,6 +318,8 @@ async function main(): Promise<void> {
         return handleSchema(request.hash)
       case 'transform':
         return handleTransform(request.hash, request.sql)
+      case 'engineInfo':
+        return handleEngineInfo()
     }
   }
 

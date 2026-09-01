@@ -23,7 +23,8 @@ const api: Api = {
     query: (hash, sql) => invoke('dataset:query', { hash, sql }),
     profile: (hash) => invoke('dataset:profile', { hash }),
     transform: (hash, steps) => invoke('dataset:transform', { hash, steps }),
-    queueDepth: () => invoke('dataset:queueDepth')
+    queueDepth: () => invoke('dataset:queueDepth'),
+    engineInfo: () => invoke('dataset:engineInfo')
   },
   document: {
     pick: () => invoke('document:pick'),
@@ -82,6 +83,9 @@ const api: Api = {
     write: (provider, apiKey) => invoke('secrets:write', { provider, apiKey }),
     has: (provider) => invoke('secrets:has', { provider }),
     remove: (provider) => invoke('secrets:remove', { provider })
+  },
+  database: {
+    info: () => invoke('database:info')
   }
 }
 

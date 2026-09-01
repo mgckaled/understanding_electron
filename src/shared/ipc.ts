@@ -319,6 +319,35 @@ export interface DatasetTransformResult {
   after: ColumnProfile[]
 }
 
+export interface DuckDbExtensionInfo {
+  name: string
+  loaded: boolean
+  installed: boolean
+  version: string | null
+}
+export interface DuckDbMemoryTag {
+  tag: string
+  bytes: number
+}
+/** What duckdb_settings()/duckdb_extensions()/duckdb_memory() report right now — the applied value, not a copy of config.ts (O-3). */
+export interface DuckDbEngineInfo {
+  memoryLimit: string
+  extensions: DuckDbExtensionInfo[]
+  memoryByTag: DuckDbMemoryTag[]
+}
+
+export interface DatabaseTableInfo {
+  name: string
+  rowCount: number
+}
+/** crivo.db as SQLite reports itself — derived from sqlite_master, never a hardcoded table list (DO3.4). */
+export interface DatabaseInfo {
+  migrationVersion: number
+  sizeBytes: number
+  freelistCount: number
+  tables: DatabaseTableInfo[]
+}
+
 /**
  * A document attached to a message (plano 17, D17.2) — `text` carries the
  * whole extraction inline, produced once by `document:attach`: the chat is
@@ -638,6 +667,7 @@ export const argsSchema = {
   // payload with no free-text SQL surface to inject through.
   'dataset:transform': z.object({ hash: z.string().min(1), steps: z.array(stepSchema).min(1) }),
   'dataset:queueDepth': z.void(),
+  'dataset:engineInfo': z.void(),
   // Its own pair (D17.1): dataset:pick's file filter (csv/tsv/txt) does not
   // serve a document dialog, so a shared channel would need an internal
   // dispatch register-all.ts already gets for free by picking the function.
@@ -759,7 +789,8 @@ export const argsSchema = {
   // reads it back. A fourth schema here would be the bypass.
   'secrets:write': z.object({ provider: cloudProviderSchema, apiKey: z.string().min(1) }),
   'secrets:has': z.object({ provider: cloudProviderSchema }),
-  'secrets:remove': z.object({ provider: cloudProviderSchema })
+  'secrets:remove': z.object({ provider: cloudProviderSchema }),
+  'database:info': z.void()
 } as const
 
 export type IpcContract = {
@@ -810,6 +841,13 @@ export type IpcContract = {
   'dataset:queueDepth': {
     args: z.infer<(typeof argsSchema)['dataset:queueDepth']>
     result: number
+  }
+  // Result, unlike queueDepth: this round-trips the worker's queue (query/
+  // profile/transform's own risk, O-2) instead of reading an in-memory
+  // counter (DO3.2).
+  'dataset:engineInfo': {
+    args: z.infer<(typeof argsSchema)['dataset:engineInfo']>
+    result: Result<DuckDbEngineInfo>
   }
   'document:pick': {
     args: z.infer<(typeof argsSchema)['document:pick']>
@@ -922,6 +960,9 @@ export type IpcContract = {
   // differently from "false" — same reasoning as the conversation channels.
   'secrets:has': { args: z.infer<(typeof argsSchema)['secrets:has']>; result: boolean }
   'secrets:remove': { args: z.infer<(typeof argsSchema)['secrets:remove']>; result: void }
+  // No Result: reading the already-open crivo.db cannot fail in a way the UI
+  // must distinguish (DO3.3) — same reasoning as conversation:list.
+  'database:info': { args: z.infer<(typeof argsSchema)['database:info']>; result: DatabaseInfo }
 }
 
 export type Channel = keyof IpcContract
@@ -950,6 +991,8 @@ export type Api = {
     transform(hash: string, steps: Step[]): Promise<Result<DatasetTransformResult>>
     /** In-flight requests on the DuckDB worker's single queue right now (DO2.6). */
     queueDepth(): Promise<number>
+    /** memory_limit in effect, loaded/installed extensions and memory by tag (DO3.2). */
+    engineInfo(): Promise<Result<DuckDbEngineInfo>>
   }
   document: {
     pick(): Promise<Result<DatasetRef | null>>
@@ -1031,5 +1074,9 @@ export type Api = {
     /** Whether a key is stored for `provider` — never the key itself (DN1A.3). */
     has(provider: CloudProvider): Promise<boolean>
     remove(provider: CloudProvider): Promise<void>
+  }
+  database: {
+    /** crivo.db as SQLite reports itself — schema, size, migration version (O-3). */
+    info(): Promise<DatabaseInfo>
   }
 }
