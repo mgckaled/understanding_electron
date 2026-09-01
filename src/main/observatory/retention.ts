@@ -21,3 +21,13 @@ export async function sweepExpiredPerformanceEvents(
   const cutoff = now() - retentionDays * MS_PER_DAY
   db.prepare('DELETE FROM performance_events WHERE created_at < ?').run(cutoff)
 }
+
+/** Same policy again (O-8, DO8.6) — a third table, not a third window. */
+export async function sweepExpiredPrivacyEvents(
+  db: DatabaseSync,
+  retentionDays: number,
+  now: () => number = Date.now
+): Promise<void> {
+  const cutoff = now() - retentionDays * MS_PER_DAY
+  db.prepare('DELETE FROM privacy_events WHERE created_at < ?').run(cutoff)
+}

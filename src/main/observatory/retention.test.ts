@@ -3,7 +3,12 @@ import { migrate } from '../db/open'
 import { migrations } from './db/migrations'
 import { recordEvent, listEvents } from './events'
 import { recordPerformanceEvent, listPerformanceEvents } from './performance'
-import { sweepExpiredEvents, sweepExpiredPerformanceEvents } from './retention'
+import { recordPrivacyEvent, readPrivacyLedger } from './privacy'
+import {
+  sweepExpiredEvents,
+  sweepExpiredPerformanceEvents,
+  sweepExpiredPrivacyEvents
+} from './retention'
 
 const DAY = 24 * 60 * 60 * 1000
 
@@ -76,6 +81,40 @@ describe('sweepExpiredPerformanceEvents', () => {
     await sweepExpiredPerformanceEvents(db, 30, () => fixedNow)
 
     expect(listPerformanceEvents(db, 100_000, () => fixedNow).map((row) => row.model)).toEqual([
+      'recent-model'
+    ])
+  })
+})
+
+describe('sweepExpiredPrivacyEvents', () => {
+  it('deletes rows older than retentionDays and keeps the rest, same policy again', async () => {
+    const fixedNow = 100 * DAY
+    const db = new DatabaseSync(':memory:')
+    migrate(db, migrations)
+
+    recordPrivacyEvent(db, {
+      service: 'glm',
+      model: 'old-model',
+      datasetCount: 0,
+      documentCount: 0,
+      imageCount: 0
+    })
+    db.prepare('UPDATE privacy_events SET created_at = ? WHERE model = ?').run(1, 'old-model')
+    recordPrivacyEvent(db, {
+      service: 'glm',
+      model: 'recent-model',
+      datasetCount: 1,
+      documentCount: 0,
+      imageCount: 0
+    })
+    db.prepare('UPDATE privacy_events SET created_at = ? WHERE model = ?').run(
+      fixedNow - DAY,
+      'recent-model'
+    )
+
+    await sweepExpiredPrivacyEvents(db, 30, () => fixedNow)
+
+    expect(readPrivacyLedger(db, 100_000, () => fixedNow).rows.map((row) => row.model)).toEqual([
       'recent-model'
     ])
   })
