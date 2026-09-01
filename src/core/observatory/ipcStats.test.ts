@@ -71,4 +71,29 @@ describe('createIpcStatsStore', () => {
 
     expect(store.snapshot().map((stat) => stat.channel)).toEqual(['dataset:query', 'app:memory'])
   })
+
+  it('never calls the sink until one is set (O-6)', async () => {
+    const store = createIpcStatsStore()
+    const wrapped = store.wrap('app:info', () => 'ok')
+
+    await expect(wrapped(undefined)).resolves.toBe('ok')
+  })
+
+  it('calls the sink once per completed call, success and failure alike', async () => {
+    const store = createIpcStatsStore(fakeClock(0, 10, 10, 15))
+    const events: unknown[] = []
+    store.setEventSink((event) => events.push(event))
+    const succeed = store.wrap('conversation:append', (args: { conversationId: string }) => args)
+    const fail = store.wrap('ai:chat', () => {
+      throw new Error('boom')
+    })
+
+    await succeed({ conversationId: 'c1' })
+    await expect(fail(undefined)).rejects.toThrow('boom')
+
+    expect(events).toEqual([
+      { channel: 'conversation:append', durationMs: 10, error: null, domainId: 'c1' },
+      { channel: 'ai:chat', durationMs: 5, error: 'boom', domainId: null }
+    ])
+  })
 })
