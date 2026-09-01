@@ -12,9 +12,10 @@ import type {
 } from '@shared/ipc'
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
-import { runChat } from '@core/ai/chat'
 import { toChatMessagesWithImages } from '@core/ai/messages'
 import { ok, err } from '@core/result'
+import type { PerformanceEvent } from '@core/observatory/performance'
+import { measureChatTiming } from '../../observatory/chatTiming'
 import * as jobs from '../../jobs'
 
 // Short deadline for the availability ping, long one for the real call (D9.3):
@@ -115,7 +116,8 @@ export async function chat(
   { service, model, messages, numThread, numCtx, jobId }: ChatArgs,
   chatFn: ChatFn,
   emit: (event: JobEvent) => void,
-  resolveImageBytes: (hash: string) => Promise<Buffer>
+  resolveImageBytes: (hash: string) => Promise<Buffer>,
+  recordPerformance?: (event: PerformanceEvent) => void
 ): Promise<Result<ChatReply>> {
   const controller = jobs.create(jobId)
   // Two abort sources feed one controller; `timedOut` tells them apart in the
@@ -133,11 +135,13 @@ export async function chat(
     // message with an image part needs bytes the sandboxed renderer cannot
     // read from userData/attachments.
     const chatMessages = await toChatMessagesWithImages(messages, resolveImageBytes)
-    return await runChat(
+    const { result, timing } = await measureChatTiming(
       chatFn,
       { messages: chatMessages, model, numThread, numCtx },
       { signal: controller.signal, onChunk }
     )
+    if (timing !== null) recordPerformance?.({ service, model, ...timing })
+    return result
   } catch (error) {
     if (timedOut) return err({ kind: 'timeout', afterMs: CHAT_TIMEOUT_MS })
     if (controller.signal.aborted) return err({ kind: 'cancelled' })

@@ -2,7 +2,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { migrate } from '../db/open'
 import { migrations } from './db/migrations'
 import { recordEvent, listEvents } from './events'
-import { sweepExpiredEvents } from './retention'
+import { recordPerformanceEvent, listPerformanceEvents } from './performance'
+import { sweepExpiredEvents, sweepExpiredPerformanceEvents } from './retention'
 
 const DAY = 24 * 60 * 60 * 1000
 
@@ -42,6 +43,40 @@ describe('sweepExpiredEvents', () => {
     await sweepExpiredEvents(lenient, 90, () => fixedNow)
     expect(listEvents(lenient, 100_000, () => fixedNow).map((row) => row.channel)).toEqual([
       'recent'
+    ])
+  })
+})
+
+describe('sweepExpiredPerformanceEvents', () => {
+  it('deletes rows older than retentionDays and keeps the rest, same policy as sweepExpiredEvents', async () => {
+    const fixedNow = 100 * DAY
+    const db = new DatabaseSync(':memory:')
+    migrate(db, migrations)
+
+    recordPerformanceEvent(db, {
+      service: 'ollama',
+      model: 'old-model',
+      evalTokens: 1,
+      ttftMs: 1,
+      decodeMs: 1
+    })
+    db.prepare('UPDATE performance_events SET created_at = ? WHERE model = ?').run(1, 'old-model')
+    recordPerformanceEvent(db, {
+      service: 'ollama',
+      model: 'recent-model',
+      evalTokens: 1,
+      ttftMs: 1,
+      decodeMs: 1
+    })
+    db.prepare('UPDATE performance_events SET created_at = ? WHERE model = ?').run(
+      fixedNow - DAY,
+      'recent-model'
+    )
+
+    await sweepExpiredPerformanceEvents(db, 30, () => fixedNow)
+
+    expect(listPerformanceEvents(db, 100_000, () => fixedNow).map((row) => row.model)).toEqual([
+      'recent-model'
     ])
   })
 })

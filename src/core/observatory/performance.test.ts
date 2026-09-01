@@ -1,0 +1,71 @@
+import { summarizeByModel, type PerformanceRow } from './performance'
+
+function row(overrides: Partial<PerformanceRow>): PerformanceRow {
+  return {
+    id: 1,
+    service: 'ollama',
+    model: 'gemma3:4b',
+    evalTokens: 100,
+    ttftMs: 200,
+    decodeMs: 2000,
+    createdAt: 0,
+    ...overrides
+  }
+}
+
+describe('summarizeByModel', () => {
+  it('computes n, avg, median and p90 tokens/s per (service, model) bucket', () => {
+    const rows = [
+      row({ id: 1, evalTokens: 100, decodeMs: 2000 }), // 50 tok/s
+      row({ id: 2, evalTokens: 100, decodeMs: 1000 }), // 100 tok/s
+      row({ id: 3, evalTokens: 100, decodeMs: 500 }) //  200 tok/s
+    ]
+
+    const [summary] = summarizeByModel(rows)
+    expect(summary).toMatchObject({
+      service: 'ollama',
+      model: 'gemma3:4b',
+      n: 3,
+      avgTokensPerSec: (50 + 100 + 200) / 3,
+      medianTokensPerSec: 100,
+      p90TokensPerSec: 200
+    })
+  })
+
+  it('never mixes buckets from different (service, model) pairs', () => {
+    const rows = [
+      row({ service: 'ollama', model: 'gemma3:4b' }),
+      row({ service: 'glm', model: 'glm-4.5' })
+    ]
+
+    const summaries = summarizeByModel(rows)
+    expect(summaries).toHaveLength(2)
+    expect(summaries.map((s) => s.service).sort()).toEqual(['glm', 'ollama'])
+  })
+
+  it('reports null avgLoadDurationMs when no row in the bucket has it — never zero', () => {
+    const [summary] = summarizeByModel([row({ loadDurationMs: undefined })])
+    expect(summary.avgLoadDurationMs).toBeNull()
+  })
+
+  it('averages loadDurationMs only over the rows that carry it (cloud rows stay absent)', () => {
+    const rows = [row({ loadDurationMs: 48_000 }), row({ loadDurationMs: 52_000 })]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.avgLoadDurationMs).toBe(50_000)
+  })
+
+  it('drops a row with a zero decode window instead of producing Infinity or NaN', () => {
+    const rows = [
+      row({ id: 1, decodeMs: 0, evalTokens: 5 }),
+      row({ id: 2, decodeMs: 1000, evalTokens: 100 })
+    ]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.n).toBe(1)
+    expect(Number.isFinite(summary.avgTokensPerSec)).toBe(true)
+  })
+
+  it('omits a bucket entirely when every row in it has a zero decode window', () => {
+    const summaries = summarizeByModel([row({ decodeMs: 0 })])
+    expect(summaries).toHaveLength(0)
+  })
+})
