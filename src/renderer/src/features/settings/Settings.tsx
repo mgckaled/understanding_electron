@@ -97,6 +97,24 @@ function ThreadsField(): React.JSX.Element {
   )
 }
 
+const RETENTION_OPTIONS = [7, 30, 90].map((value) => ({ value, label: `${value} dias` }))
+
+function RetentionField(): React.JSX.Element {
+  const { settings, setSettings } = useSettings()
+
+  return (
+    <SegmentedField
+      label="Retenção de eventos"
+      hint="Eventos mais antigos que isso são apagados automaticamente, sem recuperação."
+      options={RETENTION_OPTIONS}
+      value={settings.eventRetentionDays ?? 30}
+      onChange={(eventRetentionDays) =>
+        setSettings((previous) => ({ ...previous, eventRetentionDays }))
+      }
+    />
+  )
+}
+
 function Settings(): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const { loaded } = useSettings()
@@ -138,6 +156,11 @@ function Settings(): React.JSX.Element {
           </div>
         )}
         {open && loaded && <ThreadsField />}
+        {open && loaded && (
+          <div className="mt-7">
+            <RetentionField />
+          </div>
+        )}
         {/* secrets:has fires on mount, and <dialog> keeps closed children
             mounted (DN1A.3, passo 6). */}
         {open && <CloudSecrets />}
