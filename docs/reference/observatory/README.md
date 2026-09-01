@@ -420,6 +420,52 @@ E o corolário que a § 6 mostra: os primeiros O-n saem dos painéis **Grátis/L
 
 ---
 
+## 9. O-7 e O-8: o desenho fechado em 01/09/2026
+
+Sessão que levantou os dois próximos cortes contra o código real, não contra a fundamentação de ago/2026. Três achados corrigem o que a § 6 supunha, e um desenho novo resolve a lacuna que sobrou.
+
+### 9.1 O que já existe e a fundamentação não sabia
+
+`promptTokens`/`evalTokens` **já são extraídos, uniformemente, dos três provedores** (`ollama.ts`, `glm.ts`, `gemini.ts` — todos retornam `{ content, promptTokens?, evalTokens? }`, mesmo formato). O ganho de "medir tokens/s, não segundos" (§ 2.5) não precisa ser inventado: precisa só parar de ser descartado depois do `chat()` resolver. E dataset anexado manda **hoje só o nível 1** (schema — `formatDataCard`, sem linha nenhuma) sempre, sem alternância; documento e imagem mandam o conteúdo inteiro sempre, e o próprio anexar já é o opt-in. **Não existe seletor de nível por anexo em lugar nenhum do renderer** — o "nível" do § 2.4/3.4 abaixo é hoje implícito pelo *tipo* de anexo, não uma escolha gravável por chamada.
+
+### 9.2 O-7 — três fases, não duas, e por que a assimetria entre provedores é real
+
+A primeira tentativa desta sessão somava rede+prefill+decode num só bloco "observado", igual nos três provedores. Corrigido pelo advisor Opus: um bucket `(service, model)` que mistura carga fria do Ollama (~48–50 s, medido no D9.3 e no `CLAUDE.md`) com prefill quente (~0,5 s) mentiria sobre o número — o mesmo princípio da § 4.3 regra 6 ("métrica ausente não é zero") aplicado a uma média que apaga dois regimes diferentes.
+
+A decomposição fechada usa só wall-clock, sem depender de nada nativo:
+
+| Marca | Quando | Existe para |
+|---|---|---|
+| `t₀` | antes de chamar `runChat` | início |
+| `t₁` | primeiro `onChunk` recebido | fim de rede+prefill (TTFT) |
+| `t₂` | resposta completa resolvida, com `evalTokens` na mão | fim de decode |
+
+`onChunk` dispara por pedaço (não em lote) nos três adaptadores — confirmado no fonte (`ollama.ts:209`, `glm.ts:95`, `gemini.ts:126`) —, então `t₁` é bem definido nos três. `tokens/s = evalTokens ÷ ((t₂−t₁)/1000)`.
+
+**A assimetria entre provedores é do mundo, não do código:** só o Ollama tem fase de carga e só ele expõe o corte servidor-side entre prefill e decode. `load_duration`/`prompt_eval_duration`/`eval_duration` (nanossegundos) já chegam na mesma linha `done:true` que `ollama.ts` já lê para `prompt_eval_count`/`eval_count` (confirmado via Context7, `/ollama/ollama`) — três campos a mais no tipo, hoje descartados. GLM/Gemini não têm equivalente: ficam com o bloco `t₁−t₀` indiviso (rede+prefill) e uma coluna `loadDurationMs` sempre `null` — nunca `0`, que mentiria "carregou instantâneo".
+
+Chamada com `format` (`ai:propose`, D19.3/D19.5) nunca invoca `onChunk` — fica fora da decomposição, sem registrar linha. Cancelamento/timeout idem, porque `evalTokens` nunca chega. **Nenhuma das duas registra zero fabricado.**
+
+**Onde grava, e por que não é a tabela do O-6:** `events` (O-6) já grava `ai:chat` como linha genérica com `durationMs` total via `ipcStats.wrap` — reescrever o total ali seria a mesma dívida de fonte única que vale para coluna, não só para documento. O-7 ganha uma tabela própria em `observatory.db` (`performance_events` ou nome equivalente, a fechar no plano) com as fases; o total, se o painel precisar dele, deriva das fases somadas — nunca uma segunda leitura do relógio.
+
+**Retenção:** a mesma janela configurável do O-6 (7–90 dias, varredura no boot + filtro na consulta, DO6.4/DO6.7), não o corte por balde de 500 do mill.tools (§ 1.3). O motivo pelo qual o mill.tools precisou de balde não se transfere: lá era `DELETE` caro sobre um JSON reescrito inteiro; aqui é `DELETE WHERE created_at <` indexado — um modelo silencioso não é despejado por um tagarela só porque a política é por idade, não por contagem.
+
+**Resumo por modelo é derivado, não mantido à parte:** a tabela guarda linha crua por chamada; o painel agrega na consulta — n · média · mediana/p90 de tokens/s por `(service, model)`, mesmo padrão de `listEvents` (O-6) e a regra "derive as linhas do código, nunca de uma lista" (§ 4.3 regra 5) aplicada a agregado, não só a lista.
+
+### 9.3 O-8 — o proxy que existe hoje, e o buraco já registrado para o plano
+
+Decisão: **o tipo do anexo é o proxy do nível**, já que nenhum seletor de nível por anexo existe para o plano esperar. Grava, por chamada cuja `service` seja de nuvem (`isCloudService`): serviço, modelo, tipos/contagem de anexo no turno, timestamp. Chamada local (Ollama) não gera linha — nada "saiu da máquina". Quando um seletor de nível por anexo nascer como feature própria, o painel ganha a coluna nível sem mudar o mecanismo de captura.
+
+**Reconciliação com § 3.4:** aquela seção diz que um painel dependente do nível de exposição por anexo "só fica honesto depois que a informação passar a ser gravada" — o que continua verdadeiro para a **escolha do usuário** (qual nível ele preferiria ter concedido, se o seletor existisse). O que o § 9.3 abre é diferente: um livro-razão do que **de fato saiu** da máquina não depende dessa escolha, só do que o código já envia hoje (schema para dataset, conteúdo inteiro para documento/imagem) — e isso é derivável agora, sem esperar feature nenhuma nascer. As duas seções não se contradizem: § 3.4 fala do dado que falta gravar (a intenção do usuário); § 9.3 fala do dado que já existe para observar (o efeito real).
+
+⚠️ **Não fechar "bytes enviados" em `contentOf`/`partForProvider` sem revisar antes.** `partForProvider` devolve `''` para `image` — os bytes de imagem viajam por `ChatMessage.images` via `resolveImageBytes` (D17.5), fora do texto unificado. Um livro-razão que reporta "o que saiu da máquina" cego para o maior payload de qualquer turno com imagem seria pior que nenhum. Em aberto para o plano O-8 resolver, não resolvido nesta sessão.
+
+### 9.4 Sequência
+
+O-7 primeiro — cria o ponto de instrumentação em `chat()` (`main/features/ai/handlers.ts`), a tabela e o painel de Desempenho. O-8 depois, reaproveitando o mesmo wrap com a condição `isCloudService` acrescentada — sem reabrir o ponto de instrumentação. Continuam **dois planos**, não um: a mesma decisão que o O-6 já registrou ("Desempenho e Privacidade ficam para planos próprios, mesmo repartindo o arquivo") se confirma aqui por razão nova — as duas tabelas têm política de retenção e forma de agregação que merecem revisão independente, não só o arquivo em comum.
+
+---
+
 ## Fontes
 
 Leitura de fonte (mill.tools, `C:\rocketseat\projetos\python\yt-transcriber`): `src/core/observatory/*.py`, `src/gui/modules/observatory/*.py`, `src/cli/observatory.py`, `src/core/rag/{stats,analytics,eval,feedback}.py`, `docs/estudo/modulos/observatorio.md`.

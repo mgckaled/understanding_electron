@@ -312,6 +312,68 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 
 ---
 
+## Trilha O — observatório
+
+| trilha | sigla | descrição |
+|---|---|---|
+| O-1 | [DO1.1](plan/implemented/O-1-a-casca-do-observatorio.md) | A casca copia o padrão de `Settings`, não inventa provider |
+| O-1 | [DO1.2](plan/implemented/O-1-a-casca-do-observatorio.md) | Dois painéis, porque um não prova a invariante |
+| O-1 | [DO1.3](plan/implemented/O-1-a-casca-do-observatorio.md) | `lazy` + `Suspense` na fronteira do modal, não por painel |
+| O-1 | [DO1.4](plan/implemented/O-1-a-casca-do-observatorio.md) | `Versions` muda de casa |
+| O-1 | [DO1.5](plan/implemented/O-1-a-casca-do-observatorio.md) | Um canal novo, e ele não devolve `Result` |
+| O-1 | [DO1.6](plan/implemented/O-1-a-casca-do-observatorio.md) | A normalização é pura, e mora em `core/observatory/` |
+| O-1 | [DO1.7](plan/implemented/O-1-a-casca-do-observatorio.md) | Bytes em todo o contrato |
+| O-1 | [DO1.8](plan/implemented/O-1-a-casca-do-observatorio.md) | `idleWakeupsPerSecond` não entra no contrato |
+| O-1 | [DO1.9](plan/implemented/O-1-a-casca-do-observatorio.md) | O `Dialog` ganha variante de tamanho, e não um irmão |
+| O-1 | [DO1.10](plan/implemented/O-1-a-casca-do-observatorio.md) | A sidebar do modal é derivada de um registro, nunca escrita à mão |
+| O-1 | [DO1.11](plan/implemented/O-1-a-casca-do-observatorio.md) | Nada persiste, e isso é o corte |
+| O-2 | [DO2.1](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | Um painel, três blocos — não três entradas na sidebar |
+| O-2 | [DO2.2](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | Sem `refetchInterval`: reabrir é a atualização |
+| O-2 | [DO2.3](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | Os contadores de IPC vivem em `core/`, a fiação em `registry.ts` |
+| O-2 | [DO2.4](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | `lastError` é pegajoso: um sucesso depois não apaga a última falha |
+| O-2 | [DO2.5](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | `job:list` devolve só os ids, sem inventar metadado |
+| O-2 | [DO2.6](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | A fila do worker mede profundidade, não tempo por requisição |
+| O-2 | [DO2.7](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | Nenhum payload entra no registro |
+| O-2 | [DO2.8](plan/implemented/O-2-ipc-jobs-e-fila-do-worker.md) | Payload inválido (zod) não conta como falha do canal |
+| O-3 | [DO3.1](plan/implemented/O-3-os-dois-motores-se-descrevem.md) | Dois painéis, não um: os grupos da fundamentação já os separam |
+| O-3 | [DO3.2](plan/implemented/O-3-os-dois-motores-se-descrevem.md) | `dataset:engineInfo` toca o worker, e por isso herda o risco do O-2 |
+| O-3 | [DO3.3](plan/implemented/O-3-os-dois-motores-se-descrevem.md) | `database:info` não retorna `Result` |
+| O-3 | [DO3.4](plan/implemented/O-3-os-dois-motores-se-descrevem.md) | A lista de tabelas é derivada de `sqlite_master`, nunca escrita à mão |
+| O-3 | [DO3.5](plan/implemented/O-3-os-dois-motores-se-descrevem.md) | `currentVersion()` é reaproveitado, não duplicado |
+| O-3 | [DO3.6](plan/implemented/O-3-os-dois-motores-se-descrevem.md) | O motor DuckDB não ganha botão de manutenção neste plano |
+| O-3 | [DO3.7](plan/implemented/O-3-os-dois-motores-se-descrevem.md) | Extensões filtradas a `loaded OR installed` |
+| O-4 | [DO4.1](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | Um painel, "Capacidades", grupo `state` |
+| O-4 | [DO4.2](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | O painel nasce sem query automática; um botão dispara a sondagem, e o resultado carrega a própria idade |
+| O-4 | [DO4.3](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | Uma sondagem, três serviços, um timestamp só |
+| O-4 | [DO4.4](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | O catálogo é o cru de `ai:models`, nunca `selectableModels` |
+| O-4 | [DO4.5](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | O embedder é uma linha derivada, não um campo novo |
+| O-4 | [DO4.6](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | Só `CapabilityChip.tsx` sobe para `shared/ui/`; `capabilities.ts` fica |
+| O-4 | [DO4.7](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | `LoadedModels` migra inteiro, sob o mesmo botão; `CloudSecrets` fica |
+| O-4 | [DO4.8](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | Nenhum canal novo |
+| O-4 | [DO4.9](plan/implemented/O-4-capacidades-o-primeiro-painel-caro.md) | `CAPABILITY_META` ganha `audio`; `image` fica de fora, nomeado |
+| O-5 | [DO5.1](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | Dois painéis, não um |
+| O-5 | [DO5.2](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | `session.getCacheSize()` mede só `Cache/` |
+| O-5 | [DO5.3](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | O walk de disco reaproveita `getCacheSize()` para a entrada `Cache/`, **se o Passo 0 confirmar que os números batem** |
+| O-5 | [DO5.4](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | Classificação por allowlist pequena; o bucket do Chromium é **um número**, não uma lista |
+| O-5 | [DO5.5](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | Erro de leitura numa subpasta não aborta o job inteiro |
+| O-5 | [DO5.6](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | Dois domínios de canal novos: `session` e `disk` |
+| O-5 | [DO5.7](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | `formatAge` sobe para `shared/format.ts` |
+| O-5 | [DO5.8](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | Correção registrada da própria classificação do inventário |
+| O-5 | [DO5.9](plan/implemented/O-5-uso-de-disco-e-cache-do-chromium.md) | Os dois painéis Caro/Acessível vivem no cache do `QueryClient`, nunca só em `useState` |
+| O-6 | [DO6.1](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Reaproveita `ipcStats.wrap`; nenhum segundo hook |
+| O-6 | [DO6.2](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | `core/` mede, `main/` grava; o sink é estado mutável do store, não argumento de construtor |
+| O-6 | [DO6.3](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Um id de domínio por evento, nunca um `observationId` novo |
+| O-6 | [DO6.4](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Retenção: intervalo fechado no schema Zod, sem "nunca apagar" |
+| O-6 | [DO6.5](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | A varredura de retenção espelha `collectOrphanedAttachments`, sem inventar mecanismo novo |
+| O-6 | [DO6.6](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | O painel entra no grupo `activity`, primeira ocupação real do grupo |
+| O-6 | [DO6.7](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Transparência sobre retenção em dois lugares, textos curtos e fixos |
+| O-6 | [DO6.8](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Um canal novo só: `events:list`, sem `Result`; nenhum canal para escrever |
+| O-6 | [DO6.9](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Duas correções da revisão do advisor, achadas antes do teste ao vivo |
+| O-6 | [DO6.10](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | O sink também enxerga `Result.ok:false`, não só exceção — achado no teste ao vivo |
+| O-6 | [DO6.11](plan/implemented/O-6-observatoriodb-e-fluxo-de-eventos.md) | Canais IPC (O-2) também passa a contar `Result.ok:false` — pedido do usuário, mesma sessão |
+
+---
+
 ## Trilha R — reconciliação de documentação
 
 | trilha | sigla | descrição |
