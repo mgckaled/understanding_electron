@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**49 canais em `IpcContract`**, conferidos contra o código em 01/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`).
+**50 canais em `IpcContract`**, conferidos contra o código em 01/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — o quinquagésimo é `privacy:list`, O-8.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -126,6 +126,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `disk` | `usage` | sim — job cancelável, varredura pode falhar por permissão (O-5) |
 | `events` | `list` | não — leitura de `observatory.db` já aberto (O-6) |
 | `performance` | `list` | não — mesma leitura de `observatory.db`, já agregada no main antes de sair (O-7, DO7.5) |
+| `privacy` | `list` | não — mesma leitura de `observatory.db`; a escrita acontece no wrap de `chat()`, condicionada a `isCloudService` (O-8) |
 
 `secrets:read` **não existe** — nem por omissão, por desenho (DN1A.3): a regra de mão única do [`CLAUDE.md`](../../../CLAUDE.md#segurança) proíbe o renderer de reler um segredo já gravado, só perguntar se ele existe.
 
