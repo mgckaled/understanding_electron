@@ -115,6 +115,8 @@ Um app local-first deve isso ao usuário, e é o painel que mais o diferencia de
 
 **Medir tokens/s, não segundos.** O gráfico de tempo de resposta deles compara média em segundos entre modelos — mas segundos não são comparáveis entre prompts de tamanhos diferentes. O crivo já conta tokens por conversa; `(prefill, decode, tokens/s)` sobrevive a uma mudança no tamanho do prompt, e segundos não.
 
+⚠️ **A mesma comparabilidade vale para desempenho fora de `ai:*`, e ainda não está resolvida.** O painel de fila do worker DuckDB (§ 6) mede só profundidade — o O-2 decidiu deliberadamente não carimbar `queued`/`running`/`total` por requisição no protocolo `WorkerRequest`/`WorkerResponse`, por ser caminho quente demais para instrumentar sem um plano que já esteja tocando essa borda. Quando um plano de desempenho existir, ele herda o mesmo requisito do parágrafo acima: o número precisa carregar o que foi medido (modelo, provider, tamanho do lote), não só o valor.
+
 ### 2.6 O painel de RAG já nasce especificado — e o levantamento é dele
 
 O [levantamento de "Projetos" e RAG particionado](../projetos-e-rag-por-projeto.md) (25/08/2026) decidiu, para outra finalidade, quatro coisas que **definem o painel de RAG antes de ele existir**. Ele é o dono desses fatos; aqui fica só o que muda a especificação do painel:
@@ -195,6 +197,12 @@ Pelo critério acima, três coisas que a trilha O vai querer **não são telemet
 
 ⚠️ **Consequência de sequência:** os painéis que dependem destes três só ficam honestos **depois** que a informação passar a ser gravada. Marcá-los como _Gatilhado_ (§ 5.3) não é adiamento — é a única classificação verdadeira.
 
+### 3.5 Evento técnico não é operação de produto
+
+Um requisito que `observatory.db` precisa resolver **antes** do primeiro `INSERT`, achado ao planejar o O-2: uma única pergunta do usuário já produz vários eventos técnicos — `conversation:append`, a criação do job, `ai:chat`, uma consulta ao DuckDB. Contar cada evento como "uma operação" no histórico mentiria sobre o volume de uso; o painel precisa de uma noção explícita de **operação** (o que o usuário fez) agrupando os **eventos** que a implementam (o que o sistema fez para cumprir isso).
+
+A pista para resolver isso já existe na regra de identidade da skill [`ipc`](../../../.claude/skills/ipc/SKILL.md): quem inicia a operação já carrega um identificador — `JobId` nasce no renderer, `conversationId`/`messageId` já viajam com cada mensagem. **Correlacionar com essas identidades é preferível a inventar um `observationId` novo para tudo**; um id extra só se justifica onde nenhuma identidade de domínio cobre o evento.
+
 ---
 
 ## 4. A superfície
@@ -213,13 +221,14 @@ A escolha já foi feita uma vez, pelo motivo certo: **Configurações é modal, 
 
 > **Regra:** só o painel ativo se renderiza — `{ativo === 'db' && <PainelBanco />}`. Nunca um `Stack` com visibilidade alternada.
 
-### 4.3 As cinco regras de leveza
+### 4.3 As seis regras de leveza
 
 1. **Só o painel ativo monta** (§ 4.2).
 2. **O modal inteiro entra por `import()` dinâmico.** É a feature que a maioria das sessões nunca abre, e vai atrair tabela virtualizada e biblioteca de gráfico. Depois do E-2 — onde 27 gramáticas custaram **+261,75 kB medidos**, mais que o dobro da estimativa — o argumento se defende sozinho: sem code-splitting, todo boot paga por um painel fechado.
 3. **Cada subelemento abre com resumo, nunca com a coisa inteira.** "Banco de dados" abre listando tabelas com contagem; a tabela em si só carrega ao clicar. Mantém o custo de abrir **constante**, independente do quanto o painel _pode_ mostrar.
 4. **Leitura pesada é job, não função.** `src/main/jobs.ts` já dá progresso, cancelamento e `job:event` — e resolve por construção o problema de não travar a janela. Inventar caminho novo aqui seria escrever um segundo mecanismo de progresso. A reindexação de RAG (~7,4 min, § 2.6) é o caso que torna isto obrigatório, não opcional.
 5. **Derive as linhas do código, nunca de uma lista.** `sqlite_master` em vez de lista de tabelas; as chaves de `IpcContract` em vez de lista de canais; varredura de diretório em vez de lista de arquivos. É a lição da § 1.6, e é a resposta ao "engordar" no sentido de manutenção.
+6. **Métrica ausente não é zero.** Leitura pendente ou com erro não pode coalescer para `0`/vazio — é indistinguível do estado saudável e o painel mente por omissão. Regra descoberta duas vezes de forma independente: o O-1 já a aplicava sem nomeá-la (`idleWakeupsPerSecond` fora do contrato, DO1.8) e o O-2 a redescobriu como bug real (`ActivityPanel` mostrando "0 em andamento" para uma leitura que **falhou**, pego na revisão antes de embarcar). Duas descobertas independentes da mesma regra é o sinal de que ela precisa estar escrita aqui, não só implícita em cada plano.
 
 E a regra que amarra tudo: **o painel caro exibe a idade do próprio número** — _"medido há 4 min · ↻"_. Um observatório que mente sobre o frescor do que exibe é pior que nenhum, e é literalmente a lição que o mill.tools aprendeu caro com o `force=is_stale_scheme`.
 
