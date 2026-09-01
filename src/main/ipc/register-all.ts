@@ -14,7 +14,12 @@ import {
 import { recordEvent, listEvents } from '../observatory/events'
 import { recordPerformanceEvent, listPerformanceEvents } from '../observatory/performance'
 import { summarizeByModel } from '@core/observatory/performance'
-import { sweepExpiredEvents, sweepExpiredPerformanceEvents } from '../observatory/retention'
+import { recordPrivacyEvent, readPrivacyLedger } from '../observatory/privacy'
+import {
+  sweepExpiredEvents,
+  sweepExpiredPerformanceEvents,
+  sweepExpiredPrivacyEvents
+} from '../observatory/retention'
 import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory, readIpcStats, readProcesses } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
@@ -147,11 +152,11 @@ export async function registerAll(): Promise<() => void> {
     join(app.getPath('userData'), OBSERVATORY_DATABASE_FILE),
     observatoryMigrations
   )
-  // events:list and performance:list are excluded: without this, opening
-  // either read-only Observatório panel would instrument itself, and every
-  // open would push its own read to the top of the list it just fetched
-  // (O-6 DO6.9, extended to performance:list by O-7 DO7.7).
-  const OBSERVATORY_READ_CHANNELS = new Set(['events:list', 'performance:list'])
+  // events:list, performance:list and privacy:list are excluded: without
+  // this, opening any read-only Observatório panel would instrument itself,
+  // and every open would push its own read to the top of the list it just
+  // fetched (O-6 DO6.9, extended by O-7 DO7.7 and O-8).
+  const OBSERVATORY_READ_CHANNELS = new Set(['events:list', 'performance:list', 'privacy:list'])
   configureEventSink((event) => {
     if (!OBSERVATORY_READ_CHANNELS.has(event.channel)) recordEvent(observatoryDb, event)
   })
@@ -273,7 +278,8 @@ export async function registerAll(): Promise<() => void> {
       resolveProvider(args.service).chat,
       broadcastJobEvent,
       resolveAttachmentBytes(attachmentsDir),
-      (event) => recordPerformanceEvent(observatoryDb, event)
+      (event) => recordPerformanceEvent(observatoryDb, event),
+      (event) => recordPrivacyEvent(observatoryDb, event)
     )
   )
   handle('ai:propose', (args) =>
@@ -347,6 +353,12 @@ export async function registerAll(): Promise<() => void> {
     )
   )
 
+  // Same retentionDays as events:list/performance:list (O-8) — one setting
+  // prunes all three tables.
+  handle('privacy:list', () =>
+    readPrivacyLedger(observatoryDb, readSettings(undefined, db).eventRetentionDays ?? 30)
+  )
+
   // Dev-only seed (DN1A.1): .env never ships (app.isPackaged guards it), and
   // it only FILLS a key that is still unset — a key already written through
   // the UI is never overwritten. try/catch because it is not confirmed
@@ -374,6 +386,7 @@ export async function registerAll(): Promise<() => void> {
   const retentionDays = readSettings(undefined, db).eventRetentionDays ?? 30
   await sweepExpiredEvents(observatoryDb, retentionDays).catch(() => {})
   await sweepExpiredPerformanceEvents(observatoryDb, retentionDays).catch(() => {})
+  await sweepExpiredPrivacyEvents(observatoryDb, retentionDays).catch(() => {})
 
   return () => {
     db.close()
