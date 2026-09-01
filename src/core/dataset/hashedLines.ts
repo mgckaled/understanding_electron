@@ -2,15 +2,13 @@ import type { createHash } from 'node:crypto'
 import { StringDecoder } from 'node:string_decoder'
 
 /**
- * Splits a raw byte stream into lines while feeding every chunk to `hash`
- * exactly once — the read that pays for both the digest and the scan (D16.6).
+ * Splits a raw byte stream into lines while hashing each chunk exactly once
+ * (D16.6).
  *
- * @param chunks - Raw bytes, in order. Decoded through `StringDecoder`, not a
- *   per-chunk `toString('utf8')`: the latter corrupts any multi-byte
- *   character split at a chunk boundary (`endereço` → `endere` + U+FFFD +
- *   `o`), silently, which a Portuguese header hits often (verified: Context7).
- * @param hash - Mutated via `update()` as chunks arrive; `digest()` on it is
- *   only meaningful after this generator is fully consumed.
+ * @param chunks - Raw bytes in order, decoded with `StringDecoder` to preserve
+ *   multi-byte UTF-8 characters across chunk boundaries.
+ * @param hash - Updated as chunks arrive; `digest()` is only valid after the
+ *   generator is fully consumed.
  */
 export async function* hashedLines(
   chunks: AsyncIterable<Buffer>,
@@ -36,14 +34,10 @@ export async function* hashedLines(
 }
 
 /**
- * Feeds every chunk to `hash` with no text decoding at all (D18F.4) — unlike
- * {@link hashedLines}, there is no line-shaped product to hand back for a
- * binary format like `.xlsx`: decoding it as UTF-8 would both corrupt it and
- * hold the whole discardable string in memory until a `\n` that never comes
- * in a meaningful place.
+ * Hashes a raw byte stream without text decoding (D18F.4).
  *
- * @param hash - Mutated via `update()` as chunks arrive; `digest()` on it is
- *   only meaningful after this promise resolves.
+ * @param hash - Updated as chunks arrive; `digest()` is only valid after this
+ *   promise resolves.
  */
 export async function hashFile(
   chunks: AsyncIterable<Buffer>,

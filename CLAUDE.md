@@ -76,7 +76,7 @@ Aplica o funil arquivo → linha → bloco do princípio acima; a tabela abaixo 
 | **`plan/implemented/`** (57 arq.) | **~302k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
 | `reference/` (19 arq.) | ~54k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
 | `study/` (12 arq.) | ~39k | `Grep` no conceito; `Read` com `offset` na seção achada |
-| `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
+| `plan/active/` (3 arq.) | ~11k | o plano **em execução** se lê inteiro; os demais, `Grep` |
 
 ⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** Foram remedidos em 28/08/2026; a ordem de grandeza é o que importa aqui, não o dígito. ⚠️ **Cinco tetos estão estourados** (`ARMADILHAS.md`, este arquivo, e agora `ROADMAP.md`, `DECISOES.md` e `ESCOPO.md`) — registrado com o conserto no [`ROADMAP § 2`](docs/ROADMAP.md).
 

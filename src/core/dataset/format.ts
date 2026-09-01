@@ -7,21 +7,12 @@ const BOM = '﻿'
 const ZIP_SIGNATURE = Buffer.from([0x50, 0x4b, 0x03, 0x04])
 
 /**
- * Detects a dataset's format from its own bytes — never a file extension or
- * a new IPC parameter (D18E.1). The same function runs on both sides of the
- * attach/query boundary, over identical content-addressed bytes, so main and
- * worker cannot disagree about the same hash.
+ * Detects the dataset format from its content, not its file extension (D18E.1).
  *
- * Checks the ZIP signature on the raw bytes first (D18F.3): `.xlsx` is
- * binary, and decoding it as UTF-8 before recognizing it would be both
- * wrong and wasteful. Only once that fails does the sample get decoded, for
- * the existing delimited/JSON check.
- *
- * A leading BOM (U+FEFF) survives `String.prototype.trimStart()` — it was
- * removed from Unicode's `White_Space` property in version 6.3, so
- * `trimStart` never treated it as whitespace — and must be stripped before
- * inspecting the next character, or a BOM-prefixed JSON file silently reads
- * as delimited.
+ * Checks the ZIP signature before UTF-8 decoding because .xlsx files are
+ * binary ZIP containers (D18F.3). For text formats, strips a leading BOM
+ * before inspecting the first non-whitespace character to distinguish JSON
+ * from delimited data.
  */
 export function sniffDatasetFormat(sample: Buffer): DatasetFormat {
   if (sample.subarray(0, ZIP_SIGNATURE.length).equals(ZIP_SIGNATURE)) return 'excel'
