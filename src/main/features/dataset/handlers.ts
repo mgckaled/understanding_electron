@@ -3,6 +3,7 @@ import type {
   ColumnProfile,
   DatasetPart,
   DatasetTransformResult,
+  DuckDbEngineInfo,
   JobEvent,
   JobId,
   Result,
@@ -171,4 +172,15 @@ export async function profileDataset(
 /** In-flight requests on the worker's single queue right now (DO2.6). No `Result`: the in-memory counter cannot fail. */
 export function readQueueDepth(getDepth: () => number): number {
   return getDepth()
+}
+
+/** Round-trips the worker's queue (DO3.2) — `Result`, unlike `readQueueDepth`, because this can fail the same way `queryDataset`/`profileDataset` can. */
+export async function readEngineInfo(
+  runEngineInfo: () => Promise<DuckDbEngineInfo>
+): Promise<Result<DuckDbEngineInfo>> {
+  try {
+    return ok(await runEngineInfo())
+  } catch (error) {
+    return err({ kind: 'invalidQuery', message: (error as Error).message })
+  }
 }

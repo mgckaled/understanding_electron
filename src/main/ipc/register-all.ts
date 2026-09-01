@@ -14,9 +14,11 @@ import {
   attachDataset,
   queryDataset,
   profileDataset,
+  readEngineInfo,
   readQueueDepth,
   transformDataset
 } from '../features/dataset/handlers'
+import { readDatabaseInfo } from '../features/database/handlers'
 import { pickDataset } from '../features/dataset/pick'
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage, readImageBytes } from '../features/image/handlers'
@@ -183,6 +185,7 @@ export async function registerAll(): Promise<() => void> {
     transformDataset(args, duckdbClient.runSchema, duckdbClient.runTransform)
   )
   handle('dataset:queueDepth', () => readQueueDepth(duckdbClient.queueDepth))
+  handle('dataset:engineInfo', () => readEngineInfo(duckdbClient.runEngineInfo))
   handle('document:pick', (args) => pickDocument(args, dialog.showOpenDialog, statDocumentSize))
   handle('document:attach', (args) =>
     attachDocument(args, readDocumentFile, attachmentsDir, ensureAttachment, broadcastJobEvent)
@@ -292,6 +295,8 @@ export async function registerAll(): Promise<() => void> {
   handle('secrets:write', (args) => writeSecret(args, db, encryptSecret, readSecretBackendInfo()))
   handle('secrets:has', (args) => hasSecret(args, db))
   handle('secrets:remove', (args) => removeSecret(args, db))
+
+  handle('database:info', () => readDatabaseInfo(db))
 
   // Dev-only seed (DN1A.1): .env never ships (app.isPackaged guards it), and
   // it only FILLS a key that is still unset — a key already written through

@@ -1,8 +1,9 @@
-import type { ColumnProfile, Step } from '@shared/ipc'
+import type { ColumnProfile, DuckDbEngineInfo, Step } from '@shared/ipc'
 import {
   attachDataset,
   queryDataset,
   profileDataset,
+  readEngineInfo,
   readQueueDepth,
   transformDataset
 } from './handlers'
@@ -314,5 +315,26 @@ describe('readQueueDepth', () => {
     const getDepth = vi.fn().mockReturnValue(2)
 
     expect(readQueueDepth(getDepth)).toBe(2)
+  })
+})
+
+describe('readEngineInfo', () => {
+  it('wraps the source in ok on success', async () => {
+    const info: DuckDbEngineInfo = { memoryLimit: '2.0GiB', extensions: [], memoryByTag: [] }
+    const runEngineInfo = vi.fn().mockResolvedValue(info)
+
+    expect(await readEngineInfo(runEngineInfo)).toEqual({ ok: true, value: info })
+  })
+
+  // The provocation: a rejection from the worker (the queue's own
+  // worker-death risk, O-2) must come back as a Result the UI can render,
+  // never an uncaught rejection.
+  it('wraps a worker rejection as invalidQuery, with the engine text preserved', async () => {
+    const runEngineInfo = vi.fn().mockRejectedValue(new Error('DuckDB worker exited (code 137)'))
+
+    expect(await readEngineInfo(runEngineInfo)).toEqual({
+      ok: false,
+      error: { kind: 'invalidQuery', message: 'DuckDB worker exited (code 137)' }
+    })
   })
 })
