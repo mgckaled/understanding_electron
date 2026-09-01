@@ -83,6 +83,15 @@ export type AppIpcStat = {
   lastError: string | null
 }
 
+/** One completed IPC call, as `observatory.db` records it (O-6, DO6.2). */
+export type EventRow = {
+  channel: string
+  durationMs: number
+  error: string | null
+  domainId: string | null
+  createdAt: number
+}
+
 export type JobId = string
 
 export type JobEvent =

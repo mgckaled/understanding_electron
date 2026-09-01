@@ -1,8 +1,14 @@
 import { ipcMain } from 'electron'
 import { argsSchema, type Args, type AppIpcStat, type Channel, type ResultOf } from '@shared/ipc'
 import { createIpcStatsStore } from '@core/observatory/ipcStats'
+import type { IpcCallEvent } from '@core/observatory/events'
 
 const ipcStats = createIpcStatsStore()
+
+/** O-6: registerAll() calls this once, wiring completed calls to observatory.db. */
+export function configureEventSink(sink: (event: IpcCallEvent) => void): void {
+  ipcStats.setEventSink(sink)
+}
 
 /**
  * Wraps `fn` after schema validation, so a client sending garbage never
