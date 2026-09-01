@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { dropRedundantVariants } from '@core/ai/models'
+import { dropRedundantVariants, findEmbedders, hasCapability } from '@core/ai/models'
 import { CLOUD_PROVIDERS } from '@shared/ipc'
 import type {
   AiAvailability,
@@ -22,6 +22,18 @@ export type CapabilitiesData = {
   services: Record<AiService, ServiceCapability>
   cloudKeys: Record<CloudProvider, boolean>
   loadedModels: ViewState<LoadedModel[]>
+  /**
+   * Every embedder across every service, deduped, pulled out of `services`
+   * (DO4.5, corrected 01/09/2026): one line per model, never two — the
+   * catalog is the same read whether the provider is local or cloud opt-in.
+   */
+  embedders: AiModel[]
+}
+
+/** `models` with every `embedding` model removed — it belongs in `embedders` instead. */
+function withoutEmbedders(models: AiModel[]): ViewState<AiModel[]> {
+  const remaining = models.filter((model) => !hasCapability(model, 'embedding'))
+  return remaining.length === 0 ? { status: 'empty' } : { status: 'ready', data: remaining }
 }
 
 function settledResultState<T>(
@@ -46,16 +58,18 @@ async function fetchCapabilities(): Promise<CapabilitiesData> {
   ])
 
   const services = {} as Record<AiService, ServiceCapability>
+  const embedders: AiModel[] = []
   AI_SERVICES.forEach((service, index) => {
     const modelsState = settledResultState(models[index]!, 'ai:models')
+    // A Modelfile clone made for mill.tools (sibling app, same Ollama) is not a
+    // second installed model — dropped before the embedder split below, so it
+    // never reaches either table.
+    const deduped = modelsState.status === 'ready' ? dropRedundantVariants(modelsState.data) : null
+    if (deduped !== null) embedders.push(...findEmbedders(deduped))
+
     services[service] = {
       availability: settledResultState(availabilities[index]!, 'ai:isAvailable'),
-      // A Modelfile clone made for mill.tools (sibling app, same Ollama) is not
-      // a second installed model — dropped here so it never reaches a table.
-      models:
-        modelsState.status === 'ready'
-          ? { ...modelsState, data: dropRedundantVariants(modelsState.data) }
-          : modelsState
+      models: deduped !== null ? withoutEmbedders(deduped) : modelsState
     }
   })
 
@@ -68,7 +82,8 @@ async function fetchCapabilities(): Promise<CapabilitiesData> {
   return {
     services,
     cloudKeys,
-    loadedModels: settledResultState(loaded[0]!, 'ai:loaded')
+    loadedModels: settledResultState(loaded[0]!, 'ai:loaded'),
+    embedders
   }
 }
 

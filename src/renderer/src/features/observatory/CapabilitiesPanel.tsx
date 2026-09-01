@@ -1,4 +1,3 @@
-import { findEmbedders } from '@core/ai/models'
 import type { AiModel, AiService, CloudProvider } from '@shared/ipc'
 import { CLOUD_PROVIDERS } from '@shared/ipc'
 import CapabilityChip from '../../shared/ui/CapabilityChip/CapabilityChip'
@@ -38,46 +37,54 @@ function formatAge(dataUpdatedAt: number): string {
 
 function ModelsTable({ models }: { models: AiModel[] }): React.JSX.Element {
   return (
-    <table className="w-full table-fixed border-collapse text-left">
-      <colgroup>
-        {COLUMN_WIDTHS.map((width, index) => (
-          <col key={index} className={width} />
-        ))}
-      </colgroup>
-      <thead>
-        <tr className="border-b border-border text-2xs tracking-[0.04em] text-text-faint uppercase">
-          <th className={CELL}>Modelo</th>
-          <th className={CELL}>Parâmetros</th>
-          <th className={CELL}>Tamanho</th>
-          <th className={CELL}>Contexto</th>
-          <th className={CELL}>Capacidades</th>
-        </tr>
-      </thead>
-      <tbody>
-        {models.map((model) => (
-          <tr key={model.name} className="border-b border-border last:border-b-0">
-            <td className={`${CELL} font-mono text-text select-text`}>
-              {model.name}
-              {model.variantOf !== null && (
-                <span className="ml-2 text-2xs text-text-faint">variante de {model.variantOf}</span>
-              )}
-            </td>
-            <td className={`${CELL} text-text-muted`}>{model.parameterSize || '—'}</td>
-            <td className={`${CELL} font-mono text-text-muted`}>{formatSize(model.sizeBytes)}</td>
-            <td className={`${CELL} font-mono text-text-muted`}>
-              {formatContext(model.contextLength) ?? '—'}
-            </td>
-            <td className={CELL}>
-              <div className="flex flex-wrap gap-1">
-                {capabilityChips(model).map((chip) => (
-                  <CapabilityChip key={chip.capability} {...chip} />
-                ))}
-              </div>
-            </td>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[640px] table-fixed border-collapse text-left">
+        <colgroup>
+          {COLUMN_WIDTHS.map((width, index) => (
+            <col key={index} className={width} />
+          ))}
+        </colgroup>
+        <thead>
+          <tr className="border-b border-border text-2xs tracking-[0.04em] text-text-faint uppercase">
+            <th className={`${CELL} whitespace-nowrap`}>Modelo</th>
+            <th className={`${CELL} whitespace-nowrap`}>Parâmetros</th>
+            <th className={`${CELL} whitespace-nowrap`}>Tamanho</th>
+            <th className={`${CELL} whitespace-nowrap`}>Contexto</th>
+            <th className={`${CELL} whitespace-nowrap`}>Capacidades</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {models.map((model) => (
+            <tr key={model.name} className="border-b border-border last:border-b-0">
+              <td className={`${CELL} font-mono text-text select-text`}>
+                {model.name}
+                {model.variantOf !== null && (
+                  <span className="ml-2 text-2xs text-text-faint">
+                    variante de {model.variantOf}
+                  </span>
+                )}
+              </td>
+              <td className={`${CELL} whitespace-nowrap text-text-muted`}>
+                {model.parameterSize || '—'}
+              </td>
+              <td className={`${CELL} whitespace-nowrap font-mono text-text-muted`}>
+                {formatSize(model.sizeBytes)}
+              </td>
+              <td className={`${CELL} whitespace-nowrap font-mono text-text-muted`}>
+                {formatContext(model.contextLength) ?? '—'}
+              </td>
+              <td className={CELL}>
+                <div className="flex flex-wrap gap-1">
+                  {capabilityChips(model).map((chip) => (
+                    <CapabilityChip key={chip.capability} {...chip} />
+                  ))}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -109,15 +116,7 @@ function ServiceSection({
   )
 }
 
-function EmbeddersSection({
-  services
-}: {
-  services: Record<AiService, ServiceCapability>
-}): React.JSX.Element | null {
-  const ready = Object.values(services).flatMap((capability) =>
-    capability.models.status === 'ready' ? capability.models.data : []
-  )
-  const embedders = findEmbedders(ready)
+function EmbeddersSection({ embedders }: { embedders: AiModel[] }): React.JSX.Element | null {
   if (embedders.length === 0) return null
 
   return (
@@ -168,7 +167,7 @@ function CapabilitiesPanel(): React.JSX.Element {
           {AI_SERVICES.map((service) => (
             <ServiceSection key={service} service={service} capability={data.services[service]} />
           ))}
-          <EmbeddersSection services={data.services} />
+          <EmbeddersSection embedders={data.embedders} />
           <CloudKeysSection cloudKeys={data.cloudKeys} />
           <LoadedModels state={data.loadedModels} onUnloaded={refetch} />
           <div className="flex items-center gap-2 text-2xs text-text-faint">

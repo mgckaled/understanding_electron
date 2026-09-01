@@ -1,9 +1,21 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock, TEST_MODEL } from '@test/api-mock'
+import type { AiModel } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
 import CapabilitiesPanel from './CapabilitiesPanel'
+
+const EMBEDDER: AiModel = {
+  provider: 'ollama',
+  name: 'nomic-embed-text:latest',
+  parameterSize: '137M',
+  sizeBytes: 274_000_000,
+  capabilities: ['embedding'],
+  contextLength: 2048,
+  attention: null,
+  variantOf: null
+}
 
 function renderPanel(): void {
   render(
@@ -110,5 +122,24 @@ describe('CapabilitiesPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Sondar capacidades de novo' }))
 
     await waitFor(() => expect(api.ai.isAvailable).toHaveBeenCalledTimes(6))
+  })
+
+  it('keeps an embedder out of its own service table — it belongs to Embedder only', async () => {
+    const user = userEvent.setup()
+    const api = installApiMock()
+    mockHealthy(api)
+    vi.mocked(api.ai.models).mockImplementation(async (service) =>
+      service === 'ollama' ? { ok: true, value: [TEST_MODEL, EMBEDDER] } : { ok: true, value: [] }
+    )
+
+    renderPanel()
+    await user.click(screen.getByRole('button', { name: 'Sondar capacidades' }))
+    await screen.findByText(TEST_MODEL.name)
+
+    expect(screen.getAllByText(EMBEDDER.name)).toHaveLength(1)
+    const embeddersHeading = screen.getByRole('heading', { name: 'Embedder' })
+    expect(
+      within(embeddersHeading.closest('section')!).getByText(EMBEDDER.name)
+    ).toBeInTheDocument()
   })
 })
