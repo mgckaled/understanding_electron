@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, shell, dialog, nativeTheme, safeStorage, BrowserWindow } from 'electron'
+import { app, shell, dialog, nativeTheme, safeStorage, session, BrowserWindow } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import type { AiService, JobEvent } from '@shared/ipc'
 import { JOB_EVENT_CHANNEL } from '@shared/channels'
@@ -19,6 +19,8 @@ import {
   transformDataset
 } from '../features/dataset/handlers'
 import { readDatabaseInfo } from '../features/database/handlers'
+import { readCacheSize, clearChromiumCache } from '../features/session/handlers'
+import { readDiskUsage } from '../features/disk/handlers'
 import { pickDataset } from '../features/dataset/pick'
 import { pickDocument, attachDocument } from '../features/document/handlers'
 import { pickImage, attachImage, readImageBytes } from '../features/image/handlers'
@@ -297,6 +299,17 @@ export async function registerAll(): Promise<() => void> {
   handle('secrets:remove', (args) => removeSecret(args, db))
 
   handle('database:info', () => readDatabaseInfo(db))
+
+  handle('session:cacheSize', () => readCacheSize(() => session.defaultSession.getCacheSize()))
+  handle('session:clearCache', () => clearChromiumCache(() => session.defaultSession.clearCache()))
+  handle('disk:usage', (args) =>
+    readDiskUsage(
+      args,
+      app.getPath('userData'),
+      () => session.defaultSession.getCacheSize(),
+      broadcastJobEvent
+    )
+  )
 
   // Dev-only seed (DN1A.1): .env never ships (app.isPackaged guards it), and
   // it only FILLS a key that is still unset — a key already written through

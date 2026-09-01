@@ -125,6 +125,16 @@ export function createApiMock(): Api {
         freelistCount: 0,
         tables: []
       })
+    },
+    session: {
+      cacheSize: vi.fn().mockResolvedValue(0),
+      clearCache: vi.fn()
+    },
+    disk: {
+      usage: vi.fn().mockResolvedValue({
+        ok: true,
+        value: { crivo: [], runtimeBytes: 0, runtimePartial: false, totalBytes: 0 }
+      })
     }
   } satisfies Api
 }

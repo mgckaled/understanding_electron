@@ -348,6 +348,26 @@ export interface DatabaseInfo {
   tables: DatabaseTableInfo[]
 }
 
+export interface DiskEntry {
+  name: string
+  bytes: number
+  /** True when a subtree under this entry could not be fully read (O-5, DO5.5) — bytes is a lower bound, not zero. */
+  partial: boolean
+}
+
+/**
+ * `userData/` split by who wrote it (O-5, DO5.4): `crivo` entries are named
+ * individually; every Chromium-owned top-level entry collapses into
+ * `runtimeBytes` so the panel does not enumerate the browser's own cache
+ * directories.
+ */
+export interface DiskUsage {
+  crivo: DiskEntry[]
+  runtimeBytes: number
+  runtimePartial: boolean
+  totalBytes: number
+}
+
 /**
  * A document attached to a message (plano 17, D17.2) — `text` carries the
  * whole extraction inline, produced once by `document:attach`: the chat is
@@ -790,7 +810,10 @@ export const argsSchema = {
   'secrets:write': z.object({ provider: cloudProviderSchema, apiKey: z.string().min(1) }),
   'secrets:has': z.object({ provider: cloudProviderSchema }),
   'secrets:remove': z.object({ provider: cloudProviderSchema }),
-  'database:info': z.void()
+  'database:info': z.void(),
+  'session:cacheSize': z.void(),
+  'session:clearCache': z.void(),
+  'disk:usage': z.object({ jobId: z.string() })
 } as const
 
 export type IpcContract = {
@@ -963,6 +986,13 @@ export type IpcContract = {
   // No Result: reading the already-open crivo.db cannot fail in a way the UI
   // must distinguish (DO3.3) — same reasoning as conversation:list.
   'database:info': { args: z.infer<(typeof argsSchema)['database:info']>; result: DatabaseInfo }
+  // No Result: reading the session's own counter cannot fail in a way the UI
+  // must distinguish (O-5, DO5.2) — bytes, the HTTP cache only.
+  'session:cacheSize': { args: z.infer<(typeof argsSchema)['session:cacheSize']>; result: number }
+  'session:clearCache': { args: z.infer<(typeof argsSchema)['session:clearCache']>; result: void }
+  // Result: a job over the filesystem can be cancelled or hit an unreadable
+  // root — states the UI reacts to (O-5, DO5.5).
+  'disk:usage': { args: z.infer<(typeof argsSchema)['disk:usage']>; result: Result<DiskUsage> }
 }
 
 export type Channel = keyof IpcContract
@@ -1078,5 +1108,14 @@ export type Api = {
   database: {
     /** crivo.db as SQLite reports itself — schema, size, migration version (O-3). */
     info(): Promise<DatabaseInfo>
+  }
+  session: {
+    /** Bytes of the HTTP cache only — not Code Cache/GPUCache (O-5, DO5.2). */
+    cacheSize(): Promise<number>
+    clearCache(): Promise<void>
+  }
+  disk: {
+    /** Walks userData/, split crivo vs. Chromium (O-5, DO5.4). */
+    usage(jobId: JobId): Promise<Result<DiskUsage>>
   }
 }

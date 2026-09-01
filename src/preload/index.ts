@@ -84,9 +84,12 @@ const api: Api = {
     has: (provider) => invoke('secrets:has', { provider }),
     remove: (provider) => invoke('secrets:remove', { provider })
   },
-  database: {
-    info: () => invoke('database:info')
-  }
+  database: { info: () => invoke('database:info') },
+  session: {
+    cacheSize: () => invoke('session:cacheSize'),
+    clearCache: () => invoke('session:clearCache')
+  },
+  disk: { usage: (jobId) => invoke('disk:usage', { jobId }) }
 }
 
 try {
