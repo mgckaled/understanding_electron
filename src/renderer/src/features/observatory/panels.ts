@@ -1,5 +1,7 @@
 import type { ComponentType } from 'react'
 import ActivityPanel from './ActivityPanel'
+import DatabasePanel from './DatabasePanel'
+import EnginePanel from './EnginePanel'
 import ProcessesPanel from './ProcessesPanel'
 import RuntimePanel from './RuntimePanel'
 
@@ -31,5 +33,11 @@ export const PANELS: ObservatoryPanel[] = [
   // IPC channels, jobs and the DuckDB worker queue read live state with no
   // history, same as the two above — not the persisted, historical sense of
   // "Atividade" this group's label suggests for later plans (O-2).
-  { id: 'inFlight', group: 'state', label: 'Em andamento', Panel: ActivityPanel }
+  { id: 'inFlight', group: 'state', label: 'Em andamento', Panel: ActivityPanel },
+  // Grátis/Moderado (§ 6) — live engine config, same family as Runtime, not
+  // the storage group below (DO3.1).
+  { id: 'engine', group: 'state', label: 'Motor DuckDB', Panel: EnginePanel },
+  // First panel in "storage" — the group has existed since O-1 with nothing
+  // in it (DO1.10: a group only shows once it has a panel).
+  { id: 'database', group: 'storage', label: 'Banco de dados', Panel: DatabasePanel }
 ]

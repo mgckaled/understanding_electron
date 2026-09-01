@@ -31,12 +31,19 @@ describe('Observatory', () => {
 
     await user.click(screen.getByRole('button', { name: 'Observatório' }))
 
-    expect(await screen.findByRole('heading', { name: 'Runtime' })).toBeInTheDocument()
+    // Five panel modules now load in this one lazy chunk (O-3 added two) —
+    // RTL's default findBy timeout (1s) flakes under a full-suite parallel
+    // run; the explicit timeouts match ArtifactPanel.test.tsx's precedent.
+    expect(
+      await screen.findByRole('heading', { name: 'Runtime' }, { timeout: 8000 })
+    ).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Estado' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Armazenamento' })).not.toBeInTheDocument()
+    // Armazenamento now has a panel (O-3, Banco de dados) — this is DO1.10
+    // working as designed, not a regression of the O-1 assertion.
+    expect(screen.getByRole('heading', { name: 'Armazenamento' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Índices' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Atividade' })).not.toBeInTheDocument()
-  })
+  }, 10000)
 
   // The invariant the whole modal's lightness rests on (§ 4.2): switching must
   // UNMOUNT, never hide. A stack toggled by CSS would leave both in the DOM and
