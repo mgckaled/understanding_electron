@@ -5,6 +5,7 @@ import type { PerformanceEvent } from '@core/observatory/performance'
 
 export type ChatTiming = Pick<
   PerformanceEvent,
+  | 'promptTokens'
   | 'evalTokens'
   | 'ttftMs'
   | 'decodeMs'
@@ -41,13 +42,15 @@ export async function measureChatTiming(
   }
 
   const t2 = performance.now()
-  const { evalTokens, loadDurationMs, promptEvalDurationMs, nativeEvalDurationMs } = result.value
+  const { promptTokens, evalTokens, loadDurationMs, promptEvalDurationMs, nativeEvalDurationMs } =
+    result.value
   return {
     result,
     timing: {
       evalTokens,
       ttftMs: t1 - t0,
       decodeMs: t2 - t1,
+      ...(promptTokens === undefined ? {} : { promptTokens }),
       ...(loadDurationMs === undefined ? {} : { loadDurationMs }),
       ...(promptEvalDurationMs === undefined ? {} : { promptEvalDurationMs }),
       ...(nativeEvalDurationMs === undefined ? {} : { nativeEvalDurationMs })

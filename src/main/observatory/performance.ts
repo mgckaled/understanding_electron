@@ -5,12 +5,13 @@ import type { PerformanceEvent, PerformanceRow } from '@core/observatory/perform
 export function recordPerformanceEvent(db: DatabaseSync, event: PerformanceEvent): void {
   db.prepare(
     `INSERT INTO performance_events
-       (service, model, eval_tokens, ttft_ms, decode_ms,
+       (service, model, prompt_tokens, eval_tokens, ttft_ms, decode_ms,
         load_duration_ms, prompt_eval_duration_ms, native_eval_duration_ms, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     event.service,
     event.model,
+    event.promptTokens ?? null,
     event.evalTokens,
     event.ttftMs,
     event.decodeMs,
@@ -32,7 +33,7 @@ export function listPerformanceEvents(
   const cutoff = now() - retentionDays * MS_PER_DAY
   const rows = db
     .prepare(
-      `SELECT id, service, model, eval_tokens, ttft_ms, decode_ms,
+      `SELECT id, service, model, prompt_tokens, eval_tokens, ttft_ms, decode_ms,
               load_duration_ms, prompt_eval_duration_ms, native_eval_duration_ms, created_at
        FROM performance_events
        WHERE created_at >= ?
@@ -46,6 +47,7 @@ export function listPerformanceEvents(
     // only ever receives an AiService), not user input crossing a trust boundary.
     service: row['service'] as AiService,
     model: String(row['model']),
+    promptTokens: row['prompt_tokens'] === null ? undefined : Number(row['prompt_tokens']),
     evalTokens: Number(row['eval_tokens']),
     ttftMs: Number(row['ttft_ms']),
     decodeMs: Number(row['decode_ms']),

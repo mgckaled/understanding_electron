@@ -14,7 +14,7 @@ function row(overrides: Partial<PerformanceRow>): PerformanceRow {
 }
 
 describe('summarizeByModel', () => {
-  it('computes n, avg, median and p90 tokens/s per (service, model) bucket', () => {
+  it('computes n, avg, median and p90 OUTPUT tokens/s per (service, model) bucket', () => {
     const rows = [
       row({ id: 1, evalTokens: 100, decodeMs: 2000 }), // 50 tok/s
       row({ id: 2, evalTokens: 100, decodeMs: 1000 }), // 100 tok/s
@@ -26,10 +26,17 @@ describe('summarizeByModel', () => {
       service: 'ollama',
       model: 'gemma3:4b',
       n: 3,
-      avgTokensPerSec: (50 + 100 + 200) / 3,
-      medianTokensPerSec: 100,
-      p90TokensPerSec: 200
+      avgOutputTokensPerSec: (50 + 100 + 200) / 3,
+      medianOutputTokensPerSec: 100,
+      p90OutputTokensPerSec: 200
     })
+  })
+
+  it('averages ttftMs and decodeMs across every row in the bucket, not just the ones with a stable rate', () => {
+    const rows = [row({ ttftMs: 100, decodeMs: 2000 }), row({ ttftMs: 300, decodeMs: 1000 })]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.avgTtftMs).toBe(200)
+    expect(summary.avgDecodeMs).toBe(1500)
   })
 
   it('never mixes buckets from different (service, model) pairs', () => {
@@ -70,7 +77,7 @@ describe('summarizeByModel', () => {
     ]
     const [summary] = summarizeByModel(rows)
     expect(summary.n).toBe(1)
-    expect(Number.isFinite(summary.avgTokensPerSec)).toBe(true)
+    expect(Number.isFinite(summary.avgOutputTokensPerSec)).toBe(true)
   })
 
   it('omits a bucket entirely when every row in it has a zero decode window', () => {
@@ -89,6 +96,30 @@ describe('summarizeByModel', () => {
     ]
     const [summary] = summarizeByModel(rows)
     expect(summary.n).toBe(1)
-    expect(summary.avgTokensPerSec).toBe(100)
+    expect(summary.avgOutputTokensPerSec).toBe(100)
+  })
+
+  it('computes INPUT tokens/s from promptTokens/promptEvalDurationMs — Ollama only, no first-chunk bias to guard', () => {
+    // Unlike decode, prefill duration comes straight from the provider
+    // (DO7.9) — no wall-clock derivation, so no threshold is needed here.
+    const rows = [row({ promptTokens: 200, promptEvalDurationMs: 1000 })] // 200 tok/s
+    const [summary] = summarizeByModel(rows)
+    expect(summary.avgInputTokensPerSec).toBe(200)
+  })
+
+  it('reports null avgInputTokensPerSec for a bucket with no native prefill fields (cloud)', () => {
+    const [summary] = summarizeByModel([
+      row({ promptTokens: undefined, promptEvalDurationMs: undefined })
+    ])
+    expect(summary.avgInputTokensPerSec).toBeNull()
+  })
+
+  it('averages input tokens/s only over rows that carry both native fields', () => {
+    const rows = [
+      row({ promptTokens: 100, promptEvalDurationMs: 1000 }), // 100 tok/s
+      row({ promptTokens: undefined, promptEvalDurationMs: undefined }) // cloud row, ignored
+    ]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.avgInputTokensPerSec).toBe(100)
   })
 })

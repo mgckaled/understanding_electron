@@ -10,18 +10,24 @@ const SUMMARIES: PerformanceSummary[] = [
     service: 'ollama',
     model: 'gemma3:4b',
     n: 12,
-    avgTokensPerSec: 34.2,
-    medianTokensPerSec: 33.1,
-    p90TokensPerSec: 40.5,
+    avgTtftMs: 420,
+    avgDecodeMs: 2_930,
+    avgInputTokensPerSec: 180.4,
+    avgOutputTokensPerSec: 34.2,
+    medianOutputTokensPerSec: 33.1,
+    p90OutputTokensPerSec: 40.5,
     maxLoadDurationMs: 48_000
   },
   {
     service: 'glm',
     model: 'glm-4.5',
     n: 3,
-    avgTokensPerSec: 60,
-    medianTokensPerSec: 58,
-    p90TokensPerSec: 70,
+    avgTtftMs: 900,
+    avgDecodeMs: 1_200,
+    avgInputTokensPerSec: null,
+    avgOutputTokensPerSec: 60,
+    medianOutputTokensPerSec: 58,
+    p90OutputTokensPerSec: 70,
     maxLoadDurationMs: null
   }
 ]
@@ -43,7 +49,7 @@ describe('PerformancePanel', () => {
     expect(await screen.findByText(/últimos 30 dias/)).toBeInTheDocument()
   })
 
-  it('lists model, n and tokens/s per bucket', async () => {
+  it('lists model, n, the ttft/decode split and input/output tokens/s per bucket', async () => {
     const api = installApiMock()
     vi.mocked(api.performance.list).mockResolvedValue(SUMMARIES)
 
@@ -52,11 +58,14 @@ describe('PerformancePanel', () => {
     expect(await screen.findByText('gemma3:4b')).toBeInTheDocument()
     const ollamaRow = screen.getByText('gemma3:4b').closest('tr')
     expect(ollamaRow).toHaveTextContent('12')
+    expect(ollamaRow).toHaveTextContent('420ms')
+    expect(ollamaRow).toHaveTextContent('2,9s')
+    expect(ollamaRow).toHaveTextContent('180,4 tok/s')
     expect(ollamaRow).toHaveTextContent('34,2 tok/s')
     expect(ollamaRow).toHaveTextContent('48,0s')
   })
 
-  it('shows — for the load column when the bucket has no Ollama-native duration', async () => {
+  it('shows — for input tok/s and the load column when the bucket has no Ollama-native fields', async () => {
     const api = installApiMock()
     vi.mocked(api.performance.list).mockResolvedValue(SUMMARIES)
 

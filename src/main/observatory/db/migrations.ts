@@ -42,4 +42,11 @@ const v2: Migration = (db) => {
   `)
 }
 
-export const migrations: readonly Migration[] = [v1, v2]
+// New rung, not an edit to v2 (D14.2's own rule): a dev database that already
+// ran v2 exists on this machine, with real rows in it — ALTER TABLE keeps
+// them, editing v2 in place would not.
+const v3: Migration = (db) => {
+  db.exec(`ALTER TABLE performance_events ADD COLUMN prompt_tokens INTEGER;`)
+}
+
+export const migrations: readonly Migration[] = [v1, v2, v3]

@@ -4,6 +4,7 @@ import type { AiService, PerformanceSummary } from '@shared/ipc'
 export type PerformanceEvent = {
   service: AiService
   model: string
+  promptTokens?: number
   evalTokens: number
   ttftMs: number
   decodeMs: number
@@ -28,9 +29,20 @@ const MIN_EVAL_TOKENS_FOR_RATE = 5
 // null, never Infinity/NaN: a decode window of ~0ms or a too-short reply is a
 // degenerate sample, and a fabricated (or unstable) rate would drag the
 // bucket's average further than dropping the sample does.
-function tokensPerSec(row: PerformanceRow): number | null {
+function outputTokensPerSec(row: PerformanceRow): number | null {
   if (row.decodeMs <= 0 || row.evalTokens < MIN_EVAL_TOKENS_FOR_RATE) return null
   return row.evalTokens / (row.decodeMs / 1000)
+}
+
+// Unlike decode, prefill is never derived from our own onChunk marks — both
+// promptTokens and promptEvalDurationMs are the provider's own exact count
+// and duration for the SAME call, so there is no first-chunk bias to guard
+// against here (O-7, DO7.9). Ollama-only: no cloud adapter reports a
+// prefill-only duration, only the combined ttftMs.
+function inputTokensPerSec(row: PerformanceRow): number | null {
+  if (row.promptTokens === undefined || row.promptEvalDurationMs === undefined) return null
+  if (row.promptEvalDurationMs <= 0) return null
+  return row.promptTokens / (row.promptEvalDurationMs / 1000)
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -46,14 +58,21 @@ function max(values: number[]): number {
   return Math.max(...values)
 }
 
+function avgOf(values: (number | null | undefined)[]): number | null {
+  const defined = values.filter((value): value is number => value !== null && value !== undefined)
+  return defined.length === 0 ? null : average(defined)
+}
+
 /**
- * Groups raw rows by `(service, model)` and computes n/avg/median/p90 of
- * tokens/s per bucket (O-7, DO7.5) — the summary is derived here, never a
- * second table kept in sync with `performance_events`.
+ * Groups raw rows by `(service, model)` and computes the three-way
+ * decomposition promised in `reference/observatory/README.md` § 9.2 — network
+ * + prefill (`ttftMs`), decode, and tokens/s, split into input (prefill) and
+ * output (decode) — per bucket (O-7, DO7.5/DO7.9). The summary is derived
+ * here, never a second table kept in sync with `performance_events`.
  *
- * @returns One entry per bucket that has at least one measurable rate; a
- *   bucket where every row had a zero decode window or too few tokens
- *   (DO7.8) is omitted rather than reported with a biased number.
+ * @returns One entry per bucket that has at least one measurable output
+ *   rate; a bucket where every row had a zero decode window or too few
+ *   tokens (DO7.8) is omitted rather than reported with a biased number.
  */
 export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
   const buckets = new Map<string, PerformanceRow[]>()
@@ -64,11 +83,11 @@ export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
 
   const summaries: PerformanceSummary[] = []
   for (const bucket of buckets.values()) {
-    const rates = bucket
-      .map(tokensPerSec)
+    const outputRates = bucket
+      .map(outputTokensPerSec)
       .filter((rate): rate is number => rate !== null)
       .sort((a, b) => a - b)
-    if (rates.length === 0) continue
+    if (outputRates.length === 0) continue
 
     // MAX, not average (DO7.2 revisited): Ollama reports load_duration on
     // every call, near-zero once the model is resident — averaging one cold
@@ -81,10 +100,13 @@ export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
     summaries.push({
       service: bucket[0].service,
       model: bucket[0].model,
-      n: rates.length,
-      avgTokensPerSec: average(rates),
-      medianTokensPerSec: percentile(rates, 0.5),
-      p90TokensPerSec: percentile(rates, 0.9),
+      n: outputRates.length,
+      avgTtftMs: average(bucket.map((row) => row.ttftMs)),
+      avgDecodeMs: average(bucket.map((row) => row.decodeMs)),
+      avgInputTokensPerSec: avgOf(bucket.map(inputTokensPerSec)),
+      avgOutputTokensPerSec: average(outputRates),
+      medianOutputTokensPerSec: percentile(outputRates, 0.5),
+      p90OutputTokensPerSec: percentile(outputRates, 0.9),
       maxLoadDurationMs: loads.length === 0 ? null : max(loads)
     })
   }

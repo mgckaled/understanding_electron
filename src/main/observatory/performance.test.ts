@@ -11,6 +11,7 @@ describe('recordPerformanceEvent / listPerformanceEvents', () => {
     recordPerformanceEvent(db, {
       service: 'ollama',
       model: 'gemma3:4b',
+      promptTokens: 512,
       evalTokens: 42,
       ttftMs: 120,
       decodeMs: 900,
@@ -30,9 +31,14 @@ describe('recordPerformanceEvent / listPerformanceEvents', () => {
     expect(rows).toHaveLength(2)
 
     const ollamaRow = rows.find((row) => row.service === 'ollama')
-    expect(ollamaRow).toMatchObject({ loadDurationMs: 48_000, promptEvalDurationMs: 80 })
+    expect(ollamaRow).toMatchObject({
+      promptTokens: 512,
+      loadDurationMs: 48_000,
+      promptEvalDurationMs: 80
+    })
 
     const cloudRow = rows.find((row) => row.service === 'glm')
+    expect(cloudRow?.promptTokens).toBeUndefined()
     expect(cloudRow?.loadDurationMs).toBeUndefined()
   })
 

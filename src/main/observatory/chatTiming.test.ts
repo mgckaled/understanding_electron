@@ -24,6 +24,7 @@ describe('measureChatTiming', () => {
       onChunk?.('oi')
       return {
         content: 'oi',
+        promptTokens: 512,
         evalTokens: 10,
         loadDurationMs: 48_000,
         promptEvalDurationMs: 80,
@@ -34,6 +35,7 @@ describe('measureChatTiming', () => {
     const { timing } = await measureChatTiming(chatFn, request)
 
     expect(timing).toMatchObject({
+      promptTokens: 512,
       loadDurationMs: 48_000,
       promptEvalDurationMs: 80,
       nativeEvalDurationMs: 900

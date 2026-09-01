@@ -94,19 +94,26 @@ export type EventRow = {
 }
 
 /**
- * Tokens/s summary for one `(service, model)` bucket, already aggregated in
- * the main process — the raw `performance_events` rows never cross IPC
- * (O-7, DO7.5). `maxLoadDurationMs` is `null`, never `0`, when no row in the
- * bucket carried it (every cloud-provider bucket, and any Ollama bucket
- * measured while the model was already resident).
+ * Timing and tokens/s summary for one `(service, model)` bucket, already
+ * aggregated in the main process — the raw `performance_events` rows never
+ * cross IPC (O-7, DO7.5). The three-way split promised by
+ * `reference/observatory/README.md` § 9.2: `avgTtftMs` (network + prefill),
+ * `avgDecodeMs`, and tokens/s split into input (prefill) and output (decode).
+ * `avgInputTokensPerSec` and `maxLoadDurationMs` are `null`, never `0`, when
+ * no row in the bucket carried the underlying native field — every
+ * cloud-provider bucket, and (for the load column) any Ollama bucket
+ * measured while the model was already resident (O-7, DO7.9).
  */
 export type PerformanceSummary = {
   service: AiService
   model: string
   n: number
-  avgTokensPerSec: number
-  medianTokensPerSec: number
-  p90TokensPerSec: number
+  avgTtftMs: number
+  avgDecodeMs: number
+  avgInputTokensPerSec: number | null
+  avgOutputTokensPerSec: number
+  medianOutputTokensPerSec: number
+  p90OutputTokensPerSec: number
   maxLoadDurationMs: number | null
 }
 
