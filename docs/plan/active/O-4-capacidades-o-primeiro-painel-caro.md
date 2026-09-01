@@ -1,0 +1,155 @@
+# O-4 — Capacidades: o primeiro painel Caro, e o mecanismo que ele estreia
+
+> Quarto plano da trilha O. A fundamentação inteira — os seis eixos, o inventário classificado, as seis regras de leveza — é de [`docs/reference/observatory/`](../../reference/observatory/README.md). Este plano **não a repete: aplica**. Toda referência a "§ n" abaixo é seção daquele documento.
+
+**Origem:** O-1 (`Fora do escopo`, DO1.4) já previa a mudança e adiou os dois motivos: *"`LoadedModels` e `CloudSecrets` saindo de Configurações — mesma lógica da DO1.4, mas o destino deles é o painel de Capacidades, que é O-4"* e *"a idade do número e o botão de remedir (§ 4.3) — nenhum painel deste plano é Caro. O mecanismo nasce em O-4, com o primeiro consumidor real."* Este é esse plano: a única linha `Caro` do inventário (§ 6) e o primeiro painel que não pode se dar ao luxo de abrir e ler sozinho.
+
+**Entrega:** o painel **Capacidades**, grupo `state`, com o gate de cada serviço de IA (Ollama/GLM/Gemini), o catálogo de modelos com suas capacidades (`vision`/`tools`/`embedding`/...), a presença de chave de nuvem, e — pela primeira vez na trilha — leitura **sob botão explícito**, com a idade do próprio número exibida. `LoadedModels` (modelos em memória, com "Descarregar") migra de Configurações para dentro deste painel. Nenhum canal IPC novo.
+
+---
+
+## O que a sondagem achou, e que o desenho não previa
+
+Leitura do fonte (`src/renderer/src/features/conversation/`, `src/renderer/src/features/settings/`, `src/core/ai/models.ts`, `src/main/features/ai/providers/`) e Context7 (`tanstack/query`) + busca web em 31/08/2026.
+
+| Afirmação plausível | O que é verdade |
+| --- | --- |
+| `LoadedModels` **e** `CloudSecrets` saem de Configurações, como o O-1 registrou | ⚠️ **Só `LoadedModels`.** `CloudSecrets` não é observação — é o formulário que **escreve** a chave (`secrets:write`/`secrets:remove`, via `useCloudSecret.ts`). A frase de origem *"Configurações é o que você muda, Observatório é o que você olha"* (DO1.4) argumenta pela permanência dela em Configurações, não pela saída. O que o painel Capacidades mostra é só a **presença** (`secrets:has`) — o mesmo dado que a fundamentação já lista como fonte da linha Capacidades (§ 6), sem UI de escrever/substituir/remover |
+| Reaproveitar `useAiModels`/`selectableModels` para o catálogo do painel | ⚠️ **Esconderia o embedder.** `selectableModels` (D15.11) filtra por `hasCapability(model, 'completion')` — e `core/ai/models.ts` documenta, na função `readAttention`, que *"an embedder reports none of them, and it is never offered for conversation anyway"*. Um painel que existe para descrever capacidade não pode herdar o filtro que a tela de conversa usa para **esconder** a capacidade menos comum. O catálogo do painel usa `ai:models` cru |
+| O catálogo Ollama é rápido, como os outros canais Grátis da trilha | Não — é o mesmo N+1 que o O-2 já mediu em uso real (`ai:models` ~4,9s para 14 modelos via `/api/show` por modelo); GLM e Gemini respondem uma lista fixa, sem custo. É exatamente por isso que a fundamentação classifica Capacidades como **Caro** apesar de **Leve** (§ 5, "o par que uma classificação de eixo único esconderia") |
+| TanStack Query não tem um jeito nativo de "só sob botão, com idade do número" | Existe, e é exatamente a forma que a regra pede: `enabled: false` desarma o fetch automático (mount e invalidação), `refetch()` dispara sob demanda, e `dataUpdatedAt` do resultado é o timestamp para a idade — sem inventar mecanismo (Context7, `tanstack/query`) |
+| `Intl.RelativeTimeFormat('pt-BR')` precisa de uma dependência (`date-fns`, `dayjs`) para o texto "há 4 min" | Não — é API nativa da plataforma, suportada desde 2020 em todo motor Chromium (o app roda Chromium 148), com `numeric: 'auto'` produzindo a forma natural em pt-BR. Nenhuma dependência nova (busca web) |
+| `§ 4.4` nomeia "Visão geral · Capacidades · Modelos" como três painéis distintos do grupo Estado | O `§ 4.4` é um esboço **ilustrativo** de onze painéis, usado para justificar adiar a busca (só se paga acima de ~12) — não é o inventário buildável. O `§ 6`, que É o inventário, tem **uma** linha: "Capacidades — Ollama, modelos, `vision`, embedder, chaves". Mesmo padrão do O-2 (DO2.1: três fontes, um painel só) |
+| `CAPABILITY_META` (`capabilities.ts`) já cobre toda capacidade que o Ollama pode declarar | ⚠️ **Não — falta `audio`.** Conferido no fonte oficial (`types/model/capability.go`, `ollama/ollama`, GitHub direto): o enum `Capability` tem **8** valores — `completion`, `tools`, `insert`, `vision`, `embedding`, `thinking`, `image`, `audio`. `capabilities.ts` mapeia 5 (falta `image` e `audio`); `completion` é dropado de propósito (D`F2.1`). `image` (geração de imagem) só existe na tabela de erro de `server/images.go` — **nenhum** `appendCapability(..., model.CapabilityImage)` no arquivo, confirma prototype/"experimental" (commit "Add experimental image generation fields to /api/generate", jan/2026): seguro adiar. `audio`, ao contrário, **está em uso real** — `appendCapability(..., model.CapabilityAudio)` aparece três vezes (detecção de projetor de áudio, negociação de template), é capacidade viva, não vestígio. Um modelo de entrada de áudio instalado cairia hoje no fallback `UNKNOWN` (sigla de duas letras cortada do nome cru, ícone `HelpCircle`) — o painel cuja finalidade é justamente descrever capacidade perderia a mais nova das oito. Vira DO4.9 |
+
+---
+
+## Decisões
+
+### DO4.1 — Um painel, "Capacidades", grupo `state`
+
+Segue o `§ 6` (a fonte buildável), não o esboço do `§ 4.4`. Entra em `panels.ts` como a quinta entrada do grupo `state`, ao lado de Runtime/Processos/Em andamento/Motor DuckDB.
+
+### DO4.2 — O painel nasce sem query automática; um botão dispara a sondagem, e o resultado carrega a própria idade
+
+Primeiro consumidor do mecanismo que o `§ 4.3` reserva para painéis `Caro`: **"só sob botão explícito, e exibe a idade do próprio número"**. Implementado com `useQuery({ enabled: false })` + `refetch()` (Context7 confirma a forma) — o painel abre mostrando um botão "Sondar capacidades" e nada mais; depois da primeira sondagem, mostra o resultado com um rodapé *"medido há Xmin · ↻"*, `Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' })` sobre `dataUpdatedAt`, e o `↻` chama o mesmo `refetch()`.
+
+⚠️ **`ollama pull`/`ollama rm` feitos fora do app não atualizam o painel sozinhos** — mesmo limite que `useAiModels` já documenta ("instalar um modelo é um evento de sistema que o app não observa"). O catálogo mostrado é o da última sondagem; "medido há Xmin" é precisamente o aviso honesto disso, não um defeito a consertar. Sem sincronia com o `queryKey` do seletor de conversa (`['ai','models',service]`) — os dois já não se atualizavam entre si antes deste plano, e continuam não se atualizando, só que agora dos dois lados.
+
+⚠️ **A espera de vários segundos precisa de retorno visual, e a primeira redação não tinha nenhum.** `isFetching` de `useQuery` alimenta o `loading` do `Button` (`shared/ui/Button`, já usado assim em `LoadedModels.tsx`/`useLoadedModels.ts` para "Descarregar") — botão desabilita, mostra o spinner e `aria-busy`, tanto no clique inicial ("Sondar capacidades") quanto no `↻` do rodapé. Sem isso, um clique sem resposta visível convida ao segundo clique — que `enabled: false` não impediria por si só (`refetch()` chamado duas vezes em sequência dispara duas idas, a segunda invisível atrás da primeira).
+
+⚠️ Isto **diverge** de todo painel anterior da trilha (`staleTime: 0`, relê a cada abertura) — de propósito: os outros são Grátis/Barato/Moderado, este é o primeiro Caro, e a regra do `§ 4.3` existe para não repetir a lição do mill.tools sobre número obsoleto sem aviso.
+
+### DO4.3 — Uma sondagem, três serviços, um timestamp só
+
+**Uma** `useQuery({ enabled: false })`, não `useQueries`: o `queryFn` roda `Promise.allSettled` sobre `ai:isAvailable` + `ai:models` para os três serviços, `secrets:has` para os dois provedores de nuvem, e `ai:loaded('ollama')` (a razão de incluir este último está na DO4.7) — nove chamadas, um `dataUpdatedAt` só. `useQueries` foi cogitado e descartado: ele devolveria um `dataUpdatedAt` por sub-query, e "medido há Xmin" viraria uma regra ad hoc (média? mínimo?) para colapsar oito relógios em um — uma única query com agregação manual não tem essa pergunta. Um serviço fora do ar não derruba os outros: cada chamada do `Promise.allSettled` é tratada por si (nunca `Promise.all` cru), e o serviço aparece como "indisponível" na própria linha (regra 6 do `§ 4.3`, "métrica ausente não é zero" — já vivida duas vezes na trilha, O-1/DO1.8 e O-2).
+
+### DO4.4 — O catálogo é o cru de `ai:models`, nunca `selectableModels`
+
+Ver achado da sondagem. `selectableModels` é uma decisão de **produto** sobre o que vale oferecer para conversar (D15.11); o painel existe para descrever o que está instalado, ponto — inclusive o que a tela de conversa deliberadamente esconde (embedder, variante redundante). Reimplementar o filtro aqui repetiria o erro que a `hasCapability` já documenta como intencional em outro contexto.
+
+### DO4.5 — O embedder é uma linha derivada, não um campo novo
+
+`core/ai/models.ts` ganha uma função pura, nível 1: `findEmbedders(models: AiModel[]): AiModel[]`, filtrando por `hasCapability(model, 'embedding')` — reaproveitando a função que já existe, sem duplicar o predicado. Não é "preparar o terreno para RAG" (RAG é `Gatilhado`, § 6): é o mesmo argumento do `§ 1.3` da fundamentação, "toda funcionalidade opcional tem um gate, então a lista de gates é a auto-descrição honesta". O app já tem (ou não) um modelo com essa capacidade instalado, hoje, e é um fato tão observável quanto `vision`.
+
+⚠️ **`findEmbedders` não deduplica variante.** A frota real desta máquina tem `nomic-embed-text:latest` **e** `nomic-embed-custom:latest` (mesmos pesos, por `ollama create` — o formato que `D15.11` já nomeia via `variantOf`). `selectableModels` dedupliaria a variante cujo pai está presente; `findEmbedders` **não** chama `selectableModels` (é a DO4.4 de propósito) e devolve os dois. Decisão: mostrar os dois — é o retrato honesto do que está instalado, mesmo padrão do resto do catálogo cru neste painel, não uma lista "para escolher um" como o seletor de conversa é.
+
+### DO4.6 — Só `CapabilityChip.tsx` sobe para `shared/ui/`; `capabilities.ts` fica
+
+Correção sobre a primeira redação: `DraftPicker` mora em `features/draft/`, não em `features/conversation/` — os dois chamadores de hoje (`ModelSelector`, `DraftPicker`) **já cruzam** a fronteira de feature, o gatilho da régua do `design-system` ("sobe quando o segundo chamador aparece") já disparou desde o E-1-x e ninguém remediou, mesmo padrão do `Panel`/`Toolbar` apagados no DS-8 por ficarem sem chamador — aqui é o oposto: o primitivo devido ficou parado abaixo do teto. O painel Capacidades é o **terceiro** chamador, não o primeiro.
+
+Mas os dois arquivos não têm a mesma forma. `CapabilityChip.tsx` recebe `{ sigla, Icon, label }` — genérico, sem saber o que é `AiModel`, do mesmo molde que os nove primitivos existentes. `capabilities.ts` (`capabilityChips(model: AiModel)`, `CAPABILITY_META`) é mapeamento de **domínio** — conhece o formato de `AiModel` e a lista de capacidades do provedor. Só `CapabilityChip.tsx` sobe para `shared/ui/CapabilityChip/` (10º primitivo); `capabilities.ts`/`capabilities.test.tsx` ficam em `features/conversation/`, e `CapabilitiesPanel.tsx` importa a função de lá — import entre features é livre (skill `architecture`), e mover um mapeamento de domínio para `shared/ui/` misturaria os dois níveis que os nove primitivos existentes mantêm separados.
+
+Trabalho do passo: mover só `CapabilityChip.tsx` para `shared/ui/CapabilityChip/`, sem tocar o conteúdo; corrigir os dois imports existentes (`ModelSelector.tsx`, `DraftPicker.tsx`) e o novo em `CapabilitiesPanel.tsx`.
+
+### DO4.7 — `LoadedModels` migra inteiro, sob o mesmo botão; `CloudSecrets` fica
+
+Ver achado da sondagem. `LoadedModels` (lista + "Descarregar") é observação pura mais uma ação de liberar memória — sem semântica de configuração, mesmo padrão de `Versions` no O-1 (DO1.4 literal). `CloudSecrets` fica em Configurações; o painel Capacidades mostra só `secrets.has(provider)` como parte do gate de cada serviço de nuvem, sem link de atalho para editar — a fronteira "Configurações é o que você muda" não ganha porta lateral.
+
+⚠️ **Correção de projeto:** a primeira redação desta decisão deixava `LoadedModels` com `staleTime: 0` e montagem própria, furando a promessa central da DO4.2 ("nada é sondado até o clique") — `ai:loaded` dispararia ao abrir o painel, sem botão, e o teste de nível 2 planejado nem cobria esse canal para acusar o furo (a forma vazia que a skill `testing` nomeia: enumerar três canais e esquecer o quarto que provaria o defeito). `ai:loaded('ollama')` entra na mesma chamada agregada da DO4.3 — uma sondagem, um botão, uma idade, sem exceção. "Descarregar" chama `refetch()` da mesma query ao terminar (não `invalidateQueries`: Context7 confirma que uma query `enabled: false` **ignora** invalidação — só `refetch()` a move), mais o `invalidateQueries` de sempre em `['app', 'memory']`, que segue como query normal e não é afetado por isto.
+
+### DO4.8 — Nenhum canal novo
+
+`ai:isAvailable`, `ai:models`, `ai:loaded`, `ai:unload`, `secrets:has` já existem, todos usados hoje por `Settings`/`conversation`. A tabela de canais da skill `ipc` permanece em 44.
+
+### DO4.9 — `CAPABILITY_META` ganha `audio`; `image` fica de fora, nomeado
+
+Ver achado da sondagem. `audio` entra em `capabilities.ts` com sigla própria (`AU`, ícone `Mic` de `lucide-react`, label "Áudio — entende áudio anexado", mesmo padrão de `vision`). `image` (geração de imagem) **não** entra — não é omissão, é o mesmo raciocínio da DO1.8 (`idleWakeupsPerSecond`): a própria fonte do Ollama mostra que nenhum caminho de detecção atribui essa capacidade a modelo nenhum hoje, só a tabela de erro a conhece. Entra quando o Ollama passar a atribuí-la de verdade, não antes.
+
+⚠️ **`AU` não colide hoje, mas `image` vai colidir amanhã.** `vision` já é sigla `IM` ("Imagem"). O dia em que `image` (geração) sair de prototype, a sigla óbvia repete a de `vision` — o mesmo problema que já fez `tools`/`thinking` ganharem duas letras em vez de uma. Registrado aqui para não custar uma segunda investigação quando `CapabilityImage` finalmente aparecer num `appendCapability` de verdade.
+
+---
+
+## Passos
+
+### 1. A derivação pura (DO4.5, DO4.9)
+
+`core/ai/models.ts` ganha `findEmbedders`. `capabilities.ts` ganha a entrada `audio` em `CAPABILITY_META`. Nível 1, contra fixtures reais do catálogo (um modelo com `embedding`, um sem; um teste de `capabilityChips` cobrindo um modelo com `audio` entre suas capacidades).
+
+⚠️ **A asserção do teste de `audio` não pode ser sobre a sigla.** O fallback `UNKNOWN` já produz `capability.slice(0, 2).toUpperCase()` — para `'audio'` isso é `'AU'`, **idêntico** à sigla que `CAPABILITY_META['audio']` propõe. Um teste que só confere `sigla === 'AU'` passa com ou sem a entrada nova — a mesma forma vazia que a DO4.7 já corrigiu duas vezes nesta escrita. O que discrimina é o **label** (`'Áudio — entende áudio anexado'` contra o genérico `'Capacidade sem descrição nesta versão do app'`) ou o ícone (`Mic` contra `HelpCircle`).
+
+Provocação: trocar `'embedding'` por `'completion'` na chamada de `hasCapability` → o teste tem de reprovar (a lista viraria "todo modelo conversável", o oposto do que a função promete); e separadamente, remover a entrada `audio` de `CAPABILITY_META` → o teste tem de reprovar no **label**, não na sigla.
+
+### 2. O hook de sondagem (DO4.2, DO4.3, DO4.7)
+
+`features/observatory/useCapabilities.ts`: uma `useQuery({ enabled: false })`, `queryKey: ['observatory', 'capabilities']`, cujo `queryFn` roda `Promise.allSettled` sobre `ai:isAvailable`/`ai:models` dos três serviços, `secrets:has` dos dois provedores de nuvem e `ai:loaded('ollama')`, devolvendo `{ services: Record<AiService, ...>, cloudKeys: Record<CloudProvider, boolean>, loadedModels: LoadedModel[] }`. `ViewState` por serviço dentro do combinado — não um `ViewState` só para o painel inteiro, porque um serviço fora do ar não é "o painel falhou" (DO4.3). Expõe `dataUpdatedAt`, `refetch` e **`isFetching`** do próprio `useQuery` — o terceiro é o que alimenta o `loading` do botão (achado da conferência com o usuário, ver a nota na DO4.2).
+
+Nível 2: nada dispara até `refetch` ser chamado — as **nove** chamadas ficam mockadas e a asserção conta todas, não uma amostra; depois de `refetch`, um serviço com `ai:isAvailable` rejeitando não impede os outros dois de aparecer.
+
+Provocação: trocar `Promise.allSettled` por `Promise.all` cru → o teste do serviço saudável ao lado do indisponível tem de reprovar (a rejeição de um se propagaria para o objeto inteiro).
+
+### 3. O painel, com `LoadedModels` já dentro (DO4.1, DO4.2, DO4.4, DO4.6, DO4.7)
+
+`CapabilitiesPanel.tsx`: botão inicial "Sondar capacidades", com `loading={isFetching}` (`shared/ui/Button`, mesmo padrão de `LoadedModels.tsx`/"Descarregar") — desabilitado e com spinner enquanto a sondagem está em voo, o que também evita um segundo `refetch()` disparado por clique duplo antes da primeira resposta. Depois de `refetch`, uma linha por serviço (nome, disponível sim/não, versão/host quando presente), o catálogo cru com **uma linha por modelo** (nome, `parameterSize` — ex. "4.3B" —, `formatSize(sizeBytes)`, teto de contexto declarado — `formatContext(model.contextLength)` —, `capabilityChips`, e "variante de `<nome>`" quando `variantOf` não é nulo), a linha do embedder (DO4.5) quando houver, `secrets.has` por provedor de nuvem, a seção "Em memória" (o antigo `LoadedModels`, com "Descarregar" chamando `refetch()` da DO4.7), e o rodapé "medido há Xmin · ↻" via `Intl.RelativeTimeFormat` — o `↻` é o mesmo `Button` com o mesmo `loading={isFetching}`, uma segunda sondagem também desabilita o botão em vez de deixar clique acumular. `LoadedModels`/`useLoadedModels` migram de `features/settings/` para dentro deste módulo; `Settings.tsx` perde a seção e o import.
+
+⚠️ **A linha do modelo é o mesmo formato que `ModelSelector` já usa** (nome + tamanho + teto + chips), mais dois campos que `ModelSelector` não mostra porque não precisa: `parameterSize` (contagem de parâmetros — não é implícito ao ver o tamanho em disco, quantização muda a relação entre os dois) e `variantOf` (resolve ao vivo a pergunta que a própria sondagem levantou: por que `nomic-embed-text` e `nomic-embed-custom` aparecem como duas entradas — DO4.5). `provider` não repete como campo — o modelo já está dentro da seção do próprio serviço, repetir seria a mesma informação duas vezes. **Fica de fora, por decisão:** o aviso "não cabe" que `ModelSelector` mostra via `fitsInMemory(ceilingOf(model))` — aquele cálculo depende da RAM livre **no momento de escolher** um modelo para conversar; Capacidades não seleciona nada, só descreve o catálogo, e acoplar o painel a uma leitura de memória extra para um aviso de "posso usar agora" misturaria descrição com decisão de uso. `contextLength` mostrado aqui é o teto **declarado** pelo modelo, não o ajustado por RAM disponível — e `attention` (`blockCount`/`headCountKv`/`headDim`/`slidingWindow`) fica de fora também: são parâmetros internos ao cálculo de custo de KV cache, não um fato legível por si só — nem `ModelSelector` os expõe crus, só o resultado (`ceilingOf`), que este painel já decidiu não reproduzir.
+
+Entra em `panels.ts` como quinta entrada de `state` (DO4.1).
+
+Nível 2: **não basta o modal fechado** — `CapabilitiesPanel` só monta quando o usuário navega até a categoria Capacidades (§ 4.2/DO1.10 já garantem isso; testá-lo de novo aqui não prova nada, porque o painel não mudou de mount, mudou de comportamento **depois** de montado). A asserção certa é: abrir o observatório, ir a Capacidades — o painel monta — e afirmar que **nenhuma** das nove chamadas mockadas foi feita ainda; só então clicar em "Sondar capacidades" e afirmar que as nove foram. Reabrir o painel **não** relê sozinho — só o `↻` ou "Descarregar" fazem; "Em memória" aparece dentro de Capacidades e sumiu de Configurações. Enquanto a promessa mockada não resolve, o botão está `aria-busy`/`disabled` (`Button` já garante isso — o teste confere o atributo, não reimplementa o comportamento).
+
+Provocação: remover `enabled: false` do hook → a primeira metade do teste (painel montado, nada chamado ainda) tem de reprovar; separadamente, trocar `loading={isFetching}` por `loading={false}` → o teste do estado ocupado tem de reprovar.
+
+### 4. Conferência ao vivo — com o usuário
+
+1. Abrir o observatório, ir a Capacidades: nada é sondado até o clique.
+2. Clicar em "Sondar capacidades": Ollama, GLM e Gemini aparecem (GLM/Gemini quase instantâneos, Ollama leva alguns segundos — o Caro do `§ 5`); "Em memória" aparece na mesma resposta, sem chamada própria.
+3. O catálogo Ollama mostra os modelos com seus chips de capacidade, **incluindo** um sem `completion` se houver embedder instalado nesta máquina.
+4. "Descarregar" um modelo: a lista "Em memória" atualiza sem precisar clicar em `↻`.
+5. `↻` depois de alguns minutos: a idade muda de "há 1 min" para o valor atual.
+6. Confirmar em Configurações que `LoadedModels` sumiu e `CloudSecrets` continua lá, funcionando como antes.
+
+---
+
+## Verificação
+
+- `pnpm check:fast` depois de cada passo.
+- **Provocação obrigatória**, uma sabotagem por vez — listadas nos passos 1–3 acima.
+- **Sem caso E2E novo.** O que resta provar é tempo de rede real (Ollama) e o texto do `Intl.RelativeTimeFormat`, nenhum dos dois observável de forma estável sob Playwright contra dado sintético.
+
+---
+
+## Fora do escopo deste plano
+
+- **Cache do Chromium** (`session.getCacheSize()`, `§ 6`) — mesmo grupo de custo (`Acessível`), painel próprio, sem relação de dado com Capacidades.
+- **Editar/testar uma chave de nuvem a partir do painel** — manteria a porta lateral que a DO4.7 recusa; se um atalho for pedido, é decisão de produto, não conserto deste plano.
+- **Histórico de sondagens** ("Ollama esteve indisponível 3x hoje") — é `Barato/Pesado` (linha "Eventos", `§ 6`), pede `observatory.db`, que é O-6.
+- **Metadados de modelo além de nome/tamanho/capacidades/contexto** — `ShowResponse` (`api/types.go`, `ollama/ollama`) carrega bem mais do que `AiModel` hoje normaliza: `license`, `template` (o prompt template embutido), `system` (system prompt embutido no modelo), `family`/`families` (arquitetura), `quantization_level`, `digest`. `ProcessModelResponse` (`/api/ps`) também carrega `size_vram` — quanto do modelo carregado está em VRAM, um jeito barato de **confirmar ao vivo** a decisão CPU-only já medida em `docs/reference/models/ollama-models-gpu-analysis.md` — e `context_length`, a janela **realmente ativa** do modelo carregado, distinta do teto declarado que `AiModelAttention` já rastreia. Nenhum campo pede canal novo (mesmo `ai:models`/`ai:loaded`); é candidato natural a um painel "Detalhe do modelo" (clique num item do catálogo → ficha completa), na linha da regra 3 do `§ 4.3` ("abre com resumo, a coisa inteira só ao clicar") — não decidido aqui para não inflar o escopo de um plano que já é o primeiro `Caro` da trilha.
+
+  ⚠️ **Proveniência remedida, não só lida no fonte.** `curl 127.0.0.1:11434/api/show` contra `gemma3:4b` e `nomic-embed-text` (frota real desta máquina, 01/09/2026) confirma `family`/`families`/`quantization_level` presentes na resposta da 0.32.14 instalada, e `digest` presente em `/api/tags` (ausente em `/api/show` — dois endpoints diferentes, não o mesmo campo repetido). `requires` **não** entra na lista acima por isso: veio ausente nos dois modelos testados (2/2), então o campo existe no contrato Go mas nunca foi observado preenchido nesta frota — um painel futuro que o exibisse renderizaria vazio sempre, até prova em contrário contra outro modelo. Nenhum modelo da frota declara `audio` hoje — consistente com a DO4.9 tratá-la como capacidade real mas ainda não observada localmente.
+- **Botão de reindexar/qualificar o embedder para RAG** — RAG é `Gatilhado`; a linha do embedder aqui é só leitura do catálogo, não preparação de infraestrutura.
+
+---
+
+## Diário de execução
+
+Uma linha por sessão de trabalho, preenchida **antes de encerrar a sessão**. Responde a "onde eu parei?" — não é o histórico do projeto.
+
+| Data | Passo(s) | Estado | Observação |
+| --- | --- | --- | --- |
+| 31/08/2026 | — | plano escrito, ainda não executado | Context7 (`tanstack/query`) confirmou `enabled: false` + `refetch()` + `dataUpdatedAt` como o mecanismo nativo para "só sob botão, com idade do número" (§ 4.3) — nenhuma engenharia própria necessária. Busca web confirmou `Intl.RelativeTimeFormat('pt-BR')` nativo do Chromium, sem dependência nova. A sondagem no código achou duas correções à leitura literal do O-1: `CloudSecrets` não migra (é configuração, não observação) e o catálogo do painel não pode reaproveitar `selectableModels` (esconderia o embedder) — ambas viraram DO4.7/DO4.4. |
+| 01/09/2026 | — | plano revisado antes de qualquer código, ainda não executado | Advisor Opus achou uma contradição real antes da implementação: a redação original de DO4.7 deixava `LoadedModels` com `staleTime: 0` e montagem própria, furando a promessa central da DO4.2 (`ai:loaded` sondaria ao abrir o painel, sem botão) — e o teste de nível 2 planejado nem cobria o canal que provaria isso (forma vazia: três canais listados, o quarto que falharia esquecido). Corrigido fundindo `ai:loaded('ollama')` na mesma chamada agregada da DO4.3 — uma sondagem, um botão, uma idade, sem exceção; "Descarregar" chama `refetch()` direto porque uma query `enabled: false` ignora `invalidateQueries` (confirmado via Context7). Trocado `useQueries` (oito relógios) por uma `useQuery` só com `Promise.allSettled` manual (um `dataUpdatedAt`). Segunda rodada do advisor achou mais dois: o teste "modal fechado não sonda nada" do passo 3 era vacuamente verdadeiro (painel nem monta fechado; a asserção real precisa ser painel **montado**, nada sondado ainda) — corrigido; e a alegação de que Capacidades seria o "primeiro chamador de fora de `conversation/`" para `CapabilityChip` era falsa (`DraftPicker` já mora em `features/draft/` — é o terceiro, não o primeiro) — corrigido, e a promoção rendeu uma segunda decisão: só `CapabilityChip.tsx` (genérico) sobe para `shared/ui/`, `capabilities.ts` (mapeamento de domínio sobre `AiModel`) fica em `features/conversation/`. Passos 3 e 4 originais fundidos em um só. |
+| 01/09/2026 | — | plano refinado antes de qualquer código, ainda não executado | Pedido do usuário: conferir se o padrão oficial de capacidades do Ollama bate com o que `capabilities.ts` já mapeia. Lido `types/model/capability.go` direto do GitHub (`gh api`, decodificado): o enum real tem **8** valores (`completion`, `tools`, `insert`, `vision`, `embedding`, `thinking`, `image`, `audio`), `capabilities.ts` mapeava 5. `image` (geração) confirmado prototype — só existe na tabela de erro de `server/images.go`, nenhum `appendCapability` o atribui a modelo nenhum; fica de fora, motivo nomeado (DO4.9). `audio` confirmado **vivo** — três usos reais em `appendCapability` — e entra no `CAPABILITY_META` (DO4.9). De carona, levantamento do `ShowResponse`/`ProcessModelResponse` completos (`api/types.go`) achou campos que `AiModel` não normaliza — registrado em "Fora do escopo". Terceira rodada do advisor: (1) a asserção da sigla `AU` era vazia — coincide byte a byte com o fallback `UNKNOWN`, corrigida para o label; (2) proveniência remedida ao vivo com `curl 127.0.0.1:11434/api/show` contra a frota real (`gemma3:4b`, `nomic-embed-text`) — `family`/`quantization_level` confirmados, `digest` mora em `/api/tags` não em `/api/show`, `requires` veio ausente 2/2 e foi retirado da lista de "campo interessante" por falta de evidência de que já apareça preenchido nesta máquina; (3) achado real na sondagem: a frota tem `nomic-embed-text` **e** `nomic-embed-custom` (mesmos pesos, variante `ollama create`) — `findEmbedders` não deduplica (é a mesma DO4.4 de propósito), decisão registrada de mostrar os dois. Lição generalizável dos três testes vazios corrigidos nesta sessão subiu para `ARMADILHAS.md` em vez de repetida no diário. Plano considerado final pelo advisor. |
+| 01/09/2026 | — | plano refinado antes de qualquer código, ainda não executado | Pergunta do usuário achou um gap real: a redação até aqui não previa nenhum retorno visual durante os segundos que a sondagem leva — clicar em "Sondar capacidades" e não ver nada convidaria a um segundo clique, empilhando `refetch()`. Corrigido reaproveitando `isFetching` de `useQuery` no `loading` do `Button` (mesmo padrão já em uso por "Descarregar" em `LoadedModels.tsx`) — sem componente novo, sem decisão nova de design, só uma propriedade que o hook já tinha para expor. Vale para o botão inicial e para o `↻` do rodapé, os dois pontos de entrada da mesma sondagem. |
+| 01/09/2026 | — | plano refinado antes de qualquer código, ainda não executado | Pergunta do usuário ("a sondagem é só sobre capacidades?"): não — `ai:models` já devolve o `AiModel` inteiro (nome, tamanho, teto de contexto declarado, atenção, `provider`), a chamada nunca foi recortada só para capacidades. O que estava subespecificado era o que o **painel** mostra disso: a redação dizia só "catálogo cru com `capabilityChips`", sem comprometer nome/tamanho/contexto. Corrigido reaproveitando o formato que `ModelSelector` já usa (nome + `formatSize` + `formatContext` + chips), com um corte explícito: o aviso "não cabe" do `ModelSelector` (via `fitsInMemory(ceilingOf(model))`) fica de fora, porque depende de RAM livre no momento de **selecionar** um modelo — Capacidades só descreve o catálogo, não seleciona nada. Plano considerado final. |
+| 01/09/2026 | — | plano refinado antes de qualquer código, ainda não executado | Segunda pergunta na mesma linha, campo por campo do `AiModel`: `parameterSize` e `variantOf` estavam ausentes da linha do modelo sem motivo — são dado pronto, sem cálculo, e `variantOf` resolve ao vivo a confusão que a própria DO4.5 registrou (`nomic-embed-text`/`nomic-embed-custom` como duas entradas). Ambos entraram na linha. `attention` e o resultado de `ceilingOf` permanecem fora, com o motivo agora escrito explicitamente em vez de implícito no corte da RAM: são internos ao cálculo de custo, não fato legível por si. Plano considerado final — próxima etapa é a implementação. |
