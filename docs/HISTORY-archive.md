@@ -12,6 +12,17 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### E-1-C — O rascunho se edita: CodeMirror 6, no molde do VS Code (ago/2026)
+Origem: o usuário nomeou editar como o diferencial do app — *"eu defino o que é exportado e como é exportado, e não o modelo"*. O `ESCOPO` já dava **duas** decisões exclusivas do usuário (o caminho e o formato); editar acrescenta a terceira, o **conteúdo**. Entrega: as abas `Editar`/`Prévia`, o editor sobre CodeMirror 6, o canal `draft:update` (37º) e `Tabs` promovido a `shared/ui/` (9º primitivo).
+
+**Uma pergunta do usuário descartou um plano inteiro antes de virar código.** Este plano existiu primeiro sobre `<textarea>`, e metade dele era contorno: campo não controlado, estado sombra, `useDeferredValue`, e uma decisão central — a pilha de desfazer — que **nenhum teste do projeto alcançava**. A pergunta foi *"como os apps do mercado fazem, tipo Notion?"*, e a resposta desfez a premissa: **ProseMirror, Lexical e CodeMirror implementam a própria pilha de desfazer**. "O React quebra o desfazer" é limite da `<textarea>`, não da plataforma.
+
+**A escolha entre as três famílias foi decidida por fonte da verdade, não por peso.** TipTap e Lexical editam um modelo de documento e serializam markdown na entrada e na saída, com perda silenciosa no *round-trip* — os emissores de `.docx`/`.pdf` da trilha E passariam a ler o modelo em vez do markdown. No CodeMirror o documento **é** a string, e nada a jusante muda. Registrado porque a pergunta vai voltar: *"por que não um editor rico?"*
+
+⚠️ **A sabotagem achou um teste vacuoso e o desenho redundante atrás dele.** O teste da gravação passava com o `blur` desligado — quem gravava era um **segundo** caminho, na troca de aba, escrito no mesmo passo. Dois mecanismos, duas escritas. Ficou um, porque clicar numa aba já tira o foco do editor. **`EditorView.findFromDOM` melhorou a cobertura além do plano:** é API pública, permite editar por transação, e o nível 2 passou a provar que um documento **alterado** é gravado — só o teclado real ficou para a prova ao vivo, porque `contenteditable` + `beforeinput` não são reproduzíveis sob jsdom.
+
+**O tema é um objeto só e serve aos dois temas do app**, porque todo valor é `var(--color-*)`. Não é conveniência: o CodeMirror injeta CSS próprio, fora do Tailwind e fora dos CSS Modules — exatamente onde o hook `guard` não varre —, então um `#hex` ali seria a primeira cor literal do app a passar despercebida. **Bundle medido:** 2,00 → 2,66 MB com o editor, 3,02 MB com o destaque de markdown; **o destaque sozinho custa 352,8 kB**, porque `lang-markdown` arrasta `lang-html`, e o número ficou no fonte para a remoção ser uma linha. `check:fast`: 961 testes, 108 arquivos. [`plan/implemented/E-1-C-o-rascunho-se-edita.md`](plan/implemented/E-1-C-o-rascunho-se-edita.md)
+
 ### E-1-B — A região da direita ganha um segundo inquilino: o painel de rascunho (ago/2026)
 Origem: o usuário fixou a restrição na primeira rodada de esboço — *"os dois painéis podem sobreviver ao mesmo tempo desde que não ocupem o mesmo espaço em tela"*. A aritmética confirmou a intuição: dois painéis no piso (352px cada) mais a sidebar (264px) e o piso da conversa (416px) somam **1384px** — cabe em 1920, não cabe em 1366. Entrega: `SidePanel` extraído para `shared/ui/` (5º primitivo em CSS Modules), `features/panel/` como dono da região, o painel de rascunho em prévia, seletor, contador clicável, `Ctrl+D` e o rodapé com excluir.
 
