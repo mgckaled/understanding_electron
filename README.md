@@ -154,6 +154,8 @@ src/
 
 Essa separação **é o modelo de segurança transformado em estrutura**: a interface nunca toca o sistema de arquivos direto; ela pede, através de uma ponte estreita, e o processo principal decide. A árvore inteira é percorrida em [`docs/study/03-anatomia-do-projeto.md`](docs/study/03-anatomia-do-projeto.md).
 
+**Onde os dados do usuário ficam.** Nada disso mora no repositório: histórico de conversa (`crivo.db`, SQLite) e os anexos (`attachments/<hash>`, endereçados por conteúdo, com limpeza automática dos que nenhuma conversa referencia mais) vivem em `userData` — no Windows, `%APPDATA%\crivo\`. É o próprio Observatório do app (ícone no rodapé da sidebar, painéis "Banco de dados" e "Uso de disco") que revela esse diretório ao vivo, separando o que o crivo escreveu do que é só o motor Chromium por baixo — dono técnico em [`docs/reference/observatory/`](docs/reference/observatory/README.md).
+
 O método de trabalho é **uma variável por vez** — instalar, validar, registrar, só então seguir; com o corolário de que gerenciador de pacotes entrega reprodutibilidade, não corretude ([`CLAUDE.md § Princípio de trabalho`](CLAUDE.md#princípio-de-trabalho)).
 
 ---
