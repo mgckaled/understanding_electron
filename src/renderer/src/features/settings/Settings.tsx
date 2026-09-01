@@ -104,8 +104,8 @@ function RetentionField(): React.JSX.Element {
 
   return (
     <SegmentedField
-      label="Retenção de eventos"
-      hint="Eventos mais antigos que isso são apagados automaticamente, sem recuperação."
+      label="Retenção do Observatório"
+      hint="Dados do Observatório mais antigos que isso são apagados automaticamente, sem recuperação."
       options={RETENTION_OPTIONS}
       value={settings.eventRetentionDays ?? 30}
       onChange={(eventRetentionDays) =>

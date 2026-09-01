@@ -12,7 +12,9 @@ import {
   migrations as observatoryMigrations
 } from '../observatory/db/migrations'
 import { recordEvent, listEvents } from '../observatory/events'
-import { sweepExpiredEvents } from '../observatory/retention'
+import { recordPerformanceEvent, listPerformanceEvents } from '../observatory/performance'
+import { summarizeByModel } from '@core/observatory/performance'
+import { sweepExpiredEvents, sweepExpiredPerformanceEvents } from '../observatory/retention'
 import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory, readIpcStats, readProcesses } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
@@ -145,11 +147,13 @@ export async function registerAll(): Promise<() => void> {
     join(app.getPath('userData'), OBSERVATORY_DATABASE_FILE),
     observatoryMigrations
   )
-  // events:list is excluded: without this, opening the Eventos panel would
-  // instrument itself, and every open would push its own read to the top of
-  // the list it just fetched.
+  // events:list and performance:list are excluded: without this, opening
+  // either read-only Observatório panel would instrument itself, and every
+  // open would push its own read to the top of the list it just fetched
+  // (O-6 DO6.9, extended to performance:list by O-7 DO7.7).
+  const OBSERVATORY_READ_CHANNELS = new Set(['events:list', 'performance:list'])
   configureEventSink((event) => {
-    if (event.channel !== 'events:list') recordEvent(observatoryDb, event)
+    if (!OBSERVATORY_READ_CHANNELS.has(event.channel)) recordEvent(observatoryDb, event)
   })
   const attachmentsDir = join(app.getPath('userData'), 'attachments')
   // Resolved once, here, where app.isPackaged/process.resourcesPath are known
@@ -268,7 +272,8 @@ export async function registerAll(): Promise<() => void> {
       args,
       resolveProvider(args.service).chat,
       broadcastJobEvent,
-      resolveAttachmentBytes(attachmentsDir)
+      resolveAttachmentBytes(attachmentsDir),
+      (event) => recordPerformanceEvent(observatoryDb, event)
     )
   )
   handle('ai:propose', (args) =>
@@ -334,6 +339,14 @@ export async function registerAll(): Promise<() => void> {
     listEvents(observatoryDb, readSettings(undefined, db).eventRetentionDays ?? 30)
   )
 
+  // Same retentionDays as events:list (O-7, DO7.6) — one setting prunes both
+  // tables; the raw rows never leave the main process, only the summary does.
+  handle('performance:list', () =>
+    summarizeByModel(
+      listPerformanceEvents(observatoryDb, readSettings(undefined, db).eventRetentionDays ?? 30)
+    )
+  )
+
   // Dev-only seed (DN1A.1): .env never ships (app.isPackaged guards it), and
   // it only FILLS a key that is still unset — a key already written through
   // the UI is never overwritten. try/catch because it is not confirmed
@@ -356,8 +369,11 @@ export async function registerAll(): Promise<() => void> {
 
   // Retention runs against the crivo.db setting but sweeps observatory.db —
   // the two files stay independent; only the number they read is shared.
+  // Both tables share the same window (O-7, DO7.6): a quiet model's history
+  // is never evicted by a chatty one, since the sweep is by age, not by count.
   const retentionDays = readSettings(undefined, db).eventRetentionDays ?? 30
   await sweepExpiredEvents(observatoryDb, retentionDays).catch(() => {})
+  await sweepExpiredPerformanceEvents(observatoryDb, retentionDays).catch(() => {})
 
   return () => {
     db.close()

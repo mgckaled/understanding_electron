@@ -1,6 +1,8 @@
+import type { AiService, PerformanceSummary } from '@shared/ipc'
+
 /** What `measureChatTiming` hands to whoever persists it (O-7, § 9.2). */
 export type PerformanceEvent = {
-  service: string
+  service: AiService
   model: string
   evalTokens: number
   ttftMs: number
@@ -11,16 +13,6 @@ export type PerformanceEvent = {
 }
 
 export type PerformanceRow = PerformanceEvent & { id: number; createdAt: number }
-
-export type PerformanceSummary = {
-  service: string
-  model: string
-  n: number
-  avgTokensPerSec: number
-  medianTokensPerSec: number
-  p90TokensPerSec: number
-  avgLoadDurationMs: number | null
-}
 
 // null, never Infinity/NaN (DO7.8): a decode window of ~0ms is a degenerate
 // sample, and a fabricated four-digit rate would drag the bucket's average

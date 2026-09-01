@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite'
+import type { AiService } from '@shared/ipc'
 import type { PerformanceEvent, PerformanceRow } from '@core/observatory/performance'
 
 export function recordPerformanceEvent(db: DatabaseSync, event: PerformanceEvent): void {
@@ -41,7 +42,9 @@ export function listPerformanceEvents(
 
   return rows.map((row) => ({
     id: Number(row['id']),
-    service: String(row['service']),
+    // Cast, not parsed: this row is data this file wrote itself (recordPerformanceEvent
+    // only ever receives an AiService), not user input crossing a trust boundary.
+    service: row['service'] as AiService,
     model: String(row['model']),
     evalTokens: Number(row['eval_tokens']),
     ttftMs: Number(row['ttft_ms']),
