@@ -40,6 +40,15 @@ describe('EnginePanel', () => {
     expect(row).toHaveTextContent('v1.4.0')
   })
 
+  it('scales a sub-gigabyte memory tag instead of rounding it to 0,0 GB', async () => {
+    const api = installApiMock()
+    vi.mocked(api.dataset.engineInfo).mockResolvedValue({ ok: true, value: INFO })
+
+    renderPanel()
+
+    expect(await screen.findByText('512,0 MB')).toBeInTheDocument()
+  })
+
   it('shows an error instead of a blank panel when the worker rejects', async () => {
     const api = installApiMock()
     vi.mocked(api.dataset.engineInfo).mockResolvedValue({

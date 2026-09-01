@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { DuckDbEngineInfo } from '@shared/ipc'
-import { formatSize } from '../../shared/format'
+import { formatBytes } from '../../shared/format'
 import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
 
@@ -79,7 +79,7 @@ function EnginePanel(): React.JSX.Element {
               <dl className="flex flex-col">
                 <h4 className="mb-2 text-xs text-text-muted uppercase">Memória por categoria</h4>
                 {info.memoryByTag.map((entry) => (
-                  <Row key={entry.tag} label={entry.tag} value={formatSize(entry.bytes)} />
+                  <Row key={entry.tag} label={entry.tag} value={formatBytes(entry.bytes)} />
                 ))}
               </dl>
             )}

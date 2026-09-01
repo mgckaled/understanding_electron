@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { DatabaseInfo } from '@shared/ipc'
-import { formatSize } from '../../shared/format'
+import { formatBytes } from '../../shared/format'
 import StateView from '../../shared/ui/StateView'
 import type { ViewState } from '../../shared/ui/state'
 
@@ -60,7 +60,7 @@ function DatabasePanel(): React.JSX.Element {
           <div className="flex flex-col gap-6">
             <dl className="flex flex-col">
               <Row label="Versão de migração" value={String(info.migrationVersion)} />
-              <Row label="Tamanho" value={formatSize(info.sizeBytes)} />
+              <Row label="Tamanho" value={formatBytes(info.sizeBytes)} />
               <Row label="Páginas livres" value={String(info.freelistCount)} />
             </dl>
             <div>

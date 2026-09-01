@@ -31,6 +31,7 @@ describe('DatabasePanel', () => {
     renderPanel()
 
     expect(await screen.findByText('5')).toBeInTheDocument()
+    expect(screen.getByText('3,0 MB')).toBeInTheDocument()
     const row = screen.getByText('messages').closest('tr')
     expect(row).toHaveTextContent('340')
   })

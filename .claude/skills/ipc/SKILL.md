@@ -105,13 +105,13 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**42 canais em `IpcContract`**, conferidos contra o código em 31/08/2026 (`grep -c "^  '[a-zA-Z]*:" src/shared/ipc.ts` dá 84 — dois blocos, metade disso).
+**44 canais em `IpcContract`**, conferidos contra o código em 31/08/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`).
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
 | `app` | `info`, `memory`, `processes`, `ipcStats` | não |
 | `shell` | `openExternal` | sim |
-| `dataset` | `pick`, `attach`, `query`, `profile`, `transform`, `queueDepth` | sim — exceto `queueDepth`, leitura de contador em memória (O-2) |
+| `dataset` | `pick`, `attach`, `query`, `profile`, `transform`, `queueDepth`, `engineInfo` | sim — exceto `queueDepth`, leitura de contador em memória (O-2); `engineInfo` volta a ser `sim`, é round-trip pelo worker (O-3, DO3.2) |
 | `document` | `pick`, `attach` | sim |
 | `image` | `pick`, `attach`, `bytes` | sim |
 | `job` | `cancel`, `list` | não |
@@ -121,6 +121,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `export` | `save` | **sim** — arquivo em uso, permissão e disco cheio são estados que a interface desenha |
 | `settings` | `read`, `write` | não |
 | `secrets` | `write` (`Result`), `has`, `remove` | `write` só — `has`/`remove` seguem a régua de `conversation` |
+| `database` | `info` | não — leitura do `crivo.db` já aberto, sem modo de falha que a UI precise distinguir (O-3, DO3.3) |
 
 `secrets:read` **não existe** — nem por omissão, por desenho (DN1A.3): a regra de mão única do [`CLAUDE.md`](../../../CLAUDE.md#segurança) proíbe o renderer de reler um segredo já gravado, só perguntar se ele existe.
 
