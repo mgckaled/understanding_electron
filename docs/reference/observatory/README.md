@@ -315,9 +315,9 @@ Custo primeiro, porque é o eixo declarado mais danoso. Cada linha nomeia a font
 | **Banco de dados** — esquema, contagem, migração, bytes        | Barato        | Moderado | Disponível     | `sqlite_master`, `PRAGMA user_version` / `page_count` / `freelist_count` (§ 7.3) |
 | **Anexos** — blobs, bytes, economia de dedup, órfãos           | Barato        | Moderado | Disponível     | diretório por hash + a lógica de `main/attachments/gc.ts`               |
 | **Uso de conversa** — modelos usados, respostas interrompidas  | Barato        | Moderado | Disponível     | `message.model` e o marcador `stopped` (§ 7.4)                          |
-| **Cache do Chromium** — tamanho, e limpar                      | Acessível     | Leve     | Disponível     | `session.getCacheSize()` (§ 7.5)                                        |
+| **Cache do Chromium** — tamanho, e limpar                      | Acessível     | Moderado | Disponível     | `session.getCacheSize()` (§ 7.5) — exige `session:cacheSize`/`clearCache` novos, não um canal já existente (O-5, DO5.8) |
 | **Capacidades** — Ollama, modelos, `vision`, embedder, chaves  | Caro          | Leve     | Disponível     | `ai:isAvailable` / `models` / `loaded` + `secrets:has`                  |
-| **Uso de disco** — varredura de `userData/`                    | Caro          | Pesado   | Disponível     | walk como job, com a separação da § 3.1                                 |
+| **Uso de disco** — varredura de `userData/`                    | Caro          | Pesado   | Disponível     | walk como job, com a separação da § 3.1 — `Cache/` resolvida via `getCacheSize()`, medido a ~5% do walk real (O-5) |
 | **Eventos** — fluxo único, filtrado por severidade             | Barato        | Pesado   | Disponível     | store novo em `observatory.db`                                          |
 | **Desempenho** — latência e tokens/s por modelo                | Barato        | Pesado   | Disponível     | store novo; instrumentação na borda de `ai:*`                           |
 | **Privacidade** — o que saiu da máquina                        | Barato        | Pesado   | Disponível     | store novo + nível por anexo (§ 3.4)                                    |
