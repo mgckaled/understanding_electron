@@ -6,6 +6,7 @@ import DatabasePanel from './DatabasePanel'
 import DiskUsagePanel from './DiskUsagePanel'
 import EnginePanel from './EnginePanel'
 import EventsPanel from './EventsPanel'
+import PerformancePanel from './PerformancePanel'
 import ProcessesPanel from './ProcessesPanel'
 import RuntimePanel from './RuntimePanel'
 
@@ -55,5 +56,8 @@ export const PANELS: ObservatoryPanel[] = [
   { id: 'diskUsage', group: 'storage', label: 'Uso de disco', Panel: DiskUsagePanel },
   // First panel in "activity" — the persisted, historical sense the group's
   // label promises, unlike "Em andamento" above (O-6, DO6.6).
-  { id: 'events', group: 'activity', label: 'Eventos', Panel: EventsPanel }
+  { id: 'events', group: 'activity', label: 'Eventos', Panel: EventsPanel },
+  // Second inhabitant of "activity" (O-7) — tokens/s per (service, model),
+  // aggregated in the main process from the same observatory.db.
+  { id: 'performance', group: 'activity', label: 'Desempenho', Panel: PerformancePanel }
 ]

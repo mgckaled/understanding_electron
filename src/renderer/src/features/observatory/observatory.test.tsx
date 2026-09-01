@@ -31,7 +31,7 @@ describe('Observatory', () => {
 
     await user.click(screen.getByRole('button', { name: 'Observatório' }))
 
-    // Nine panel modules now load in this one lazy chunk (O-6 added Eventos) —
+    // Ten panel modules now load in this one lazy chunk (O-7 added Desempenho) —
     // RTL's default findBy timeout (1s) flakes under a full-suite parallel
     // run; the explicit timeouts match ArtifactPanel.test.tsx's precedent.
     expect(
