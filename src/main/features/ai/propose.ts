@@ -7,8 +7,10 @@ import type {
   StepProposal
 } from '@shared/ipc'
 import type { ChatFn } from '@core/ai/types'
+import { isCloudService } from '@core/ai/messages'
 import { requestStepProposal } from '@core/ai/proposal'
 import { err } from '@core/result'
+import type { PrivacyEvent } from '@core/observatory/privacy'
 import * as jobs from '../../jobs'
 import { mapProviderError } from './handlers'
 
@@ -38,7 +40,8 @@ type ProposeArgs = {
 export async function propose(
   { service, model, hash, card, request, numThread, numCtx, jobId }: ProposeArgs,
   chatFn: ChatFn,
-  runProfile: (hash: string, includeTopValues?: boolean) => Promise<ColumnProfile[]>
+  runProfile: (hash: string, includeTopValues?: boolean) => Promise<ColumnProfile[]>,
+  recordPrivacy?: (event: PrivacyEvent) => void
 ): Promise<Result<StepProposal>> {
   const controller = jobs.create(jobId)
   let timedOut = false
@@ -56,6 +59,12 @@ export async function propose(
       profile = await runProfile(hash, false)
     } catch (error) {
       return err({ kind: 'invalidQuery', message: (error as Error).message })
+    }
+
+    // Always exactly one card (ProposeArgs has no attachment list) — same
+    // send-time placement as chat()'s DO8.3, right before the provider call.
+    if (isCloudService(service)) {
+      recordPrivacy?.({ service, model, datasetCount: 1, documentCount: 0, imageCount: 0 })
     }
 
     return await requestStepProposal(

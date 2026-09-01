@@ -127,4 +127,56 @@ describe('propose', () => {
 
     expect(result).toEqual({ ok: false, error: { kind: 'cancelled' } })
   })
+
+  // O-8: propose() sends a dataset card to the provider same as chat() sends
+  // an attachment part — recordPrivacy must see it too, or a proposal
+  // against a cloud service reads as nothing having left the machine.
+  describe('recordPrivacy (O-8)', () => {
+    it('records a cloud proposal with one dataset card', async () => {
+      const chatFn: ChatFn = async () => ({
+        content: JSON.stringify({ kind: 'steps', steps: [{ kind: 'limit', count: 1 }] })
+      })
+      const runProfile = vi.fn().mockResolvedValue(profile)
+      const recordPrivacy = vi.fn()
+
+      await propose(
+        {
+          service: 'gemini',
+          model: 'gemini-2.0-flash',
+          hash: card.hash,
+          card,
+          request: 'x',
+          jobId: 'p6'
+        },
+        chatFn,
+        runProfile,
+        recordPrivacy
+      )
+
+      expect(recordPrivacy).toHaveBeenCalledWith({
+        service: 'gemini',
+        model: 'gemini-2.0-flash',
+        datasetCount: 1,
+        documentCount: 0,
+        imageCount: 0
+      })
+    })
+
+    it('never records a local (Ollama) proposal', async () => {
+      const chatFn: ChatFn = async () => ({
+        content: JSON.stringify({ kind: 'steps', steps: [{ kind: 'limit', count: 1 }] })
+      })
+      const runProfile = vi.fn().mockResolvedValue(profile)
+      const recordPrivacy = vi.fn()
+
+      await propose(
+        { service: 'ollama', model: 'gemma3:4b', hash: card.hash, card, request: 'x', jobId: 'p7' },
+        chatFn,
+        runProfile,
+        recordPrivacy
+      )
+
+      expect(recordPrivacy).not.toHaveBeenCalled()
+    })
+  })
 })

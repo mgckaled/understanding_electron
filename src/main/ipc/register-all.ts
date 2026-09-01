@@ -283,7 +283,9 @@ export async function registerAll(): Promise<() => void> {
     )
   )
   handle('ai:propose', (args) =>
-    aiPropose(args, resolveProvider(args.service).chat, duckdbClient.runProfile)
+    aiPropose(args, resolveProvider(args.service).chat, duckdbClient.runProfile, (event) =>
+      recordPrivacyEvent(observatoryDb, event)
+    )
   )
 
   handle('conversation:list', (args) => listConversations(args, db))

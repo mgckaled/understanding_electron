@@ -49,6 +49,10 @@ Mesma razão do O-7 (DO7.3/DO7.6): dado de forma diferente de `events`/`performa
 
 Achado do advisor: a maioria das chamadas de nuvem é só-texto (DO8.5), então uma janela de 200 mais recentes fica dominada por linhas de contagem zero — exatamente as linhas com anexo, que são o motivo do painel existir, podem sair da janela visível sem sair da retenção. `privacy:list` passa a devolver `{ rows, totalCalls, callsWithAttachment }`: `rows` continua `LIMIT 200` (DO8.7), e os dois contadores somam sobre a retenção inteira via `COUNT`/`SUM` no SQLite, não sobre as 200 linhas devolvidas. O painel mostra os contadores como cabeçalho, no mesmo lugar em que `EventsPanel` mostra "últimos N dias" — sem os contadores, a DO8.5 grava um dado que a UI não consegue honrar.
 
+### DO8.9 — `ai:propose` também é chamada de nuvem, e também grava
+
+Achado do advisor, e falha real de escopo na primeira versão deste plano: `ai:propose` resolve `glm`/`gemini` do mesmo jeito que `ai:chat` e manda um `card: DatasetPart` inteiro (nível 1) ao provedor — o § 9.3 já falava em "por chamada cuja `service` seja de nuvem", não "por chamada de `ai:chat`". O motivo do O-7 excluir `ai:propose` (sem `onChunk`, logo sem `evalTokens`) **não se transfere**: aqui não há métrica derivada da resposta, só a contagem do que foi enviado, já conhecida antes da chamada. `propose()` ganha a mesma dependência `recordPrivacy`, chamada no mesmo ponto (antes de `requestStepProposal`, depois de tudo montado) com `datasetCount: 1` fixo — `ProposeArgs` nunca carrega mais de um card. Sem isso, uma proposta contra a nuvem com dataset anexado apareceria como painel vazio, e um livro-razão cego para o próprio motivo de existir é pior que nenhum (mesmo argumento do § 9.3 sobre bytes de imagem).
+
 ## Passos
 
 ### 1. Schema (`src/main/observatory/db/migrations.ts`)
@@ -106,4 +110,6 @@ Terceiro habitante do grupo `activity`. Cabeçalho com `totalCalls`/`callsWithAt
 
 | Data | O que mudou | Observações |
 |---|---|---|
-| 01/09/2026 | Escopo definido e plano escrito (DO8.1–DO8.7) | Sessão de escopo — implementação segue no mesmo dia |
+| 01/09/2026 | Escopo definido, plano escrito e revisado pelo advisor (DO8.1–DO8.9) | Duas rodadas de revisão: a primeira fechou DO8.8 (contadores de janela inteira) e o ponto de gravação pós-materialização; a segunda achou DO8.9 (`ai:propose` também precisa gravar) |
+| 01/09/2026 | Implementação completa: schema, `core/observatory/privacy.ts`, `main/observatory/privacy.ts`, retenção, contrato IPC, `chat()` e `propose()` instrumentados, painel Privacidade, sincronização de docs | 9 commits, um por passo. `pnpm check:fast` verde (1276+ testes). Teste de ausência (`ollama` não grava) verificado vermelho antes de verde, manualmente, nos dois handlers |
+| — | Verificação ao vivo | Pendente — fica com o usuário (prints/feedback) antes de mover para `implemented/` e fechar o marco em `HISTORY.md` |
