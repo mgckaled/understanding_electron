@@ -15,10 +15,6 @@ export function createIpcStatsStore(now: () => number = () => performance.now())
   const stats = new Map<string, AppIpcStat>()
   let eventSink: ((event: IpcCallEvent) => void) | undefined
 
-  // AppIpcStat's notion of "failure" stays exception-only (DO2.4, unchanged
-  // by O-6): it answers "did the plumbing break", not "did the app-level
-  // call fail". Kept separate from the events sink below, which needs the
-  // broader notion (DO6.10).
   function record(channel: string, durationMs: number, error: string | null): void {
     const prev = stats.get(channel)
     stats.set(channel, {
@@ -46,8 +42,12 @@ export function createIpcStatsStore(now: () => number = () => performance.now())
         try {
           const result = await fn(args)
           const durationMs = now() - start
-          record(channel, durationMs, null)
-          emitEvent(channel, durationMs, resultError(result), args)
+          // A Result-returning channel counts as a failure here too (DO6.11):
+          // most user-visible failures never throw — they resolve
+          // { ok: false }, per the ipc skill's own Result-vs-exception rule.
+          const error = resultError(result)
+          record(channel, durationMs, error)
+          emitEvent(channel, durationMs, error, args)
           return result
         } catch (error) {
           const durationMs = now() - start

@@ -97,7 +97,7 @@ describe('createIpcStatsStore', () => {
     ])
   })
 
-  it('records a Result.ok:false as an event error without throwing (DO6.10)', async () => {
+  it('records a Result.ok:false as an error, both in the event and in AppIpcStat (DO6.11)', async () => {
     const store = createIpcStatsStore(fakeClock(0, 1))
     const events: unknown[] = []
     store.setEventSink((event) => events.push(event))
@@ -112,10 +112,16 @@ describe('createIpcStatsStore', () => {
     expect(events).toEqual([
       { channel: 'ai:chat', durationMs: 1, error: 'unavailable', domainId: null }
     ])
-    // AppIpcStat stays exception-only (DO2.4 unchanged): a Result failure
-    // does not count as an error in the Canais IPC panel.
+    // Canais IPC (O-2) counts it too — Result.ok:false was a real failure
+    // mode DO2.4/DO2.8 never excluded, just never exercised (DO6.11).
     expect(store.snapshot()).toEqual([
-      { channel: 'ai:chat', callCount: 1, errorCount: 0, lastDurationMs: 1, lastError: null }
+      {
+        channel: 'ai:chat',
+        callCount: 1,
+        errorCount: 1,
+        lastDurationMs: 1,
+        lastError: 'unavailable'
+      }
     ])
   })
 })
