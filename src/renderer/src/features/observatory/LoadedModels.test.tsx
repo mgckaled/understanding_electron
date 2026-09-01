@@ -5,6 +5,7 @@ import { installApiMock } from '@test/api-mock'
 import type { LoadedModel } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
 import { createQueryClient } from '../../shared/queryClient'
+import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import LoadedModels from './LoadedModels'
 
 const RESIDENT: LoadedModel = {
@@ -19,6 +20,16 @@ function renderWithState(state: ViewState<LoadedModel[]>, onUnloaded = vi.fn()):
       <LoadedModels state={state} onUnloaded={onUnloaded} />
     </QueryClientProvider>
   )
+}
+
+// Stands in for ConversationView, the observer that stays mounted behind the
+// Observatório dialog in production (it is a sibling, not a route — D13.8)
+// and is the reason `invalidateQueries(['app','memory'])` in LoadedModels'
+// onSuccess is not vestigial: without an active observer of that key,
+// invalidation only marks it stale, it never refetches.
+function MemoryProbe(): null {
+  useSystemMemory()
+  return null
 }
 
 describe('LoadedModels', () => {
@@ -46,5 +57,23 @@ describe('LoadedModels', () => {
 
     await waitFor(() => expect(api.ai.unload).toHaveBeenCalledWith('ollama', 'gemma3:4b'))
     await waitFor(() => expect(onUnloaded).toHaveBeenCalled())
+  })
+
+  it('rereads free memory after unloading, because that is the whole point', async () => {
+    const user = userEvent.setup()
+    const api = installApiMock()
+    const client = createQueryClient()
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryProbe />
+        <LoadedModels state={{ status: 'ready', data: [RESIDENT] }} onUnloaded={vi.fn()} />
+      </QueryClientProvider>
+    )
+    await waitFor(() => expect(api.app.memory).toHaveBeenCalledTimes(1))
+
+    await user.click(screen.getByRole('button', { name: 'Descarregar' }))
+
+    await waitFor(() => expect(api.ai.unload).toHaveBeenCalledWith('ollama', 'gemma3:4b'))
+    await waitFor(() => expect(api.app.memory).toHaveBeenCalledTimes(2))
   })
 })

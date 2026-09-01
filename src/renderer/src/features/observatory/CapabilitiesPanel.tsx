@@ -8,7 +8,7 @@ import { formatSize } from '../../shared/format'
 import { capabilityChips } from '../conversation/capabilities'
 import { formatContext } from '../conversation/modelFormat'
 import LoadedModels from './LoadedModels'
-import { useCapabilities, type ServiceCapability } from './useCapabilities'
+import { AI_SERVICES, useCapabilities, type ServiceCapability } from './useCapabilities'
 
 const SERVICE_LABEL: Record<AiService, string> = {
   ollama: 'Ollama',
@@ -155,7 +155,7 @@ function CapabilitiesPanel(): React.JSX.Element {
         </Button>
       ) : (
         <div className="flex flex-col gap-6">
-          {(['ollama', 'glm', 'gemini'] as const).map((service) => (
+          {AI_SERVICES.map((service) => (
             <ServiceSection key={service} service={service} capability={data.services[service]} />
           ))}
           <EmbeddersSection services={data.services} />

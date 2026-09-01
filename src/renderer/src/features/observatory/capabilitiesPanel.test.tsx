@@ -96,7 +96,7 @@ describe('CapabilitiesPanel', () => {
     await waitFor(() => expect(refetchButton).not.toBeDisabled())
   })
 
-  it('does not refetch on its own when reopened — only the ↻ or Descarregar do', async () => {
+  it('↻ triggers a fresh sondagem, not a cached replay', async () => {
     const user = userEvent.setup()
     const api = installApiMock()
     mockHealthy(api)

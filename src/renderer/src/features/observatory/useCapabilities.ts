@@ -10,7 +10,7 @@ import type {
 } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
 
-const AI_SERVICES: AiService[] = ['ollama', 'glm', 'gemini']
+export const AI_SERVICES: AiService[] = ['ollama', 'glm', 'gemini']
 
 export type ServiceCapability = {
   availability: ViewState<AiAvailability>
