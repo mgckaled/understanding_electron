@@ -12,9 +12,10 @@ import type {
 } from '@shared/ipc'
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
-import { toChatMessagesWithImages } from '@core/ai/messages'
+import { isCloudService, toChatMessagesWithImages } from '@core/ai/messages'
 import { ok, err } from '@core/result'
 import type { PerformanceEvent } from '@core/observatory/performance'
+import { countAttachments, type PrivacyEvent } from '@core/observatory/privacy'
 import { measureChatTiming } from '../../observatory/chatTiming'
 import * as jobs from '../../jobs'
 
@@ -117,7 +118,8 @@ export async function chat(
   chatFn: ChatFn,
   emit: (event: JobEvent) => void,
   resolveImageBytes: (hash: string) => Promise<Buffer>,
-  recordPerformance?: (event: PerformanceEvent) => void
+  recordPerformance?: (event: PerformanceEvent) => void,
+  recordPrivacy?: (event: PrivacyEvent) => void
 ): Promise<Result<ChatReply>> {
   const controller = jobs.create(jobId)
   // Two abort sources feed one controller; `timedOut` tells them apart in the
@@ -135,6 +137,12 @@ export async function chat(
     // message with an image part needs bytes the sandboxed renderer cannot
     // read from userData/attachments.
     const chatMessages = await toChatMessagesWithImages(messages, resolveImageBytes)
+    // After materialization, right before the provider call (DO8.3 revised):
+    // a resolveImageBytes failure above never reaches here, so this never
+    // records a send that did not happen.
+    if (isCloudService(service)) {
+      recordPrivacy?.({ service, model, ...countAttachments(messages) })
+    }
     const { result, timing } = await measureChatTiming(
       chatFn,
       { messages: chatMessages, model, numThread, numCtx },

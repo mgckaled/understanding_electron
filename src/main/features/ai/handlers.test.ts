@@ -368,6 +368,93 @@ describe('chat', () => {
 
     expect(result).toEqual({ ok: true, value: { content: 'ok' } })
   })
+
+  // O-8: recordPrivacy is the sixth dependency, injected the same way as
+  // recordPerformance — gated by isCloudService, never by the outcome.
+  describe('recordPrivacy (O-8)', () => {
+    const withDataset: Message[] = [
+      {
+        id: 'm1',
+        role: 'user',
+        parts: [
+          {
+            kind: 'dataset',
+            hash: 'h',
+            fileName: 'vendas.csv',
+            format: 'delimited',
+            delimiter: ',',
+            columns: ['id', 'valor'],
+            rowCount: 10
+          },
+          { kind: 'text', text: 'o que tem aqui?' }
+        ],
+        createdAt: 1
+      }
+    ]
+
+    it('records a cloud call with its attachment counts', async () => {
+      const chatFn: ChatFn = async () => ({ content: 'ok' })
+      const recordPrivacy = vi.fn()
+
+      await chat(
+        { service: 'glm', model: 'glm-4.7-flash', messages: withDataset, jobId: 'j13' },
+        chatFn,
+        () => {},
+        resolveImageBytes,
+        undefined,
+        recordPrivacy
+      )
+
+      expect(recordPrivacy).toHaveBeenCalledWith({
+        service: 'glm',
+        model: 'glm-4.7-flash',
+        datasetCount: 1,
+        documentCount: 0,
+        imageCount: 0
+      })
+    })
+
+    it('records a zero-count row for a text-only cloud call (DO8.5)', async () => {
+      const chatFn: ChatFn = async () => ({ content: 'ok' })
+      const recordPrivacy = vi.fn()
+
+      await chat(
+        { service: 'gemini', model: 'gemini-2.0-flash', messages, jobId: 'j14' },
+        chatFn,
+        () => {},
+        resolveImageBytes,
+        undefined,
+        recordPrivacy
+      )
+
+      expect(recordPrivacy).toHaveBeenCalledWith({
+        service: 'gemini',
+        model: 'gemini-2.0-flash',
+        datasetCount: 0,
+        documentCount: 0,
+        imageCount: 0
+      })
+    })
+
+    // The one that must be seen red first (testing skill § "O que NÃO é
+    // provado"): drop the isCloudService guard in handlers.ts and this must
+    // fail, or an unwired recordPrivacy would pass by omission.
+    it('never records a local (Ollama) call', async () => {
+      const chatFn: ChatFn = async () => ({ content: 'ok' })
+      const recordPrivacy = vi.fn()
+
+      await chat(
+        { service: 'ollama', model: 'llama3.2', messages: withDataset, jobId: 'j15' },
+        chatFn,
+        () => {},
+        resolveImageBytes,
+        undefined,
+        recordPrivacy
+      )
+
+      expect(recordPrivacy).not.toHaveBeenCalled()
+    })
+  })
 })
 
 /*
