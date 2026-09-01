@@ -89,7 +89,8 @@ const api: Api = {
   },
   disk: { usage: (jobId) => invoke('disk:usage', { jobId }) },
   events: { list: () => invoke('events:list') },
-  performance: { list: () => invoke('performance:list') }
+  performance: { list: () => invoke('performance:list') },
+  privacy: { list: () => invoke('privacy:list') }
 }
 
 try {

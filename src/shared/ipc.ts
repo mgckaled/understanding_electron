@@ -118,6 +118,29 @@ export type PerformanceSummary = {
   maxLoadDurationMs: number | null
 }
 
+/** One cloud `ai:chat` call's attachment exposure, as `observatory.db` records it (O-8, DO8.4). A local (Ollama) call never produces a row. */
+export type PrivacyRow = {
+  id: number
+  service: AiService
+  model: string
+  datasetCount: number
+  documentCount: number
+  imageCount: number
+  createdAt: number
+}
+
+/**
+ * `rows` is the 200 most recent cloud calls; `totalCalls`/`callsWithAttachment`
+ * sum over the FULL retention window instead, because most cloud calls carry
+ * no attachment (DO8.5) and a 200-row window would otherwise bury the
+ * attachment exposures the panel exists to surface (O-8, DO8.8).
+ */
+export type PrivacyLedger = {
+  rows: PrivacyRow[]
+  totalCalls: number
+  callsWithAttachment: number
+}
+
 export type JobId = string
 
 export type JobEvent =
@@ -860,7 +883,8 @@ export const argsSchema = {
   'session:clearCache': z.void(),
   'disk:usage': z.object({ jobId: z.string() }),
   'events:list': z.void(),
-  'performance:list': z.void()
+  'performance:list': z.void(),
+  'privacy:list': z.void()
 } as const
 
 export type IpcContract = {
@@ -1048,6 +1072,9 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['performance:list']>
     result: PerformanceSummary[]
   }
+  // Same reasoning as performance:list: writing happens at chat()'s wrap
+  // point, this channel only reads observatory.db (O-8).
+  'privacy:list': { args: z.infer<(typeof argsSchema)['privacy:list']>; result: PrivacyLedger }
 }
 
 export type Channel = keyof IpcContract
@@ -1180,5 +1207,9 @@ export type Api = {
   performance: {
     /** Tokens/s summary per (service, model), aggregated in the main process (O-7). */
     list(): Promise<PerformanceSummary[]>
+  }
+  privacy: {
+    /** Attachment exposure per cloud `ai:chat` call, plus retention-wide totals (O-8). */
+    list(): Promise<PrivacyLedger>
   }
 }

@@ -141,6 +141,9 @@ export function createApiMock(): Api {
     },
     performance: {
       list: vi.fn().mockResolvedValue([])
+    },
+    privacy: {
+      list: vi.fn().mockResolvedValue({ rows: [], totalCalls: 0, callsWithAttachment: 0 })
     }
   } satisfies Api
 }
