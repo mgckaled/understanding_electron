@@ -89,7 +89,8 @@ const api: Api = {
     cacheSize: () => invoke('session:cacheSize'),
     clearCache: () => invoke('session:clearCache')
   },
-  disk: { usage: (jobId) => invoke('disk:usage', { jobId }) }
+  disk: { usage: (jobId) => invoke('disk:usage', { jobId }) },
+  events: { list: () => invoke('events:list') }
 }
 
 try {

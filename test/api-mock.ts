@@ -135,6 +135,9 @@ export function createApiMock(): Api {
         ok: true,
         value: { crivo: [], runtimeBytes: 0, runtimePartial: false, totalBytes: 0 }
       })
+    },
+    events: {
+      list: vi.fn().mockResolvedValue([])
     }
   } satisfies Api
 }

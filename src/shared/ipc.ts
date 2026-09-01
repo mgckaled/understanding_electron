@@ -651,7 +651,9 @@ export const appSettingsSchema = z.object({
   numThread: z.number().int().positive(),
   theme: themeSchema,
   /** Where the last export landed, so the next dialog opens there (DE1D.5). */
-  lastExportDir: z.string().optional()
+  lastExportDir: z.string().optional(),
+  /** Closed interval, not user preference: caps observatory.db growth (O-6, DO6.4). */
+  eventRetentionDays: z.number().int().min(7).max(90).optional()
 })
 export type AppSettings = z.infer<typeof appSettingsSchema>
 
@@ -822,7 +824,8 @@ export const argsSchema = {
   'database:info': z.void(),
   'session:cacheSize': z.void(),
   'session:clearCache': z.void(),
-  'disk:usage': z.object({ jobId: z.string() })
+  'disk:usage': z.object({ jobId: z.string() }),
+  'events:list': z.void()
 } as const
 
 export type IpcContract = {
@@ -1002,6 +1005,10 @@ export type IpcContract = {
   // Result: a job over the filesystem can be cancelled or hit an unreadable
   // root — states the UI reacts to (O-5, DO5.5).
   'disk:usage': { args: z.infer<(typeof argsSchema)['disk:usage']>; result: Result<DiskUsage> }
+  // No Result: writing happens inside main, at ipcStats's sink — this channel
+  // only reads a database the composition root already opened (DO3.3-style
+  // precedent), never anything the UI needs to distinguish a failure mode for.
+  'events:list': { args: z.infer<(typeof argsSchema)['events:list']>; result: EventRow[] }
 }
 
 export type Channel = keyof IpcContract
@@ -1126,5 +1133,9 @@ export type Api = {
   disk: {
     /** Walks userData/, split crivo vs. Chromium (O-5, DO5.4). */
     usage(jobId: JobId): Promise<Result<DiskUsage>>
+  }
+  events: {
+    /** Last 200 completed IPC calls, newest first — observatory.db (O-6). */
+    list(): Promise<EventRow[]>
   }
 }
