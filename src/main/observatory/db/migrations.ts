@@ -21,4 +21,25 @@ const v1: Migration = (db) => {
   `)
 }
 
-export const migrations: readonly Migration[] = [v1]
+// service/model own no foreign key — this table outlives the AiModel catalog
+// entry it was measured against (a model can be uninstalled later).
+const v2: Migration = (db) => {
+  db.exec(`
+    CREATE TABLE performance_events (
+      id                      INTEGER PRIMARY KEY,
+      service                 TEXT    NOT NULL,
+      model                   TEXT    NOT NULL,
+      eval_tokens             INTEGER NOT NULL,
+      ttft_ms                 REAL    NOT NULL,
+      decode_ms               REAL    NOT NULL,
+      load_duration_ms        REAL,
+      prompt_eval_duration_ms REAL,
+      native_eval_duration_ms REAL,
+      created_at              INTEGER NOT NULL
+    );
+
+    CREATE INDEX performance_events_by_created_at ON performance_events (created_at);
+  `)
+}
+
+export const migrations: readonly Migration[] = [v1, v2]

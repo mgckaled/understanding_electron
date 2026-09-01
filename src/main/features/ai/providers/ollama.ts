@@ -37,6 +37,29 @@ type OllamaChatLine = {
   // ChatReply.promptTokens for why it is the only exact count and the truncation signal.
   prompt_eval_count?: number
   eval_count?: number
+  // Nanoseconds, only Ollama has these (O-7, § 9.2) — converted to ms at the
+  // point of return, never re-exposed in this unit past this file.
+  load_duration?: number
+  prompt_eval_duration?: number
+  eval_duration?: number
+}
+
+const NS_PER_MS = 1e6
+
+function nativeDurations(line: OllamaChatLine): {
+  loadDurationMs?: number
+  promptEvalDurationMs?: number
+  nativeEvalDurationMs?: number
+} {
+  return {
+    ...(line.load_duration === undefined ? {} : { loadDurationMs: line.load_duration / NS_PER_MS }),
+    ...(line.prompt_eval_duration === undefined
+      ? {}
+      : { promptEvalDurationMs: line.prompt_eval_duration / NS_PER_MS }),
+    ...(line.eval_duration === undefined
+      ? {}
+      : { nativeEvalDurationMs: line.eval_duration / NS_PER_MS })
+  }
 }
 
 // Cheapest availability ping: /api/version returns only { version }, without
@@ -216,7 +239,8 @@ export const ollamaChat: ChatFn = async (
             ...(parsed.prompt_eval_count === undefined
               ? {}
               : { promptTokens: parsed.prompt_eval_count }),
-            ...(parsed.eval_count === undefined ? {} : { evalTokens: parsed.eval_count })
+            ...(parsed.eval_count === undefined ? {} : { evalTokens: parsed.eval_count }),
+            ...nativeDurations(parsed)
           }
         }
       }

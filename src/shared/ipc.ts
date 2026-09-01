@@ -178,6 +178,14 @@ export type ChatReply = {
    */
   promptTokens?: number
   evalTokens?: number
+  /**
+   * Ollama-only wall-clock breakdown (nanosecond fields converted to ms at
+   * the adapter), in ms (O-7, § 9.2). Cloud providers never set these — the
+   * observatory reads their absence as "no load phase", never as zero.
+   */
+  loadDurationMs?: number
+  promptEvalDurationMs?: number
+  nativeEvalDurationMs?: number
 }
 
 export type AiAvailability = {
