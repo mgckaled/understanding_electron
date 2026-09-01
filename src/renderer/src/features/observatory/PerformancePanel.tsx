@@ -24,7 +24,7 @@ function PerformanceTable({ summaries }: { summaries: PerformanceSummary[] }): R
           <th className={`${CELL} text-right`}>Média</th>
           <th className={`${CELL} text-right`}>Mediana</th>
           <th className={`${CELL} text-right`}>P90</th>
-          <th className={`${CELL} text-right`}>Carga</th>
+          <th className={`${CELL} text-right`}>Carga (pico)</th>
         </tr>
       </thead>
       <tbody>
@@ -52,9 +52,9 @@ function PerformanceTable({ summaries }: { summaries: PerformanceSummary[] }): R
               {formatTokensPerSec(summary.p90TokensPerSec)}
             </td>
             <td className={`${CELL} text-right font-mono text-text-faint`}>
-              {summary.avgLoadDurationMs === null
+              {summary.maxLoadDurationMs === null
                 ? '—'
-                : formatLoadDuration(summary.avgLoadDurationMs)}
+                : formatLoadDuration(summary.maxLoadDurationMs)}
             </td>
           </tr>
         ))}

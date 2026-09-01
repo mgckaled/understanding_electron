@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**44 canais em `IpcContract`**, conferidos contra o código em 31/08/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`).
+**49 canais em `IpcContract`**, conferidos contra o código em 01/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`).
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -122,6 +122,10 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `settings` | `read`, `write` | não |
 | `secrets` | `write` (`Result`), `has`, `remove` | `write` só — `has`/`remove` seguem a régua de `conversation` |
 | `database` | `info` | não — leitura do `crivo.db` já aberto, sem modo de falha que a UI precise distinguir (O-3, DO3.3) |
+| `session` | `cacheSize`, `clearCache` | não — leitura/limpeza do cache do Chromium, sem modo de falha que a UI precise distinguir (O-5) |
+| `disk` | `usage` | sim — job cancelável, varredura pode falhar por permissão (O-5) |
+| `events` | `list` | não — leitura de `observatory.db` já aberto (O-6) |
+| `performance` | `list` | não — mesma leitura de `observatory.db`, já agregada no main antes de sair (O-7, DO7.5) |
 
 `secrets:read` **não existe** — nem por omissão, por desenho (DN1A.3): a regra de mão única do [`CLAUDE.md`](../../../CLAUDE.md#segurança) proíbe o renderer de reler um segredo já gravado, só perguntar se ele existe.
 

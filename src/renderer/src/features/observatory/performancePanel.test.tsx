@@ -13,7 +13,7 @@ const SUMMARIES: PerformanceSummary[] = [
     avgTokensPerSec: 34.2,
     medianTokensPerSec: 33.1,
     p90TokensPerSec: 40.5,
-    avgLoadDurationMs: 48_000
+    maxLoadDurationMs: 48_000
   },
   {
     service: 'glm',
@@ -22,7 +22,7 @@ const SUMMARIES: PerformanceSummary[] = [
     avgTokensPerSec: 60,
     medianTokensPerSec: 58,
     p90TokensPerSec: 70,
-    avgLoadDurationMs: null
+    maxLoadDurationMs: null
   }
 ]
 

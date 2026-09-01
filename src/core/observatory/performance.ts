@@ -30,6 +30,10 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
+function max(values: number[]): number {
+  return Math.max(...values)
+}
+
 /**
  * Groups raw rows by `(service, model)` and computes n/avg/median/p90 of
  * tokens/s per bucket (O-7, DO7.5) — the summary is derived here, never a
@@ -54,6 +58,10 @@ export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
       .sort((a, b) => a - b)
     if (rates.length === 0) continue
 
+    // MAX, not average (DO7.2 revisited): Ollama reports load_duration on
+    // every call, near-zero once the model is resident — averaging one cold
+    // load (measured ~13.5s) against warm ones (~6ms) would report a number
+    // that describes neither. Max is the cost the user actually felt.
     const loads = bucket
       .map((row) => row.loadDurationMs)
       .filter((ms): ms is number => ms !== undefined)
@@ -65,7 +73,7 @@ export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
       avgTokensPerSec: average(rates),
       medianTokensPerSec: percentile(rates, 0.5),
       p90TokensPerSec: percentile(rates, 0.9),
-      avgLoadDurationMs: loads.length === 0 ? null : average(loads)
+      maxLoadDurationMs: loads.length === 0 ? null : max(loads)
     })
   }
   return summaries

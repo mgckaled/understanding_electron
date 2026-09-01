@@ -96,7 +96,7 @@ export type EventRow = {
 /**
  * Tokens/s summary for one `(service, model)` bucket, already aggregated in
  * the main process — the raw `performance_events` rows never cross IPC
- * (O-7, DO7.5). `avgLoadDurationMs` is `null`, never `0`, when no row in the
+ * (O-7, DO7.5). `maxLoadDurationMs` is `null`, never `0`, when no row in the
  * bucket carried it (every cloud-provider bucket, and any Ollama bucket
  * measured while the model was already resident).
  */
@@ -107,7 +107,7 @@ export type PerformanceSummary = {
   avgTokensPerSec: number
   medianTokensPerSec: number
   p90TokensPerSec: number
-  avgLoadDurationMs: number | null
+  maxLoadDurationMs: number | null
 }
 
 export type JobId = string

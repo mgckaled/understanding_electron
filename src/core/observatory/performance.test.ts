@@ -43,15 +43,24 @@ describe('summarizeByModel', () => {
     expect(summaries.map((s) => s.service).sort()).toEqual(['glm', 'ollama'])
   })
 
-  it('reports null avgLoadDurationMs when no row in the bucket has it — never zero', () => {
+  it('reports null maxLoadDurationMs when no row in the bucket has it — never zero', () => {
     const [summary] = summarizeByModel([row({ loadDurationMs: undefined })])
-    expect(summary.avgLoadDurationMs).toBeNull()
+    expect(summary.maxLoadDurationMs).toBeNull()
   })
 
-  it('averages loadDurationMs only over the rows that carry it (cloud rows stay absent)', () => {
-    const rows = [row({ loadDurationMs: 48_000 }), row({ loadDurationMs: 52_000 })]
+  it('reports the MAX load, not the average — a cold and a warm load in the same bucket must not blend', () => {
+    // Measured live against qwen2.5-coder:3b (01/09/2026): cold ~13.5s,
+    // the very next call on the same model ~6ms once resident. Averaging
+    // the two would report a number that describes neither (DO7.2 revisited).
+    const rows = [row({ loadDurationMs: 13_531 }), row({ loadDurationMs: 6 })]
     const [summary] = summarizeByModel(rows)
-    expect(summary.avgLoadDurationMs).toBe(50_000)
+    expect(summary.maxLoadDurationMs).toBe(13_531)
+  })
+
+  it('ignores rows with no loadDurationMs when computing the max (cloud rows stay absent)', () => {
+    const rows = [row({ loadDurationMs: undefined }), row({ loadDurationMs: 48_000 })]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.maxLoadDurationMs).toBe(48_000)
   })
 
   it('drops a row with a zero decode window instead of producing Infinity or NaN', () => {
