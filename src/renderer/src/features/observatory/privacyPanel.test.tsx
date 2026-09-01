@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { installApiMock } from '@test/api-mock'
 import type { PrivacyLedger } from '@shared/ipc'
 import { createQueryClient } from '../../shared/queryClient'
@@ -66,7 +66,10 @@ describe('PrivacyPanel', () => {
     renderPanel()
 
     const textOnlyRow = (await screen.findByText(/glm-4.6/)).closest('tr')
-    expect(textOnlyRow).toHaveTextContent('0')
+    // Scoped to the attachment cell, not the row: 'glm-4.6' itself contains
+    // no '0', but a row-wide match would pass even if the cell were empty.
+    const cells = within(textOnlyRow as HTMLElement).getAllByRole('cell')
+    expect(cells[1]).toHaveTextContent('0')
   })
 
   it('shows an error instead of a blank panel on failure', async () => {

@@ -105,6 +105,7 @@ Terceiro habitante do grupo `activity`. Cabeçalho com `totalCalls`/`callsWithAt
 - **Bytes enviados por chamada.** O § 9.3 registra o buraco (`partForProvider` devolve `''` para imagem, os bytes reais viajam por `ChatMessage.images`) e explicitamente não resolve — este plano também não: a métrica aqui é tipo+contagem, nunca tamanho.
 - **Nível de exposição escolhido pelo usuário.** Depende de um seletor de nível por anexo que ainda não existe em nenhum lugar do renderer (§ 3.4 vs. § 9.3, já reconciliados na fundamentação) — feature própria, não este plano.
 - **Provedor terceirizado (N-2).** `isCloudService` já cobre qualquer serviço que não seja `'ollama'`, então um provedor novo (Groq/Cerebras/SambaNova) entra na trilha N-2 sem tocar este plano.
+- **`ai:propose` mistura nível 1 e nível 2 sob a mesma `datasetCount: 1` (achado do advisor).** `requestStepProposal` manda `card` (nível 1, o schema) **e** `profile` (nível 2 — `ColumnProfile[]`, com `min`/`max`/`avg` reais por coluna) na mesma chamada; a contagem grava só "um dataset saiu", sem distinguir que essa chamada especificamente expôs mais do que o schema. DO8.1 assume que o tipo do anexo é o proxy fiel do nível — aqui não é, porque um único canal combina dois níveis que `ai:chat` mantém separados (dataset anexado é sempre nível 1). Resolver isso pede a mesma coluna de nível por anexo que o seletor ainda-não-construído do item acima traria; até lá, esta é uma lacuna nomeada, não corrigida.
 
 ## Diário de execução
 
