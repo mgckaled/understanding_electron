@@ -26,3 +26,11 @@ export function formatBytes(bytes: number): string {
   const decimals = unitIndex === 0 ? 0 : 1
   return `${value.toFixed(decimals).replace('.', ',')} ${BYTE_UNITS[unitIndex]}`
 }
+
+const relativeAge = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' })
+
+/** "medido há Xmin" (§ 4.3) from a query's own `dataUpdatedAt` — never a separate clock. Second caller: O-5. */
+export function formatAge(dataUpdatedAt: number): string {
+  const minutes = Math.round((dataUpdatedAt - Date.now()) / 60_000)
+  return relativeAge.format(minutes, 'minute')
+}

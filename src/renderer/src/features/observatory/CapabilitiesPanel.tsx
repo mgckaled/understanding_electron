@@ -3,7 +3,7 @@ import { CLOUD_PROVIDERS } from '@shared/ipc'
 import CapabilityChip from '../../shared/ui/CapabilityChip/CapabilityChip'
 import Button from '../../shared/ui/Button/Button'
 import StateView from '../../shared/ui/StateView'
-import { formatSize } from '../../shared/format'
+import { formatSize, formatAge } from '../../shared/format'
 import { capabilityChips } from '../conversation/capabilities'
 import { formatContext } from '../conversation/modelFormat'
 import LoadedModels from './LoadedModels'
@@ -26,14 +26,6 @@ const CELL = 'px-3 py-2 text-xs'
 // plus Embedder): otherwise each table sizes columns off its own content and
 // "Modelo" lands at a different x per section.
 const COLUMN_WIDTHS = ['w-[34%]', 'w-[12%]', 'w-[12%]', 'w-[12%]', 'w-[30%]']
-
-const relativeAge = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' })
-
-/** "medido há Xmin" (§ 4.3) from the query's own `dataUpdatedAt` — never a separate clock. */
-function formatAge(dataUpdatedAt: number): string {
-  const minutes = Math.round((dataUpdatedAt - Date.now()) / 60_000)
-  return relativeAge.format(minutes, 'minute')
-}
 
 function ModelsTable({ models }: { models: AiModel[] }): React.JSX.Element {
   return (

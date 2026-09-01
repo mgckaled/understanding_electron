@@ -1,7 +1,9 @@
 import type { ComponentType } from 'react'
 import ActivityPanel from './ActivityPanel'
 import CapabilitiesPanel from './CapabilitiesPanel'
+import ChromiumCachePanel from './ChromiumCachePanel'
 import DatabasePanel from './DatabasePanel'
+import DiskUsagePanel from './DiskUsagePanel'
 import EnginePanel from './EnginePanel'
 import ProcessesPanel from './ProcessesPanel'
 import RuntimePanel from './RuntimePanel'
@@ -43,5 +45,11 @@ export const PANELS: ObservatoryPanel[] = [
   { id: 'capabilities', group: 'state', label: 'Capacidades', Panel: CapabilitiesPanel },
   // First panel in "storage" — the group has existed since O-1 with nothing
   // in it (DO1.10: a group only shows once it has a panel).
-  { id: 'database', group: 'storage', label: 'Banco de dados', Panel: DatabasePanel }
+  { id: 'database', group: 'storage', label: 'Banco de dados', Panel: DatabasePanel },
+  // Acessível/Moderado (§ 6, O-5) — caches instead of reading on every open,
+  // unlike Banco de dados above.
+  { id: 'chromiumCache', group: 'storage', label: 'Cache do Chromium', Panel: ChromiumCachePanel },
+  // Caro/Pesado (§ 6, O-5) — the trilha's second sob-botão panel, this one a
+  // cancellable job instead of a one-shot sondagem (DO5.1).
+  { id: 'diskUsage', group: 'storage', label: 'Uso de disco', Panel: DiskUsagePanel }
 ]
