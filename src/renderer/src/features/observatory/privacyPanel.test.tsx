@@ -49,6 +49,20 @@ describe('PrivacyPanel', () => {
     expect(screen.getByText(/7 com anexo/)).toBeInTheDocument()
   })
 
+  it('uses the singular for a single call, found live (0 chamadas seria igualmente estranho)', async () => {
+    const api = installApiMock()
+    vi.mocked(api.privacy.list).mockResolvedValue({
+      ...LEDGER,
+      rows: [LEDGER.rows[0]],
+      totalCalls: 1,
+      callsWithAttachment: 1
+    })
+
+    renderPanel()
+
+    expect(await screen.findByText(/1 chamada de nuvem/)).toBeInTheDocument()
+  })
+
   it('labels a call with attachments by kind, never as a cumulative total', async () => {
     const api = installApiMock()
     vi.mocked(api.privacy.list).mockResolvedValue(LEDGER)

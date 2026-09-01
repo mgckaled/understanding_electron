@@ -67,7 +67,7 @@ function PrivacyPanel(): React.JSX.Element {
       <h3 className="mb-1 text-sm text-text">Privacidade</h3>
       <p className="mb-4 text-xs text-text-faint">
         {state.status === 'ready'
-          ? `${state.data.totalCalls} chamadas de nuvem nos últimos ${retentionDays} dias, ${state.data.callsWithAttachment} com anexo — `
+          ? `${state.data.totalCalls} ${state.data.totalCalls === 1 ? 'chamada' : 'chamadas'} de nuvem nos últimos ${retentionDays} dias, ${state.data.callsWithAttachment} com anexo — `
           : ''}
         Mostrando as 200 mais recentes. Chamada local (Ollama) nunca gera linha.
       </p>
