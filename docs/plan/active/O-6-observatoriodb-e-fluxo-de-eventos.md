@@ -59,6 +59,15 @@ Decisão de UX fechada com o usuário nesta sessão, implementada sem variação
 
 A escrita nunca passa por IPC — acontece dentro do processo main, no sink da DO6.2 — então não existe (nem faria sentido existir) um `events:write`. `events:list` é `z.void()` → `EventRow[]`, **sem** `Result`: segue o mesmo precedente de `database:info` — "leitura de um banco já aberto pelo composition root, sem modo de falha que a UI precise distinguir" (DO3.3, skill `ipc`). `ORDER BY created_at DESC LIMIT 200`, sem paginação nesta primeira entrega — 200 já cobre a janela útil de um painel de depuração; paginação real é candidato a refinamento futuro, não bloqueio deste plano.
 
+### DO6.9 — Duas correções da revisão do advisor, achadas antes do teste ao vivo
+
+Nenhuma muda o escopo — as duas fecham um caso que o `check:fast` (testes automatizados) não conseguia pegar, porque exigem observar o *comportamento em uso*, não o dado isolado:
+
+- **Auto-instrumentação.** Sem exclusão, abrir o painel Eventos dispararia `events:list`, que o sink gravaria como mais um evento concluído — o painel instrumentaria a si mesmo, e cada abertura empurraria sua própria leitura para o topo da lista que acabou de buscar. O sink em `registerAll()` agora ignora o canal `events:list`.
+- **A janela de retenção precisa ser verdadeira no momento da leitura, não só no boot.** `sweepExpiredEvents` só roda uma vez, ao iniciar o app — se o usuário reduzisse `eventRetentionDays` de 90 para 7 em Configurações, o cabeçalho do painel (DO6.7(b)) passaria a dizer "últimos 7 dias" enquanto `events:list` continuava devolvendo linhas de até 90 dias atrás, porque a varredura física só rodaria no próximo boot. `listEvents` agora recebe `retentionDays` e filtra `WHERE created_at >= cutoff` na própria leitura — a varredura do boot continua existindo (ela é quem de fato libera espaço em disco), mas o texto de transparência do painel passa a ser verdadeiro por construção, não por coincidência de quando o app foi reiniciado pela última vez.
+
+Consequência mecânica: `EventRow` ganhou `id` (chave estável de linha no React, em vez de índice de array — `key={index}` reordena/reusa DOM entre fetches diferentes, o que é exatamente o tipo de bug que só aparece ao vivo, nunca num teste que monta uma vez).
+
 ## Passos
 
 ### 1. Schema e constante (`src/main/observatory/db/migrations.ts`)
@@ -74,7 +83,7 @@ CREATE TABLE events (
   domain_id   TEXT,
   created_at  INTEGER NOT NULL
 );
-CREATE INDEX idx_events_created_at ON events (created_at);
+CREATE INDEX events_by_created_at ON events (created_at);
 ```
 
 `migrations: readonly Migration[] = [v1]` exportado ao lado. Reusa o `Migration` type de `src/main/db/migrations.ts` (mesmo tipo, escada diferente) — não duplica a definição.
@@ -89,16 +98,16 @@ CREATE INDEX idx_events_created_at ON events (created_at);
 
 ### 4. Retenção (`src/main/observatory/retention.ts`)
 
-`sweepExpiredEvents(db, retentionDays, now)` (DO6.5), teste de nível 1 com fixture de linhas antigas/novas.
+`sweepExpiredEvents(db, retentionDays, now)` (DO6.5), teste de nível 1 com fixture de linhas antigas/novas, e um segundo caso variando `retentionDays` (0 apaga tudo, 90 mantém a linha recente) — prova que o parâmetro não é decorativo.
 
 ### 5. Registro no boot (`src/main/ipc/register-all.ts`)
 
-Abre `observatoryDb = openDatabase(join(app.getPath('userData'), OBSERVATORY_DATABASE_FILE), observatoryMigrations)`. Chama `configureEventSink((event) => recordEvent(observatoryDb, event))` logo em seguida. Lê `retentionDays` via `readSettings(undefined, db).eventRetentionDays ?? 30` (síncrona, confirmado no fonte) e chama `await sweepExpiredEvents(observatoryDb, retentionDays).catch(() => {})` no mesmo ponto onde `collectOrphanedAttachments` já roda. `observatoryDb.close()` entra na função devolvida por `registerAll()`, ao lado de `db.close()`/`duckdbWorker.kill()`.
+Abre `observatoryDb = openDatabase(join(app.getPath('userData'), OBSERVATORY_DATABASE_FILE), observatoryMigrations)`. Chama `configureEventSink(...)` logo em seguida — **corrigido na revisão do advisor (DO6.9):** o sink exclui o próprio canal `events:list` (`if (event.channel !== 'events:list') recordEvent(...)`), senão abrir o painel Eventos instrumentaria a si mesmo, e cada abertura empurraria sua própria leitura para o topo da lista que acabou de buscar. `handle('events:list', ...)` lê `retentionDays` **a cada chamada**, não uma vez no boot (mesma correção, DO6.9) — chama `sweepExpiredEvents(observatoryDb, retentionDays).catch(() => {})` no mesmo ponto onde `collectOrphanedAttachments` já roda. `observatoryDb.close()` entra na função devolvida por `registerAll()`, ao lado de `db.close()`/`duckdbWorker.kill()`.
 
 ### 6. Contrato, retenção em `AppSettings`, canal `events:list` (`src/shared/ipc.ts`, `src/preload/index.ts`, `test/api-mock.ts`)
 
 - `appSettingsSchema` ganha `eventRetentionDays: z.number().int().min(7).max(90).optional()` (DO6.4) — sem entrada em `DEFAULT_APP_SETTINGS`.
-- `EventRow = { channel: string; durationMs: number; error: string | null; domainId: string | null; createdAt: number }`.
+- `EventRow = { id: number; channel: string; durationMs: number; error: string | null; domainId: string | null; createdAt: number }` — o `id` entrou na revisão do advisor (DO6.9), para o painel ter chave estável de linha em vez de índice de array.
 - `argsSchema['events:list'] = z.void()`; `IpcContract['events:list'] = { args: void; result: EventRow[] }` (DO6.8).
 - `Api`: `events: { list(): Promise<EventRow[]> }`.
 - Preload: bloco `events` em `src/preload/index.ts` — conferir teto de 100 linhas depois de `pnpm format`.
@@ -136,4 +145,4 @@ O índice hoje descreve a trilha O como se só `O-1` existisse ("a trilha é gat
 
 | Data | Sessão | O que foi feito |
 |---|---|---|
-| 01/09/2026 | 1 | Escopo do O-6 fechado em conversa (fonte do evento = hook único em `ipcStats.wrap`, retenção configurável com intervalo fechado 7–90 dias, textos de transparência no cabeçalho do painel e em Configurações). Plano escrito, ainda não executado. Context7 confirmou a API do `node:sqlite` (`DatabaseSync`, `exec`/`prepare`/`run`, binding parametrizado). Revisão do advisor (Opus) corrigiu o desenho do sink de eventos (setter mutável em vez de parâmetro de construtor — o singleton `ipcStats` nasce sem argumento em `registry.ts:5`, antes de `registerAll()` existir) e o schema (`STRICT`/`AUTOINCREMENT` removidos, sem precedente no `migrations.ts` do `crivo.db`). Skills usadas: `architecture`, `ipc`, `data`, `testing`, `design-system`, `comments`. |
+| 01/09/2026 | 1 | Escopo do O-6 fechado em conversa (fonte do evento = hook único em `ipcStats.wrap`, retenção configurável com intervalo fechado 7–90 dias, textos de transparência no cabeçalho do painel e em Configurações). Plano escrito e revisado pelo advisor (Opus) antes de codar — corrigiu o desenho do sink (setter mutável, não parâmetro de construtor) e o schema (sem `STRICT`/`AUTOINCREMENT`). Context7 confirmou a API do `node:sqlite`. **Todos os 8 passos implementados na mesma sessão**, um commit por passo (`63386c5`..`9371346`): schema, extração pura + sink, gravação real, retenção, wiring no boot, contrato IPC, campo em Configurações, painel Eventos. Segunda revisão do advisor, agora sobre o código, achou dois problemas visíveis em uso — auto-instrumentação do canal `events:list` e janela de retenção que só ficava verdadeira após um restart — corrigidos como DO6.9 (ver Decisões), mais `EventRow.id` para chave estável de linha no React. `pnpm check:fast` verde: 139 arquivos de teste, 1231 testes, zero erros de lint. **Verificação ao vivo (`pnpm dev`) ainda não feita** — combinado com o usuário que ele testa e manda print/feedback antes de fechar esta sessão. Skills usadas: `architecture`, `ipc`, `data`, `testing`, `design-system`, `comments`. |

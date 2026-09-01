@@ -20,8 +20,8 @@ function EventsTable({ rows }: { rows: EventRow[] }): React.JSX.Element {
         </tr>
       </thead>
       <tbody>
-        {rows.map((row, index) => (
-          <tr key={index} className="border-b border-border last:border-b-0">
+        {rows.map((row) => (
+          <tr key={row.id} className="border-b border-border last:border-b-0">
             <td className={`${CELL} font-mono text-text select-text`}>{row.channel}</td>
             <td className={`${CELL} text-text-muted`}>{row.durationMs.toFixed(1)}ms</td>
             <td className={`${CELL} text-danger-text select-text`}>{row.error ?? '—'}</td>

@@ -6,8 +6,16 @@ import { createQueryClient } from '../../shared/queryClient'
 import EventsPanel from './EventsPanel'
 
 const ROWS: EventRow[] = [
-  { channel: 'app:info', durationMs: 1.2, error: null, domainId: null, createdAt: Date.now() },
   {
+    id: 1,
+    channel: 'app:info',
+    durationMs: 1.2,
+    error: null,
+    domainId: null,
+    createdAt: Date.now()
+  },
+  {
+    id: 2,
     channel: 'ai:chat',
     durationMs: 800,
     error: 'provider down',

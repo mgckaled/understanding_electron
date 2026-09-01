@@ -145,7 +145,12 @@ export async function registerAll(): Promise<() => void> {
     join(app.getPath('userData'), OBSERVATORY_DATABASE_FILE),
     observatoryMigrations
   )
-  configureEventSink((event) => recordEvent(observatoryDb, event))
+  // events:list is excluded: without this, opening the Eventos panel would
+  // instrument itself, and every open would push its own read to the top of
+  // the list it just fetched.
+  configureEventSink((event) => {
+    if (event.channel !== 'events:list') recordEvent(observatoryDb, event)
+  })
   const attachmentsDir = join(app.getPath('userData'), 'attachments')
   // Resolved once, here, where app.isPackaged/process.resourcesPath are known
   // terrain (icon.png already reads process.resourcesPath the same way) —
@@ -322,7 +327,12 @@ export async function registerAll(): Promise<() => void> {
     )
   )
 
-  handle('events:list', () => listEvents(observatoryDb))
+  // Read fresh on every call, not cached at boot: a retentionDays just
+  // lowered in Configurações must narrow the list immediately, not wait for
+  // the next restart's sweep (DO6.7(b)).
+  handle('events:list', () =>
+    listEvents(observatoryDb, readSettings(undefined, db).eventRetentionDays ?? 30)
+  )
 
   // Dev-only seed (DN1A.1): .env never ships (app.isPackaged guards it), and
   // it only FILLS a key that is still unset — a key already written through

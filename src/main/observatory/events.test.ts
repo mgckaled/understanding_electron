@@ -16,7 +16,7 @@ describe('recordEvent / listEvents', () => {
       domainId: 'conv-1'
     })
 
-    const rows = listEvents(db)
+    const rows = listEvents(db, 30)
     expect(rows).toHaveLength(2)
     expect(rows.map((row) => row.channel).sort()).toEqual(['ai:chat', 'app:info'])
 
@@ -31,6 +31,6 @@ describe('recordEvent / listEvents', () => {
     recordEvent(db, { channel: 'app:info', durationMs: 1, error: null, domainId: null })
     recordEvent(db, { channel: 'app:memory', durationMs: 1, error: null, domainId: null })
 
-    expect(listEvents(db).map((row) => row.channel)).toEqual(['app:memory', 'app:info'])
+    expect(listEvents(db, 30).map((row) => row.channel)).toEqual(['app:memory', 'app:info'])
   })
 })
