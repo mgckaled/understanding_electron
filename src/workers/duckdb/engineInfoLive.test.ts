@@ -13,18 +13,28 @@ import {
 // actually exist on the @duckdb/node-api version installed here — the
 // plan's own warning (O-3 passo 1) that the doc's column names can drift
 // between engine versions.
+//
+// One shared instance for the three probes below (a single beforeAll, not
+// one DuckDBInstance.create per `it`): spinning up the native engine is the
+// expensive part, and none of these three queries mutate state the others
+// depend on. Three separate instances were enough parallel-suite contention
+// to time out unrelated tests (ConversationView, draft) at their 5s limit —
+// diagnosed live, not assumed; see ARMADILHAS.md.
 describe('engine info SQL against the real, installed DuckDB engine', () => {
-  it('memory_limit reads as a display string', async () => {
+  let connection: Awaited<ReturnType<Awaited<ReturnType<typeof DuckDBInstance.create>>['connect']>>
+
+  beforeAll(async () => {
     const instance = await DuckDBInstance.create(':memory:')
-    const connection = await instance.connect()
+    connection = await instance.connect()
+  })
+
+  it('memory_limit reads as a display string', async () => {
     const reader = await connection.runAndReadAll(buildMemoryLimitSql())
     const [row] = reader.getRowObjectsJS() as [{ value: string }]
     expect(typeof row.value).toBe('string')
   })
 
   it('extensions carry name, loaded, installed and version', async () => {
-    const instance = await DuckDBInstance.create(':memory:')
-    const connection = await instance.connect()
     const reader = await connection.runAndReadAll(buildExtensionsSql())
     const rows = reader.getRowObjectsJS() as Record<string, unknown>[]
     for (const row of rows) {
@@ -36,8 +46,6 @@ describe('engine info SQL against the real, installed DuckDB engine', () => {
   })
 
   it('memory-by-tag runs without error on a fresh instance', async () => {
-    const instance = await DuckDBInstance.create(':memory:')
-    const connection = await instance.connect()
     const reader = await connection.runAndReadAll(buildMemoryByTagSql())
     expect(Array.isArray(reader.getRowObjectsJS())).toBe(true)
   })
