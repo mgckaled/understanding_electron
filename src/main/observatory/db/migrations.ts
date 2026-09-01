@@ -49,4 +49,23 @@ const v3: Migration = (db) => {
   db.exec(`ALTER TABLE performance_events ADD COLUMN prompt_tokens INTEGER;`)
 }
 
-export const migrations: readonly Migration[] = [v1, v2, v3]
+// service/model own no foreign key, same reasoning as performance_events —
+// counts, never a hash, so this table never retains a pointer to the
+// attachment itself (O-8, DO8.4).
+const v4: Migration = (db) => {
+  db.exec(`
+    CREATE TABLE privacy_events (
+      id             INTEGER PRIMARY KEY,
+      service        TEXT    NOT NULL,
+      model          TEXT    NOT NULL,
+      dataset_count  INTEGER NOT NULL,
+      document_count INTEGER NOT NULL,
+      image_count    INTEGER NOT NULL,
+      created_at     INTEGER NOT NULL
+    );
+
+    CREATE INDEX privacy_events_by_created_at ON privacy_events (created_at);
+  `)
+}
+
+export const migrations: readonly Migration[] = [v1, v2, v3, v4]
