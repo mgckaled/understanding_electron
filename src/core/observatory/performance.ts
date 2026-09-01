@@ -14,11 +14,23 @@ export type PerformanceEvent = {
 
 export type PerformanceRow = PerformanceEvent & { id: number; createdAt: number }
 
-// null, never Infinity/NaN (DO7.8): a decode window of ~0ms is a degenerate
-// sample, and a fabricated four-digit rate would drag the bucket's average
-// further than dropping the sample does.
+// Below this, evalTokens/(decodeMs/1000) is measurably biased: a 2-token
+// reply measured +12.6% high against Ollama's own eval_count/eval_duration,
+// because the first token's generation time is counted in ttftMs, not
+// decodeMs (t1 marks the first CHUNK, not the start of decoding). A 266-token
+// reply measured ~0% bias — the same denominator error is negligible once
+// amortized. Subtracting one token from the numerator was tried and made the
+// 2-token case worse (-43%): at this sample size the window itself is too
+// short for any correction to be stable. Dropping the sample, not adjusting
+// it, is the honest fix (O-7, DO7.8 — measured live, 01/09/2026).
+const MIN_EVAL_TOKENS_FOR_RATE = 5
+
+// null, never Infinity/NaN: a decode window of ~0ms or a too-short reply is a
+// degenerate sample, and a fabricated (or unstable) rate would drag the
+// bucket's average further than dropping the sample does.
 function tokensPerSec(row: PerformanceRow): number | null {
-  return row.decodeMs > 0 ? row.evalTokens / (row.decodeMs / 1000) : null
+  if (row.decodeMs <= 0 || row.evalTokens < MIN_EVAL_TOKENS_FOR_RATE) return null
+  return row.evalTokens / (row.decodeMs / 1000)
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -40,8 +52,8 @@ function max(values: number[]): number {
  * second table kept in sync with `performance_events`.
  *
  * @returns One entry per bucket that has at least one measurable rate; a
- *   bucket where every row had a zero decode window is omitted rather than
- *   reported with fabricated numbers.
+ *   bucket where every row had a zero decode window or too few tokens
+ *   (DO7.8) is omitted rather than reported with a biased number.
  */
 export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
   const buckets = new Map<string, PerformanceRow[]>()

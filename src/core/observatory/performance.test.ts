@@ -77,4 +77,18 @@ describe('summarizeByModel', () => {
     const summaries = summarizeByModel([row({ decodeMs: 0 })])
     expect(summaries).toHaveLength(0)
   })
+
+  it('drops a reply too short to produce a stable rate (DO7.8, measured live)', () => {
+    // Measured live against qwen2.5-coder:3b: a 2-token reply's tokens/s
+    // came out +12.6% high against Ollama's own eval_count/eval_duration; a
+    // 266-token reply matched within noise. The threshold, not a correction
+    // factor, is what the live measurement decided.
+    const rows = [
+      row({ id: 1, evalTokens: 2, decodeMs: 75 }),
+      row({ id: 2, evalTokens: 100, decodeMs: 1000 })
+    ]
+    const [summary] = summarizeByModel(rows)
+    expect(summary.n).toBe(1)
+    expect(summary.avgTokensPerSec).toBe(100)
+  })
 })
