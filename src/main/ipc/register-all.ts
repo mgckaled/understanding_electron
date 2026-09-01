@@ -5,8 +5,14 @@ import { is } from '@electron-toolkit/utils'
 import type { AiService, JobEvent } from '@shared/ipc'
 import { JOB_EVENT_CHANNEL } from '@shared/channels'
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
-import { handle, getIpcStats } from './registry'
+import { handle, getIpcStats, configureEventSink } from './registry'
 import { DATABASE_FILE, openDatabase } from '../db/open'
+import {
+  OBSERVATORY_DATABASE_FILE,
+  migrations as observatoryMigrations
+} from '../observatory/db/migrations'
+import { recordEvent, listEvents } from '../observatory/events'
+import { sweepExpiredEvents } from '../observatory/retention'
 import { freemem, totalmem } from 'node:os'
 import { getAppInfo, getSystemMemory, readIpcStats, readProcesses } from '../features/app/handlers'
 import { openExternal } from '../features/shell/handlers'
@@ -135,6 +141,11 @@ function broadcastJobEvent(event: JobEvent): void {
  */
 export async function registerAll(): Promise<() => void> {
   const db = openDatabase(join(app.getPath('userData'), DATABASE_FILE))
+  const observatoryDb = openDatabase(
+    join(app.getPath('userData'), OBSERVATORY_DATABASE_FILE),
+    observatoryMigrations
+  )
+  configureEventSink((event) => recordEvent(observatoryDb, event))
   const attachmentsDir = join(app.getPath('userData'), 'attachments')
   // Resolved once, here, where app.isPackaged/process.resourcesPath are known
   // terrain (icon.png already reads process.resourcesPath the same way) —
@@ -311,6 +322,8 @@ export async function registerAll(): Promise<() => void> {
     )
   )
 
+  handle('events:list', () => listEvents(observatoryDb))
+
   // Dev-only seed (DN1A.1): .env never ships (app.isPackaged guards it), and
   // it only FILLS a key that is still unset — a key already written through
   // the UI is never overwritten. try/catch because it is not confirmed
@@ -331,8 +344,14 @@ export async function registerAll(): Promise<() => void> {
   // with a fresh dataset:attach that has not been appended yet.
   await collectOrphanedAttachments(db, attachmentsDir).catch(() => {})
 
+  // Retention runs against the crivo.db setting but sweeps observatory.db —
+  // the two files stay independent; only the number they read is shared.
+  const retentionDays = readSettings(undefined, db).eventRetentionDays ?? 30
+  await sweepExpiredEvents(observatoryDb, retentionDays).catch(() => {})
+
   return () => {
     db.close()
+    observatoryDb.close()
     duckdbWorker.kill()
   }
 }
