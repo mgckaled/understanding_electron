@@ -1,6 +1,8 @@
+import type { AiModel } from '@shared/ipc'
 import {
   GEMINI_MODELS,
   GLM_MODELS,
+  findEmbedders,
   hasCapability,
   normalizeOllamaModel,
   normalizeOllamaRunning,
@@ -317,5 +319,32 @@ describe('GEMINI_MODELS', () => {
     const flash = GEMINI_MODELS.find((m) => m.name === 'gemini-3.7-flash')
     expect(lite?.rateLimit).toMatchObject({ rpd: 500 })
     expect(flash?.rateLimit).toMatchObject({ rpd: 20 })
+  })
+})
+
+describe('findEmbedders', () => {
+  const embedder: AiModel = {
+    provider: 'ollama',
+    name: 'nomic-embed-text',
+    parameterSize: '137M',
+    sizeBytes: 274_000_000,
+    capabilities: ['embedding'],
+    contextLength: 2048,
+    attention: null,
+    variantOf: null
+  }
+  const chatModel: AiModel = {
+    provider: 'ollama',
+    name: 'gemma3:4b',
+    parameterSize: '4.3B',
+    sizeBytes: 3_338_801_804,
+    capabilities: ['completion', 'vision'],
+    contextLength: 131072,
+    attention: null,
+    variantOf: null
+  }
+
+  it('keeps the embedder and drops the chat model', () => {
+    expect(findEmbedders([embedder, chatModel])).toEqual([embedder])
   })
 })

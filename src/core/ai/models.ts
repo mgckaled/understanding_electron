@@ -164,6 +164,11 @@ export function hasCapability(model: AiModel, capability: string): boolean {
   return model.capabilities.includes(capability)
 }
 
+/** Models the catalog declares `embedding` for (O-4, DO4.5) — the raw catalog, not `selectableModels`, which filters embedders out by design (D15.11). */
+export function findEmbedders(models: AiModel[]): AiModel[] {
+  return models.filter((model) => hasCapability(model, 'embedding'))
+}
+
 /** One entry of `/api/ps` — what the provider currently holds in memory. */
 export type OllamaRunning = {
   name: string

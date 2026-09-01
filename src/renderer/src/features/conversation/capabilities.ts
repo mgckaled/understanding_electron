@@ -2,6 +2,7 @@ import {
   HelpCircle,
   Image,
   Lightbulb,
+  Mic,
   Network,
   PenLine,
   Wrench,
@@ -26,7 +27,8 @@ const CAPABILITY_META: Record<string, CapabilityMeta> = {
     label: 'Inserção — fill-in-middle, autocomplete com sufixo'
   },
   embedding: { sigla: 'E', Icon: Network, label: 'Embedding — para RAG e busca semântica' },
-  thinking: { sigla: 'TH', Icon: Lightbulb, label: 'Raciocínio — cadeia de pensamento explícita' }
+  thinking: { sigla: 'TH', Icon: Lightbulb, label: 'Raciocínio — cadeia de pensamento explícita' },
+  audio: { sigla: 'AU', Icon: Mic, label: 'Áudio — entende áudio anexado' } // DO4.9
 }
 
 const UNKNOWN: Omit<CapabilityMeta, 'sigla'> = {

@@ -24,12 +24,24 @@ describe('capabilityChips', () => {
   })
 
   it('falls back to a raw sigla for a capability with no meta of its own', () => {
+    const model: AiModel = { ...TEST_MODEL, capabilities: ['completion', 'reasoning-x'] }
+
+    const [chip] = capabilityChips(model)
+
+    expect(chip?.capability).toBe('reasoning-x')
+    expect(chip?.sigla).toBe('RE')
+  })
+
+  // DO4.9: the sigla alone does not discriminate — 'audio'.slice(0,2).toUpperCase()
+  // is already 'AU', same as the fallback above would produce. The label is what proves
+  // CAPABILITY_META carries a real entry, not the UNKNOWN fallback landing on the same letters.
+  it('gives audio its own label, not the generic unknown-capability one', () => {
     const model: AiModel = { ...TEST_MODEL, capabilities: ['completion', 'audio'] }
 
     const [chip] = capabilityChips(model)
 
-    expect(chip?.capability).toBe('audio')
     expect(chip?.sigla).toBe('AU')
+    expect(chip?.label).toBe('Áudio — entende áudio anexado')
   })
 })
 
