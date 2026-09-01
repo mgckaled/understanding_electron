@@ -380,6 +380,15 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | O-7 | [DO7.7](plan/implemented/O-7-desempenho-por-modelo.md) | `performance:list` entra na mesma exclusão do sink que `events:list` |
 | O-7 | [DO7.8](plan/implemented/O-7-desempenho-por-modelo.md) | Resposta curta demais não produz taxa: piso de 5 tokens, decidido com dado real, não com correção matemática |
 | O-7 | [DO7.9](plan/implemented/O-7-desempenho-por-modelo.md) | A decomposição em três vira quatro números: rede+prefill, decode, tokens/s de entrada e de saída |
+| O-8 | [DO8.1](plan/implemented/O-8-livro-razao-de-privacidade.md) | O tipo do anexo é o proxy do nível de exposição, decisão herdada do § 9.3 |
+| O-8 | [DO8.2](plan/implemented/O-8-livro-razao-de-privacidade.md) | Só chamada de nuvem grava linha; local não produz nada |
+| O-8 | [DO8.3](plan/implemented/O-8-livro-razao-de-privacidade.md) | Grava no envio da requisição, não na resolução da resposta |
+| O-8 | [DO8.4](plan/implemented/O-8-livro-razao-de-privacidade.md) | Contagem por tipo, nunca o hash do anexo |
+| O-8 | [DO8.5](plan/implemented/O-8-livro-razao-de-privacidade.md) | Toda chamada de nuvem grava, mesmo sem anexo — contagem zero é dado, não lacuna |
+| O-8 | [DO8.6](plan/implemented/O-8-livro-razao-de-privacidade.md) | Tabela própria (`privacy_events`), mesmo arquivo, retenção herdada de `eventRetentionDays` |
+| O-8 | [DO8.7](plan/implemented/O-8-livro-razao-de-privacidade.md) | `privacy:list` devolve linhas cruas, não um resumo agregado |
+| O-8 | [DO8.8](plan/implemented/O-8-livro-razao-de-privacidade.md) | `LIMIT 200` não sustenta a DO8.5 sozinho; o canal devolve linhas + contadores da janela inteira |
+| O-8 | [DO8.9](plan/implemented/O-8-livro-razao-de-privacidade.md) | `ai:propose` também é chamada de nuvem, e também grava |
 
 ---
 

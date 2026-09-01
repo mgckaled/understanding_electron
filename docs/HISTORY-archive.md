@@ -12,6 +12,17 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### E-1-F — O `.pdf` pelo motor que já estava no app, e a trilha E fecha (ago/2026)
+Origem: último item desabilitado do `FormatPicker`, e a única bifurcação técnica que a trilha ainda tinha. Entrega: `.pdf` de ponta a ponta por `webContents.printToPDF` numa janela offscreen, **zero dependência nova**, com número de página no rodapé. O seletor fica sem nenhuma opção desabilitada pela primeira vez.
+
+**A bifurcação era `pdf-lib` contra `printToPDF`, e o usuário dissolveu a objeção que restava.** O `pdf-lib` não é uma dependência (é ele, `@pdf-lib/fontkit` e uma fonte vendorizada) e **não pagina** — o `ESCOPO` já registrava isso ao escolhê-lo, e resposta de modelo é prosa longa de tamanho arbitrário. Contra o `printToPDF` só sobrava bifurcar o pipeline; ao perguntar se o `.pdf` não podia sair *"no mesmo esquema do `.docx`"*, ele apontou a saída: **gerar o HTML a partir do `Block[]`**. O `.pdf` virou o **terceiro renderizador** do mesmo mapeamento, e ainda o mais testável dos três — HTML é string, então o nível 1 compara o documento por igualdade, que é justamente o que a DE1E.9 cobrou e o `.docx` não permitiu.
+
+**Segurança: gerar HTML de texto de modelo parece contrariar a D12.2 e não contraria.** Ela proíbe *transformar* texto do modelo em HTML; aqui todo run é **escapado** e só saem as nossas tags — inclusive o nó `html` do markdown, que a DE1E.7 já converte em texto e o escape alcança de graça. Segunda tranca: `default-src 'none'` no documento gerado. **E ela é real, não decorativa** — a orientação geral diz que CSP em `<meta>` inserida depois do parse é ignorada; medido com `securitypolicyviolation`, está **ativa** por este caminho.
+
+⚠️ **Uma palavra ambígua custou uma investigação inteira e pagou por ela.** O relato *"a paginação não veio"* foi lido como quebra em páginas, quando era **numeração**. Reproduzir antes de consertar impediu o estrago — as sondas paginavam, e o rascunho reexportado deu 3 páginas completas —, e a investigação pelo caminho errado achou **dois defeitos reais**: o documento inteiro renderizava em **modo quirks** (o `data:` inicial não tinha doctype, e `innerHTML` não muda compat mode depois), e uma **medição minha era falsa**.
+
+⚠️ **A medição falsa é a lição que sobrevive ao plano.** Eu havia registrado, em fonte e em decisão, que o `data:` URL falha "entre 128 e 192 KB". Era artefato da sonda: ela destruía a **única** janela, o que dispara `window-all-closed` e encerra o app por padrão — então a **segunda** janela falhava sempre, em qualquer tamanho, e eu li ordem como tamanho. Com uma âncora viva (o que a `mainWindow` é em produção): 1 MB passa, 2 MB morre com `ERR_INVALID_URL`, e a carga em dois tempos não tem teto a 4 MB. **Uma medição que varia duas coisas ao mesmo tempo mede a que não se está olhando.** `check:fast`: 1047 testes, 113 arquivos. [`plan/implemented/E-1-F-o-rascunho-vira-pdf.md`](plan/implemented/E-1-F-o-rascunho-vira-pdf.md)
+
 ### E-1-E — O `.docx`, e a descoberta de que o `.txt` estava mentindo (ago/2026)
 Origem: o `FormatPicker` mostrava `.docx` desabilitado desde o E-1-D. Entrega: uma dependência (`docx`, de dolanmiu), um emissor `mdast → .docx` escrito aqui, e — não previsto — **o `.txt` reescrito do zero**, porque o corte descobriu que ele vinha corrompendo texto desde o plano anterior.
 
