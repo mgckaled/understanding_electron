@@ -96,4 +96,26 @@ describe('createIpcStatsStore', () => {
       { channel: 'ai:chat', durationMs: 5, error: 'boom', domainId: null }
     ])
   })
+
+  it('records a Result.ok:false as an event error without throwing (DO6.10)', async () => {
+    const store = createIpcStatsStore(fakeClock(0, 1))
+    const events: unknown[] = []
+    store.setEventSink((event) => events.push(event))
+    // ai:chat never throws for a down provider — it resolves Result.ok:false
+    // (the `ipc` skill's own rule). A sink watching only `catch` would miss
+    // this entirely, which is exactly what killing Ollama live surfaced.
+    const wrapped = store.wrap('ai:chat', () => ({ ok: false, error: { kind: 'unavailable' } }))
+
+    const result = await wrapped(undefined)
+
+    expect(result).toEqual({ ok: false, error: { kind: 'unavailable' } })
+    expect(events).toEqual([
+      { channel: 'ai:chat', durationMs: 1, error: 'unavailable', domainId: null }
+    ])
+    // AppIpcStat stays exception-only (DO2.4 unchanged): a Result failure
+    // does not count as an error in the Canais IPC panel.
+    expect(store.snapshot()).toEqual([
+      { channel: 'ai:chat', callCount: 1, errorCount: 0, lastDurationMs: 1, lastError: null }
+    ])
+  })
 })

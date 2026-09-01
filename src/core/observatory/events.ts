@@ -6,6 +6,24 @@ export type IpcCallEvent = {
   domainId: string | null
 }
 
+/**
+ * A resolved value that failed without throwing — the shape of `Result<T>`
+ * from `shared/ipc.ts` (`{ ok: false, error: AppError }`). Most user-visible
+ * failures (Ollama down, cancelled job) are Results, not exceptions (per the
+ * `ipc` skill's own rule) — a sink that only watched `catch` would log almost
+ * nothing (O-6, DO6.10, found live: killing Ollama mid-chat produced zero
+ * error rows before this check existed).
+ */
+export function resultError(value: unknown): string | null {
+  if (typeof value !== 'object' || value === null || !('ok' in value)) return null
+  if ((value as { ok: unknown }).ok !== false) return null
+  const error = (value as { error?: unknown }).error
+  if (typeof error === 'object' && error !== null && 'kind' in error) {
+    return String((error as { kind: unknown }).kind)
+  }
+  return 'unknown'
+}
+
 const DOMAIN_ID_KEYS = ['conversationId', 'messageId', 'jobId'] as const
 
 /**

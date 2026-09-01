@@ -1,5 +1,5 @@
 import type { AppIpcStat } from '@shared/ipc'
-import { extractDomainId, type IpcCallEvent } from './events'
+import { extractDomainId, resultError, type IpcCallEvent } from './events'
 
 /**
  * Wraps every IPC handler with a call counter, sticky on failure (DO2.4): a
@@ -9,13 +9,17 @@ import { extractDomainId, type IpcCallEvent } from './events'
 export function createIpcStatsStore(now: () => number = () => performance.now()): {
   wrap: <A, R>(channel: string, fn: (args: A) => Promise<R> | R) => (args: A) => Promise<R>
   snapshot: () => AppIpcStat[]
-  /** O-6: the sink is read fresh by `record()` on every call, so it can be set any time before real use. */
+  /** O-6: the sink is read fresh on every call, so it can be set any time before real use. */
   setEventSink: (sink: (event: IpcCallEvent) => void) => void
 } {
   const stats = new Map<string, AppIpcStat>()
   let eventSink: ((event: IpcCallEvent) => void) | undefined
 
-  function record(channel: string, durationMs: number, error: string | null, args: unknown): void {
+  // AppIpcStat's notion of "failure" stays exception-only (DO2.4, unchanged
+  // by O-6): it answers "did the plumbing break", not "did the app-level
+  // call fail". Kept separate from the events sink below, which needs the
+  // broader notion (DO6.10).
+  function record(channel: string, durationMs: number, error: string | null): void {
     const prev = stats.get(channel)
     stats.set(channel, {
       channel,
@@ -24,6 +28,14 @@ export function createIpcStatsStore(now: () => number = () => performance.now())
       lastDurationMs: durationMs,
       lastError: error ?? prev?.lastError ?? null
     })
+  }
+
+  function emitEvent(
+    channel: string,
+    durationMs: number,
+    error: string | null,
+    args: unknown
+  ): void {
     eventSink?.({ channel, durationMs, error, domainId: extractDomainId(args) })
   }
 
@@ -33,15 +45,15 @@ export function createIpcStatsStore(now: () => number = () => performance.now())
         const start = now()
         try {
           const result = await fn(args)
-          record(channel, now() - start, null, args)
+          const durationMs = now() - start
+          record(channel, durationMs, null)
+          emitEvent(channel, durationMs, resultError(result), args)
           return result
         } catch (error) {
-          record(
-            channel,
-            now() - start,
-            error instanceof Error ? error.message : String(error),
-            args
-          )
+          const durationMs = now() - start
+          const message = error instanceof Error ? error.message : String(error)
+          record(channel, durationMs, message)
+          emitEvent(channel, durationMs, message, args)
           throw error
         }
       }
