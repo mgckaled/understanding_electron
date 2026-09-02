@@ -13,13 +13,13 @@ import { useAttachFile } from './useAttachFile'
 
 // The three switches mirror ESCOPO.md § Ferramentas do chat (planos 21-23,
 // dentro do arco) — same Portuguese names as the product's single source, not
-// the rascunho's placeholder English ones. Off and disabled here on purpose:
-// no tool-calling logic exists yet: each future plan only flips `disabled` and
-// wires a real `onChange`, never redesigns the row (F2.6).
+// the rascunho's placeholder English ones. `kind` is what a caller flips
+// (F2.6): 'reasoning' left this row alone, the other two stay off and
+// disabled — arcos 22/23, still unbuilt.
 const TOOLS = [
-  { label: 'Busca web', Icon: Globe },
-  { label: 'Raciocínio visível', Icon: Lightbulb },
-  { label: 'Documentação (MCP)', Icon: BookOpen }
+  { label: 'Busca web', Icon: Globe, kind: 'webSearch' },
+  { label: 'Raciocínio visível', Icon: Lightbulb, kind: 'reasoning' },
+  { label: 'Documentação (MCP)', Icon: BookOpen, kind: 'mcp' }
 ] as const
 
 // A group label, same shape as the date headings in ConversationList.
@@ -33,6 +33,9 @@ type AttachButtonProps = {
   disabled?: boolean
   /** The conversation's resolved model, for the vision gate (D17.11) — null disables "Imagens". */
   model?: AiModel | null
+  /** The "Raciocínio visível" switch (arco 21, D21A.5) — undefined/no-op until the caller wires it. */
+  wantsReasoning?: boolean
+  onWantsReasoningChange?: (value: boolean) => void
 }
 
 const DEFAULT_LABEL = 'Lendo arquivo…'
@@ -49,7 +52,9 @@ function AttachButton({
   onAttached,
   onRemove,
   disabled = false,
-  model = null
+  model = null,
+  wantsReasoning = false,
+  onWantsReasoningChange = () => {}
 }: AttachButtonProps): React.JSX.Element {
   const { state, pick, cancel } = useAttachFile<AttachmentPart>(onAttached)
   const [open, setOpen] = useState(false)
@@ -59,6 +64,7 @@ function AttachButton({
   // The gate's compose-side check (D17.11) — the other lives in Composer's
   // canSend, both calling the same hasCapability the docstring promises.
   const hasVision = model !== null && hasCapability(model, 'vision')
+  const hasThinking = model !== null && hasCapability(model, 'thinking')
 
   const handlePickDataset = (): void => {
     setOpen(false)
@@ -205,15 +211,20 @@ function AttachButton({
                 </button>
                 <div className="my-1 border-t border-border" />
                 <p className={GROUP_LABEL}>Ferramentas</p>
-                {TOOLS.map(({ label, Icon }) => (
+                {TOOLS.map(({ label, Icon, kind }) => (
                   <div key={label} className="flex items-center justify-between gap-3 px-4 py-3">
                     <span className="flex items-center gap-3 text-xs text-text-faint">
                       <Icon size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
                       {label}
                     </span>
-                    {/* Off and disabled (F2.6): planos 21-23 wire the real
-                        onChange, never redesign this row. */}
-                    <Switch checked={false} onChange={() => {}} disabled aria-label={label} />
+                    {/* 'webSearch'/'mcp' stay off and disabled (F2.6, arcos
+                        22/23 unbuilt). 'reasoning' is destravado (D21A.5). */}
+                    <Switch
+                      checked={kind === 'reasoning' ? wantsReasoning : false}
+                      onChange={kind === 'reasoning' ? onWantsReasoningChange : () => {}}
+                      disabled={kind === 'reasoning' ? !hasThinking : true}
+                      aria-label={label}
+                    />
                   </div>
                 ))}
               </div>

@@ -84,12 +84,15 @@ const NO_VISION: AiModel = { ...TEST_MODEL, capabilities: ['completion'] }
 
 function ControlledAttachButton({ model = null }: { model?: AiModel | null }): React.JSX.Element {
   const [attachment, setAttachment] = useState<AttachmentPart | null>(null)
+  const [wantsReasoning, setWantsReasoning] = useState(false)
   return (
     <AttachButton
       attachment={attachment}
       onAttached={setAttachment}
       onRemove={() => setAttachment(null)}
       model={model}
+      wantsReasoning={wantsReasoning}
+      onWantsReasoningChange={setWantsReasoning}
     />
   )
 }
@@ -358,9 +361,10 @@ describe('AttachButton', () => {
     })
   })
 
-  // F2.7/F2.8 — the popover's second group. Web Search/Raciocínio
-  // visível/Documentação (MCP) belong to planos 21-23; Código has no plano
-  // yet (F2.8). All four render disabled regardless of model/state.
+  // F2.7/F2.8 — the popover's second group. Código has no plano yet (F2.8),
+  // Busca web/Documentação (MCP) belong to arcos 22/23 — the three render
+  // disabled regardless of model. Raciocínio visível is the one destravado
+  // by 21-A (D21A.5): its own describe block below.
   describe('the Código item and the Ferramentas group', () => {
     it('always disables Código, independent of the model', async () => {
       const user = userEvent.setup()
@@ -372,18 +376,61 @@ describe('AttachButton', () => {
       expect(screen.getByRole('button', { name: 'Código', hidden: true })).toBeDisabled()
     })
 
-    it('renders the three tool switches off and disabled', async () => {
+    it('renders Busca web and Documentação (MCP) off and disabled regardless of the model', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton model={{ ...TEST_MODEL, capabilities: ['thinking'] }} />)
+      await open(user)
+
+      for (const label of ['Busca web', 'Documentação (MCP)']) {
+        const toggle = screen.getByRole('switch', { name: label, hidden: true })
+        expect(toggle).toBeDisabled()
+        expect(toggle).toHaveAttribute('aria-checked', 'false')
+      }
+    })
+  })
+
+  describe('the Raciocínio visível switch (arco 21, D21A.5)', () => {
+    it('stays off and disabled without a model', async () => {
       const user = userEvent.setup()
       installApiMock()
 
       render(<ControlledAttachButton />)
       await open(user)
 
-      for (const label of ['Busca web', 'Raciocínio visível', 'Documentação (MCP)']) {
-        const toggle = screen.getByRole('switch', { name: label, hidden: true })
-        expect(toggle).toBeDisabled()
-        expect(toggle).toHaveAttribute('aria-checked', 'false')
-      }
+      const toggle = screen.getByRole('switch', { name: 'Raciocínio visível', hidden: true })
+      expect(toggle).toBeDisabled()
+      expect(toggle).toHaveAttribute('aria-checked', 'false')
+    })
+
+    it('stays disabled for a model without the thinking capability', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton model={TEST_MODEL} />)
+      await open(user)
+
+      expect(
+        screen.getByRole('switch', { name: 'Raciocínio visível', hidden: true })
+      ).toBeDisabled()
+    })
+
+    it('is enabled and toggles for a model that declares thinking', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+      const thinkingModel: AiModel = { ...TEST_MODEL, capabilities: ['thinking'] }
+
+      render(<ControlledAttachButton model={thinkingModel} />)
+      await open(user)
+
+      const toggle = screen.getByRole('switch', { name: 'Raciocínio visível', hidden: true })
+      expect(toggle).not.toBeDisabled()
+      expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+      await user.click(toggle)
+
+      expect(toggle).toHaveAttribute('aria-checked', 'true')
     })
   })
 })

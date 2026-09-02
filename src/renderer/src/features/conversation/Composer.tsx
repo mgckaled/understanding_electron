@@ -23,7 +23,7 @@ type ComposerProps = {
    */
   locked: boolean
   /** `attachment` is the pending attachment, cleared together with the draft right after (D16.6, generalized D17.4). */
-  onSend: (text: string, attachment: AttachmentPart | null) => void
+  onSend: (text: string, attachment: AttachmentPart | null, wantsReasoning: boolean) => void
   onCancel: () => void
   /**
    * Everything already in the transcript, in characters. The budget is computed
@@ -62,6 +62,9 @@ function Composer({
 }: ComposerProps): React.JSX.Element {
   const [draft, setDraft] = useState('')
   const [attachment, setAttachment] = useState<AttachmentPart | null>(null)
+  // Sticky across turns, unlike attachment/draft (arco 21, D21A.9) — a mode
+  // the user opts into for the conversation, not a one-shot payload.
+  const [wantsReasoning, setWantsReasoning] = useState(false)
 
   // A PENDING attachment is about to be sent just as much as the draft text is
   // — counted here with the same materializer toChatMessages uses (D16.5), so
@@ -92,11 +95,15 @@ function Composer({
   const hasVision = model !== null && hasCapability(model, 'vision')
   const visionBlocked = imageCount > 0 && !hasVision
   const canSend = !disabled && !loading && draft.trim() !== '' && !overflows && !visionBlocked
+  // Re-checked at send time, not trusted from the switch's own disabled state
+  // (same precedent as hasVision above): a locked conversation can carry a
+  // toggle left on from before the model's capability changed underneath it.
+  const hasThinking = model !== null && hasCapability(model, 'thinking')
 
   const submit = (event: SyntheticEvent): void => {
     event.preventDefault()
     if (!canSend) return
-    onSend(draft, attachment)
+    onSend(draft, attachment, wantsReasoning && hasThinking)
     setDraft('')
     setAttachment(null)
   }
@@ -147,6 +154,8 @@ function Composer({
               onRemove={() => setAttachment(null)}
               disabled={disabled}
               model={model}
+              wantsReasoning={wantsReasoning}
+              onWantsReasoningChange={setWantsReasoning}
             />
             {modelSelector(budget)}
           </div>
