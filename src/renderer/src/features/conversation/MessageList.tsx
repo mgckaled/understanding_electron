@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
 import type { Message, MessageStopped } from '@shared/ipc'
-import { attachmentPartOf, messageText, stepProposalPartOf } from '@core/ai/messages'
+import {
+  attachmentPartOf,
+  messageText,
+  reasoningPartOf,
+  stepProposalPartOf
+} from '@core/ai/messages'
 import MarkdownMessage, { type CodeActions } from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import AttachmentCard from '../attachment/AttachmentCard'
 import StepProposalLine from '../attachment/StepProposalLine'
@@ -67,6 +72,19 @@ function MessageList({ messages }: { messages: Message[] }): React.JSX.Element {
           // proposal replaces the text entirely — the reply IS the line, and it
           // opens the panel where the steps are edited (DF3F.1).
           <li key={message.id} className="flex flex-col gap-2">
+            {(() => {
+              // Minimal on purpose (D21A.8) — plain text, no collapsing, no
+              // per-provider label. The elegant block is 21-B's; this only
+              // proves the trace survives past the turn that produced it.
+              const reasoning = reasoningPartOf(message)
+              return (
+                reasoning !== null && (
+                  <p className="text-reading text-text-muted italic">
+                    Raciocínio: {reasoning.text}
+                  </p>
+                )
+              )
+            })()}
             {(() => {
               const proposal = stepProposalPartOf(message)
               return proposal !== null ? (

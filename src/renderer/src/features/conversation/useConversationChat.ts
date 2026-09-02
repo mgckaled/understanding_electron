@@ -11,6 +11,7 @@ import type {
 import { imageCountOf, toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
+import { useJobReasoning } from '../../shared/hooks/useJobReasoning'
 import type { ViewState } from '../../shared/ui/state'
 import { stoppedFromError } from './conversations'
 import { useActiveConversation, useConversations } from './conversationsContext'
@@ -33,6 +34,8 @@ export function useConversationChat(
   numCtx?: number
 ): {
   streaming: string
+  /** Live reasoning trace for the in-flight turn, cleared with `streaming` (arco 21). */
+  streamingReasoning: string
   /**
    * The conversation the last request addressed. Deliberately not cleared when
    * it ends: its loading, error and cancelled state belong to that conversation
@@ -46,13 +49,18 @@ export function useConversationChat(
    * and a figure from another moment is not a ratio (D15.14).
    */
   lastPrompt: { chars: number; tokens: number } | undefined
-  send: (prompt: string, attachment: AttachmentPart | null) => Promise<void>
+  send: (
+    prompt: string,
+    attachment: AttachmentPart | null,
+    wantsReasoning?: boolean
+  ) => Promise<void>
   cancel: () => void
 } {
   const { activeId, create, append, updateSettings } = useConversations()
   // History comes from the transcript query now, not a list carrying every message (D14.1).
   const active = useActiveConversation()
   const [streaming, setStreaming] = useState('')
+  const [streamingReasoning, setStreamingReasoning] = useState('')
   const [lastRequestId, setLastRequestId] = useState<string | null>(null)
   const [lastPrompt, setLastPrompt] = useState<{ chars: number; tokens: number } | undefined>(
     undefined
@@ -64,18 +72,29 @@ export function useConversationChat(
   // `send` captures `streaming` from its render, so at settle time the closure
   // holds an empty string. The ref is read at settle; state is what re-renders.
   const partialRef = useRef('')
+  const reasoningPartialRef = useRef('')
   useJobChunks(jobId, (text) => {
     partialRef.current += text
     setStreaming(partialRef.current)
   })
+  useJobReasoning(jobId, (text) => {
+    reasoningPartialRef.current += text
+    setStreamingReasoning(reasoningPartialRef.current)
+  })
 
   const clearStreaming = useCallback((): void => {
     partialRef.current = ''
+    reasoningPartialRef.current = ''
     setStreaming('')
+    setStreamingReasoning('')
   }, [])
 
   const send = useCallback(
-    async (prompt: string, attachment: AttachmentPart | null): Promise<void> => {
+    async (
+      prompt: string,
+      attachment: AttachmentPart | null,
+      wantsReasoning = false
+    ): Promise<void> => {
       const text = prompt.trim()
       if (text === '') return
       // Nothing installed: there is no model to address the call to. The
@@ -125,10 +144,14 @@ export function useConversationChat(
       const newJobId = crypto.randomUUID()
       setJobId(newJobId)
       const result = await run(() =>
-        window.api.ai.chat({ service, model, messages: history, numThread, numCtx }, newJobId)
+        window.api.ai.chat(
+          { service, model, messages: history, numThread, numCtx, wantsReasoning },
+          newJobId
+        )
       )
       setJobId(null)
       const partial = partialRef.current
+      const reasoningPartial = reasoningPartialRef.current
       clearStreaming()
 
       if (result.ok) {
@@ -140,14 +163,19 @@ export function useConversationChat(
         if (result.value.promptTokens !== undefined && imageCountOf(history) === 0) {
           setLastPrompt({ chars: sentChars, tokens: result.value.promptTokens })
         }
+        // Reasoning rides ahead of text, never resent to a provider (D21A.3) —
+        // it is a MessagePart, not a ChatReply field a second call reads back.
+        const replyParts: MessagePart[] =
+          result.value.reasoning === undefined
+            ? [{ kind: 'text', text: result.value.content }]
+            : [
+                { kind: 'reasoning', text: result.value.reasoning },
+                { kind: 'text', text: result.value.content }
+              ]
         // Addressed to the conversation captured at send time, never whichever is
         // active when the reply lands: switching mid-stream must not drop the
         // answer into the wrong transcript. Model is on the message (D13.4).
-        append(conversationId, {
-          role: 'assistant',
-          parts: [{ kind: 'text', text: result.value.content }],
-          model
-        })
+        append(conversationId, { role: 'assistant', parts: replyParts, model })
         return
       }
 
@@ -155,12 +183,21 @@ export function useConversationChat(
       // in the renderer costs no contract change: main returns err() with no
       // payload, and it does not need one — the text is already here.
       const stopped = stoppedFromError(result.error)
-      // Interrupted before the first token writes NOTHING: an empty assistant
-      // message is noise, not honesty.
-      if (stopped === null || partial === '') return
+      // Interrupted before the first token of EITHER kind writes NOTHING: an
+      // empty assistant message is noise, not honesty. A turn cancelled mid
+      // reasoning, before any content arrived, still has something worth
+      // keeping (D21A, Passo 5).
+      if (stopped === null || (partial === '' && reasoningPartial === '')) return
+      const interruptedParts: MessagePart[] =
+        reasoningPartial === ''
+          ? [{ kind: 'text', text: partial }]
+          : [
+              { kind: 'reasoning', text: reasoningPartial },
+              { kind: 'text', text: partial }
+            ]
       append(conversationId, {
         role: 'assistant',
-        parts: [{ kind: 'text', text: partial }],
+        parts: interruptedParts,
         model,
         stopped
       })
@@ -184,5 +221,5 @@ export function useConversationChat(
     if (jobId !== null) void window.api.job.cancel(jobId)
   }, [jobId])
 
-  return { streaming, lastRequestId, state, lastPrompt, send, cancel }
+  return { streaming, streamingReasoning, lastRequestId, state, lastPrompt, send, cancel }
 }

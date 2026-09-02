@@ -56,6 +56,22 @@ function renderShell(): void {
   )
 }
 
+/**
+ * Wires `job.onEvent` to fan an emitted event out to every subscriber —
+ * `useConversationChat` now registers two (`useJobChunks`, `useJobReasoning`,
+ * arco 21), and a mock that kept only the LAST listener would silently route
+ * a 'chunk' event into the reasoning-only one. Same broadcast shape the real
+ * preload gives every caller of `window.api.job.onEvent`.
+ */
+function stubJobEvents(api: Api): (event: JobEvent) => void {
+  const listeners: ((event: JobEvent) => void)[] = []
+  vi.mocked(api.job.onEvent).mockImplementation((listener) => {
+    listeners.push(listener)
+    return vi.fn()
+  })
+  return (event) => listeners.forEach((listener) => listener(event))
+}
+
 /** Drives a full send and resolves the reply, returning the rendered container. */
 async function reply(
   content: string,
@@ -73,11 +89,11 @@ async function reply(
 }
 
 /**
- * Sends a prompt, optionally lets `chunk` arrive, then fails the request with
- * `error`. The reply is held open until then, which is what makes the partial
- * text exist at the moment of the interruption.
+ * Sends a prompt, optionally lets `chunk` and/or `reasoning` arrive, then
+ * fails the request with `error`. The reply is held open until then, which is
+ * what makes the partial text exist at the moment of the interruption.
  */
-async function interrupted(error: AppError, chunk?: string): Promise<Api> {
+async function interrupted(error: AppError, chunk?: string, reasoning?: string): Promise<Api> {
   const api = installApiMock()
   vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
   let settle: (result: Result<ChatReply>) => void = () => {}
@@ -86,11 +102,7 @@ async function interrupted(error: AppError, chunk?: string): Promise<Api> {
       settle = resolve
     })
   )
-  let emit: ((event: JobEvent) => void) | undefined
-  vi.mocked(api.job.onEvent).mockImplementation((listener) => {
-    emit = listener
-    return vi.fn()
-  })
+  const emit = stubJobEvents(api)
   const user = userEvent.setup()
 
   renderView()
@@ -99,7 +111,8 @@ async function interrupted(error: AppError, chunk?: string): Promise<Api> {
   await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
   const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
-  if (chunk !== undefined) act(() => emit?.({ jobId, type: 'chunk', text: chunk }))
+  if (reasoning !== undefined) act(() => emit({ jobId, type: 'reasoning', text: reasoning }))
+  if (chunk !== undefined) act(() => emit({ jobId, type: 'chunk', text: chunk }))
   await act(async () => settle({ ok: false, error }))
   return api
 }
@@ -167,10 +180,31 @@ describe('ConversationView', () => {
         // Sent explicitly since plano 15. Leaving it out is what left Ollama's
         // own default of 4096 in charge — a number nobody chose, and one a
         // single 8k-token document overflows on its own, in silence.
-        numCtx: 32768
+        numCtx: 32768,
+        // The composer's toggle default (arco 21, D21A.9) — off until the
+        // user opts in per turn.
+        wantsReasoning: false
       },
       expect.any(String)
     )
+  })
+
+  it('renders and keeps the reasoning trace once the reply lands (arco 21)', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: { content: 'Olá!', reasoning: 'Pensando bem' }
+    })
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    expect(await screen.findByText('Olá!')).toBeInTheDocument()
+    expect(screen.getByText('Raciocínio: Pensando bem')).toBeInTheDocument()
   })
 
   it('cancels the in-flight job with the jobId used for the chat', async () => {
@@ -264,11 +298,7 @@ describe('ConversationView — troca de conversa', () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
     vi.mocked(api.ai.chat).mockReturnValue(new Promise<Result<ChatReply>>(() => {}))
-    let emit: ((event: JobEvent) => void) | undefined
-    vi.mocked(api.job.onEvent).mockImplementation((listener) => {
-      emit = listener
-      return vi.fn()
-    })
+    const emit = stubJobEvents(api)
     const user = userEvent.setup()
 
     renderShell()
@@ -277,7 +307,7 @@ describe('ConversationView — troca de conversa', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
     const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
-    act(() => emit?.({ jobId, type: 'chunk', text: 'chegando' }))
+    act(() => emit({ jobId, type: 'chunk', text: 'chegando' }))
     expect(screen.getByText('chegando')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
@@ -537,11 +567,7 @@ describe('ConversationView — realce de sintaxe', () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
     vi.mocked(api.ai.chat).mockReturnValue(new Promise<Result<ChatReply>>(() => {}))
-    let emit: ((event: JobEvent) => void) | undefined
-    vi.mocked(api.job.onEvent).mockImplementation((listener) => {
-      emit = listener
-      return vi.fn()
-    })
+    const emit = stubJobEvents(api)
     const user = userEvent.setup()
 
     const container = renderView()
@@ -550,7 +576,7 @@ describe('ConversationView — realce de sintaxe', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
     const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
-    act(() => emit?.({ jobId, type: 'chunk', text: '```sql\nSELECT nam' }))
+    act(() => emit({ jobId, type: 'chunk', text: '```sql\nSELECT nam' }))
 
     // completePartial closes the fence, so this IS a well-formed block — the
     // absence of colour comes from highlight={false}, not from broken markdown.
@@ -719,6 +745,20 @@ describe('ConversationView — resposta interrompida', () => {
     // noise, not honesty.
     expect(api.conversation.append).toHaveBeenCalledTimes(1)
     expect(vi.mocked(api.conversation.append).mock.calls[0]?.[1]).toMatchObject({ role: 'user' })
+  })
+
+  it('keeps a reasoning-only partial cancelled before any content token arrived (arco 21)', async () => {
+    // The guard used to read `partial === ''` alone — a cancel mid-reasoning,
+    // before content started, has an empty `partial` too, and would have been
+    // dropped as if nothing had arrived at all.
+    const api = await interrupted({ kind: 'cancelled' }, undefined, 'Pensando…')
+
+    expect(await screen.findByText(/interrompida por você/)).toBeInTheDocument()
+    expect(screen.getByText('Raciocínio: Pensando…')).toBeInTheDocument()
+    expect(vi.mocked(api.conversation.append).mock.calls[1]?.[1]).toMatchObject({
+      role: 'assistant',
+      stopped: 'cancelled'
+    })
   })
 
   it('writes nothing when the service was unreachable, partial or not', async () => {
