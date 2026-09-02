@@ -150,6 +150,42 @@ describe('chat', () => {
     ])
   })
 
+  it('does not give chatFn an onThinking when the caller never asked for reasoning', async () => {
+    const chatFn: ChatFn = async (_messages, opts) => {
+      expect(opts.onThinking).toBeUndefined()
+      return { content: 'ok' }
+    }
+
+    await chat(
+      { service: 'ollama', model: 'llama3.2', messages, jobId: 'j16' },
+      chatFn,
+      () => {},
+      resolveImageBytes
+    )
+  })
+
+  it('streams reasoning events, kept separate from chunk events, when wantsReasoning is true', async () => {
+    const chatFn: ChatFn = async (_messages, opts) => {
+      opts.onThinking?.('Pensando')
+      opts.onChunk?.('Pronto')
+      return { content: 'Pronto', reasoning: 'Pensando' }
+    }
+    const events: JobEvent[] = []
+
+    const result = await chat(
+      { service: 'ollama', model: 'qwen3:4b', messages, wantsReasoning: true, jobId: 'j17' },
+      chatFn,
+      (e) => events.push(e),
+      resolveImageBytes
+    )
+
+    expect(result).toEqual({ ok: true, value: { content: 'Pronto', reasoning: 'Pensando' } })
+    expect(events).toEqual([
+      { jobId: 'j17', type: 'reasoning', text: 'Pensando' },
+      { jobId: 'j17', type: 'chunk', text: 'Pronto' }
+    ])
+  })
+
   it('finishes the job even on success (no leaked AbortController)', async () => {
     const finish = vi.spyOn(jobs, 'finish')
     const chatFn: ChatFn = async () => ({ content: 'ok' })

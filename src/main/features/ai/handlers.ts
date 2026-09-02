@@ -110,11 +110,12 @@ type ChatArgs = {
   messages: Message[]
   numThread?: number
   numCtx?: number
+  wantsReasoning?: boolean
   jobId: JobId
 }
 
 export async function chat(
-  { service, model, messages, numThread, numCtx, jobId }: ChatArgs,
+  { service, model, messages, numThread, numCtx, wantsReasoning, jobId }: ChatArgs,
   chatFn: ChatFn,
   emit: (event: JobEvent) => void,
   resolveImageBytes: (hash: string) => Promise<Buffer>,
@@ -132,6 +133,12 @@ export async function chat(
 
   try {
     const onChunk = (text: string): void => emit({ jobId, type: 'chunk', text })
+    // D21A.1: presence, not the boolean itself, is what an adapter reads —
+    // this is the one place wantsReasoning turns into that presence.
+    const onThinking =
+      wantsReasoning === true
+        ? (text: string): void => emit({ jobId, type: 'reasoning', text })
+        : undefined
     // The renderer sends what it models the conversation as; materializing
     // into the provider's flat shape happens here, not there (D17.5) — a
     // message with an image part needs bytes the sandboxed renderer cannot
@@ -146,7 +153,7 @@ export async function chat(
     const { result, timing } = await measureChatTiming(
       chatFn,
       { messages: chatMessages, model, numThread, numCtx },
-      { signal: controller.signal, onChunk }
+      { signal: controller.signal, onChunk, onThinking }
     )
     if (timing !== null) recordPerformance?.({ service, model, ...timing })
     return result

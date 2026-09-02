@@ -24,9 +24,17 @@ export type ChatTiming = Pick<
 export async function measureChatTiming(
   chatFn: ChatFn,
   request: { messages: ChatMessage[]; model: string; numThread?: number; numCtx?: number },
-  opts: { signal?: AbortSignal; onChunk?: (text: string) => void } = {}
+  opts: {
+    signal?: AbortSignal
+    onChunk?: (text: string) => void
+    onThinking?: (text: string) => void
+  } = {}
 ): Promise<{ result: Result<ChatReply>; timing: ChatTiming | null }> {
   const t0 = performance.now()
+  // TTFT marks the first CONTENT chunk only, never a reasoning one (arco 21):
+  // with the toggle on, the whole reasoning phase counts as part of TTFT —
+  // decided, not accidental. Splitting the two is O-9's question, not this
+  // function's.
   let t1: number | null = null
 
   const result = await runChat(chatFn, request, {
@@ -34,7 +42,8 @@ export async function measureChatTiming(
     onChunk: (text) => {
       if (t1 === null) t1 = performance.now()
       opts.onChunk?.(text)
-    }
+    },
+    onThinking: opts.onThinking
   })
 
   if (t1 === null || !result.ok || result.value.evalTokens === undefined) {
