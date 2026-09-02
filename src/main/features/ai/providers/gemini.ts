@@ -78,12 +78,13 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
         contents: toGeminiContents(messages),
         ...(systemInstruction === undefined ? {} : { systemInstruction }),
         // thinkingLevel replaces thinkingBudget for the 3.x generation
-        // (Context7) — but the valid ENUM differs by model: gemini-3.1-flash-lite
+        // (Context7) — but the valid ENUM differs by model: gemini-3.5-flash-lite
         // accepts 'minimal', gemini-3.7-flash does not (measured live, N-1-C —
         // "Thinking level MINIMAL is not supported for this model", HTTP 400).
         // 'low' is the lowest level confirmed valid for both, and stays fixed:
         // there is no true off switch in this family (D21A.6). includeThoughts
-        // is sent but never honored by this endpoint — confirmed live, D21A.10.
+        // is sent but no part.thought ever came back live, on either model —
+        // cause not established, D21A.10.
         generationConfig: {
           thinkingConfig: {
             thinkingLevel: 'low',
