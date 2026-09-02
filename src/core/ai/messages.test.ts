@@ -4,6 +4,7 @@ import {
   imageCountOf,
   isCloudService,
   messageText,
+  reasoningPartOf,
   toChatMessages,
   toChatMessagesWithImages
 } from './messages'
@@ -104,6 +105,34 @@ describe('attachmentPartOf', () => {
     }
     expect(attachmentPartOf(withProposal)).toBeNull()
   })
+
+  it('does not mistake a reasoning part for an attachment (arco 21, D21A widening)', () => {
+    const withReasoning: Message = {
+      ...message('assistant', 'pronto'),
+      parts: [
+        { kind: 'reasoning', text: 'pensando' },
+        { kind: 'text', text: 'pronto' }
+      ]
+    }
+    expect(attachmentPartOf(withReasoning)).toBeNull()
+  })
+})
+
+describe('reasoningPartOf', () => {
+  it('returns null when the message carries no reasoning', () => {
+    expect(reasoningPartOf(message('assistant', 'olá'))).toBeNull()
+  })
+
+  it('finds the reasoning part', () => {
+    const withReasoning: Message = {
+      ...message('assistant', 'pronto'),
+      parts: [
+        { kind: 'reasoning', text: 'pensando' },
+        { kind: 'text', text: 'pronto' }
+      ]
+    }
+    expect(reasoningPartOf(withReasoning)).toEqual({ kind: 'reasoning', text: 'pensando' })
+  })
 })
 
 describe('imageCountOf', () => {
@@ -185,6 +214,18 @@ describe('toChatMessages', () => {
     }
 
     expect(toChatMessages([withImage])).toEqual([{ role: 'user', content: 'o que é isso?' }])
+  })
+
+  it('never resends a reasoning part to the provider (arco 21, D21A.3)', () => {
+    const withReasoning: Message = {
+      ...message('assistant', 'pronto'),
+      parts: [
+        { kind: 'reasoning', text: 'pensando bastante' },
+        { kind: 'text', text: 'pronto' }
+      ]
+    }
+
+    expect(toChatMessages([withReasoning])).toEqual([{ role: 'assistant', content: 'pronto' }])
   })
 
   it('materializes a stepProposal part as its Portuguese description (plano 19) — the transcript is resent whole every turn', () => {

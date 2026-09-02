@@ -87,6 +87,17 @@ describe('argsSchema', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts ai:chat with an optional wantsReasoning (arco 21)', () => {
+    const result = argsSchema['ai:chat'].safeParse({
+      service: 'ollama',
+      model: 'qwen3:4b',
+      messages: chatMessages,
+      wantsReasoning: true,
+      jobId: 'j1'
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('rejects ai:chat with a non-positive numThread', () => {
     const result = argsSchema['ai:chat'].safeParse({
       service: 'ollama',
@@ -118,6 +129,20 @@ describe('argsSchema — conversation:*', () => {
 
   it('accepts an append with no title — the conversation keeps the one it has', () => {
     const result = argsSchema['conversation:append'].safeParse({ conversationId: 'c1', message })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts a reasoning message part (arco 21, D21A.3)', () => {
+    const result = argsSchema['conversation:append'].safeParse({
+      conversationId: 'c1',
+      message: {
+        ...message,
+        parts: [
+          { kind: 'reasoning', text: 'pensando' },
+          { kind: 'text', text: 'pronto' }
+        ]
+      }
+    })
     expect(result.success).toBe(true)
   })
 
