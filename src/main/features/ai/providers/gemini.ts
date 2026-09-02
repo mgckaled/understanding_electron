@@ -82,8 +82,8 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
         // accepts 'minimal', gemini-3.7-flash does not (measured live, N-1-C —
         // "Thinking level MINIMAL is not supported for this model", HTTP 400).
         // 'low' is the lowest level confirmed valid for both, and stays fixed:
-        // there is no true off switch in this family (D21A.6) — includeThoughts
-        // only controls whether the summary comes back visible.
+        // there is no true off switch in this family (D21A.6). includeThoughts
+        // is sent but never honored by this endpoint — confirmed live, D21A.10.
         generationConfig: {
           thinkingConfig: {
             thinkingLevel: 'low',

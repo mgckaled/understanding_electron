@@ -42,9 +42,11 @@ const piece = chunk.candidates?.[0]?.content?.parts?.map((part) => part.text ?? 
 
 Sem filtrar por `part.thought`. Ligar `includeThoughts: true` sem separar por esse campo faz o texto de raciocínio ser **concatenado dentro do conteúdo final** — sintoma é resposta com o raciocínio colado no início, sem nenhum erro lançado. O tipo `GeminiChunk` também precisa ganhar o campo `thought?: boolean` em cada parte. Ollama e GLM não têm esse risco — são campo irmão, imunes por construção.
 
-### 2. Risco vivo (não hipotético): Gemini 3.x às vezes não devolve `thought` mesmo com `includeThoughts: true`
+### 2. Confirmado ao vivo no 21-A: `streamGenerateContent` não devolve `thought` — não é intermitência, é o endpoint errado
 
-Relatos correntes (issue aberta em repositório de terceiro, thread no fórum oficial `discuss.ai.google.dev`) descrevem omissão intermitente do resumo de raciocínio em streaming nos modelos 3.x, sem confirmação de fix. **Não bloqueia o desenho** — o caminho Ollama prova o mecanismo isoladamente — mas precisa entrar no plano como risco a validar ao vivo, não como suposição de que os três provedores se comportam igual.
+Verificação ao vivo, 02/09/2026, 2/2: nem `gemini-3.5-flash-lite` nem `gemini-3.7-flash` devolveram um único `part.thought`, com `includeThoughts: true` enviado nos dois. Investigação (Context7 + web search) aponta causa estrutural, não flakiness: a documentação atual do Google (`ai.google.dev/gemini-api/docs/thinking-mode`) moveu **todo** exemplo de raciocínio visível para a **Interactions API** (`client.interactions.create`), com a frase "the generateContent API does not provide dedicated thought blocks, instead attaching signatures as metadata to various response parts" — o endpoint que este app usa (`streamGenerateContent`, escolhido por ser stateless, D21A.6) nunca teria entregue texto de raciocínio, só assinaturas opacas. Corroborado por relatos externos desde jan/2025 ([`discuss.ai.google.dev`](https://discuss.ai.google.dev/t/thoughts-are-missing-cot-not-included-anymore/63653), issue no [`litellm`](https://github.com/BerriAI/litellm/issues/15779)) de que `streamGenerateContent` parou de devolver `thought` mesmo com o parâmetro ligado.
+
+**Não bloqueia o 21-A** — o caminho Ollama e o GLM provam o mecanismo de ponta a ponta, cada um pelo seu campo irmão. Decisão registrada (D21A.10): o Gemini degrada graciosamente (manda `includeThoughts`, não quebra quando nada volta) e a migração para a Interactions API vira gatilho do `ROADMAP § 2`, condicionada a confirmar se `store: false` preserva o modelo stateless que D21A.6 assumiu impossível com essa API.
 
 ### 3. "Alternável por turno" significa três coisas diferentes — decide o rótulo da UI
 
