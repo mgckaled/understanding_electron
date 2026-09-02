@@ -220,7 +220,7 @@ function AttachButton({
                     {/* 'webSearch'/'mcp' stay off and disabled (F2.6, arcos
                         22/23 unbuilt). 'reasoning' is destravado (D21A.5). */}
                     <Switch
-                      checked={kind === 'reasoning' ? wantsReasoning : false}
+                      checked={kind === 'reasoning' ? wantsReasoning && hasThinking : false}
                       onChange={kind === 'reasoning' ? onWantsReasoningChange : () => {}}
                       disabled={kind === 'reasoning' ? !hasThinking : true}
                       aria-label={label}

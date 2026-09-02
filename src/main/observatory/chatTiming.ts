@@ -32,8 +32,10 @@ export async function measureChatTiming(
 ): Promise<{ result: Result<ChatReply>; timing: ChatTiming | null }> {
   const t0 = performance.now()
   // TTFT marks the first CONTENT chunk only, never a reasoning one (arco 21):
-  // with the toggle on, the whole reasoning phase counts as part of TTFT —
-  // decided, not accidental. Splitting the two is O-9's question, not this
+  // with the toggle on, decodeMs excludes the reasoning phase, but evalTokens
+  // (the provider's raw eval_count) likely still counts those tokens — so
+  // O-7's tokens/s reads faster than true content-decode speed while the
+  // toggle is on. Separating the two counters is O-9's question, not this
   // function's.
   let t1: number | null = null
 
