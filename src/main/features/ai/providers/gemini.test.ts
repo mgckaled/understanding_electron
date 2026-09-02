@@ -93,6 +93,60 @@ describe('makeGeminiChat', () => {
     })
   })
 
+  it('adds includeThoughts, but keeps thinkingLevel at low, when onThinking is given', async () => {
+    const fetchMock = stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
+    ])
+
+    await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
+
+    expect(requestBody(fetchMock).generationConfig).toEqual({
+      thinkingConfig: { thinkingLevel: 'low', includeThoughts: true }
+    })
+  })
+
+  it('separates part.thought pieces into onThinking, from plain parts into onChunk', async () => {
+    stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"Pensando","thought":true}]}}]}\n\n',
+      'data: {"candidates":[{"content":{"parts":[{"text":"Pronto"}]}}]}\n\n'
+    ])
+    const reasoning: string[] = []
+    const content: string[] = []
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      onThinking: (t) => reasoning.push(t),
+      onChunk: (t) => content.push(t)
+    })
+
+    expect(reasoning).toEqual(['Pensando'])
+    expect(content).toEqual(['Pronto'])
+    expect(result).toMatchObject({ content: 'Pronto', reasoning: 'Pensando' })
+  })
+
+  it('splits a single chunk carrying both a thought part and a text part', async () => {
+    stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"Pensando","thought":true},{"text":"Pronto"}]}}]}\n\n'
+    ])
+    const reasoning: string[] = []
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      onThinking: (t) => reasoning.push(t)
+    })
+
+    expect(reasoning).toEqual(['Pensando'])
+    expect(result.content).toBe('Pronto')
+  })
+
+  it('omits reasoning from the result when no part ever carries thought: true', async () => {
+    stubStream(['data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
+
+    expect('reasoning' in result).toBe(false)
+  })
+
   it('maps assistant to role "model" and drops system into systemInstruction', async () => {
     const fetchMock = stubStream([
       'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'

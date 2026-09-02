@@ -30,7 +30,7 @@ async function upstreamErrorFor(response: Response): Promise<UpstreamError> {
 // message.content (unlike /api/generate, which uses `response`); an error mid
 // stream arrives as { error } while the HTTP status stays 200.
 type OllamaChatLine = {
-  message?: { role: string; content: string }
+  message?: { role: string; content: string; thinking?: string }
   done?: boolean
   error?: string
   // Only on the final line — the exact token count the model actually read. See
@@ -173,7 +173,7 @@ async function requestStructuredChat(
 
 export const ollamaChat: ChatFn = async (
   messages,
-  { model, numThread, numCtx, signal, onChunk, format }
+  { model, numThread, numCtx, signal, onChunk, onThinking, format }
 ) => {
   const options = chatOptions(numThread, numCtx)
 
@@ -188,10 +188,8 @@ export const ollamaChat: ChatFn = async (
       model,
       messages,
       stream: true,
-      // think:false stopgap (2026-08-19): a `thinking`-capable model (qwen3:4b)
-      // streams reasoning in message.thinking, which this parser never reads —
-      // content stayed empty until CHAT_TIMEOUT_MS aborted it. Revisit for planos 21-23.
-      think: false,
+      // D21A.1: onThinking's presence is the request, not a separate flag.
+      think: onThinking !== undefined,
       ...(options === undefined ? {} : { options })
     }),
     signal
@@ -204,6 +202,7 @@ export const ollamaChat: ChatFn = async (
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let assembled = ''
+  let reasoningAssembled = ''
   let buffer = ''
 
   try {
@@ -226,6 +225,13 @@ export const ollamaChat: ChatFn = async (
           throw new UpstreamError(null, parsed.error)
         }
 
+        // message.thinking is a sibling field, streamed before message.content
+        // (docs.ollama.com/capabilities/thinking) — the two never share a piece.
+        const thinkingPiece = parsed.message?.thinking ?? ''
+        if (thinkingPiece !== '') {
+          reasoningAssembled += thinkingPiece
+          onThinking?.(thinkingPiece)
+        }
         const piece = parsed.message?.content ?? ''
         if (piece !== '') {
           assembled += piece
@@ -236,6 +242,7 @@ export const ollamaChat: ChatFn = async (
         if (parsed.done === true) {
           return {
             content: assembled,
+            ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
             ...(parsed.prompt_eval_count === undefined
               ? {}
               : { promptTokens: parsed.prompt_eval_count }),
@@ -252,5 +259,8 @@ export const ollamaChat: ChatFn = async (
   // The stream ended without a `done` line — a truncated response rather than a
   // finished one. What arrived is still worth keeping; there are simply no
   // counters to report, which is the same shape a cloud provider may produce.
-  return { content: assembled }
+  return {
+    content: assembled,
+    ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled })
+  }
 }

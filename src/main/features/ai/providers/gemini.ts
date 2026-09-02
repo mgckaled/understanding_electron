@@ -18,7 +18,7 @@ function streamUrl(model: string): string {
 // One line of the Gemini SSE stream. Same candidate shape whether streamed
 // or not — confirmed via Context7 against the official REST reference.
 type GeminiChunk = {
-  candidates?: { content?: { parts?: { text?: string }[] } }[]
+  candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[]
   usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }
 }
 
@@ -64,7 +64,7 @@ export function makeGeminiProbe(hasKey: () => boolean): ProbeFn {
 }
 
 export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
-  return async (messages, { model, signal, onChunk }) => {
+  return async (messages, { model, signal, onChunk, onThinking }) => {
     const apiKey = getApiKey()
     if (apiKey === null) throw new UpstreamError(null, 'no api key stored')
 
@@ -81,11 +81,15 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
         // (Context7) — but the valid ENUM differs by model: gemini-3.1-flash-lite
         // accepts 'minimal', gemini-3.7-flash does not (measured live, N-1-C —
         // "Thinking level MINIMAL is not supported for this model", HTTP 400).
-        // 'low' is the lowest level confirmed valid for both, so it is the
-        // universal choice here — not a true off switch (there is none in this
-        // family), same stopgap as glm.ts/ollama.ts's qwen3:4b, adiado para os
-        // planos 21-23.
-        generationConfig: { thinkingConfig: { thinkingLevel: 'low' } }
+        // 'low' is the lowest level confirmed valid for both, and stays fixed:
+        // there is no true off switch in this family (D21A.6) — includeThoughts
+        // only controls whether the summary comes back visible.
+        generationConfig: {
+          thinkingConfig: {
+            thinkingLevel: 'low',
+            ...(onThinking !== undefined ? { includeThoughts: true } : {})
+          }
+        }
       }),
       signal
     })
@@ -99,6 +103,7 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let assembled = ''
+    let reasoningAssembled = ''
     let buffer = ''
     let promptTokens: number | undefined
     let evalTokens: number | undefined
@@ -119,8 +124,22 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
 
           const payload = line.slice('data: '.length)
           const chunk = JSON.parse(payload) as GeminiChunk
-          const piece =
-            chunk.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('') ?? ''
+          const parts = chunk.candidates?.[0]?.content?.parts ?? []
+          // D21A.6: thought and answer share the same `parts` array — must
+          // split by `part.thought` before joining, or reasoning text lands
+          // inside `content` with no error to signal it.
+          const thinkingPiece = parts
+            .filter((part) => part.thought === true)
+            .map((part) => part.text ?? '')
+            .join('')
+          if (thinkingPiece !== '') {
+            reasoningAssembled += thinkingPiece
+            onThinking?.(thinkingPiece)
+          }
+          const piece = parts
+            .filter((part) => part.thought !== true)
+            .map((part) => part.text ?? '')
+            .join('')
           if (piece !== '') {
             assembled += piece
             onChunk?.(piece)
@@ -137,6 +156,7 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
 
     return {
       content: assembled,
+      ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
       ...(promptTokens === undefined ? {} : { promptTokens }),
       ...(evalTokens === undefined ? {} : { evalTokens })
     }

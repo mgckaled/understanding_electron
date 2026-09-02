@@ -85,6 +85,46 @@ describe('makeGlmChat', () => {
     expect(requestBody(fetchMock).thinking).toEqual({ type: 'disabled' })
   })
 
+  it('sends thinking: enabled when onThinking is given', async () => {
+    const fetchMock = stubStream([
+      'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+    ])
+
+    await chat(messages, { model: 'glm-4.7-flash', onThinking: () => {} })
+
+    expect(requestBody(fetchMock).thinking).toEqual({ type: 'enabled' })
+  })
+
+  it('forwards delta.reasoning_content to onThinking, separately from onChunk', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"reasoning_content":"Pensando"},"finish_reason":null}]}\n\n',
+      'data: {"choices":[{"delta":{"content":"Pronto"},"finish_reason":"stop"}]}\n\n',
+      'data: [DONE]\n\n'
+    ])
+    const reasoning: string[] = []
+    const content: string[] = []
+
+    const result = await chat(messages, {
+      model: 'glm-4.7-flash',
+      onThinking: (t) => reasoning.push(t),
+      onChunk: (t) => content.push(t)
+    })
+
+    expect(reasoning).toEqual(['Pensando'])
+    expect(content).toEqual(['Pronto'])
+    expect(result).toMatchObject({ content: 'Pronto', reasoning: 'Pensando' })
+  })
+
+  it('omits reasoning from the result when the model never sent reasoning_content', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'glm-4.7-flash', onThinking: () => {} })
+
+    expect('reasoning' in result).toBe(false)
+  })
+
   it('assembles content across SSE chunks and forwards each piece to onChunk', async () => {
     stubStream([
       'data: {"choices":[{"delta":{"content":"Olá"},"finish_reason":null}]}\n\n',

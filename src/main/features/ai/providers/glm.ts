@@ -12,7 +12,7 @@ const GLM_ENDPOINT = 'https://api.z.ai/api/paas/v4/chat/completions'
 // "data: [DONE]". The final content-bearing line carries `usage` alongside
 // `finish_reason` — not a separate line, unlike Ollama's NDJSON.
 type GlmChunk = {
-  choices?: { delta?: { content?: string } }[]
+  choices?: { delta?: { content?: string; reasoning_content?: string } }[]
   usage?: { prompt_tokens?: number; completion_tokens?: number }
 }
 
@@ -29,7 +29,7 @@ export function makeGlmProbe(hasKey: () => boolean): ProbeFn {
 }
 
 export function makeGlmChat(getApiKey: () => string | null): ChatFn {
-  return async (messages, { model, signal, onChunk }) => {
+  return async (messages, { model, signal, onChunk, onThinking }) => {
     const apiKey = getApiKey()
     if (apiKey === null) throw new UpstreamError(null, 'no api key stored')
 
@@ -40,10 +40,8 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
         model,
         messages,
         stream: true,
-        // Same stopgap as qwen3:4b in ollama.ts: this parser never reads
-        // delta.reasoning_content, so thinking would cost latency without
-        // ever reaching `content`. Revisit alongside it (planos 21-23).
-        thinking: { type: 'disabled' }
+        // D21A.1: onThinking's presence is the request, not a separate flag.
+        thinking: { type: onThinking !== undefined ? 'enabled' : 'disabled' }
       }),
       signal
     })
@@ -60,6 +58,7 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let assembled = ''
+    let reasoningAssembled = ''
     let buffer = ''
     let promptTokens: number | undefined
     let evalTokens: number | undefined
@@ -83,12 +82,18 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
           if (payload === '[DONE]') {
             return {
               content: assembled,
+              ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
               ...(promptTokens === undefined ? {} : { promptTokens }),
               ...(evalTokens === undefined ? {} : { evalTokens })
             }
           }
 
           const chunk = JSON.parse(payload) as GlmChunk
+          const thinkingPiece = chunk.choices?.[0]?.delta?.reasoning_content ?? ''
+          if (thinkingPiece !== '') {
+            reasoningAssembled += thinkingPiece
+            onThinking?.(thinkingPiece)
+          }
           const piece = chunk.choices?.[0]?.delta?.content ?? ''
           if (piece !== '') {
             assembled += piece
@@ -108,6 +113,7 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
     // arrived is still worth keeping, same fallback as ollama.ts.
     return {
       content: assembled,
+      ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
       ...(promptTokens === undefined ? {} : { promptTokens }),
       ...(evalTokens === undefined ? {} : { evalTokens })
     }

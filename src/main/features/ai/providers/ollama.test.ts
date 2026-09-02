@@ -174,10 +174,52 @@ describe('ollamaChat', () => {
     expect('promptTokens' in result).toBe(false)
   })
 
-  it('always sends think: false, to skip the reasoning phase a thinking model would otherwise stream as message.thinking', async () => {
+  it('sends think: false when the caller does not ask for reasoning', async () => {
     const fetchMock = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
     await ollamaChat(messages, { model: 'qwen3:4b' })
     expect(requestBody(fetchMock).think).toBe(false)
+  })
+
+  it('sends think: true when onThinking is given, and does not touch onChunk', async () => {
+    const fetchMock = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
+    await ollamaChat(messages, { model: 'qwen3:4b', onThinking: () => {} })
+    expect(requestBody(fetchMock).think).toBe(true)
+  })
+
+  it('forwards message.thinking to onThinking, separately from onChunk', async () => {
+    stubChatStream([
+      '{"message":{"thinking":"Pensando"},"done":false}\n',
+      '{"message":{"thinking":"…","content":""},"done":false}\n',
+      '{"message":{"content":"Pronto"},"done":true}\n'
+    ])
+    const reasoning: string[] = []
+    const content: string[] = []
+
+    const result = await ollamaChat(messages, {
+      model: 'qwen3:4b',
+      onThinking: (t) => reasoning.push(t),
+      onChunk: (t) => content.push(t)
+    })
+
+    expect(reasoning).toEqual(['Pensando', '…'])
+    expect(content).toEqual(['Pronto'])
+    expect(result).toMatchObject({ content: 'Pronto', reasoning: 'Pensando…' })
+  })
+
+  it('omits reasoning from the result when the model never sent message.thinking', async () => {
+    stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
+
+    const result = await ollamaChat(messages, { model: 'gemma3:4b', onThinking: () => {} })
+
+    expect('reasoning' in result).toBe(false)
+  })
+
+  it('keeps a partial reasoning trace in the truncated-stream fallback', async () => {
+    stubChatStream(['{"message":{"thinking":"Pensando","content":""},"done":false}\n'])
+
+    const result = await ollamaChat(messages, { model: 'qwen3:4b', onThinking: () => {} })
+
+    expect(result).toEqual({ content: '', reasoning: 'Pensando' })
   })
 
   it('sends num_ctx in options only when it is defined', async () => {
