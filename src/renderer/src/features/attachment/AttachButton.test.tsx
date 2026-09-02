@@ -82,9 +82,15 @@ const IMAGE: ImagePart = {
 /** No `vision` capability — the shape a caller passes for the disabled case. */
 const NO_VISION: AiModel = { ...TEST_MODEL, capabilities: ['completion'] }
 
-function ControlledAttachButton({ model = null }: { model?: AiModel | null }): React.JSX.Element {
+function ControlledAttachButton({
+  model = null,
+  initialWantsReasoning = false
+}: {
+  model?: AiModel | null
+  initialWantsReasoning?: boolean
+}): React.JSX.Element {
   const [attachment, setAttachment] = useState<AttachmentPart | null>(null)
-  const [wantsReasoning, setWantsReasoning] = useState(false)
+  const [wantsReasoning, setWantsReasoning] = useState(initialWantsReasoning)
   return (
     <AttachButton
       attachment={attachment}
@@ -431,6 +437,18 @@ describe('AttachButton', () => {
       await user.click(toggle)
 
       expect(toggle).toHaveAttribute('aria-checked', 'true')
+    })
+
+    it('reads unchecked when wantsReasoning is stale true but the model lost thinking (D21A widening)', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton model={TEST_MODEL} initialWantsReasoning={true} />)
+      await open(user)
+
+      const toggle = screen.getByRole('switch', { name: 'Raciocínio visível', hidden: true })
+      expect(toggle).toBeDisabled()
+      expect(toggle).toHaveAttribute('aria-checked', 'false')
     })
   })
 })

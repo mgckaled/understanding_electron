@@ -22,7 +22,7 @@ Consulta rara, deliberadamente fora do [`SKILL.md`](SKILL.md): nada aqui decide 
 
 **`animate-spinner`** tem nome próprio em vez do `animate-spin` do Tailwind porque aquele é travado em 1s e o deste projeto é `--duration-slow` (320ms) — `duration-*` seta `transition-duration`, nunca `animation-duration`. As `@keyframes` ficam fora do `@utility` porque ele não pode conter at-rule.
 
-**`thinking-dot`/`dotThinking`/`animate-thinking-dot`** são os 14 pontos do `ThinkingMark`: um keyframe único, parametrizado por custom properties que `ThinkingMark.tsx` seta inline por ponto. Adicionado e removido ponto a ponto, na fronteira de `animationiteration` daquele ponto — nunca os 14 de uma vez, porque `--thinking-dot-delay` escalona quando cada um volta ao repouso. ⚠️ **`0%`/`100%` do `dotThinking` precisam bater exatamente com a posição de repouso de `thinking-dot`**: `prefers-reduced-motion` força uma única iteração de `0.01ms`, que pousa onde `0%`/`100%` apontarem — divergir congela a marca fora de forma para quem usa movimento reduzido.
+**`responding-dot`/`dotResponding`/`animate-responding-dot`** são os 14 pontos do `RespondingMark` (renomeado de `ThinkingMark` no 21-A, D21A.4 — a marca é uma só, atravessa raciocínio e resposta): um keyframe único, parametrizado por custom properties que `RespondingMark.tsx` seta inline por ponto. Adicionado e removido ponto a ponto, na fronteira de `animationiteration` daquele ponto — nunca os 14 de uma vez, porque `--responding-dot-delay` escalona quando cada um volta ao repouso. ⚠️ **`0%`/`100%` do `dotResponding` precisam bater exatamente com a posição de repouso de `responding-dot`**: `prefers-reduced-motion` força uma única iteração de `0.01ms`, que pousa onde `0%`/`100%` apontarem — divergir congela a marca fora de forma para quem usa movimento reduzido.
 
 ### Comportamento de desktop que faltava
 
@@ -75,9 +75,9 @@ Consulta rara, deliberadamente fora do [`SKILL.md`](SKILL.md): nada aqui decide 
 
 `--syntax-*` é um conjunto importado de `@primer/primitives` (D12.4) que **não corresponde nome a nome** ao vocabulário do `highlight.js`: cada token do projeto nomeia o que colore na gramática do `highlight.js`, não como o Primer chama a cor — o `variable` do Primer colore `built_in`/`symbol` aqui, enquanto `.hljs-variable` cai no grupo `constant`; herdar o nome do Primer apontaria para a classe errada. No tema claro há uma divergência deliberada: o Primer funde `entityTag` em `constant` (ambos `#0550ae`), mas o `highlight.js` não funde `name`/`selector-tag` com `attr`/`selector-class` — seguir o Primer à risca pintaria `<div class="x">` com `div` e `class` na mesma cor no claro e cores diferentes no escuro. `--syntax-tag` usa o verde `stringRegexp` do próprio Primer, mantendo o par distinto nos dois temas sem sair da paleta.
 
-## `ThinkingMark`: canais de animação, não tokens de design
+## `RespondingMark`: canais de animação, não tokens de design
 
-As 8 variáveis `--thinking-*` (`--thinking-r`, `--thinking-rest-x` etc.) são exceção deliberada à regra "token é valor visual com nome semântico": existem porque o `@utility thinking-dot`/`dotThinking` precisa de um nome para cada valor por ponto que `ThinkingMark.tsx` sobrescreve inline, e ficam em `tokens.css` com default inerte só para que um typo no par falhe alto (`guard.mjs` guarda 7) em vez de renderizar nada.
+As 8 variáveis `--responding-*` (`--responding-r`, `--responding-rest-x` etc.) são exceção deliberada à regra "token é valor visual com nome semântico": existem porque o `@utility responding-dot`/`dotResponding` precisa de um nome para cada valor por ponto que `RespondingMark.tsx` sobrescreve inline, e ficam em `tokens.css` com default inerte só para que um typo no par falhe alto (`guard.mjs` guarda 7) em vez de renderizar nada.
 
 ## Layout da casca: um consumidor real, não três
 
