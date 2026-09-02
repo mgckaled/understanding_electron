@@ -146,6 +146,7 @@ export type JobId = string
 export type JobEvent =
   | { jobId: JobId; type: 'progress'; phase: string; done: number; total: number | null }
   | { jobId: JobId; type: 'chunk'; text: string }
+  | { jobId: JobId; type: 'reasoning'; text: string }
   | { jobId: JobId; type: 'log'; level: 'info' | 'warn' | 'error'; message: string }
 
 export type JobProgress = Extract<JobEvent, { type: 'progress' }>
@@ -198,6 +199,8 @@ export type ChatRequest = {
    * overflows (D15.2).
    */
   numCtx?: number
+  /** Whether this turn asks the provider to think and stream it back (arco 21) — gated by the model's `thinking` capability on the sending side. */
+  wantsReasoning?: boolean
 }
 
 /** Args for `ai.propose` (D19.5) — its own shape, not ChatRequest: no `messages`, since the prompt is built server-side from `card`/`request` (core/ai/proposal.ts), never the conversation transcript. */
@@ -234,6 +237,8 @@ export type ChatReply = {
   loadDurationMs?: number
   promptEvalDurationMs?: number
   nativeEvalDurationMs?: number
+  /** Assembled reasoning trace, only when the caller asked for it (arco 21). */
+  reasoning?: string
 }
 
 export type AiAvailability = {
@@ -588,12 +593,20 @@ export const stepProposalPartSchema = z.object({
 })
 export type StepProposalPart = z.infer<typeof stepProposalPartSchema>
 
+/** The model's reasoning trace for one assistant turn (arco 21, D21A.3) — never sent back to a provider (core/ai/messages.ts). */
+export const reasoningPartSchema = z.object({
+  kind: z.literal('reasoning'),
+  text: z.string()
+})
+export type ReasoningPart = z.infer<typeof reasoningPartSchema>
+
 export const messagePartSchema = z.discriminatedUnion('kind', [
   textPartSchema,
   datasetPartSchema,
   documentPartSchema,
   imagePartSchema,
-  stepProposalPartSchema
+  stepProposalPartSchema,
+  reasoningPartSchema
 ])
 export type MessagePart = z.infer<typeof messagePartSchema>
 
@@ -787,6 +800,7 @@ export const argsSchema = {
     messages: z.array(messageSchema).min(1),
     numThread: z.number().int().positive().optional(),
     numCtx: z.number().int().positive().optional(),
+    wantsReasoning: z.boolean().optional(),
     jobId: z.string()
   }),
   // D19.5: its own channel, not a flag on ai:chat — a second model call per

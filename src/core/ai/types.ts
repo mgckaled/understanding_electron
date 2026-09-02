@@ -13,6 +13,12 @@ export type ChatFn = (
     signal?: AbortSignal
     onChunk?: (text: string) => void
     /**
+     * Present only when the caller wants reasoning streamed back (D21A.1) —
+     * its presence, not a separate flag, is what tells an adapter to ask the
+     * provider to think at all.
+     */
+    onThinking?: (text: string) => void
+    /**
      * A JSON Schema that constrains decoding (D19.3/D19.5) — the same schema
      * `core/ai/proposal.ts` later `.parse()`s the reply with. Ollama's own
      * `stream: false` path answers with one complete JSON body, since a

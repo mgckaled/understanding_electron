@@ -10,7 +10,11 @@ import type { ChatFn } from './types'
 export async function runChat(
   chat: ChatFn,
   request: { messages: ChatMessage[]; model: string; numThread?: number; numCtx?: number },
-  opts: { signal?: AbortSignal; onChunk?: (text: string) => void } = {}
+  opts: {
+    signal?: AbortSignal
+    onChunk?: (text: string) => void
+    onThinking?: (text: string) => void
+  } = {}
 ): Promise<Result<ChatReply>> {
   if (opts.signal?.aborted) return err({ kind: 'cancelled' })
 
@@ -19,7 +23,8 @@ export async function runChat(
     numThread: request.numThread,
     numCtx: request.numCtx,
     signal: opts.signal,
-    onChunk: opts.onChunk
+    onChunk: opts.onChunk,
+    onThinking: opts.onThinking
   })
 
   if (opts.signal?.aborted) return err({ kind: 'cancelled' })

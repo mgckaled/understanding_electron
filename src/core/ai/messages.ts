@@ -5,6 +5,7 @@ import type {
   ImagePart,
   Message,
   MessagePart,
+  ReasoningPart,
   StepProposalPart
 } from '@shared/ipc'
 import { describeSteps } from '../pipeline/describe'
@@ -39,9 +40,15 @@ export function messageText(message: Message): string {
 export function attachmentPartOf(message: Message): AttachmentPart | null {
   return (
     message.parts.find(
-      (part): part is AttachmentPart => part.kind !== 'text' && part.kind !== 'stepProposal'
+      (part): part is AttachmentPart =>
+        part.kind !== 'text' && part.kind !== 'stepProposal' && part.kind !== 'reasoning'
     ) ?? null
   )
+}
+
+/** The reasoning trace on a message, if any (arco 21) — never more than one per turn. */
+export function reasoningPartOf(message: Message): ReasoningPart | null {
+  return message.parts.find((part): part is ReasoningPart => part.kind === 'reasoning') ?? null
 }
 
 /**
@@ -92,6 +99,11 @@ export function partForProvider(part: MessagePart): string {
       // proposal from an earlier turn needs a textual form here too, or the
       // model loses track of what it already proposed.
       return `[Proposta de passos]\n${describeSteps(part.steps)}`
+    case 'reasoning':
+      // Never resent (D21A.3) — same treatment as image: the final content
+      // already captures what matters, and resending would only inflate
+      // historyChars for no benefit.
+      return ''
   }
 }
 
