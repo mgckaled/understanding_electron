@@ -133,12 +133,8 @@ function ConversationView(): React.JSX.Element {
       ? contextWindow.numCtx
       : null
 
-  const { streaming, lastRequestId, state, send, cancel, lastPrompt } = useConversationChat(
-    service,
-    model,
-    settings.numThread,
-    numCtx ?? undefined
-  )
+  const { streaming, streamingReasoning, lastRequestId, state, send, cancel, lastPrompt } =
+    useConversationChat(service, model, settings.numThread, numCtx ?? undefined)
   // Reflects whichever service the SELECTED model belongs to, not always
   // Ollama's (N-1-B) — else picking GLM with Ollama down would leave the
   // composer disabled for a reason that has nothing to do with GLM.
@@ -229,6 +225,17 @@ function ConversationView(): React.JSX.Element {
 
         {messages.length > 0 && <MessageList messages={messages} />}
 
+        {belongsHere && isLoading && streamingReasoning !== '' && (
+          // Minimal on purpose (D21A.8) — plain text, no collapsing. The
+          // elegant recolhível block is 21-B's; this only proves the live
+          // trace reaches the screen while the turn is in flight.
+          <p
+            className="mt-7 text-reading leading-normal whitespace-pre-wrap text-text-muted italic select-text"
+            aria-live="polite"
+          >
+            Raciocínio: {streamingReasoning}
+          </p>
+        )}
         {belongsHere && isLoading && streaming !== '' && (
           // whitespace-pre-wrap does NOT belong here (F-1 fixup, item 2): unlike
           // the plain-text user bubble above, MarkdownMessage already turns blank

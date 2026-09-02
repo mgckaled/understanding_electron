@@ -207,6 +207,24 @@ describe('ConversationView', () => {
     expect(screen.getByText('Raciocínio: Pensando bem')).toBeInTheDocument()
   })
 
+  it('shows the reasoning trace live while the reply is still in flight (arco 21, Passo 7)', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockReturnValue(new Promise<Result<ChatReply>>(() => {}))
+    const emit = stubJobEvents(api)
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
+    act(() => emit({ jobId, type: 'reasoning', text: 'Pensando' }))
+
+    expect(await screen.findByText('Raciocínio: Pensando')).toBeInTheDocument()
+  })
+
   it('cancels the in-flight job with the jobId used for the chat', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
