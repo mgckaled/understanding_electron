@@ -98,47 +98,47 @@
   animation: spinner var(--duration-slow) linear infinite;
 }
 
-@utility thinking-dot {
+@utility responding-dot {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: calc(var(--thinking-r) * 2 * 1px);
-  height: calc(var(--thinking-r) * 2 * 1px);
+  width: calc(var(--responding-r) * 2 * 1px);
+  height: calc(var(--responding-r) * 2 * 1px);
   border-radius: var(--radius-full);
   background-color: var(--color-accent-text);
-  opacity: var(--thinking-rest-opacity);
-  transform: translate(-50%, -50%) translate(var(--thinking-rest-x), var(--thinking-rest-y))
+  opacity: var(--responding-rest-opacity);
+  transform: translate(-50%, -50%) translate(var(--responding-rest-x), var(--responding-rest-y))
     scale(1);
 }
 
-/* 0%/100% must match thinking-dot's rest position exactly — see the skill:
+/* 0%/100% must match responding-dot's rest position exactly — see the skill:
    prefers-reduced-motion forces a single 0.01ms iteration onto this keyframe,
    which lands wherever 0%/100% put it. */
-@keyframes dotThinking {
+@keyframes dotResponding {
   0%,
   100% {
-    transform: translate(-50%, -50%) translate(var(--thinking-rest-x), var(--thinking-rest-y))
+    transform: translate(-50%, -50%) translate(var(--responding-rest-x), var(--responding-rest-y))
       scale(1);
-    opacity: var(--thinking-rest-opacity);
+    opacity: var(--responding-rest-opacity);
   }
   12% {
-    transform: translate(-50%, -50%) translate(var(--thinking-rest-x), var(--thinking-rest-y))
-      scale(var(--thinking-pulse-scale));
+    transform: translate(-50%, -50%) translate(var(--responding-rest-x), var(--responding-rest-y))
+      scale(var(--responding-pulse-scale));
     opacity: 1;
   }
   45%,
   60% {
     transform: translate(-50%, -50%)
       translate(
-        calc(var(--thinking-rest-x) + var(--thinking-dx)),
-        calc(var(--thinking-rest-y) + var(--thinking-dy))
+        calc(var(--responding-rest-x) + var(--responding-dx)),
+        calc(var(--responding-rest-y) + var(--responding-dy))
       )
       scale(0.6);
     opacity: 0.4;
   }
 }
 
-@utility animate-thinking-dot {
-  animation: dotThinking var(--duration-thinking-cycle, 2400ms) ease-in-out infinite;
-  animation-delay: var(--thinking-dot-delay);
+@utility animate-responding-dot {
+  animation: dotResponding var(--duration-responding-cycle, 2400ms) ease-in-out infinite;
+  animation-delay: var(--responding-dot-delay);
 }

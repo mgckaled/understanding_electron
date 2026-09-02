@@ -111,17 +111,17 @@
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
-  --duration-thinking-cycle: 2400ms;
+  --duration-responding-cycle: 2400ms;
 
-  /* ThinkingMark per-dot animation channel */
-  --thinking-r: 0;
-  --thinking-rest-x: 0px;
-  --thinking-rest-y: 0px;
-  --thinking-rest-opacity: 1;
-  --thinking-pulse-scale: 1.5;
-  --thinking-dx: 0px;
-  --thinking-dy: 0px;
-  --thinking-dot-delay: 0ms;
+  /* RespondingMark per-dot animation channel */
+  --responding-r: 0;
+  --responding-rest-x: 0px;
+  --responding-rest-y: 0px;
+  --responding-rest-opacity: 1;
+  --responding-pulse-scale: 1.5;
+  --responding-dx: 0px;
+  --responding-dy: 0px;
+  --responding-dot-delay: 0ms;
 
   /* Fonts */
   --font-ui:
