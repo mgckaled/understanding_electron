@@ -70,6 +70,7 @@ function ContextBands({
         options={bandOptions(ceiling)}
         value={tokens}
         onChange={commit}
+        disabled={disabled}
       />
       <Field label="Personalizado" hint={`múltiplo de ${MIN_NUM_CTX.toLocaleString('pt-BR')}`}>
         <input

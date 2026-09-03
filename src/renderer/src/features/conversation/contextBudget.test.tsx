@@ -64,7 +64,7 @@ describe('context budget', () => {
     expect(await screen.findByText(/~1 de 32.768 tokens/)).toBeInTheDocument()
   })
 
-  it('commits the exact value of a clicked band, not a rounded one (21-C-C)', async () => {
+  it('commits the exact value of a clicked band, through the whole pipeline (21-C-C)', async () => {
     mount()
     await screen.findByText(/de 32\.768 tokens/)
 

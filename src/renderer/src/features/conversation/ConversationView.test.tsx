@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
@@ -315,6 +315,33 @@ describe('ConversationView — troca de conversa', () => {
 
     expect(await screen.findByText('resposta A')).toBeInTheDocument()
     expect(screen.queryByText('resposta B')).not.toBeInTheDocument()
+  })
+
+  it("does not leak one conversation's calibrated density into the next (21-C-A)", async () => {
+    // promptTokens: 1 against whatever A actually sends makes an extreme
+    // chars-per-token density (few tokens for a lot of characters). The hook
+    // does not remount on switch (lastRequestId's own docstring says the
+    // in-flight surface deliberately survives one) — if the ratio leaked, B's
+    // draft would estimate almost no tokens instead of the default-based figure.
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: { content: 'resposta A', promptTokens: 1 }
+    })
+    const user = userEvent.setup()
+
+    renderShell()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('resposta A')
+
+    await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
+    fireEvent.change(screen.getByPlaceholderText(PROMPT), { target: { value: 'x'.repeat(380) } })
+
+    // 380 chars at the DEFAULT 3,8 chars/token is exactly 100 tokens.
+    expect(await screen.findByText(/~100 de 32\.768 tokens/)).toBeInTheDocument()
   })
 
   it('keeps a stream out of a conversation it does not belong to', async () => {
@@ -796,6 +823,35 @@ describe('ConversationView — resposta interrompida', () => {
 
     expect(api.conversation.append).toHaveBeenCalledTimes(1)
     expect(screen.queryByText(/interrompida/)).toBeNull()
+  })
+
+  it('marks a RESOLVED reply that stopped because the window filled up (21-C-B)', async () => {
+    // Distinct from every case above: this call did not fail (result.ok is
+    // true), the provider just answered with its own done/finish reason
+    // saying the window filled mid-generation. installApiMock's conversation
+    // channel is the real handlers over :memory: (test/store-api.ts), so this
+    // proves the round trip — zod parse of the new enum value, the plain TEXT
+    // column (no CHECK constraint to violate), and STOPPED_LABEL together —
+    // not just the shape passed to a mock.
+    const user = userEvent.setup()
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: { content: 'metade de uma explicação', stopped: 'context-exhausted' }
+    })
+
+    renderView()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    expect(await screen.findByText(/janela de contexto encheu/)).toBeInTheDocument()
+    expect(screen.getByText('metade de uma explicação')).toBeInTheDocument()
+    expect(vi.mocked(api.conversation.append).mock.calls[1]?.[1]).toMatchObject({
+      role: 'assistant',
+      stopped: 'context-exhausted'
+    })
   })
 })
 

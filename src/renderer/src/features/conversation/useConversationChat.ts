@@ -69,6 +69,16 @@ export function useConversationChat(
   // calibrateRatio blend the very first real sample toward it instead of
   // accepting the sample outright.
   const [charsPerToken, setCharsPerToken] = useState<number | undefined>(undefined)
+  // This hook does not remount on conversation switch (lastRequestId's own
+  // docstring above says so, on purpose, for the in-flight surface) — so
+  // without this, conversation A's density would decay into B's estimate
+  // (0.6ⁿ per turn) instead of B starting fresh. Same render-time
+  // state-compare as `prevThinking` in ReasoningDisclosure.tsx (21-B).
+  const [prevActiveId, setPrevActiveId] = useState(activeId)
+  if (activeId !== prevActiveId) {
+    setPrevActiveId(activeId)
+    setCharsPerToken(undefined)
+  }
   const [jobId, setJobId] = useState<JobId | null>(null)
   const { state, run } = useAsyncAction<ChatReply>()
 

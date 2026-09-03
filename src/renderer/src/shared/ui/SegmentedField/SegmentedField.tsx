@@ -19,13 +19,15 @@ function SegmentedField<T extends string | number>({
   hint,
   options,
   value,
-  onChange
+  onChange,
+  disabled = false
 }: {
   label: string
   hint?: string
   options: { value: T; label: string }[]
   value: T
   onChange: (value: T) => void
+  disabled?: boolean
 }): React.JSX.Element {
   const labelId = useId()
 
@@ -41,6 +43,7 @@ function SegmentedField<T extends string | number>({
             type="button"
             variant={option.value === value ? 'primary' : 'secondary'}
             aria-pressed={option.value === value}
+            disabled={disabled}
             onClick={() => onChange(option.value)}
           >
             {option.label}

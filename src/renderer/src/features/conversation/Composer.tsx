@@ -2,7 +2,7 @@ import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowUp, Pause } from 'lucide-react'
 import type { AiModel, AttachmentPart } from '@shared/ipc'
 import { budgetFor, IMAGE_TOKEN_ESTIMATE, type Budget } from '@core/ai/budget'
-import { hasCapability } from '@core/ai/models'
+import { exposesReasoning, hasCapability } from '@core/ai/models'
 import { partForProvider } from '@core/ai/messages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -106,8 +106,11 @@ function Composer({
   const canSend = !disabled && !loading && draft.trim() !== '' && !overflows && !visionBlocked
   // Re-checked at send time, not trusted from the switch's own disabled state
   // (same precedent as hasVision above): a locked conversation can carry a
-  // toggle left on from before the model's capability changed underneath it.
-  const hasThinking = model !== null && hasCapability(model, 'thinking')
+  // toggle left on from before the model's capability changed underneath it —
+  // including a switch to Gemini, whose AttachButton gate is exposesReasoning
+  // (21-C-C), not hasCapability; this has to agree or a stale `wantsReasoning`
+  // from an earlier Ollama selection would still send includeThoughts there.
+  const hasThinking = model !== null && exposesReasoning(model)
 
   const submit = (event: SyntheticEvent): void => {
     event.preventDefault()
