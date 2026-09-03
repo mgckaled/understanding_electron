@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Message, MessageStopped } from '@shared/ipc'
+import type { AiService, Message, MessageStopped } from '@shared/ipc'
 import {
   attachmentPartOf,
   messageText,
@@ -10,6 +10,7 @@ import MarkdownMessage, { type CodeActions } from '../../shared/ui/MarkdownMessa
 import AttachmentCard from '../attachment/AttachmentCard'
 import StepProposalLine from '../attachment/StepProposalLine'
 import { useDraft } from '../draft/draftContext'
+import ReasoningDisclosure from './ReasoningDisclosure'
 import TurnActions from './TurnActions'
 
 // Reading a saved conversation, "there is no answer here" and "the answer was
@@ -49,11 +50,18 @@ function AssistantMarkdown({
 // The scrolling <div> stays with ConversationView, so the ref useStickToBottom
 // measures never changes element — the failure the hook's own comment warns
 // about does not arise here.
-function MessageList({ messages }: { messages: Message[] }): React.JSX.Element {
+function MessageList({
+  messages,
+  service
+}: {
+  messages: Message[]
+  service: AiService
+}): React.JSX.Element {
   return (
     <ol className="flex flex-col gap-7">
       {messages.map((message) => {
         const attachment = attachmentPartOf(message)
+        const reasoning = message.role === 'user' ? null : reasoningPartOf(message)
         return message.role === 'user' ? (
           // User turn: a bubble on the right. Alignment and fill carry the
           // authorship, so the "Você" label the target drops is gone. Reading
@@ -72,19 +80,7 @@ function MessageList({ messages }: { messages: Message[] }): React.JSX.Element {
           // proposal replaces the text entirely — the reply IS the line, and it
           // opens the panel where the steps are edited (DF3F.1).
           <li key={message.id} className="flex flex-col gap-2">
-            {(() => {
-              // Minimal on purpose (D21A.8) — plain text, no collapsing, no
-              // per-provider label. The elegant block is 21-B's; this only
-              // proves the trace survives past the turn that produced it.
-              const reasoning = reasoningPartOf(message)
-              return (
-                reasoning !== null && (
-                  <p className="text-reading text-text-muted italic">
-                    Raciocínio: {reasoning.text}
-                  </p>
-                )
-              )
-            })()}
+            {reasoning !== null && <ReasoningDisclosure text={reasoning.text} provider={service} />}
             {(() => {
               const proposal = stepProposalPartOf(message)
               return proposal !== null ? (

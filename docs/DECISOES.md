@@ -392,6 +392,29 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 
 ---
 
+## Arco 21 — raciocínio visível
+
+| trilha | sigla | descrição |
+|---|---|---|
+| 21-A | [D21A.1](plan/implemented/21-A-o-raciocinio-atravessa.md) | A presença de `onThinking` é o sinal, não um booleano paralelo |
+| 21-A | [D21A.2](plan/implemented/21-A-o-raciocinio-atravessa.md) | `JobEvent` ganha uma variante, `job:event` não muda de forma |
+| 21-A | [D21A.3](plan/implemented/21-A-o-raciocinio-atravessa.md) | Raciocínio é `MessagePart`, não coluna — e não é reenviado ao provedor |
+| 21-A | [D21A.4](plan/implemented/21-A-o-raciocinio-atravessa.md) | O nome errado é o que já existe, não o que vai nascer |
+| 21-A | [D21A.5](plan/implemented/21-A-o-raciocinio-atravessa.md) | O toggle destrava, não nasce |
+| 21-A | [D21A.6](plan/implemented/21-A-o-raciocinio-atravessa.md) | Gemini precisa do filtro antes de ligar `includeThoughts` |
+| 21-A | [D21A.7](plan/implemented/21-A-o-raciocinio-atravessa.md) | `ai:propose` fica de fora |
+| 21-A | [D21A.8](plan/implemented/21-A-o-raciocinio-atravessa.md) | Exibição em tela é mínima nesta sessão |
+| 21-A | [D21A.9](plan/implemented/21-A-o-raciocinio-atravessa.md) | Default desligado, escolha do usuário por conversa |
+| 21-A | [D21A.10](plan/implemented/21-A-o-raciocinio-atravessa.md) | Gemini degrada graciosamente: manda `includeThoughts`, mas hoje não recebe nada de volta |
+| 21-B | [D21B.1](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | Rótulo de duas fases no `RespondingMark`, derivado do estado que já existe |
+| 21-B | [D21B.2](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | O monograma não escala com o container; precisa de um multiplicador próprio |
+| 21-B | [D21B.3](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | Disclosure com auto-open/auto-collapse por streaming, clique manual sempre vence |
+| 21-B | [D21B.4](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | `SERVICE_LABEL` consolidado numa fonte única, wording do `CapabilitiesPanel` |
+| 21-B | [D21B.5](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | Animação de altura via `calc-size(auto, size)`, sem opt-in global |
+| 21-B | [D21B.6](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | Achatamento de raciocínio sem `strip-markdown`, sem `remark-stringify` — lição do DE1E.9 reaplicada |
+
+---
+
 ## Trilha R — reconciliação de documentação
 
 | trilha | sigla | descrição |

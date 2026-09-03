@@ -9,6 +9,7 @@ import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
+import { SERVICE_LABEL } from '../../shared/serviceLabel'
 import { useSettings } from '../settings/settingsContext'
 import { useActiveConversation, useConversations } from './conversationsContext'
 import { useConversationChat } from './useConversationChat'
@@ -21,6 +22,7 @@ import ContextControl from './ContextControl'
 import { ModelPicker, BudgetMeter } from './ModelSelector'
 import Composer from './Composer'
 import RespondingMark from './RespondingMark'
+import ReasoningDisclosure from './ReasoningDisclosure'
 import ArtifactCount from '../artifact/ArtifactCount'
 import DraftCount from '../draft/DraftCount'
 import MessageList from './MessageList'
@@ -38,14 +40,6 @@ const UNAVAILABLE = 'mb-5 text-sm text-warn-text'
 // to the shared generic message.
 function availabilityText(error: AppError): string {
   return error.kind === 'unavailable' ? error.hint : errorMessage(error)
-}
-
-// The loading line names whichever service the composer is currently
-// addressing (N-1-B) — it used to say "o Ollama" unconditionally.
-const SERVICE_LABEL: Record<AiService, string> = {
-  ollama: 'o Ollama',
-  glm: 'o GLM',
-  gemini: 'o Gemini'
 }
 
 function ConversationView(): React.JSX.Element {
@@ -135,6 +129,9 @@ function ConversationView(): React.JSX.Element {
 
   const { streaming, streamingReasoning, lastRequestId, state, send, cancel, lastPrompt } =
     useConversationChat(service, model, settings.numThread, numCtx ?? undefined)
+  const thinking = streamingReasoning !== '' && streaming === ''
+  const phase: 'connecting' | 'thinking' | 'responding' =
+    streaming !== '' ? 'responding' : thinking ? 'thinking' : 'connecting'
   // Reflects whichever service the SELECTED model belongs to, not always
   // Ollama's (N-1-B) — else picking GLM with Ollama down would leave the
   // composer disabled for a reason that has nothing to do with GLM.
@@ -191,7 +188,7 @@ function ConversationView(): React.JSX.Element {
       <div className="flex-1 min-h-[0px] overflow-y-auto p-7" ref={threadRef}>
         {availability.status === 'loading' && (
           <p className={STATUS} role="status">
-            Verificando {SERVICE_LABEL[service]}…
+            Verificando o {SERVICE_LABEL[service]}…
           </p>
         )}
         {/* mb-5 moves from the <p> (UNAVAILABLE below) to this row, now that a
@@ -223,18 +220,12 @@ function ConversationView(): React.JSX.Element {
           </p>
         )}
 
-        {messages.length > 0 && <MessageList messages={messages} />}
+        {messages.length > 0 && <MessageList messages={messages} service={service} />}
 
         {belongsHere && isLoading && streamingReasoning !== '' && (
-          // Minimal on purpose (D21A.8) — plain text, no collapsing. The
-          // elegant recolhível block is 21-B's; this only proves the live
-          // trace reaches the screen while the turn is in flight.
-          <p
-            className="mt-7 text-reading leading-normal whitespace-pre-wrap text-text-muted italic select-text"
-            aria-live="polite"
-          >
-            Raciocínio: {streamingReasoning}
-          </p>
+          <div className="mt-7">
+            <ReasoningDisclosure text={streamingReasoning} provider={service} thinking={thinking} />
+          </div>
         )}
         {belongsHere && isLoading && streaming !== '' && (
           // whitespace-pre-wrap does NOT belong here (F-1 fixup, item 2): unlike
@@ -260,7 +251,7 @@ function ConversationView(): React.JSX.Element {
 
       {/* Own band, not inside the scrolling thread above — useStickToBottom
           measures that div specifically (D13.5), and this sits outside it. */}
-      <RespondingMark isStreaming={belongsHere && isLoading} />
+      <RespondingMark isStreaming={belongsHere && isLoading} phase={phase} />
 
       {/* No model installed is as blocking as no service — nothing to address
           the call to, so the composer stays closed. A model too large for free

@@ -79,11 +79,19 @@ Consulta rara, deliberadamente fora do [`SKILL.md`](SKILL.md): nada aqui decide 
 
 As 8 variáveis `--responding-*` (`--responding-r`, `--responding-rest-x` etc.) são exceção deliberada à regra "token é valor visual com nome semântico": existem porque o `@utility responding-dot`/`dotResponding` precisa de um nome para cada valor por ponto que `RespondingMark.tsx` sobrescreve inline, e ficam em `tokens.css` com default inerte só para que um typo no par falhe alto (`guard.mjs` guarda 7) em vez de renderizar nada.
 
+## `animate-pulse-warn`: pulso de estado, cor sempre do token semântico
+
+`ReasoningDisclosure.tsx` (21-B) pulsa o ícone `Lightbulb` enquanto o modelo está na fase "pensando", mesmo com o card fechado — precedente de "indicador de estado ativo" fora do `RespondingMark`. `--duration-warn-pulse-cycle: 1200ms` é um token de ciclo one-off, mesma categoria de `--duration-responding-cycle` (não uma das três durações genéricas `fast`/`base`/`slow` — pedido explícito era um pulso "bastante perceptível", mais rápido que os 2400ms do monograma). `@keyframes pulseWarn`/`@utility animate-pulse-warn` (`tailwind.css`) variam só `opacity` (1 → 0,25 → 1) — a cor em si nunca muda, é sempre `text-warn-text` (o token semântico de aviso, já testado para contraste em `tokens.contrast.test.ts`); "apagado" (fora da fase de pensar) é `text-text-faint` estático, ícone sempre montado para não perder o sinal de "isto teve raciocínio" quando o card recolhe. `prefers-reduced-motion` não precisa de tratamento extra — a regra global do `base.css` já zera `animation-duration`.
+
 ## Layout da casca: um consumidor real, não três
 
 O par `--sidebar-width`/`--sidebar-width-collapsed` tem **um** consumidor: `Sidebar.tsx`, que lê os dois valores para a largura (expandida/recolhida) e conduz a própria transição (`transition-[width]`) no mesmo elemento — não há segundo arquivo de transição nem persistência da largura. O plano 13 previu uma "largura persistida pelo plano 14"; o 14 decidiu contra (D14.7: não existe alça de redimensionar, persistir um booleano seria adiantar metade de uma feature). Se um recurso de redimensionar chegar, é ele quem reabre a pergunta.
 
-## Medidas de controle fora do token — inventário (DS-8)
+## Animar para altura automática: `calc-size(auto, size)`, sem opt-in global
+
+`ReasoningDisclosure.tsx` (21-B) é o primeiro consumidor no projeto. `height: calc-size(auto, size)` aplica `interpolate-size: allow-keywords` **escopado ao próprio valor** (confirmado na MDN) — não precisa de `:root { interpolate-size: allow-keywords }`, que ligaria interpolação de palavra-chave para qualquer elemento do app animando para uma keyword intrínseca, efeito colateral difícil de auditar. Suporte desde Chromium 129 (set/2024); o app roda em Chromium 148 embutido — sem fallback, mesmo critério do `field-sizing: content` do `Composer.tsx`. Duração e *timing function* seguem a convenção normal (`duration-(--duration-base)` + `ease-initial`), nenhum token novo. **Se um segundo consumidor precisar do mesmo, reaproveite a classe, não a pesquisa.**
+
+## Layout da casca: um consumidor real, não três
 
 Nenhuma promovida a token, mesmo critério de sempre: um único consumidor não justifica um terceiro nível.
 

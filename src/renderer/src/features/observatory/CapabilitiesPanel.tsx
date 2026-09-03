@@ -4,16 +4,11 @@ import CapabilityChip from '../../shared/ui/CapabilityChip/CapabilityChip'
 import Button from '../../shared/ui/Button/Button'
 import StateView from '../../shared/ui/StateView'
 import { formatSize, formatAge } from '../../shared/format'
+import { SERVICE_LABEL } from '../../shared/serviceLabel'
 import { capabilityChips } from '../conversation/capabilities'
 import { formatContext } from '../conversation/modelFormat'
 import LoadedModels from './LoadedModels'
 import { AI_SERVICES, useCapabilities, type ServiceCapability } from './useCapabilities'
-
-const SERVICE_LABEL: Record<AiService, string> = {
-  ollama: 'Ollama',
-  glm: 'GLM (Z.ai)',
-  gemini: 'Gemini (Google)'
-}
 
 const CLOUD_LABEL: Record<CloudProvider, string> = {
   gemini: 'Gemini',

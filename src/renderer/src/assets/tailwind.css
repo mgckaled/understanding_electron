@@ -142,3 +142,17 @@
   animation: dotResponding var(--duration-responding-cycle, 2400ms) ease-in-out infinite;
   animation-delay: var(--responding-dot-delay);
 }
+
+@keyframes pulseWarn {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@utility animate-pulse-warn {
+  animation: pulseWarn var(--duration-warn-pulse-cycle, 1200ms) ease-in-out infinite;
+}

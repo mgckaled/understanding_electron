@@ -25,6 +25,10 @@ export const DOTS: readonly Dot[] = [
 // Local viewBox unit → px. The ring spans ~50 local units; 0.91 (1.3x the
 // original 0.7 — F-1 fixup, item 1) puts it at ~46px.
 export const MARK_SCALE = 0.91
+// 21-B: cx/cy/r and the dispersal distances all shrink by this factor
+// together — scaling MARK_SCALE alone would move the dots closer without
+// shrinking them, since .responding-dot sizes itself off --responding-r.
+export const MARK_REDUCTION = 0.5
 // The ring's centre, not the full dot set's centroid — d13/d14 are loose
 // sparks outside the ring on purpose, and averaging them in would pull every
 // ring dot's outward vector off-radial.

@@ -1,4 +1,4 @@
-import { render, renderHook, act } from '@testing-library/react'
+import { render, renderHook, act, screen } from '@testing-library/react'
 import RespondingMark from './RespondingMark'
 import { useRespondingLoop } from './useRespondingLoop'
 
@@ -26,6 +26,20 @@ describe('RespondingMark', () => {
     const rendered = dots(container)
     expect(rendered).toHaveLength(14)
     expect(rendered.every((dot) => dot.classList.contains('animate-responding-dot'))).toBe(true)
+  })
+
+  it('labels each phase: connecting, thinking, responding', () => {
+    const { rerender } = render(<RespondingMark isStreaming={true} phase="connecting" />)
+    expect(screen.getByText(/^Preparando/)).toBeInTheDocument()
+
+    rerender(<RespondingMark isStreaming={true} phase="thinking" />)
+    expect(screen.getByText(/^Pensando/)).toBeInTheDocument()
+
+    rerender(<RespondingMark isStreaming={true} phase="responding" />)
+    expect(screen.getByText(/^Respondendo/)).toBeInTheDocument()
+
+    rerender(<RespondingMark isStreaming={true} />)
+    expect(screen.getByText(/^Respondendo/)).toBeInTheDocument()
   })
 })
 

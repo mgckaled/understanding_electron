@@ -112,6 +112,7 @@
   --duration-base: 200ms;
   --duration-slow: 320ms;
   --duration-responding-cycle: 2400ms;
+  --duration-warn-pulse-cycle: 1200ms;
 
   /* RespondingMark per-dot animation channel */
   --responding-r: 0;

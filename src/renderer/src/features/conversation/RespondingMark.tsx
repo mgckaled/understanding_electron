@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { DOTS, MARK_SCALE, useRespondingLoop, type Dot, type Variance } from './useRespondingLoop'
+import {
+  DOTS,
+  MARK_REDUCTION,
+  MARK_SCALE,
+  useRespondingLoop,
+  type Dot,
+  type Variance
+} from './useRespondingLoop'
 
 // F-1: the crivo monogram as the "model is working" signal, always visible
 // between the thread and the composer.
@@ -29,23 +36,33 @@ type DotStyle = React.CSSProperties & Record<`--responding-${string}`, string | 
 
 function dotStyle(dot: Dot, variance: Variance | undefined): DotStyle {
   const style: DotStyle = {
-    '--responding-r': dot.r,
-    '--responding-rest-x': `${dot.cx * MARK_SCALE}px`,
-    '--responding-rest-y': `${dot.cy * MARK_SCALE}px`,
+    '--responding-r': dot.r * MARK_REDUCTION,
+    '--responding-rest-x': `${dot.cx * MARK_SCALE * MARK_REDUCTION}px`,
+    '--responding-rest-y': `${dot.cy * MARK_SCALE * MARK_REDUCTION}px`,
     '--responding-rest-opacity': dot.opacity
   }
   if (variance !== undefined) {
-    style['--responding-dx'] = `${variance.dx * MARK_SCALE}px`
-    style['--responding-dy'] = `${variance.dy * MARK_SCALE}px`
+    style['--responding-dx'] = `${variance.dx * MARK_SCALE * MARK_REDUCTION}px`
+    style['--responding-dy'] = `${variance.dy * MARK_SCALE * MARK_REDUCTION}px`
     style['--responding-pulse-scale'] = variance.pulseScale
     style['--responding-dot-delay'] = `${variance.delayMs}ms`
   }
   return style
 }
 
+type ResponsePhase = 'connecting' | 'thinking' | 'responding'
+
+const PHASE_LABEL: Record<ResponsePhase, string> = {
+  connecting: 'Preparando',
+  thinking: 'Pensando',
+  responding: 'Respondendo'
+}
+
 type RespondingMarkProps = {
   /** True only while this conversation's own reply is in flight. */
   isStreaming: boolean
+  /** Which label to show — absent matches "Respondendo", the pre-arco-21 default. Ignored at rest. */
+  phase?: ResponsePhase
 }
 
 /**
@@ -53,13 +70,13 @@ type RespondingMarkProps = {
  * At rest it holds the "C" shape; while streaming, its 14 dots pulse out of
  * sync, disperse, and converge back, in a loop that only ever stops on rest.
  */
-function RespondingMark({ isStreaming }: RespondingMarkProps): React.JSX.Element {
+function RespondingMark({ isStreaming, phase }: RespondingMarkProps): React.JSX.Element {
   const { activeIds, variance, onDotIteration } = useRespondingLoop(isStreaming)
   const dots = useCyclingDots(isStreaming)
 
   return (
     <div
-      className="flex-none bg-bg px-7 py-5"
+      className="flex-none bg-bg px-7 pt-3 pb-4"
       role={isStreaming ? 'status' : undefined}
       // A stable name for assistive tech (F-1 fixup, item 1): the visible
       // "respondendo…" span below re-renders every 450ms, and without this,
@@ -67,8 +84,8 @@ function RespondingMark({ isStreaming }: RespondingMarkProps): React.JSX.Element
       aria-label={isStreaming ? 'Gerando resposta' : undefined}
       aria-hidden={isStreaming ? undefined : true}
     >
-      <div className="flex items-center gap-5">
-        <div className="relative h-[46px] w-[57px]">
+      <div className="flex items-center gap-4">
+        <div className="relative h-[23px] w-[29px]">
           {DOTS.map((dot) => {
             const isActive = activeIds.has(dot.id)
             return (
@@ -82,8 +99,9 @@ function RespondingMark({ isStreaming }: RespondingMarkProps): React.JSX.Element
           })}
         </div>
         {isStreaming && (
-          <span className="text-lg text-text-muted italic" aria-hidden="true">
-            respondendo{dots}
+          <span className="text-base text-text-muted italic" aria-hidden="true">
+            {PHASE_LABEL[phase ?? 'responding']}
+            {dots}
           </span>
         )}
       </div>
