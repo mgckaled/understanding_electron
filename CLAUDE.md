@@ -101,7 +101,8 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | Níveis de teste, mocks, o que não testar | skill [`testing`](.claude/skills/testing/SKILL.md) |
 | Convenção de comentário e docstring (TSDoc) | skill [`comments`](.claude/skills/comments/SKILL.md) |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow, motor restrito) | skill [`data`](.claude/skills/data/SKILL.md) |
-| IA local e de nuvem, ML, RAG | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
+| Camada de IA — provedor/streaming, orçamento de contexto e RAM, raciocínio, proposta NL→passo | skill [`ai`](.claude/skills/ai/SKILL.md) (R-6, set/2026) |
+| RAG e ML clássico — fatias 5/6 do plano 09, ainda não iniciadas | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
 | Frota Ollama instalada, peso/cache KV por faixa de contexto, ficha técnica dos modelos de nuvem opt-in, elegíveis, inviáveis, descartados | [`docs/reference/models/`](docs/reference/models/README.md) — **inclusive a frota instalada**, desde ago/2026 |
 | Decisões, alternativas descartadas, marcos entregues | [`docs/HISTORY.md`](docs/HISTORY.md) (10 mais recentes) + [`HISTORY-archive.md`](docs/HISTORY-archive.md) |
 | Armadilha diagnosticada — erro que já custou tempo uma vez | [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md) — busca **por sintoma**, não por data |
