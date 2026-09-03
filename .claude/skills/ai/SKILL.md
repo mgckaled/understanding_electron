@@ -7,7 +7,7 @@ description: A camada de IA do crivo — a fronteira de rede injetável (ChatFn/
 
 > Frota Ollama instalada, peso, cache KV por faixa de contexto, ficha técnica de modelo de nuvem: [`docs/reference/models/`](../../../docs/reference/models/README.md) — fronteira deliberada, não reaberta aqui (R6.1). Investigação já incorporada ao código do arco 21 (as três APIs, os achados medidos): [`docs/reference/reasoning/`](../../../docs/reference/reasoning/README.md). Contrato dos canais `ai:*` (`isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose`), `Result` vs exceção na fronteira IPC: skill [`ipc`](../ipc/SKILL.md). `CapabilityChip`/`ModelSelector`: skill [`design-system`](../design-system/SKILL.md). Camadas e regra de importação: skill [`architecture`](../architecture/SKILL.md).
 
-## Escolha de modelo nesta frota, e o protocolo de sonda (migrado de `CLAUDE.md`, R-6)
+## Escolha de modelo nesta frota, e o protocolo de sonda
 
 O que decide escolha, em uma linha cada: `gemma3:4b` é o **default** e o único com visão · `gemma3:1b` é o fallback de baixa RAM · `qwen2.5-coder:3b` é o candidato a default do NL→SQL (único que junta código e folga de RAM) · `qwen3:4b` é o único com `thinking`, e o cache mais caro da frota. Ficha técnica completa de cada um (peso, teto, KV/token): [`docs/reference/models/`](../../../docs/reference/models/README.md) — esta skill decide qual usar, aquele diretório decide o custo de usá-lo.
 
@@ -43,7 +43,7 @@ Todo seam **lança** em vez de devolver `Result` — quem classifica a exceção
 
 - **`calibrateRatio`** — sem tokenizer antes de enviar, cada estimativa é um chute; toda resposta devolve `prompt_eval_count` exato, e dividir chars enviados por ele dá a densidade real **desta** conversa. Cai para o default (`DEFAULT_CHARS_PER_TOKEN = 3.8`, medido nos docs do próprio projeto — 3,8 para prosa variada, até 5,1 para texto repetitivo) quando não há o que aprender.
 - **`GATE_MARGIN = 0.9`** — a estimativa por caractere pode subcontar por ~1/3; um portão que disparasse exatamente no teto nominal dispararia depois do dano.
-- **`REASONING_OUTPUT_RESERVE_RATIO = 0.35`** — fração da janela reservada para o que o modelo ainda vai **gerar** (resposta + raciocínio quando ligado). Ponto de partida medido ao vivo (uma sessão real com `qwen3.5:2b` mostrou raciocínio várias vezes mais longo que a resposta final), não uma constante definitiva — ajustar depois de mais teste ao vivo com raciocínio ligado.
+- **`REASONING_OUTPUT_RESERVE_RATIO = 0.35`** — fração da janela reservada para o que o modelo ainda vai **gerar** (resposta + raciocínio quando ligado). Ponto de partida, não constante medida — raciocínio observado várias vezes mais longo que a resposta final; ajustar com mais teste ao vivo antes de tratar como definitivo.
 - **`DEFAULT_NUM_CTX = 32768`** — substitui os 4096 do Ollama quando a conversa não escolheu janela (D15.2): reservar janela é barato, **preenchê-la não é** — o teto declarado do `gemma3:4b` (131072) seriam ~87 minutos de prefill nesta CPU.
 - **`CONTEXT_BANDS = [4096, 8192, 16384, 32768, 65536, 131072, 262144]`** — as sete faixas fixas do controle (21-C-C), substituindo o slider contínuo. O domínio de baixo nível continua sendo o **token bruto**, nunca um índice nesta lista: uma conversa travada num valor fora das faixas (de antes deste controle existir) continua mostrando o valor real, sem forçar encaixe.
 
@@ -61,9 +61,9 @@ O par `(modelo, num_ctx)` trava no **primeiro envio** — antes disso a janela d
 
 ⚠️ **`costed` distingue reserva real de orçamento client-side.** Para Ollama, `num_ctx` é uma reserva de RAM local de verdade, compartilhada entre prompt e geração (por isso `REASONING_OUTPUT_RESERVE_RATIO` só se aplica quando `costed`). Para nuvem, `num_ctx` **nunca chega ao corpo da requisição** — é só contabilidade do lado do cliente — então reservar espaço de geração contra ele não tem sentido, e `conversationWindow` sempre re-deriva em vez de travar, mesmo para uma conversa já travada num valor antigo de antes de este parâmetro existir.
 
-### Ancoramento pós-fato (21-C-A) — por que o medidor não reprocessa a história inteira a cada render
+### Estimativa ancorada no último turno medido de verdade
 
-`budgetFor` aceita um `anchor?: { tokens: number; chars: number }` — o último `promptTokens` real e os chars que o produziram. Presente, `charsPerToken` só estima o que mudou **desde** esse ponto; ausente, cai no comportamento antigo (linear sobre a história inteira). `anchorFromHistory(messages)` reidrata isso ao reabrir uma conversa ou relançar o app, andando de trás para frente até a última mensagem do assistente com `promptTokens` real — sem isso, reabrir uma conversa reintroduzia o mesmo drift "N+1 não acumula" que o ancoramento existe para consertar.
+`budgetFor` aceita um `anchor?: { tokens: number; chars: number }` — o último `promptTokens` real e os chars que o produziram. Presente, `charsPerToken` só estima o que mudou **desde** esse ponto; ausente, cai no comportamento antigo (linear sobre a história inteira, que dá drift). `anchorFromHistory(messages)` reidrata isso ao reabrir uma conversa ou relançar o app, andando de trás para frente até a última mensagem do assistente com `promptTokens` real (D21C.13).
 
 ⚠️ **O anchor fica obsoleto quando `removeMessage` encolhe a história abaixo do ponto ancorado** — `budgetFor` detecta isso (`anchor.chars > historyChars`) e cai de volta no fallback de história inteira; sem essa guarda a estimativa congelaria no `anchor.tokens` velho e podia recusar um envio que na verdade cabe.
 
@@ -77,7 +77,7 @@ Além de `'cancelled'`/`'timeout'` (do lado do app), existe `MessageStopped: 'co
 | Gemini | `finishReason` (`GeminiChunk.candidates[0]`) | `'MAX_TOKENS'` |
 | GLM | `finish_reason` (`GlmChunk.choices[0]`) | `'length'` |
 
-⚠️ **Sondado ao vivo contra o Ollama real antes de confiar no campo** (`qwen3:4b`, `think: true`, `num_ctx: 256`): o modelo gerou bem mais do que 256 tokens comportariam, mas a linha final chegou limpa com `done_reason: 'length'` — refutou a hipótese (levantada pelo advisor) de *context shifting* silencioso no llama.cpp. Não presuma o comportamento de um campo nativo sem sondar; documente a sonda, não só o resultado.
+⚠️ **`done_reason: 'length'` chega limpo mesmo quando o modelo gera muito além do `num_ctx`** — confirmado ao vivo (`qwen3:4b`, `think: true`, `num_ctx: 256`, saída bem maior que 256 tokens): não há *context shifting* silencioso no llama.cpp que corrompa o campo. Não presuma o comportamento de um campo nativo sem sondar contra o provedor real.
 
 ## Capacidades: de onde vêm, e a armadilha que já mordeu uma vez
 
@@ -85,7 +85,7 @@ Além de `'cancelled'`/`'timeout'` (do lado do app), existe `MessageStopped: 'co
 
 ⚠️ **Capacidade vem de `/api/show`, nunca de `/api/tags`.** `/api/tags` omite `vision` por completo (`gemma3:4b` é `["completion"]` ali, `["completion","vision"]` em `/api/show`) enquanto relata `tools` nos dois — um gate construído sobre `tags` recusaria o único modelo desta máquina que enxerga. É por isso que `ollamaModels` faz N+1 requisições (`/api/tags` uma vez, `/api/show` por modelo) em vez de confiar só no primeiro.
 
-⚠️ **`readInfo` lê por caminho **abaixo do prefixo de família**, nunca reconstruído do nome do modelo, e tem que remover exatamente **um** segmento — não casar por sufixo.** `mistral:7b` responde sob `llama.context_length`, não `mistral.context_length` — o prefixo de família diverge do nome do modelo. E um modelo com visão carrega um `gemma3.vision.block_count` paralelo que também termina em `.block_count`; casar por sufixo pegaria o campo errado (D15.8). É o caso que a skill `testing` cita como "teste vacuoso": um teste de "modelo com visão" passava contra a implementação **errada** (buscar por sufixo) só porque o Ollama calhava de devolver as chaves numa ordem favorável.
+⚠️ **`readInfo` lê por caminho abaixo do prefixo de família, nunca reconstruído do nome do modelo, e remove exatamente um segmento — não casa por sufixo.** `mistral:7b` responde sob `llama.context_length`, não `mistral.context_length` — o prefixo de família diverge do nome do modelo. E um modelo com visão carrega um `gemma3.vision.block_count` paralelo que também termina em `.block_count`; casar por sufixo pegaria o campo errado (D15.8). É o caso que a skill `testing` cita como "teste vacuoso": um teste de "modelo com visão" passava contra a implementação **errada** (buscar por sufixo) só porque o Ollama calhava de devolver as chaves numa ordem favorável.
 
 **`exposesReasoning(model)` ≠ `hasCapability(model, 'thinking')`.** A primeira pergunta é "este app consegue **mostrar** o raciocínio deste modelo agora"; a segunda é "o modelo pensa". Gemini pensa (`capabilities` inclui `thinking`, `thinkingLevel` não tem desligar de verdade, D21A.6) mas `generateContent`/`streamGenerateContent` não tem bloco de pensamento dedicado — confirmado contra a documentação da Interactions API (21-C-C) — então `exposesReasoning` retorna falso especificamente para Gemini, sem mexer em `capabilities`.
 
@@ -148,7 +148,3 @@ Três timeouts distintos, cada um medido: `PING_TIMEOUT_MS = 10s` (disponibilida
 `core/ai/` é puro — nível 1, sem Electron, sem rede real (a fronteira `ChatFn`/`ProbeFn`/etc. é o seam injetado). `main/features/ai/handlers.ts` é nível 3 (função exportada, dependências por parâmetro, skill `testing`). Os três adaptadores em `main/features/ai/providers/` têm teste próprio contra fixtures de linha de fio (NDJSON/SSE), não contra o serviço real — a sonda ao vivo (como a do motivo de parada, acima) é verificação separada, feita uma vez e documentada, não repetida a cada `pnpm test`.
 
 ⚠️ **Um teste "não escreve `numCtx` quando não há janela" passava porque o campo nem é renderizado nesse estado** — o código antigo também passaria (caso real, skill `testing`). Ao testar orçamento/janela, prove o **estado final** que o defeito inverteria, não a ausência de uma chamada.
-
-## O corte do arco 21, e o que falta
-
-21-A, 21-B, 21-C-A, 21-C-B e 21-C-C estão **implementados e verificados ao vivo** (`plan/implemented/`) — o conteúdo acima já reflete o código real deles (motivo de parada, faixas de contexto, ancoramento pós-fato). **21-D é o próximo corte do arco, ainda sem arquivo, e escreve nesta skill** quando nascer — não gera mais um documento solto em `reference/`.
