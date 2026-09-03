@@ -30,14 +30,17 @@ Cada modelo Ollama mora em **um** dos quatro estados — em uso, elegível, invi
 
 | Modelo | Tamanho | Teto treinado | KV/token | `capabilities` | Papel |
 |---|---|---|---|---|---|
-| `gemma3:4b` | 3,3 GB | 131.072 | ~4,3 KB | `completion`, `vision` | **default** — janela deslizante de 1024, o único com visão |
+| `gemma3:4b` | 3,3 GB | 131.072 | ~4,3 KB | `completion`, `vision` | **default** — janela deslizante de 1024 |
 | `gemma3:1b` | 815 MB | 32.768 | ~1 KB | `completion` | fallback de baixa RAM, fraco em síntese |
 | `qwen2.5-coder:3b` | 1,9 GB | 32.768 | 36 KB | `completion`, `tools`, `insert` | **o único que combina especialização em código com folga de RAM** — candidato a default do NL→SQL |
 | `phi4-mini` | 2,5 GB | 131.072 | 128 KB | `completion`, **`tools`** | pesos leves e cache caro — a 32k custa quase o mesmo que o `qwen2.5:7b`, que pesa o dobro |
-| `qwen3:4b` | 2,5 GB | 262.144 | **152,6 KB** | `completion`, `tools`, `thinking` | instalado 18/08/2026 (`ollama pull`, fora do app) — **o cache mais caro da frota**, e o maior teto treinado; a 32k já soma ~7,6 GB residentes, medido: 3,5 GB reais contra 3,43 GB previstos pela fórmula a 4.096. Único com raciocínio explícito — o app hoje descarta a fase com `think: false` (ver [`ARMADILHAS.md`](../../ARMADILHAS.md)) |
+| `qwen3:4b` | 2,5 GB | 262.144 | **152,6 KB** | `completion`, `tools`, `thinking` | instalado 18/08/2026 (`ollama pull`, fora do app) — **o cache mais caro da frota**, e o maior teto treinado; a 32k já soma ~7,6 GB residentes, medido: 3,5 GB reais contra 3,43 GB previstos pela fórmula a 4.096. O app hoje descarta a fase de raciocínio com `think: false` (ver [`ARMADILHAS.md`](../../ARMADILHAS.md)) |
+| `qwen3.5:2b` | 2,55 GB | 262.144 | **não custeável — bug** | `completion`, `vision`, `tools`, `thinking` | instalado fora do app (visto em 01/09/2026), medido `/api/show` na sessão do R-6 (03/09/2026). **Único da frota com as quatro capacidades juntas** — dispara o gatilho de gate `vision`+`tools` do [`ROADMAP § 2`](../../ROADMAP.md), decisão em **F-6**. É o modelo local mais usado na prática (Observatório, painel Desempenho). `attention.head_count_kv` vem `null` — `readAttention()` não consegue custear o contexto deste modelo, mesmo defeito do `granite4` abaixo, mas **este está na frota**: [`ARMADILHAS.md`](../../ARMADILHAS.md) § `qwen3.5:2b` também tem `attention.head_count_kv: null` |
 | `qwen2.5:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, **`tools`** | qualidade máxima de uso geral |
 | `qwen2.5-coder:7b` | 4,7 GB | 32.768 | 56 KB | `completion`, `tools`, `insert` | teto de qualidade em código; escolha deliberada, não default |
 | `nomic-embed-text` | 274 MB | 2.048 | — | `embedding` | 768 dims — o embedder da D9.5 já está instalado |
+
+⚠️ **Esta tabela data de 18/08/2026 e está incompleta** — `qwen3.5:2b` (acima) foi instalado fora do app depois dessa medição, e a contagem "13 entradas no `/api/tags`" não foi reconferida desde então. Adicionada aqui pontualmente (R-6) porque o modelo já é o mais usado; um reinventário completo da frota (contagem de tags, remedição dos demais pesos) é trabalho separado, ainda não agendado.
 
 As `capabilities` acima vêm do `/api/show`: o `/api/tags` também traz o campo e **omite `vision`** ([`ARMADILHAS.md`](../../ARMADILHAS.md)). Carregar o `gemma3:4b` do disco frio custa **~50 s** — o preço real de trocar de modelo.
 
