@@ -15,7 +15,7 @@ O que decide escolha, em uma linha cada: `gemma3:4b` é o **default** e o único
 
 ## A fronteira de rede é injetável, e é por isso que `core/` testa sem Ollama instalado
 
-`src/core/ai/types.ts` declara cinco seams — `ChatFn`, `ProbeFn`, `ModelsFn`, `LoadedFn`, `UnloadFn` — e nada em `core/` sabe qual provedor os cumpre (D9.2). Os adaptadores concretos vivem em `src/main/features/ai/providers/{ollama,gemini,glm}.ts`; `src/main/ipc/register-all.ts` escolhe um por `resolveProvider(service)` e injeta nos handlers de `src/main/features/ai/handlers.ts`. É a mesma forma do `make_llm_fn` do mill.tools, e o motivo de o nível 1 (`core/ai/*.test.ts`) rodar sem nenhum serviço no ar.
+`src/core/ai/types.ts` declara cinco seams — `ChatFn`, `ProbeFn`, `ModelsFn`, `LoadedFn`, `UnloadFn` — e nada em `core/` sabe qual provedor os cumpre (D9.2). Os adaptadores concretos vivem em `src/main/features/ai/providers/{ollama,gemini,glm}.ts`; `src/main/ipc/register-all.ts` escolhe um por `resolveProvider(service)` e injeta nos handlers de `src/main/features/ai/handlers.ts`. É o motivo de o nível 1 (`core/ai/*.test.ts`) rodar sem nenhum serviço no ar.
 
 Todo seam **lança** em vez de devolver `Result` — quem classifica a exceção em `AppError` é sempre `mapProviderError` (`handlers.ts`), o único lugar que conhece as três formas de falha (indisponível, erro upstream, timeout). Um adaptador que devolvesse `Result` duplicaria essa classificação e poderia divergir dela.
 
@@ -27,7 +27,7 @@ Todo seam **lança** em vez de devolver `Result` — quem classifica a exceção
 
 - **`OVERHEAD = 1.06`** — medido, não derivado: 38,0 KB por token contra os 36,0 que a fórmula prevê, no `qwen2.5-coder:3b` (D15.8).
 - **`FIXED_OVERHEAD_BYTES = 0,33 GiB`** — custo de um modelo carregado antes de qualquer contexto, medido via `ollama ps`. Maior que o cache inteiro de um modelo pequeno a 4k — ignorar subestima todo modelo em ~1/3 GB, sempre na direção perigosa.
-- **`RAM_MARGIN_BYTES = 512 MiB`** — subtraído **antes** da divisão por token, não é custo fixo: tira poucos milhares de tokens de um modelo 3B e a existência inteira de um 7B (D15.10, duas medidas já usadas).
+- **`RAM_MARGIN_BYTES = 512 MiB`** — subtraído **antes** da divisão por token, não é custo fixo: tira poucos milhares de tokens de um modelo 3B e a existência inteira de um 7B (D15.10).
 - **`growingLayers`** — todas as camadas crescem com `num_ctx` **sem** sliding window ativa; **uma só** cresce com ela ativa (empírico, `gemma3:4b`, fator 1,07 medido). A janela é comparada ao **teto do próprio modelo**, nunca ao `numCtx` candidato sendo calculado — senão a função seria recursiva sobre a própria saída (D15.8).
 - **`contextCeiling(model, freeBytes, marginBytes)`** — `min(teto treinado, o que a máquina aguenta)`. `null` quando falta teto treinado **ou** dado de atenção — nunca inventa um número. `phi4-mini` declara 131072, que é 16 GB de cache numa máquina de 16 GB: oferecer só o teto treinado é o erro que parece honesto e não é.
 
