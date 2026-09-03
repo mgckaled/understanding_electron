@@ -412,6 +412,17 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | 21-B | [D21B.4](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | `SERVICE_LABEL` consolidado numa fonte única, wording do `CapabilitiesPanel` |
 | 21-B | [D21B.5](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | Animação de altura via `calc-size(auto, size)`, sem opt-in global |
 | 21-B | [D21B.6](plan/implemented/21-B-o-raciocinio-aparece-bem.md) | Achatamento de raciocínio sem `strip-markdown`, sem `remark-stringify` — lição do DE1E.9 reaplicada |
+| 21-C-A | [D21C.1](plan/active/21-C-A-orcamento-de-geracao.md) | `REASONING_OUTPUT_RESERVE_RATIO` (35%) reserva espaço de geração no `budgetFor`, ponto de partida a calibrar ao vivo |
+| 21-C-A | [D21C.2](plan/active/21-C-A-orcamento-de-geracao.md) | A reserva só se aplica quando `costed && reasoningActive` — nunca contra um `num_ctx` client-side de nuvem |
+| 21-C-A | [D21C.3](plan/active/21-C-A-orcamento-de-geracao.md) | Média móvel exponencial avança uma vez por turno assentado, não por render |
+| 21-C-B | [D21C.4](plan/active/21-C-B-motivo-de-parada.md) | `messageStoppedSchema` ganha `'context-exhausted'`, motivo de parada de uma resposta bem-sucedida, não de uma chamada interrompida |
+| 21-C-B | [D21C.5](plan/active/21-C-B-motivo-de-parada.md) | Os três adaptadores passam a ler o campo de parada do provedor (`done_reason`/`finish_reason`/`finishReason`) — sondagem ao vivo confirmou `'length'` antes do desenho |
+| 21-C-C | [D21C.6](plan/active/21-C-C-faixas-fixas-de-contexto.md) | `CONTEXT_BANDS` fixas (4k–256k), `MIN_NUM_CTX` mantido em 1024 |
+| 21-C-C | [D21C.7](plan/active/21-C-C-faixas-fixas-de-contexto.md) | O teto do modelo sempre entra na lista de opções, mesmo fora das faixas |
+| 21-C-C | [D21C.8](plan/active/21-C-C-faixas-fixas-de-contexto.md) | `SegmentedField` sobe para `shared/ui/` no segundo chamador fora de `settings/` |
+| 21-C-C | [D21C.9](plan/active/21-C-C-faixas-fixas-de-contexto.md) | `Slider` sai do repositório — único chamador era `ContextSlider`, mesmo precedente do DS-8 |
+| 21-C-C | [D21C.10](plan/active/21-C-C-faixas-fixas-de-contexto.md) | `exposesReasoning()` desliga o switch de raciocínio só para Gemini — `hasCapability` continua `true` |
+| 21-C-C | [D21C.11](plan/active/21-C-C-faixas-fixas-de-contexto.md) | Migração para a Interactions API do Gemini documentada, não implementada — causa do D21A.10 fechada via Context7 |
 
 ---
 

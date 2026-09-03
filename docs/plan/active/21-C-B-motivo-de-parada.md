@@ -40,4 +40,4 @@ Nível 3 (cada adaptador, `node`): fixture de resposta com o `done_reason`/`fini
 
 | Sessão | O que foi feito |
 |---|---|
-| 1 (03/09/2026) | Sondagem ao vivo contra Ollama real (`qwen3:4b`, `num_ctx:256`) confirmou `done_reason:'length'` — refutou a hipótese do advisor de context shifting silencioso. Implementação nesta mesma sessão. |
+| 1 (03/09/2026) | Sondagem ao vivo contra Ollama real (`qwen3:4b`, `num_ctx:256`) confirmou `done_reason:'length'` — refutou a hipótese do advisor de context shifting silencioso. Implementação completa nesta mesma sessão: `messageStoppedSchema`/`ChatReply` em `shared/ipc.ts`, os três adaptadores (nenhum parseava o campo antes, ao contrário do que o plano original supunha), `useConversationChat.ts`, legenda em `MessageList.tsx`. Testes de nível 3 novos nos três adaptadores. `pnpm check:fast` verde (1330/1330). **Verificação ao vivo pendente** — fica com o usuário. |

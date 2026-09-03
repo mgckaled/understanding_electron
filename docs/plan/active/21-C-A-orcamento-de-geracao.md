@@ -40,4 +40,4 @@ Revisado pelo advisor (Opus) antes da implementação — duas correções que a
 
 | Sessão | O que foi feito |
 |---|---|
-| 1 (03/09/2026) | Sondagem inicial do arco 21-C (três frentes), revisão do advisor (Opus) split o plano em três arquivos e corrigiu o timing da EMA e o gate por `costed`. Implementação desta frente nesta mesma sessão. |
+| 1 (03/09/2026) | Sondagem inicial do arco 21-C (três frentes), revisão do advisor (Opus) split o plano em três arquivos e corrigiu o timing da EMA e o gate por `costed`. Implementação completa nesta mesma sessão: `budgetFor`/`calibrateRatio` em `core/ai/budget.ts`, `Composer.tsx`/`ConversationView.tsx`/`useConversationChat.ts` ajustados, testes de nível 1 e 2 novos. Dois bugs pegos pelos próprios testes durante a implementação (state inicial do `charsPerToken` nascendo `DEFAULT_CHARS_PER_TOKEN` em vez de `undefined`, e o fallback esquecido no retorno do hook) — ambos corrigidos, `pnpm check:fast` verde (1330/1330). **Verificação ao vivo pendente** — fica com o usuário. |

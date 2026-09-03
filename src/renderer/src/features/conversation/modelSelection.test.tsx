@@ -417,7 +417,9 @@ describe('the pair locks on the first send', () => {
     const user = userEvent.setup()
     mount()
     await user.click(await modelTrigger())
-    await screen.findByLabelText('Contexto', { selector: 'input' })
+    // Popover content computes display:none under jsdom (design-system skill,
+    // reference.md) — hidden: true is required for getByRole/findByRole here.
+    await screen.findByRole('group', { name: 'Contexto', hidden: true })
     await user.click(await modelTrigger())
 
     await send(user)
@@ -425,7 +427,7 @@ describe('the pair locks on the first send', () => {
     expect(await screen.findByText(/32\.768 tokens · travado/)).toBeInTheDocument()
     // Not a disabled input: one still reads as "editable later", which is the
     // opposite of what the lock promises.
-    expect(screen.queryByLabelText('Contexto', { selector: 'input' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Contexto', hidden: true })).not.toBeInTheDocument()
   })
 
   it('refuses the send when the locked window no longer fits, without shrinking it', async () => {
@@ -435,7 +437,9 @@ describe('the pair locks on the first send', () => {
     const user = userEvent.setup()
     const api = mount()
     await user.click(await modelTrigger())
-    await screen.findByLabelText('Contexto', { selector: 'input' })
+    // Popover content computes display:none under jsdom (design-system skill,
+    // reference.md) — hidden: true is required for getByRole/findByRole here.
+    await screen.findByRole('group', { name: 'Contexto', hidden: true })
     await user.click(await modelTrigger())
     await send(user)
     await screen.findByText(/travado/)
@@ -510,7 +514,7 @@ describe('a model that does not fit', () => {
     expect(await screen.findByRole('alert', { hidden: true })).toHaveTextContent(
       /Não cabe na memória livre/
     )
-    expect(screen.queryByLabelText('Contexto', { selector: 'input' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Contexto', hidden: true })).not.toBeInTheDocument()
   })
 
   it('closes the composer, because there is no window to send into', async () => {

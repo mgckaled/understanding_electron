@@ -48,6 +48,20 @@ Verificação ao vivo, 02/09/2026, 2/2: nem `gemini-3.5-flash-lite` nem `gemini-
 
 **Não bloqueia o 21-A** — o caminho Ollama e o GLM provam o mecanismo de ponta a ponta, cada um pelo seu campo irmão. Decisão registrada (D21A.10): o Gemini degrada graciosamente (manda `includeThoughts`, não quebra quando nada volta) e a migração para a Interactions API vira gatilho do `ROADMAP § 2`, condicionada a confirmar se `store: false` preserva o modelo stateless que D21A.6 assumiu impossível com essa API.
 
+## A Interactions API — confirmada no 21-C-C, causa fechada
+
+O que o 21-A deixou como "causa não estabelecida" (§ acima) tem resposta: pesquisa via Context7 (`/googleapis/python-genai`) e a própria documentação oficial da Interactions API (`ai.google.dev/gemini-api/docs/interactions/thinking`) afirmam, textualmente, que `generateContent`/`streamGenerateContent` **não tem bloco de pensamento dedicado nenhum** — "the Interactions API provides thoughts as a first-class representation as dedicated `thought` steps", em contraste direto com o endpoint que `gemini.ts` usa. Não é bug, não é parâmetro faltando: é a forma de resposta do endpoint, por desenho.
+
+A Interactions API expõe raciocínio de verdade, para os **mesmos** dois modelos do catálogo (`gemini-3.5-flash-lite`, `gemini-3.7-flash`), com um contrato diferente:
+
+- Configuração: `generation_config.thinking_summaries: "auto"` — não `thinkingConfig.includeThoughts`, que nem existe nesse contrato.
+- Resposta: `steps[]`, cada `thought` step com `signature` (obrigatória) e `summary` (texto, opcional — pode vir vazio se o modelo não raciocinou o bastante).
+- Streaming: suportado (`stream=true`, SSE, eventos `step.delta`).
+
+**A pergunta que travava a migração desde o D21A.6 está respondida.** `store: false` preserva o modelo stateless full-history-resend que os outros dois adaptadores já usam: o cliente mantém o array de `steps` e reenvia o histórico acumulado a cada turno, igual ao que `ollama.ts`/`glm.ts` já fazem — só que em modo stateless, a `signature` de cada `thought` step anterior precisa ser reenviada junto, intacta, o que **engorda `historyChars`** e cruza direto com o orçamento de contexto sob raciocínio (21-C-A).
+
+**Ainda fora de escopo, por decisão explícita nesta sessão:** migrar é reescrever o parser de `gemini.ts` inteiro (`steps[]` em vez de `candidates[0].content.parts[]`, semântica de streaming diferente) — tamanho de plano próprio, não um ajuste de parâmetro. Até lá, `exposesReasoning()` (`core/ai/models.ts`, 21-C-C) desliga o switch "Raciocínio visível" especificamente para Gemini: `hasCapability(model, 'thinking')` continua `true` (o modelo pensa de verdade, com `thinkingLevel` sem piso zero), a UI só para de prometer um resumo que o endpoint atual nunca entrega.
+
 ### 3. "Alternável por turno" significa três coisas diferentes — decide o rótulo da UI
 
 | | O que o toggle controla de fato |
@@ -108,6 +122,7 @@ Precedente já validado no plano 19 (feedback do usuário): sessões curtas vira
 
 - **21-A — o dado atravessa, o nome se resolve, e a UI existe (sem ser bonita ainda).** ✅ Concluído em 02/09/2026 — [`plan/implemented/21-A-o-raciocinio-atravessa.md`](../../plan/implemented/21-A-o-raciocinio-atravessa.md). O rename `Thinking*` → `Responding*`, `ChatFn.onThinking?`, `reasoning` como variante de `MessagePart`, os três adaptadores, e o toggle destravado — tudo como este guia previu, com o achado extra do Gemini (§ acima).
 - **21-B — o dado aparece bem.** ✅ Concluído, verificado ao vivo — [`plan/implemented/21-B-o-raciocinio-aparece-bem.md`](../../plan/implemented/21-B-o-raciocinio-aparece-bem.md). Bloco recolhível (`ReasoningDisclosure`), rótulo por provedor, estado padrão colapsado/expandido durante o streaming (padrão de mercado confirmado ao vivo: Vercel AI SDK Elements "Reasoning" — abre durante streaming, recolhe ao terminar), prosa achatada sem markdown visível (achado adicional, fora do previsto aqui). Dois achados a mais que o levantamento original não previa: um ícone de lâmpada indicando "pensando" mesmo com o card fechado, e um bug real de uma armadilha já documentada (`h-0` não gera CSS neste projeto — ver `ARMADILHAS.md`).
+- **21-C — orçamento sob raciocínio, faixas fixas, e o martelo do Gemini.** Implementado em 03/09/2026, `pnpm check:fast` verde — verificação ao vivo ainda pendente, três planos (revisão do advisor separou por não compartilharem código): [`21-C-A`](../../plan/active/21-C-A-orcamento-de-geracao.md) (headroom de geração reservado, calibração por média móvel), [`21-C-B`](../../plan/active/21-C-B-motivo-de-parada.md) (`context-exhausted`, sondagem ao vivo confirmou `done_reason:'length'`), [`21-C-C`](../../plan/active/21-C-C-faixas-fixas-de-contexto.md) (faixas fixas + campo numérico, `exposesReasoning` desliga o switch do Gemini, causa do D21A.10 fechada — § acima).
 - **O-9 — Observatório**, condicional e fora da numeração do arco 21 (seção acima): só ganha arquivo se, ao chegar lá, o O-7 precisar mesmo separar as duas taxas de decode. Segue não aberto.
 
 ## Verificações já feitas nesta sessão, não repetir

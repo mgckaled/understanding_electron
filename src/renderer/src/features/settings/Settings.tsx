@@ -4,6 +4,7 @@ import type { Theme } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Dialog from '../../shared/ui/Dialog/Dialog'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
+import SegmentedField from '../../shared/ui/SegmentedField/SegmentedField'
 import { useSettings } from './settingsContext'
 import CloudSecrets from './CloudSecrets'
 
@@ -11,51 +12,6 @@ import CloudSecrets from './CloudSecrets'
 // UNMOUNT the conversation, but this modal keeps it visible behind, so a reply
 // keeps streaming. The trigger and dialog live together because the open state is
 // theirs alone, and the dialog is a SIBLING in the tree, never a replacement.
-
-/**
- * A row of mutually exclusive `Button`s standing in for `Field` (DS-4 passo 1):
- * `Field`'s `<label for>` targets a labelable element, which a `role="group"` of
- * buttons is not — `aria-labelledby` is the group's own way to carry that label.
- * Generic because Configurações reuses the exact shape for two unrelated value
- * types (threads is a number, theme is a string enum).
- */
-function SegmentedField<T extends string | number>({
-  label,
-  hint,
-  options,
-  value,
-  onChange
-}: {
-  label: string
-  hint?: string
-  options: { value: T; label: string }[]
-  value: T
-  onChange: (value: T) => void
-}): React.JSX.Element {
-  const labelId = useId()
-
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="text-xs font-semibold text-text-muted" id={labelId}>
-        {label}
-      </span>
-      <div className="flex gap-2" role="group" aria-labelledby={labelId}>
-        {options.map((option) => (
-          <Button
-            key={option.value}
-            type="button"
-            variant={option.value === value ? 'primary' : 'secondary'}
-            aria-pressed={option.value === value}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </Button>
-        ))}
-      </div>
-      {hint && <span className="text-xs text-text-faint">{hint}</span>}
-    </div>
-  )
-}
 
 const THEME_OPTIONS: { value: Theme; label: string }[] = [
   { value: 'system', label: 'Sistema' },

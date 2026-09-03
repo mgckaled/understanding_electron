@@ -96,7 +96,6 @@ O par `--sidebar-width`/`--sidebar-width-collapsed` tem **um** consumidor: `Side
 Nenhuma promovida a token, mesmo critério de sempre: um único consumidor não justifica um terceiro nível.
 
 - **`Switch`** (`18px`/`32px` de trilho, `14px` de thumb). Único consumidor (`AttachButton`, três instâncias do mesmo desenho). `--control-height-*` não serve — é para controle de formulário com rótulo ao lado, não para geometria interna trilho/thumb.
-- **`Slider`** (`4px`/`16px` de trilho/thumb, `-6px` de margem do thumb via pseudo-elemento cross-browser). Único consumidor (`ContextSlider`). Mesma razão do `Switch`.
 - **`Dialog`** (`420px` de largura, `min(640px, 85vh)` de altura máxima). Documentado no próprio `Dialog.module.css`.
 
 **Se um segundo consumidor real de qualquer um desses aparecer com a mesma medida, é esse o gatilho para promover** — não a existência do valor em si.

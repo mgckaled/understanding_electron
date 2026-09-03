@@ -1,12 +1,12 @@
 import { useId, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { AiModel } from '@shared/ipc'
-import { fitsInMemory, MIN_NUM_CTX, type ConversationWindow } from '@core/ai/budget'
+import { CONTEXT_BANDS, fitsInMemory, MIN_NUM_CTX, type ConversationWindow } from '@core/ai/budget'
 import Field from '../../shared/ui/Field/Field'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import Popover from '../../shared/ui/Popover/Popover'
 import { toAnchorName } from '../../shared/ui/Popover/anchorName'
-import Slider, { type SliderTick } from '../../shared/ui/Slider/Slider'
+import SegmentedField from '../../shared/ui/SegmentedField/SegmentedField'
 import { formatSize } from '../../shared/format'
 import { formatContext } from './modelFormat'
 
@@ -19,56 +19,18 @@ import { formatContext } from './modelFormat'
 const TOO_BIG = 'max-w-[320px] self-end text-2xs text-warn-text'
 
 /**
- * Doublings of `MIN_NUM_CTX` up to `ceiling`, plus `ceiling` itself as the
- * last mark — the machine's real bound, not a round number (F2.5): the fleet
- * varies 32768–131072, never the 256k of the Ollama settings screen this
- * control borrows its shape (not its scale) from.
+ * `CONTEXT_BANDS` below `ceiling`, plus `ceiling` itself as the last option —
+ * the machine's real bound, not a round number, same guarantee the old
+ * doubling-based ticks gave (F2.5): a ceiling smaller than the first band
+ * (RAM varies 3 GB on this machine, D15.13) must still offer something real
+ * instead of an empty group.
  */
-function contextTicks(ceiling: number): SliderTick[] {
-  const values: number[] = []
-  for (let value = MIN_NUM_CTX; value < ceiling; value *= 2) {
-    values.push(value)
-  }
-  values.push(ceiling)
+function bandOptions(ceiling: number): { value: number; label: string }[] {
+  const values = [...CONTEXT_BANDS.filter((value) => value < ceiling), ceiling]
   return values.map((value) => ({ value, label: formatContext(value) ?? String(value) }))
 }
 
-/**
- * A thinned subset for the LABELS only — the slider's reachable values never
- * change. Doublings are not evenly spaced on a linear token axis (1024→2048
- * is 3% of a 32768 ceiling; 16384→32768 is 50%), so the low end collides at
- * any width a popover can reasonably take (verified live: even 500px+ cannot
- * fit three labels inside a 9% span). Keeps first/last always; a mark in
- * between survives only once it clears `minGapPercent` from both.
- */
-function thinLabels(
-  ticks: SliderTick[],
-  min: number,
-  max: number,
-  minGapPercent = 10
-): SliderTick[] {
-  if (ticks.length <= 2) return ticks
-  const percent = (value: number): number => (max === min ? 0 : ((value - min) / (max - min)) * 100)
-  const first = ticks[0]!
-  const last = ticks[ticks.length - 1]!
-  const lastPercent = percent(last.value)
-  const kept: SliderTick[] = [first]
-  let previousPercent = percent(first.value)
-  for (let index = 1; index < ticks.length - 1; index++) {
-    const tick = ticks[index]!
-    const p = percent(tick.value)
-    if (p - previousPercent >= minGapPercent && lastPercent - p >= minGapPercent) {
-      kept.push(tick)
-      previousPercent = p
-    }
-  }
-  kept.push(last)
-  return kept
-}
-
-type ContextSliderProps = {
-  id?: string
-  'aria-describedby'?: string
+type ContextBandsProps = {
   initial: number
   ceiling: number
   disabled: boolean
@@ -76,47 +38,60 @@ type ContextSliderProps = {
 }
 
 /**
- * The live thumb position lives here, separate from `onCommit` (F2.5): a drag
- * crosses many `step` boundaries, and firing `onCommit` — which persists via
- * IPC (D14.x) — on every one would spam the write the old `onBlur` input
- * avoided for the same reason. `onChangeCommitted` (mouseup/keyup/blur) is the
- * one call that reaches it.
- *
- * The domain stays the raw token count, exactly like the `<input type="number">`
- * it replaces — never an index into the doublings. A conversation from before
- * this control existed can hold any 1024-multiple (e.g. 12288), and an index
- * domain would seat the thumb at the nearest doubling while the pill still
- * read the true value, then commit that rounded value on a stray blur with no
- * drag at all — the exact defect `ThreadsField` (Settings.tsx) already warns
- * against for a value that predates a control. Advisor review caught this
- * before ship; the crowding it was chasing is a label problem (`thinLabels`),
- * not a granularity one.
+ * Two ways to reach the same domain (21-C-C, "o melhor dos dois mundos"): the
+ * seven fixed bands for a quick pick, and a free numeric field for anything
+ * else — both write the raw token count, never an index into the bands. A
+ * conversation from before this control existed can hold any 1024-multiple
+ * (e.g. 12288); the bands simply do not highlight in that case, the same way
+ * `ThreadsField` (Settings.tsx) leaves no option marked for a value that
+ * predates it — no encaixe forçado, ver F2.5.
  */
-function ContextSlider({
-  id,
-  'aria-describedby': describedBy,
+function ContextBands({
   initial,
   ceiling,
   disabled,
   onCommit
-}: ContextSliderProps): React.JSX.Element {
-  const ticks = contextTicks(ceiling)
-  const labels = thinLabels(ticks, MIN_NUM_CTX, ceiling)
+}: ContextBandsProps): React.JSX.Element {
   const [tokens, setTokens] = useState(initial)
+  const [custom, setCustom] = useState(String(initial))
+
+  function commit(value: number): void {
+    const clamped = Math.min(ceiling, Math.max(MIN_NUM_CTX, value))
+    setTokens(clamped)
+    setCustom(String(clamped))
+    onCommit(clamped)
+  }
 
   return (
-    <Slider
-      id={id}
-      aria-describedby={describedBy}
-      min={MIN_NUM_CTX}
-      max={ceiling}
-      step={MIN_NUM_CTX}
-      value={tokens}
-      onChange={setTokens}
-      onChangeCommitted={onCommit}
-      ticks={labels}
-      disabled={disabled}
-    />
+    <div className="flex flex-col gap-3">
+      <SegmentedField
+        label="Contexto"
+        hint={`até ${formatContext(ceiling)}`}
+        options={bandOptions(ceiling)}
+        value={tokens}
+        onChange={commit}
+      />
+      <Field label="Personalizado" hint={`múltiplo de ${MIN_NUM_CTX.toLocaleString('pt-BR')}`}>
+        <input
+          type="number"
+          min={MIN_NUM_CTX}
+          max={ceiling}
+          step={MIN_NUM_CTX}
+          disabled={disabled}
+          value={custom}
+          className="w-full rounded-md border border-border bg-surface-sunken px-4 py-3 font-ui text-sm text-text select-text focus-visible:border-accent-text focus-visible:outline-none"
+          onChange={(event) => setCustom(event.target.value)}
+          onBlur={() => {
+            const parsed = Number(custom)
+            if (!Number.isFinite(parsed)) {
+              setCustom(String(tokens))
+              return
+            }
+            commit(Math.round(parsed / MIN_NUM_CTX) * MIN_NUM_CTX)
+          }}
+        />
+      </Field>
+    </div>
   )
 }
 
@@ -171,12 +146,9 @@ function ContextControl({
         open={open}
         onClose={() => setOpen(false)}
         anchorName={anchorName}
-        // Wider than the other three branches need (240px) — the slider's
-        // tick labels (F2.5) are what asks for it; the rascunho itself
-        // flagged that the Ollama reference would need resizing to fit here.
-        // Widened again past the first pass (300px) on user direction after
-        // live QA: more room lets `thinLabels` keep more marks instead of
-        // dropping them.
+        // Wide enough for seven band buttons to wrap over two/three rows
+        // (21-C-C) — widened once already (300px) for the old slider's tick
+        // labels, kept at 360px here for the same reason.
         className="flex w-[360px] flex-col gap-1"
       >
         {/* No window at all: offering the control here is what produced "até 0k"
@@ -208,19 +180,17 @@ function ContextControl({
 
         {contextWindow.status === 'open' && fits && ceiling !== null && (
           <div className="mt-2 px-2">
-            <Field label="Contexto" hint={`até ${formatContext(ceiling)}`}>
-              {/* Remounted on scope/value change, same reason the old input was
-                    re-keyed rather than made controlled from `useState(stored)`:
-                    that would copy the value on the first render, before the
-                    conversation read returns (fase 14). */}
-              <ContextSlider
-                key={`${scopeKey}:${contextWindow.numCtx}`}
-                initial={contextWindow.numCtx}
-                ceiling={ceiling}
-                disabled={disabled}
-                onCommit={onNumCtx}
-              />
-            </Field>
+            {/* Remounted on scope/value change, same reason the old control was
+                  re-keyed rather than made controlled from `useState(stored)`:
+                  that would copy the value on the first render, before the
+                  conversation read returns (fase 14). */}
+            <ContextBands
+              key={`${scopeKey}:${contextWindow.numCtx}`}
+              initial={contextWindow.numCtx}
+              ceiling={ceiling}
+              disabled={disabled}
+              onCommit={onNumCtx}
+            />
           </div>
         )}
       </Popover>

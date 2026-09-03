@@ -37,18 +37,17 @@ async function paste(user: ReturnType<typeof userEvent.setup>, text: string): Pr
 }
 
 /**
- * Narrows the window to its smallest step (1024 tokens — MIN_NUM_CTX) so a
- * modest draft can overflow it inside a test. The control is a range slider
- * over the raw token count, same domain as the `<input type="number">` it
- * replaced — an earlier index-based version was reverted after advisor
- * review found it could round a pre-existing value on a stray blur (F2.5).
- * `fireEvent` mirrors a completed drag: `change` moves the value, `mouseUp`
- * is what Slider listens for to call `onChangeCommitted`.
+ * Narrows the window to MIN_NUM_CTX (1024 tokens) so a modest draft can
+ * overflow it inside a test. 1024 is below the smallest fixed band (4096,
+ * 21-C-C), so the free numeric field is the only reachable path — the raw
+ * token count stays the domain either way, same guarantee the old slider
+ * carried (F2.5): a pre-existing value never gets rounded to the nearest
+ * option on a stray blur.
  */
 async function narrowWindow(): Promise<void> {
-  const field = await screen.findByLabelText('Contexto')
+  const field = await screen.findByLabelText('Personalizado')
   fireEvent.change(field, { target: { value: '1024' } })
-  fireEvent.mouseUp(field)
+  fireEvent.blur(field)
   await waitFor(() => expect((field as HTMLInputElement).value).toBe('1024'))
 }
 
@@ -63,6 +62,19 @@ describe('context budget', () => {
     // The estimate moves with the draft: the meter exists so the overflow is
     // visible BEFORE it happens, not reported after.
     expect(await screen.findByText(/~1 de 32.768 tokens/)).toBeInTheDocument()
+  })
+
+  it('commits the exact value of a clicked band, not a rounded one (21-C-C)', async () => {
+    mount()
+    await screen.findByText(/de 32\.768 tokens/)
+
+    // Popover content stays in the DOM under jsdom, just visually hidden
+    // (design-system skill, reference.md) — same reason narrowWindow reaches
+    // the numeric field without opening the trigger first.
+    const band = await screen.findByRole('button', { name: '8k', hidden: true })
+    fireEvent.click(band)
+
+    expect(await screen.findByText(/de 8\.192 tokens/)).toBeInTheDocument()
   })
 
   it('counts the reply too, and calibrates on what was actually SENT', async () => {

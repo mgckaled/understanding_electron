@@ -3,6 +3,7 @@ import {
   GEMINI_MODELS,
   GLM_MODELS,
   dropRedundantVariants,
+  exposesReasoning,
   findEmbedders,
   hasCapability,
   normalizeOllamaModel,
@@ -373,5 +374,51 @@ describe('dropRedundantVariants', () => {
 
   it('keeps a variant when its parent is absent from the catalog', () => {
     expect(dropRedundantVariants([gemma3_4b_custom])).toEqual([gemma3_4b_custom])
+  })
+})
+
+describe('exposesReasoning', () => {
+  it('is true for a local model that declares thinking', () => {
+    const qwen3: AiModel = {
+      provider: 'ollama',
+      name: 'qwen3:4b',
+      parameterSize: '4B',
+      sizeBytes: 1,
+      capabilities: ['completion', 'thinking'],
+      contextLength: 32768,
+      attention: null,
+      variantOf: null
+    }
+
+    expect(exposesReasoning(qwen3)).toBe(true)
+  })
+
+  it('is true for GLM, which declares thinking', () => {
+    expect(exposesReasoning(GLM_MODELS[0]!)).toBe(true)
+  })
+
+  it('is false for Gemini even though it declares thinking too', () => {
+    // The app's own gate, not the model's real ability (D21A.10, 21-C-C):
+    // Gemini's generateContent has no dedicated thought block, so showing
+    // the switch here would promise a summary that never arrives.
+    for (const model of GEMINI_MODELS) {
+      expect(hasCapability(model, 'thinking')).toBe(true)
+      expect(exposesReasoning(model)).toBe(false)
+    }
+  })
+
+  it('is false for a model that does not think at all', () => {
+    const noThinking: AiModel = {
+      provider: 'ollama',
+      name: 'gemma3:4b',
+      parameterSize: '4.3B',
+      sizeBytes: 1,
+      capabilities: ['completion', 'vision'],
+      contextLength: 131072,
+      attention: null,
+      variantOf: null
+    }
+
+    expect(exposesReasoning(noThinking)).toBe(false)
   })
 })

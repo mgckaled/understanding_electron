@@ -82,6 +82,16 @@ export const DEFAULT_NUM_CTX = 32768
 export const MIN_NUM_CTX = 1024
 
 /**
+ * The fixed set of context-window sizes the control offers (21-C-C) —
+ * replaces the old continuous slider, whose doublings from MIN_NUM_CTX got
+ * harder to pick a sane point on the larger a model's native ceiling was
+ * (qwen3.5:2b: 256k). The raw token count stays the domain, never an index
+ * into this list — a conversation locked at a value outside it (from before
+ * this control existed) still displays that real value, not the nearest band.
+ */
+export const CONTEXT_BANDS = [4096, 8192, 16384, 32768, 65536, 131072, 262144] as const
+
+/**
  * Whether this machine can hold the model at all, given its ceiling. A `null`
  * ceiling reads as TRUE: the model could not be costed, and refusing to run it
  * would be the app inventing a limit it has no basis for.

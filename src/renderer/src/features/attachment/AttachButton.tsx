@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { BookOpen, Code2, FileText, Globe, Image, Lightbulb, Plus, Table2, X } from 'lucide-react'
 import type { AiModel, AttachmentPart } from '@shared/ipc'
-import { hasCapability } from '@core/ai/models'
+import { exposesReasoning, hasCapability } from '@core/ai/models'
 import { estimateReadSeconds } from '@core/document/estimate'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -64,7 +64,11 @@ function AttachButton({
   // The gate's compose-side check (D17.11) — the other lives in Composer's
   // canSend, both calling the same hasCapability the docstring promises.
   const hasVision = model !== null && hasCapability(model, 'vision')
-  const hasThinking = model !== null && hasCapability(model, 'thinking')
+  // exposesReasoning, not hasCapability directly (21-C-C): Gemini thinks
+  // regardless, but its adapter never gets a visible summary back, so the
+  // switch stays unavailable there instead of promising something it cannot
+  // deliver.
+  const hasThinking = model !== null && exposesReasoning(model)
 
   const handlePickDataset = (): void => {
     setOpen(false)

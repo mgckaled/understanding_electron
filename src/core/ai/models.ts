@@ -165,6 +165,18 @@ export function hasCapability(model: AiModel, capability: string): boolean {
 }
 
 /**
+ * Whether the UI should offer this model's reasoning, not just whether the
+ * model thinks. Gemini's generateContent/streamGenerateContent has no
+ * dedicated thought block at all — confirmed against the Interactions API
+ * docs (21-C-C) — so `capabilities` stays true (the model does think;
+ * `thinkingLevel` has no real off switch, D21A.6), and this is the separate
+ * question of what this app's current adapter can actually show.
+ */
+export function exposesReasoning(model: AiModel): boolean {
+  return hasCapability(model, 'thinking') && model.provider !== 'gemini'
+}
+
+/**
  * Drops a variant whose parent is also present in `models` (D15.11) — a
  * Modelfile clone made for a sibling app (mill.tools) sharing this Ollama, not
  * a second install. Keeps a variant when its parent is absent, since it is
