@@ -1,6 +1,8 @@
 # Raciocínio visível — guia de implementação (arco 21)
 
 > 01/09/2026. Motivado pelo início da sessão do arco 21: o `web-fetch_mcp_thinking.md` (ago/2026) propunha a "Feature 3 — Thinking Mode" com pouca profundidade (uma seção genérica, sem ler os três adaptadores reais nem as APIs primárias). Este documento a substitui como fonte para o arco 21 especificamente — as Features 1/2 daquele guia (busca web, MCP) continuam vivas para os arcos 22/23. Como todo documento deste gênero: **levantamento prévio, não o plano em si.** Marca cada item como decidido, questão em aberto ou risco a validar ao vivo — não substitui a leitura do plano que vier a nascer.
+>
+> ⚠️ **Auditado no R-6 (03/09/2026): parcialmente consumido, não o documento inteiro.** As seções sobre 21-A/21-B (contrato IPC do raciocínio, o rename `ThinkingMark`→`RespondingMark`, a prova de que persistir não migra o banco) descrevem trabalho já implementado — a regra viva que sobrou está na skill [`ai`](../../../.claude/skills/ai/SKILL.md) e a narrativa em [`HISTORY.md`](../../HISTORY.md)/nos planos `implemented/21-A`/`21-B`. **A seção "A Interactions API" continua viva de propósito** — é o desenho da migração do `gemini.ts` ainda **não** implementada (`ROADMAP § 2`, "plano futuro, ainda sem número"); marcar o documento inteiro `⛔ consumido` enterraria a única referência que essa migração futura vai precisar. Estado permanece `✅ vivo`, escopo reduzido.
 
 ## Por que este documento existe em vez de `plan/active/21-A.md`
 

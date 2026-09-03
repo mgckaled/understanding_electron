@@ -276,13 +276,11 @@ Add-MpPreference -ExclusionProcess "node.exe"
 | GPU | NVIDIA MX150, 2 GB VRAM, CUDA configurado (herança do mill.tools, que a reserva para o Whisper) — mas o app roda **CPU-only por decisão testada, não por ausência de hardware**: `num_gpu` forçado no `gemma3:1b` foi medido e descartado para geração, penalidade já presente em contexto comum (não só extremo), sem estouro de VRAM — números e protocolo em [`docs/reference/models/ollama-models-gpu-analysis.md`](docs/reference/models/ollama-models-gpu-analysis.md) |
 | Ollama | 0.32.14 (atualizado fora do app, 18/08/2026 — era 0.32.6), servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
 
-**Frota Ollama: 8 modelos distintos** (13 entradas no `/api/tags`, 5 delas variantes `-custom`). O que decide escolha, em uma linha cada: `gemma3:4b` é o **default** e o único com visão · `gemma3:1b` é o fallback de baixa RAM · `qwen2.5-coder:3b` é o candidato a default do NL→SQL (único que junta código e folga de RAM) · `qwen3:4b` é o único com `thinking`, e o cache mais caro da frota.
+**Frota Ollama: 8 modelos distintos** (13 entradas no `/api/tags`, 5 delas variantes `-custom`).
 
 📖 **Tabela completa** — peso, teto treinado, KV/token, `capabilities`, papel, desinstalados e o porquê de o teto de contexto ser da máquina: [`docs/reference/models/README.md`](docs/reference/models/README.md#frota-instalada). O dono mudou de lugar em ago/2026 justamente porque este arquivo é lido em **toda** sessão, inclusive nas que não tocam IA. **Ao instalar ou remover um modelo, é lá que se atualiza.**
 
-⚠️ **Ao sondar o Ollama, um modelo residente por vez.** `keep_alive` de no máximo 1, e descarregar explicitamente com `keep_alive: 0` entre medidas — o default é 5 minutos, então modelos se acumulam em silêncio ao longo de sondas sucessivas, e dois residentes nesta máquina é *swap*. `ollama ps` vazio antes de começar e ao terminar. `/api/tags` e `/api/show` são metadados e **não** carregam nada, então catálogo é sempre seguro; o que exige o protocolo é inferência.
-
-⚠️ **`capabilities` vem do `/api/show`, nunca do `/api/tags`** — o `/api/tags` traz o campo e omite `vision`. Carregar o `gemma3:4b` do disco frio custa **~50 s**, o preço real de trocar de modelo.
+As quatro regras de escolha de modelo, o protocolo de sonda de um modelo residente por vez, e a armadilha `capabilities`/`/api/show` (R-6, ago/2026): skill [`ai`](.claude/skills/ai/SKILL.md).
 
 **Ao trocar de máquina, refazer a medição** antes de reaproveitar qualquer decisão que dependa destes números (default de `num_thread`, modelo padrão, recusa de *tool calling*).
 

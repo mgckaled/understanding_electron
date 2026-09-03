@@ -7,6 +7,12 @@ description: A camada de IA do crivo — a fronteira de rede injetável (ChatFn/
 
 > Frota Ollama instalada, peso, cache KV por faixa de contexto, ficha técnica de modelo de nuvem: [`docs/reference/models/`](../../../docs/reference/models/README.md) — fronteira deliberada, não reaberta aqui (R6.1). Investigação já incorporada ao código do arco 21 (as três APIs, os achados medidos): [`docs/reference/reasoning/`](../../../docs/reference/reasoning/README.md). Contrato dos canais `ai:*` (`isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose`), `Result` vs exceção na fronteira IPC: skill [`ipc`](../ipc/SKILL.md). `CapabilityChip`/`ModelSelector`: skill [`design-system`](../design-system/SKILL.md). Camadas e regra de importação: skill [`architecture`](../architecture/SKILL.md).
 
+## Escolha de modelo nesta frota, e o protocolo de sonda (migrado de `CLAUDE.md`, R-6)
+
+O que decide escolha, em uma linha cada: `gemma3:4b` é o **default** e o único com visão · `gemma3:1b` é o fallback de baixa RAM · `qwen2.5-coder:3b` é o candidato a default do NL→SQL (único que junta código e folga de RAM) · `qwen3:4b` é o único com `thinking`, e o cache mais caro da frota. Ficha técnica completa de cada um (peso, teto, KV/token): [`docs/reference/models/`](../../../docs/reference/models/README.md) — esta skill decide qual usar, aquele diretório decide o custo de usá-lo.
+
+⚠️ **Ao sondar o Ollama, um modelo residente por vez.** `keep_alive` de no máximo 1, e descarregar explicitamente com `keep_alive: 0` entre medidas — o default é 5 minutos, então modelos se acumulam em silêncio ao longo de sondas sucessivas, e dois residentes nesta máquina é *swap*. `ollama ps` vazio antes de começar e ao terminar. `/api/tags` e `/api/show` são metadados e **não** carregam nada, então catálogo é sempre seguro; o que exige o protocolo é inferência. Carregar o `gemma3:4b` do disco frio custa **~50 s**, o preço real de trocar de modelo.
+
 ## A fronteira de rede é injetável, e é por isso que `core/` testa sem Ollama instalado
 
 `src/core/ai/types.ts` declara cinco seams — `ChatFn`, `ProbeFn`, `ModelsFn`, `LoadedFn`, `UnloadFn` — e nada em `core/` sabe qual provedor os cumpre (D9.2). Os adaptadores concretos vivem em `src/main/features/ai/providers/{ollama,gemini,glm}.ts`; `src/main/ipc/register-all.ts` escolhe um por `resolveProvider(service)` e injeta nos handlers de `src/main/features/ai/handlers.ts`. É a mesma forma do `make_llm_fn` do mill.tools, e o motivo de o nível 1 (`core/ai/*.test.ts`) rodar sem nenhum serviço no ar.

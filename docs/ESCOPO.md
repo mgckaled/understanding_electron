@@ -416,7 +416,7 @@ Nunca se relê o PDF a cada turno. É o mesmo princípio do cache de prefixo do 
 
 Um modelo residente ocupa RAM na ordem de gigabytes (números por modelo em [`CLAUDE.md`](../CLAUDE.md)), e a [fase 13](plan/implemented/13-casca-do-aplicativo.md) permite trocar de modelo **por mensagem** — então dois residentes é um estado alcançável, e nesta máquina isso é *swap*, não lentidão.
 
-**Regra:** ao trocar de modelo, o aplicativo descarrega o anterior antes de chamar o novo. Custa zero no caso comum, porque trocar de modelo já invalida o cache de prefixo de qualquer forma; o custo real (recarga do disco) só aparece em quem volta ao modelo anterior. O estado fica visível em Configurações, com o que o `/api/ps` reporta — e é o primeiro medidor do observatório do [`ROADMAP § 1`](ROADMAP.md) a se pagar sozinho.
+**Regra:** ao trocar de modelo, o aplicativo descarrega o anterior antes de chamar o novo. Custa zero no caso comum, porque trocar de modelo já invalida o cache de prefixo de qualquer forma; o custo real (recarga do disco) só aparece em quem volta ao modelo anterior. O estado fica visível em Configurações, com o que o `/api/ps` reporta — e é o primeiro medidor do observatório do [`ROADMAP § 1`](ROADMAP.md) a se pagar sozinho. Mecanismo do lado do código (`ai:loaded`/`ai:unload`, seams `LoadedFn`/`UnloadFn`): skill [`ai`](../.claude/skills/ai/SKILL.md).
 
 ---
 
