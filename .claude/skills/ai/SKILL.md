@@ -11,7 +11,7 @@ description: A camada de IA do crivo — a fronteira de rede injetável (ChatFn/
 
 O que decide escolha, em uma linha cada: `gemma3:4b` é o **default** e o único com visão · `gemma3:1b` é o fallback de baixa RAM · `qwen2.5-coder:3b` é o candidato a default do NL→SQL (único que junta código e folga de RAM) · `qwen3:4b` é o único com `thinking`, e o cache mais caro da frota. Ficha técnica completa de cada um (peso, teto, KV/token): [`docs/reference/models/`](../../../docs/reference/models/README.md) — esta skill decide qual usar, aquele diretório decide o custo de usá-lo.
 
-⚠️ **Ao sondar o Ollama, um modelo residente por vez.** `keep_alive` de no máximo 1, e descarregar explicitamente com `keep_alive: 0` entre medidas — o default é 5 minutos, então modelos se acumulam em silêncio ao longo de sondas sucessivas, e dois residentes nesta máquina é *swap*. `ollama ps` vazio antes de começar e ao terminar. `/api/tags` e `/api/show` são metadados e **não** carregam nada, então catálogo é sempre seguro; o que exige o protocolo é inferência. Carregar o `gemma3:4b` do disco frio custa **~50 s**, o preço real de trocar de modelo.
+⚠️ **Ao sondar o Ollama, um modelo residente por vez.** `keep_alive` de no máximo 1, e descarregar explicitamente com `keep_alive: 0` entre medidas — o default é 5 minutos, então modelos se acumulam em silêncio ao longo de sondas sucessivas, e dois residentes nesta máquina é *swap*. `ollama ps` vazio antes de começar e ao terminar. `/api/tags` e `/api/show` são metadados e **não** carregam nada, então catálogo é sempre seguro; o que exige o protocolo é inferência (a diferença de conteúdo entre os dois — a armadilha de capacidade — é a seção *Capacidades*, abaixo). Carregar o `gemma3:4b` do disco frio custa **~50 s**, o preço real de trocar de modelo.
 
 ## A fronteira de rede é injetável, e é por isso que `core/` testa sem Ollama instalado
 
@@ -30,6 +30,10 @@ Todo seam **lança** em vez de devolver `Result` — quem classifica a exceção
 - **`RAM_MARGIN_BYTES = 512 MiB`** — subtraído **antes** da divisão por token, não é custo fixo: tira poucos milhares de tokens de um modelo 3B e a existência inteira de um 7B (D15.10, duas medidas já usadas).
 - **`growingLayers`** — todas as camadas crescem com `num_ctx` **sem** sliding window ativa; **uma só** cresce com ela ativa (empírico, `gemma3:4b`, fator 1,07 medido). A janela é comparada ao **teto do próprio modelo**, nunca ao `numCtx` candidato sendo calculado — senão a função seria recursiva sobre a própria saída (D15.8).
 - **`contextCeiling(model, freeBytes, marginBytes)`** — `min(teto treinado, o que a máquina aguenta)`. `null` quando falta teto treinado **ou** dado de atenção — nunca inventa um número. `phi4-mini` declara 131072, que é 16 GB de cache numa máquina de 16 GB: oferecer só o teto treinado é o erro que parece honesto e não é.
+
+⚠️ **Um `num_ctx` pequeno não é rede de segurança: o Ollama descarta o começo do prompt em silêncio quando ele não cabe** — 1.850 tokens contra `num_ctx: 512` respondeu normalmente, `prompt_eval_count` voltou 259, os 1.500 tokens que sumiram não geraram erro nem aviso (`ARMADILHAS.md` § *O Ollama descarta o começo do prompt em silêncio, e `num_ctx` não é o botão que parece*). É o motivo de fundo de `GATE_MARGIN` e de `budgetFor.fits` recusar **antes** de enviar (D15.5) — num caminho onde o provedor decide sozinho o que descartar, o perigo não é a exceção, é o sucesso silencioso.
+
+⚠️ **`readAttention()` devolve `null` para arquitetura híbrida (Mamba/atenção), não só para embedder.** `granite4:3b`/`granite4:3b-h` reportam `attention.head_count_kv: null` de verdade (não ausente) junto de um bloco `ssm.*` completo — `readAttention` exige os três campos juntos e cai no mesmo caminho hoje reservado a um embedder. Se um modelo dessa arquitetura entrar na frota, o orçamento de contexto não erra a conta: **não faz conta nenhuma**, em silêncio, como se o modelo não tivesse custo de contexto — o comentário do código já previa dois casos (embedder, formato novo); este é o terceiro, e o perigoso, porque o modelo **é** conversacional (`ARMADILHAS.md` § *`readAttention()` devolve `null` para arquitetura híbrida Mamba/atenção*). Nenhum candidato desta arquitetura está na frota hoje — não corrigido.
 
 ⚠️ **`freeBytes` é lido no momento da chamada.** Esta máquina varia ~3 GB conforme o que mais roda (`CLAUDE.md` § Máquina e modelos locais); uma reserva feita ociosa nunca encolhe sozinha — é isso que a trava de janela (abaixo) existe para não deixar acontecer em silêncio.
 
@@ -99,7 +103,7 @@ Os três adaptadores implementam o mesmo `ChatFn`, mas o formato de fio diverge;
 | Papel de sistema | `role: 'system'` dentro de `messages` | `systemInstruction` **fora** de `contents`; sem `role: 'system'` interno | `role: 'system'` (OpenAI-compatible) |
 | Papel do assistente | `'assistant'` | `'model'` | `'assistant'` |
 | Sinal de "pensar" | `think: onThinking !== undefined` | `includeThoughts: true` dentro de `thinkingConfig` | `thinking: { type: 'enabled' \| 'disabled' }` |
-| Raciocínio no fio | campo irmão `message.thinking`, antes de `message.content` — nunca no mesmo campo | mesmo array `parts`, distinguido por `part.thought === true` | campo irmão `delta.reasoning_content` |
+| Raciocínio no fio | campo irmão `message.thinking`, antes de `message.content` — nunca no mesmo campo (`ARMADILHAS.md` § *`message.thinking` do Ollama é campo irmão de `content`, nunca lido*) | mesmo array `parts`, distinguido por `part.thought === true` | campo irmão `delta.reasoning_content` |
 | Disponibilidade | ping real (`/api/version`) | "há chave guardada", nunca um ping de verdade | idem Gemini |
 | Autenticação | nenhuma (localhost) | header `x-goog-api-key` | header `authorization: Bearer` |
 
