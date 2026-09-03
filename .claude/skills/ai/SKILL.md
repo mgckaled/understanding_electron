@@ -144,3 +144,7 @@ Três timeouts distintos, cada um medido: `PING_TIMEOUT_MS = 10s` (disponibilida
 `core/ai/` é puro — nível 1, sem Electron, sem rede real (a fronteira `ChatFn`/`ProbeFn`/etc. é o seam injetado). `main/features/ai/handlers.ts` é nível 3 (função exportada, dependências por parâmetro, skill `testing`). Os três adaptadores em `main/features/ai/providers/` têm teste próprio contra fixtures de linha de fio (NDJSON/SSE), não contra o serviço real — a sonda ao vivo (como a do motivo de parada, acima) é verificação separada, feita uma vez e documentada, não repetida a cada `pnpm test`.
 
 ⚠️ **Um teste "não escreve `numCtx` quando não há janela" passava porque o campo nem é renderizado nesse estado** — o código antigo também passaria (caso real, skill `testing`). Ao testar orçamento/janela, prove o **estado final** que o defeito inverteria, não a ausência de uma chamada.
+
+## O corte do arco 21, e o que falta
+
+21-A, 21-B, 21-C-A, 21-C-B e 21-C-C estão implementados — o conteúdo acima já reflete o código real deles (motivo de parada, faixas de contexto, ancoramento pós-fato). **21-C-B e 21-C-C têm verificação ao vivo pendente** (fica com o usuário, `plan/active/`), o que não bloqueia o nascimento desta skill: a lógica já está no código, só a confirmação final ao vivo falta. **21-D, quando nascer, escreve nesta skill** — não gera mais um documento solto em `reference/`.
