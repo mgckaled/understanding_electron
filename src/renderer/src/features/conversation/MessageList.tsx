@@ -18,7 +18,8 @@ import TurnActions from './TurnActions'
 // apart because the user's own cancel and a deadline are different facts.
 const STOPPED_LABEL: Record<MessageStopped, string> = {
   cancelled: 'interrompida por você',
-  timeout: 'interrompida por tempo esgotado'
+  timeout: 'interrompida por tempo esgotado',
+  'context-exhausted': 'parou: a janela de contexto encheu antes de terminar'
 }
 
 // Binds one answer's code blocks to the draft panel. Its own component so the

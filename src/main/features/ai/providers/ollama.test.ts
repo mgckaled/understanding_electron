@@ -174,6 +174,22 @@ describe('ollamaChat', () => {
     expect('promptTokens' in result).toBe(false)
   })
 
+  it('marks a reply that stopped because num_ctx filled up (21-C-B)', async () => {
+    stubChatStream(['{"message":{"content":"parcial"},"done":true,"done_reason":"length"}\n'])
+
+    const result = await ollamaChat(messages, { model: 'qwen3:4b' })
+
+    expect(result).toEqual({ content: 'parcial', stopped: 'context-exhausted' })
+  })
+
+  it('does not mark a reply that finished on its own', async () => {
+    stubChatStream(['{"message":{"content":"pronto"},"done":true,"done_reason":"stop"}\n'])
+
+    const result = await ollamaChat(messages, { model: 'qwen3:4b' })
+
+    expect('stopped' in result).toBe(false)
+  })
+
   it('sends think: false when the caller does not ask for reasoning', async () => {
     const fetchMock = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
     await ollamaChat(messages, { model: 'qwen3:4b' })

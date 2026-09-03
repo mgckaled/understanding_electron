@@ -32,6 +32,11 @@ async function upstreamErrorFor(response: Response): Promise<UpstreamError> {
 type OllamaChatLine = {
   message?: { role: string; content: string; thinking?: string }
   done?: boolean
+  // 'length' when num_ctx filled before generation finished (21-C-B) — this
+  // app never sets num_predict, so that is the only way this app ever sees
+  // 'length' here. Confirmed live: the window does not hard-stop generation
+  // immediately, but the final line still reports it cleanly.
+  done_reason?: string
   error?: string
   // Only on the final line — the exact token count the model actually read. See
   // ChatReply.promptTokens for why it is the only exact count and the truncation signal.
@@ -247,6 +252,7 @@ export const ollamaChat: ChatFn = async (
               ? {}
               : { promptTokens: parsed.prompt_eval_count }),
             ...(parsed.eval_count === undefined ? {} : { evalTokens: parsed.eval_count }),
+            ...(parsed.done_reason === 'length' ? { stopped: 'context-exhausted' as const } : {}),
             ...nativeDurations(parsed)
           }
         }

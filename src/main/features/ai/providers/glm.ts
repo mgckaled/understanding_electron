@@ -12,7 +12,10 @@ const GLM_ENDPOINT = 'https://api.z.ai/api/paas/v4/chat/completions'
 // "data: [DONE]". The final content-bearing line carries `usage` alongside
 // `finish_reason` — not a separate line, unlike Ollama's NDJSON.
 type GlmChunk = {
-  choices?: { delta?: { content?: string; reasoning_content?: string } }[]
+  choices?: {
+    delta?: { content?: string; reasoning_content?: string }
+    finish_reason?: string | null
+  }[]
   usage?: { prompt_tokens?: number; completion_tokens?: number }
 }
 
@@ -62,6 +65,9 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
     let buffer = ''
     let promptTokens: number | undefined
     let evalTokens: number | undefined
+    // 'length' when the window filled before generation finished (21-C-B) —
+    // arrives on the last content-bearing chunk, ahead of [DONE].
+    let finishedByLength = false
 
     try {
       for (;;) {
@@ -84,7 +90,8 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
               content: assembled,
               ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
               ...(promptTokens === undefined ? {} : { promptTokens }),
-              ...(evalTokens === undefined ? {} : { evalTokens })
+              ...(evalTokens === undefined ? {} : { evalTokens }),
+              ...(finishedByLength ? { stopped: 'context-exhausted' as const } : {})
             }
           }
 
@@ -103,6 +110,7 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
             promptTokens = chunk.usage.prompt_tokens
             evalTokens = chunk.usage.completion_tokens
           }
+          if (chunk.choices?.[0]?.finish_reason === 'length') finishedByLength = true
         }
       }
     } finally {
@@ -115,7 +123,8 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
       content: assembled,
       ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
       ...(promptTokens === undefined ? {} : { promptTokens }),
-      ...(evalTokens === undefined ? {} : { evalTokens })
+      ...(evalTokens === undefined ? {} : { evalTokens }),
+      ...(finishedByLength ? { stopped: 'context-exhausted' as const } : {})
     }
   }
 }

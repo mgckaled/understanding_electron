@@ -264,6 +264,26 @@ describe('makeGeminiChat', () => {
     expect('promptTokens' in result).toBe(false)
   })
 
+  it('marks a reply that stopped because the window filled up (21-C-B)', async () => {
+    stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"parcial"}]},"finishReason":"MAX_TOKENS"}]}\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result).toEqual({ content: 'parcial', stopped: 'context-exhausted' })
+  })
+
+  it('does not mark a reply that finished on its own', async () => {
+    stubStream([
+      'data: {"candidates":[{"content":{"parts":[{"text":"pronto"}]},"finishReason":"STOP"}]}\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect('stopped' in result).toBe(false)
+  })
+
   it('throws UpstreamError on a non-2xx response', async () => {
     stubStream([], { ok: false, status: 401 })
 

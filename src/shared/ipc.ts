@@ -239,6 +239,13 @@ export type ChatReply = {
   nativeEvalDurationMs?: number
   /** Assembled reasoning trace, only when the caller asked for it (arco 21). */
   reasoning?: string
+  /**
+   * Set when the provider's own done/finish reason says the window filled
+   * before the model was finished generating (21-C-B) — distinct from
+   * `MessageStopped`'s other two values, which come from an interrupted CALL
+   * (an AppError), not a reply that resolved normally but got cut short.
+   */
+  stopped?: 'context-exhausted'
 }
 
 export type AiAvailability = {
@@ -619,7 +626,7 @@ export type MessageRole = z.infer<typeof messageRoleSchema>
  * "I cancelled" — and the partial still informs the next turn, which on a
  * GPU-less CPU is forty seconds of generation not thrown away.
  */
-export const messageStoppedSchema = z.enum(['cancelled', 'timeout'])
+export const messageStoppedSchema = z.enum(['cancelled', 'timeout', 'context-exhausted'])
 export type MessageStopped = z.infer<typeof messageStoppedSchema>
 
 export const messageSchema = z.object({

@@ -18,7 +18,10 @@ function streamUrl(model: string): string {
 // One line of the Gemini SSE stream. Same candidate shape whether streamed
 // or not — confirmed via Context7 against the official REST reference.
 type GeminiChunk = {
-  candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[]
+  candidates?: {
+    content?: { parts?: { text?: string; thought?: boolean }[] }
+    finishReason?: string
+  }[]
   usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }
 }
 
@@ -108,6 +111,8 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     let buffer = ''
     let promptTokens: number | undefined
     let evalTokens: number | undefined
+    // 'MAX_TOKENS' when the window filled before generation finished (21-C-B).
+    let finishedByLength = false
 
     try {
       for (;;) {
@@ -149,6 +154,7 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
             promptTokens = chunk.usageMetadata.promptTokenCount
             evalTokens = chunk.usageMetadata.candidatesTokenCount
           }
+          if (chunk.candidates?.[0]?.finishReason === 'MAX_TOKENS') finishedByLength = true
         }
       }
     } finally {
@@ -159,7 +165,8 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
       content: assembled,
       ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
       ...(promptTokens === undefined ? {} : { promptTokens }),
-      ...(evalTokens === undefined ? {} : { evalTokens })
+      ...(evalTokens === undefined ? {} : { evalTokens }),
+      ...(finishedByLength ? { stopped: 'context-exhausted' as const } : {})
     }
   }
 }

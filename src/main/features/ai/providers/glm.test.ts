@@ -174,6 +174,26 @@ describe('makeGlmChat', () => {
     expect('promptTokens' in result).toBe(false)
   })
 
+  it('marks a reply that stopped because the window filled up (21-C-B)', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"content":"parcial"},"finish_reason":"length"}]}\n\ndata: [DONE]\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'glm-4.7-flash' })
+
+    expect(result).toEqual({ content: 'parcial', stopped: 'context-exhausted' })
+  })
+
+  it('does not mark a reply that finished on its own', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"content":"pronto"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'glm-4.7-flash' })
+
+    expect('stopped' in result).toBe(false)
+  })
+
   it('throws UpstreamError on a non-2xx response', async () => {
     stubStream([], { ok: false, status: 401 })
 

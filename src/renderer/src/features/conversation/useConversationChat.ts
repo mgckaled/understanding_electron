@@ -180,7 +180,14 @@ export function useConversationChat(
         // Addressed to the conversation captured at send time, never whichever is
         // active when the reply lands: switching mid-stream must not drop the
         // answer into the wrong transcript. Model is on the message (D13.4).
-        append(conversationId, { role: 'assistant', parts: replyParts, model })
+        append(conversationId, {
+          role: 'assistant',
+          parts: replyParts,
+          model,
+          // A resolved call, not an interrupted one (21-C-B) — the window
+          // filled mid-generation, but the provider still answered normally.
+          ...(result.value.stopped === undefined ? {} : { stopped: result.value.stopped })
+        })
         return
       }
 
