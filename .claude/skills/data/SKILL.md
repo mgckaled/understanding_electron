@@ -33,7 +33,7 @@ Efeito prático em quem adiciona um formato de dataset novo: a ordem do anexo se
 
 ## `memory_limit` é um retrato de agora, não um número a copiar
 
-`DUCKDB_MEMORY_LIMIT = '2GB'` em `core/duckdb/config.ts` — remedido ao vivo no 18-A (5,54 GB livres de 15,81 GB, sem Ollama residente), não copiado do `ESCOPO.md`. DuckDB derrama para `temp_directory` acima do limite — errar para baixo é lento, não quebrado. **Não reaproveite este número sem remedir a RAM livre da máquina de novo** — mesmo princípio do `CLAUDE.md` § Máquina e modelos locais.
+`DUCKDB_MEMORY_LIMIT = '2GB'` em `core/duckdb/config.ts` — remedido ao vivo no 18-A (5,54 GB livres de 15,81 GB, sem Ollama residente — orçamento de RAM de modelo é da skill [`ai`](../ai/SKILL.md)), não copiado do `ESCOPO.md`. DuckDB derrama para `temp_directory` acima do limite — errar para baixo é lento, não quebrado. **Não reaproveite este número sem remedir a RAM livre da máquina de novo** — mesmo princípio do `CLAUDE.md` § Máquina e modelos locais.
 
 ## Extensão `excel`: vendorizada, carregada por caminho local, travada por versão
 

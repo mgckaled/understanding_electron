@@ -43,7 +43,7 @@ Nível 5 usa `electron-playwright-helpers`: `findLatestBuild('dist')` + `parseEl
 
 A regra vale em todos os cinco níveis, e é mais fácil de violar do que parece — dois casos reais do projeto:
 
-- Um teste de "modelo com visão" passava contra uma implementação **errada** (buscar chave por sufixo `.context_length`), só porque o Ollama calhava de devolver as chaves numa ordem favorável. O caso certo não provava a regra; provava a ordem.
+- Um teste de "modelo com visão" passava contra uma implementação **errada** (buscar chave por sufixo `.context_length`), só porque o Ollama calhava de devolver as chaves numa ordem favorável. O caso certo não provava a regra; provava a ordem — o `readInfo` real e a armadilha completa são da skill [`ai`](../ai/SKILL.md).
 - Um teste "não escreve `numCtx` quando não há janela" passava porque o campo nem é renderizado nesse estado, logo nada dispara `blur` — **o código antigo também passaria**. Nasceu vacuoso e foi removido.
 
 - Um teste de "o atalho **não** dispara com `Ctrl+Shift+B`" passava com a guarda de modificador **removida**. Asserção síncrona de **ausência** logo depois do evento é vacuosa por construção: o estado mudaria no tique seguinte e a consulta já teria respondido "não há nada". **A forma que prova** é afirmar o **estado final** de algo que o efeito indesejado teria invertido — aqui, disparar o atalho de verdade em seguida e exigir que o painel abra, já que um disparo espúrio o teria deixado fechado.

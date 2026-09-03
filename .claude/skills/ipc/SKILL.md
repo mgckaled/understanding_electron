@@ -115,7 +115,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `document` | `pick`, `attach` | sim |
 | `image` | `pick`, `attach`, `bytes` | sim |
 | `job` | `cancel`, `list` | não |
-| `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` | sim |
+| `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` — lógica do lado do provedor: skill [`ai`](../ai/SKILL.md) | sim |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings` | não |
 | `draft` | `list`, `create`, `update`, `remove` | não |
 | `export` | `save` | **sim** — arquivo em uso, permissão e disco cheio são estados que a interface desenha |
