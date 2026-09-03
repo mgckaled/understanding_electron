@@ -197,13 +197,13 @@ Durante a auditoria de ago/2026, `electron-builder` passou a falhar com `EBUSY: 
 ### Extensão `encodings` do DuckDB (windows-1252 e +1000 codificações) — o bloqueio de configuração caiu, falta vendorizar
 O motor hoje só lê `utf-8`/`utf-16`/`latin-1` nativamente (medido: nem `latin-1` aceita todo byte — ver [`HISTORY`](HISTORY.md) § armadilhas). A extensão `encodings` cobriria `windows-1252` de verdade e a maioria dos casos reais de planilha brasileira. **O 18-F (ago/2026) já abriu esse caminho** — `extensionPaths` é `string[]`, `buildDuckDbStartupCommands` já carrega mais de uma (`config.test.ts` cobre duas entradas), `resources/duckdb-extensions/` é convenção, e `scripts/fetch-duckdb-excel-extension.mjs` é rerodável trocando só o nome da extensão. O que falta é mecânico, não arquitetural: vendorizar `encodings.duckdb_extension` (mesma D18F.1 — instância `:memory:` sem config restrita, `INSTALL`/`LOAD`, copiar o binário) e decidir se o fallback silencioso de latin-1 acima passa a avisar o usuário — "as duas pendências se resolvem com o mesmo trabalho de abrir o contrato" já dito acima continua valendo. **Preço a considerar antes de vendorizar uma segunda extensão:** `excel.duckdb_extension` sozinha pesa 22.704.662 bytes (22,7 MB) — duas binários desse porte no git somam ~45 MB, número a registrar quando a decisão for tomada, não a redescobrir.
 
-### Arquivos acima da régua de tamanho, remedidos em 02/09/2026 (21-A)
+### Arquivos acima da régua de tamanho, remedidos em 03/09/2026 (complemento 21-C-A)
 
 | Arquivo | Linhas | Teto | Situação |
 |---|---|---|---|
-| `ConversationView.tsx` | **357** | 400 | dentro do teto de novo — a costura do 21-A (streamingReasoning) coube sem reestourar |
-| `useConversationChat.ts` | **225** | 120 | estourado desde o plano 15, cresceu mais no 21-A (streamingReasoning, wantsReasoning); razão de não dividir junto da trava segue a mesma (seria uma segunda variável) |
-| `useRespondingLoop.ts` | **122** | 120 | limítrofe — renomeado de `useThinkingLoop.ts` no 21-A Passo 1 (D21A.4), linhas inalteradas |
+| `ConversationView.tsx` | **354** | 400 | dentro do teto — a fiação do `anchor` (complemento 21-C-A) não empurrou além do que a linha anterior já ocupava |
+| `useConversationChat.ts` | **313** | 120 | estourado desde o plano 15 (225 em 02/09), **cresceu 88 linhas no complemento 21-C-A** — o state e a hidratação do `anchor` (achado do advisor: sem hidratar do histórico carregado, reabrir uma conversa voltava a mostrar a estimativa linear). A razão de não dividir ("seria uma segunda variável") está ficando mais cara a cada sessão que toca o arquivo — se a próxima extensão crescer mais, considerar separar a lógica de calibração/anchor (`charsPerToken`/`anchor`, hoje ~40 linhas coesas) do `send()` propriamente dito, em vez de adiar de novo |
+| `useRespondingLoop.ts` | **126** | 120 | estourado por 6 linhas — não tocado nesta sessão, cresceu em sessão anterior sem remedição; registrado agora só porque a tabela estava sendo remedida de qualquer forma |
 
 A régua diz **divide-se ao tocar** — nenhum destes é varredura a fazer agora; o gatilho é a próxima extensão de cada um. Registrados aqui porque violação não registrada vira teto que ninguém acredita. O `main/index.ts` está em **exatamente 100**, no teto sem exceção.
 
