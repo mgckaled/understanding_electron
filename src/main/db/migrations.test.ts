@@ -79,6 +79,41 @@ describe('schema v4', () => {
   })
 })
 
+describe('schema v5', () => {
+  // A message written before v5 has no prompt_tokens/eval_tokens columns to
+  // read from — they must come back NULL, which toMessage (rows.ts) already
+  // treats as an absent key, same discipline as `model`/`stopped`.
+  function withV4Message(): DatabaseSync {
+    const db = new DatabaseSync(':memory:')
+    migrate(db, migrations.slice(0, 4))
+    db.prepare(
+      'INSERT INTO conversations (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)'
+    ).run('c1', 'Vendas', 1000, 1000)
+    db.prepare(
+      'INSERT INTO messages (id, conversation_id, role, parts, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('m1', 'c1', 'assistant', '[]', 1000)
+    return db
+  }
+
+  it('reads a message written before v5 with no token counts at all', () => {
+    const db = withV4Message()
+
+    migrate(db, migrations)
+
+    const row = db.prepare('SELECT prompt_tokens, eval_tokens FROM messages WHERE id = ?').get('m1')
+    expect(row?.['prompt_tokens']).toBeNull()
+    expect(row?.['eval_tokens']).toBeNull()
+    db.close()
+  })
+
+  it('climbs to the top of the ladder', () => {
+    const db = withV4Message()
+
+    expect(migrate(db, migrations)).toBe(migrations.length)
+    db.close()
+  })
+})
+
 describe('schema v1', () => {
   it('cascades a conversation delete down to its messages', () => {
     const db = withConversation()

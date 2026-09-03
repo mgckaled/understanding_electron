@@ -9,7 +9,7 @@ import type {
   MessagePart
 } from '@shared/ipc'
 import { calibrateRatio, DEFAULT_CHARS_PER_TOKEN } from '@core/ai/budget'
-import { imageCountOf, toChatMessages } from '@core/ai/messages'
+import { anchorFromHistory, imageCountOf, toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
 import { useJobReasoning } from '../../shared/hooks/useJobReasoning'
@@ -51,6 +51,14 @@ export function useConversationChat(
    * smoothing before a turn even finishes.
    */
   charsPerToken: number
+  /**
+   * The last turn's real prompt_eval_count, chars sent for it, and images it
+   * already covered (21-C, "ancoramento pós-fato") — the meter estimates only
+   * what changed SINCE this point, instead of re-deriving the whole history
+   * through the ratio every render, which multiplies any ratio error across
+   * chars a previous turn already measured exactly.
+   */
+  anchor: { tokens: number; chars: number; imageCount: number } | undefined
   send: (
     prompt: string,
     attachment: AttachmentPart | null,
@@ -69,15 +77,42 @@ export function useConversationChat(
   // calibrateRatio blend the very first real sample toward it instead of
   // accepting the sample outright.
   const [charsPerToken, setCharsPerToken] = useState<number | undefined>(undefined)
+  const [anchor, setAnchor] = useState<
+    { tokens: number; chars: number; imageCount: number } | undefined
+  >(undefined)
   // This hook does not remount on conversation switch (lastRequestId's own
   // docstring above says so, on purpose, for the in-flight surface) — so
-  // without this, conversation A's density would decay into B's estimate
-  // (0.6ⁿ per turn) instead of B starting fresh. Same render-time
-  // state-compare as `prevThinking` in ReasoningDisclosure.tsx (21-B).
+  // without this, conversation A's density (and anchor) would leak into B's
+  // estimate instead of B starting fresh. Same render-time state-compare as
+  // `prevThinking` in ReasoningDisclosure.tsx (21-B).
   const [prevActiveId, setPrevActiveId] = useState(activeId)
+  // Which conversation's anchor was last rebuilt from its LOADED transcript —
+  // not a boolean, because switching again before the messages query resolves
+  // must not skip the hydration once it does. Without this, re-opening a
+  // conversation (or restarting the app) would show the anchor-less, "linear"
+  // estimate until the next real turn, the exact defect the anchor exists to
+  // fix (21-C). A live `send()` on THIS conversation already set the real
+  // anchor by the time this matches `activeId`, so it is never overwritten.
+  const [anchorHydratedFor, setAnchorHydratedFor] = useState<string | null>(null)
   if (activeId !== prevActiveId) {
     setPrevActiveId(activeId)
     setCharsPerToken(undefined)
+    // Explicit statement of intent, not the only thing preventing a leak:
+    // for a freshly switched, not-yet-loaded conversation the hydration
+    // branch below reaches the same `undefined` on its own next render
+    // (`anchorFromHistory([])`), which is why red-checking this line alone
+    // does not turn the leak test below red — the two branches cover the
+    // same gap from different ends. This one is what makes the window
+    // between switching and `messagesLoaded` resolving unambiguous.
+    setAnchor(undefined)
+    setAnchorHydratedFor(null)
+  } else if (
+    activeId !== null &&
+    active?.messagesLoaded === true &&
+    anchorHydratedFor !== activeId
+  ) {
+    setAnchor(anchorFromHistory(active.messages))
+    setAnchorHydratedFor(activeId)
   }
   const [jobId, setJobId] = useState<JobId | null>(null)
   const { state, run } = useAsyncAction<ChatReply>()
@@ -169,14 +204,28 @@ export function useConversationChat(
       clearStreaming()
 
       if (result.ok) {
-        // What the meter calibrates on: chars out, and the count the provider
-        // returned for them. `sentChars` misses the template's markers, so the
-        // ratio comes out low and the estimate high — the safe direction. A
-        // turn carrying an image is skipped entirely (D17.12): its flat token
-        // cost would poison the ratio for every turn after, char-based or not.
-        if (result.value.promptTokens !== undefined && imageCountOf(history) === 0) {
+        if (result.value.promptTokens !== undefined) {
           const promptTokens = result.value.promptTokens
-          setCharsPerToken((previous) => calibrateRatio(sentChars, promptTokens, previous))
+          // What the RATIO calibrates on: chars out, and the count the
+          // provider returned for them. `sentChars` misses the template's
+          // markers, so the ratio comes out low and the estimate high — the
+          // safe direction. A turn carrying an image is skipped for the
+          // ratio (D17.12): its flat token cost would poison chars-per-token
+          // for every turn after. The ANCHOR below has no such problem — it
+          // stores the exact count, never divides by it — so it updates
+          // regardless of whether an image was sent this turn.
+          if (imageCountOf(history) === 0) {
+            setCharsPerToken((previous) => calibrateRatio(sentChars, promptTokens, previous))
+          }
+          // Ancoramento pós-fato (21-C): the meter's next estimate starts
+          // from this exact, real number instead of re-deriving the WHOLE
+          // history through the ratio again — an error in the ratio then
+          // only ever multiplies the chars added SINCE this point, not the
+          // chars a previous turn already measured for real. `imageCount`
+          // travels with it so a later estimate does not ALSO add the flat
+          // per-image guess (D17.12) for an image this exact count already
+          // covers for real.
+          setAnchor({ tokens: promptTokens, chars: sentChars, imageCount: imageCountOf(history) })
         }
         // Reasoning rides ahead of text, never resent to a provider (D21A.3) —
         // it is a MessagePart, not a ChatReply field a second call reads back.
@@ -196,7 +245,15 @@ export function useConversationChat(
           model,
           // A resolved call, not an interrupted one (21-C-B) — the window
           // filled mid-generation, but the provider still answered normally.
-          ...(result.value.stopped === undefined ? {} : { stopped: result.value.stopped })
+          ...(result.value.stopped === undefined ? {} : { stopped: result.value.stopped }),
+          // The real counts the provider reported (21-C) — persisted instead
+          // of discarded after calibrating, the only place a reasoning-heavy
+          // turn's true cost is visible, since the meter itself never
+          // resends reasoning and has nothing to estimate it from.
+          ...(result.value.promptTokens === undefined
+            ? {}
+            : { promptTokens: result.value.promptTokens }),
+          ...(result.value.evalTokens === undefined ? {} : { evalTokens: result.value.evalTokens })
         })
         return
       }
@@ -249,6 +306,7 @@ export function useConversationChat(
     lastRequestId,
     state,
     charsPerToken: charsPerToken ?? DEFAULT_CHARS_PER_TOKEN,
+    anchor,
     send,
     cancel
   }

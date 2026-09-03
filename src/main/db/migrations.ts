@@ -87,4 +87,18 @@ const v4: Migration = (db) => {
   `)
 }
 
-export const migrations: readonly Migration[] = [v1, v2, v3, v4]
+// The real per-turn counts Ollama/GLM/Gemini report (21-C, live-tested finding):
+// computed to calibrate the meter's ratio and then discarded, never shown. Two
+// plain columns, same precedent as `stopped` — small numbers, no reason to open
+// `parts` JSON to read them. `eval_tokens` is generation as the provider counts
+// it: thinking and the final answer share one budget (no separate counter), so
+// a reasoning-heavy turn's real cost is only visible here, not in the meter,
+// which never resends reasoning (D21A.3) and has no reason to estimate it.
+const v5: Migration = (db) => {
+  db.exec(`
+    ALTER TABLE messages ADD COLUMN prompt_tokens INTEGER;
+    ALTER TABLE messages ADD COLUMN eval_tokens INTEGER;
+  `)
+}
+
+export const migrations: readonly Migration[] = [v1, v2, v3, v4, v5]

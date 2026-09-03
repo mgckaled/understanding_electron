@@ -77,6 +77,33 @@ export function imageCountOf(messages: Message[]): number {
   )
 }
 
+/**
+ * Rebuilds the "ancoramento pós-fato" (21-C) anchor from an already loaded
+ * transcript — opening a conversation (or restarting the app) must not fall
+ * back to re-deriving the whole history through the ratio, the exact "linear"
+ * drift the anchor exists to avoid. Walks back to the last assistant message
+ * carrying a real `promptTokens` and measures the prefix it was sent with,
+ * the same slice `send` measures live. `undefined` when no turn in this
+ * transcript has one yet (messages written before the v5 column, or a
+ * provider that reports no counters).
+ */
+export function anchorFromHistory(
+  messages: Message[]
+): { tokens: number; chars: number; imageCount: number } | undefined {
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const message = messages[index]
+    if (message.role === 'assistant' && message.promptTokens !== undefined) {
+      const prefix = messages.slice(0, index)
+      const chars = toChatMessages(prefix).reduce(
+        (total, chatMessage) => total + chatMessage.content.length,
+        0
+      )
+      return { tokens: message.promptTokens, chars, imageCount: imageCountOf(prefix) }
+    }
+  }
+  return undefined
+}
+
 // What the PROVIDER receives for one part (D16.5) — the only place a non-text
 // part materializes into content. A card is cheap (measured: 51-180 tokens at
 // 5-40 columns, plano 16 passo 0) but paid every turn, so nothing here

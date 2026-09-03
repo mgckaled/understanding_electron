@@ -344,6 +344,46 @@ describe('ConversationView — troca de conversa', () => {
     expect(await screen.findByText(/~100 de 32\.768 tokens/)).toBeInTheDocument()
   })
 
+  it("estimates B's draft from B's OWN history and the default ratio, none of A's numbers (21-C)", async () => {
+    // A's anchor is {tokens: 100000, chars: 10} — deliberately absurd so a
+    // leak would be unmistakable. B then grows its OWN history past those 10
+    // chars (a turn whose reply reports no promptTokens, so B never gets a
+    // real anchor of its own): past that point budgetFor's stale-anchor guard
+    // (finding #2 of the advisor review) no longer protects a leaked anchor
+    // either, because historyChars(B) > anchor.chars(A) reads as "not stale".
+    // Red-checked: neither the switch-time `setAnchor(undefined)` nor the
+    // hydration branch alone turns this test red when disabled — for a
+    // freshly switched, still-empty B each reaches the same `undefined` on
+    // its own (`anchorFromHistory([])`), so this proves the OUTCOME (no
+    // carry-over), not which of the two lines is load-bearing.
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: { content: 'resposta A', promptTokens: 100000 }
+    })
+    const user = userEvent.setup()
+
+    renderShell()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta A')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('resposta A')
+
+    await user.click(screen.getByRole('button', { name: 'Nova conversa' }))
+    vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'r'.repeat(2000) } })
+    await user.type(screen.getByPlaceholderText(PROMPT), 'pergunta B')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await screen.findByText('r'.repeat(2000))
+
+    fireEvent.change(screen.getByPlaceholderText(PROMPT), { target: { value: 'x'.repeat(10) } })
+
+    // Reset: 2010 history chars (B's own turn) + 10 draft chars, at the
+    // DEFAULT 3,8 ratio (B set no anchor and no ratio of its own) = 532.
+    // A leak would read ~100000-something instead, A's anchor.tokens intact.
+    expect(await screen.findByText(/~532 de 32\.768 tokens/)).toBeInTheDocument()
+  })
+
   it('keeps a stream out of a conversation it does not belong to', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
@@ -852,6 +892,33 @@ describe('ConversationView — resposta interrompida', () => {
       role: 'assistant',
       stopped: 'context-exhausted'
     })
+  })
+
+  it('shows the real prompt/eval token counts the provider reported (21-C)', async () => {
+    // The number the meter itself can never show, by design (D21A.3: reasoning
+    // is never resent, so the meter has nothing to estimate it from) — the
+    // only honest place to see what a reasoning-heavy turn actually cost.
+    const user = userEvent.setup()
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: {
+        content: 'resposta curta',
+        reasoning: 'um raciocínio bem mais longo que a resposta',
+        promptTokens: 289,
+        evalTokens: 502
+      }
+    })
+
+    renderView()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    expect(
+      await screen.findByText('Prompt: 289 · Geração (raciocínio + resposta): 502 tokens')
+    ).toBeInTheDocument()
   })
 })
 

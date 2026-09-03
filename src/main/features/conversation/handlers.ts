@@ -27,7 +27,7 @@ export function readMessages(
 ): Message[] {
   return db
     .prepare(
-      `SELECT id, role, parts, created_at, model, stopped FROM messages
+      `SELECT id, role, parts, created_at, model, stopped, prompt_tokens, eval_tokens FROM messages
        WHERE conversation_id = ? ORDER BY created_at, id`
     )
     .all(conversationId)
@@ -104,8 +104,8 @@ export function appendMessage(
     if (Number(touched.changes) === 0) return
 
     db.prepare(
-      `INSERT INTO messages (id, conversation_id, role, parts, created_at, model, stopped)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO messages (id, conversation_id, role, parts, created_at, model, stopped, prompt_tokens, eval_tokens)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       message.id,
       conversationId,
@@ -113,7 +113,9 @@ export function appendMessage(
       JSON.stringify(message.parts),
       message.createdAt,
       message.model ?? null,
-      message.stopped ?? null
+      message.stopped ?? null,
+      message.promptTokens ?? null,
+      message.evalTokens ?? null
     )
   })
 }

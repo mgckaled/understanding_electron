@@ -423,6 +423,8 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | 21-C-C | [D21C.9](plan/active/21-C-C-faixas-fixas-de-contexto.md) | `Slider` sai do repositório — único chamador era `ContextSlider`, mesmo precedente do DS-8 |
 | 21-C-C | [D21C.10](plan/active/21-C-C-faixas-fixas-de-contexto.md) | `exposesReasoning()` desliga o switch de raciocínio só para Gemini — `hasCapability` continua `true` |
 | 21-C-C | [D21C.11](plan/active/21-C-C-faixas-fixas-de-contexto.md) | Migração para a Interactions API do Gemini documentada, não implementada — causa do D21A.10 fechada via Context7 |
+| 21-C-A | [D21C.12](plan/active/21-C-A-orcamento-de-geracao.md) | `promptTokens`/`evalTokens` reais persistidos (migração `v5`), não descartados após calibrar — legenda visível em `MessageList.tsx` |
+| 21-C-A | [D21C.13](plan/active/21-C-A-orcamento-de-geracao.md) | Ancoramento pós-fato: `budgetFor` estima só o delta desde a última medição real; `anchorFromHistory()` hidrata ao reabrir conversa; ignorado quando `removeMessage` encolhe a história abaixo do anchor |
 
 ---
 

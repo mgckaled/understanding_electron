@@ -95,6 +95,17 @@ function MessageList({
               // says less, it is not an error.
               <span className="text-2xs text-warn-text">{STOPPED_LABEL[message.stopped]}</span>
             )}
+            {message.evalTokens !== undefined && (
+              // The real counts the provider reported (21-C) — the only place
+              // a reasoning-heavy turn's true cost is visible: the meter never
+              // resends reasoning (D21A.3), so it has nothing to show for it.
+              <span className="text-2xs text-text-faint select-text">
+                {message.promptTokens !== undefined &&
+                  `Prompt: ${message.promptTokens.toLocaleString('pt-BR')} · `}
+                {reasoning !== null ? 'Geração (raciocínio + resposta)' : 'Geração'}:{' '}
+                {message.evalTokens.toLocaleString('pt-BR')} tokens
+              </span>
+            )}
             <TurnActions text={messageText(message)} messageId={message.id} />
           </li>
         )

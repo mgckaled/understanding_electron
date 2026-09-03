@@ -36,6 +36,8 @@ type ComposerProps = {
   charsPerToken: number
   /** Whether `limit` is a real local RAM window (21-C-A) — passed straight through to budgetFor. */
   costed: boolean
+  /** The last turn's real prompt_eval_count, chars, and images it already covered (21-C, ancoramento pós-fato). */
+  anchor: { tokens: number; chars: number; imageCount: number } | undefined
   /** How many image parts the transcript already carries — folded into the flat image cost (D17.12) and the vision gate below (D17.11). */
   historyImageCount: number
   /** The conversation's resolved model, or null — the send-side half of the vision gate (D17.11); the compose-side half lives in AttachButton. */
@@ -59,6 +61,7 @@ function Composer({
   limit,
   charsPerToken,
   costed,
+  anchor,
   historyImageCount,
   model,
   modelSelector
@@ -76,6 +79,11 @@ function Composer({
   // Images contribute no chars (D17.5) but a fixed token cost each (D17.12) —
   // history's already-sent images plus the one about to be attached, if any.
   const imageCount = historyImageCount + (attachment?.kind === 'image' ? 1 : 0)
+  // Only images NOT already folded into `anchor.tokens` (21-C) get the flat
+  // guess — an image the anchor's own real prompt_eval_count already covers
+  // would otherwise be charged twice: once for real inside the anchor, once
+  // again as a 270-token estimate on top.
+  const newImageCount = Math.max(0, imageCount - (anchor?.imageCount ?? 0))
   // The real on/off toggle (21-C-A) — NOT exposesReasoning (21-C-C): Gemini
   // spends thinking tokens regardless of what this app can show, but it is
   // excluded from the reserve below anyway because it is never `costed`.
@@ -88,9 +96,10 @@ function Composer({
           draftChars: draft.length + attachmentChars,
           limit,
           charsPerToken,
-          flatTokens: imageCount * IMAGE_TOKEN_ESTIMATE,
+          flatTokens: newImageCount * IMAGE_TOKEN_ESTIMATE,
           costed,
-          reasoningActive
+          reasoningActive,
+          anchor
         })
 
   // The gate (D15.5): nothing is truncated in silence — when the next turn will

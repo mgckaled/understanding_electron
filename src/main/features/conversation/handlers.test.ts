@@ -196,6 +196,34 @@ describe('appendMessage', () => {
     expect(readMessages({ conversationId: 'c1' }, db)[0]).not.toHaveProperty('stopped')
   })
 
+  it('round-trips the real promptTokens/evalTokens the provider reported (21-C)', () => {
+    appendMessage(
+      {
+        conversationId: 'c1',
+        message: message({
+          role: 'assistant',
+          model: 'gemma3:4b',
+          promptTokens: 289,
+          evalTokens: 502
+        })
+      },
+      db
+    )
+
+    expect(readMessages({ conversationId: 'c1' }, db)[0]).toMatchObject({
+      promptTokens: 289,
+      evalTokens: 502
+    })
+  })
+
+  it('omits promptTokens/evalTokens entirely when the provider reported no counters', () => {
+    appendMessage({ conversationId: 'c1', message: message({ role: 'assistant' }) }, db)
+
+    const stored = readMessages({ conversationId: 'c1' }, db)[0]
+    expect(stored).not.toHaveProperty('promptTokens')
+    expect(stored).not.toHaveProperty('evalTokens')
+  })
+
   it('omits model entirely when the message carries none', () => {
     appendMessage({ conversationId: 'c1', message: message() }, db)
 

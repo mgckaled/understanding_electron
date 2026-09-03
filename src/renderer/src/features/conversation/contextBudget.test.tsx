@@ -99,11 +99,14 @@ describe('context budget', () => {
     // formula reports 40: exactly the count of the question alone.
     expect(await screen.findByText(/~240 de 32\.768 tokens/)).toBeInTheDocument()
 
-    // Second turn (21-C-A): a dense reply on its own would push the ratio to
-    // 5 chars/token (500 chars / 100 tokens) — an outright overwrite would
-    // read ~140, and no update at all would still read ~350. The EMA blends
-    // the two (2 * 0.6 + 5 * 0.4 = 3,2), landing on neither: 700 chars now in
-    // the transcript at 3,2 chars/token is ~219.
+    // Second turn (21-C): the ratio EMA blends toward 3,2 chars/token
+    // (2 * 0.6 + 5 * 0.4, 500 chars / 100 tokens observed) — but the anchor
+    // from turn 1 (500 chars = exactly 100 real tokens, just measured) means
+    // only the 200 NEW chars since then get estimated through that ratio,
+    // not the whole 700. A ratio applied to the whole history would read
+    // ~219 (700 / 3,2) — overcounting the already-known 500 chars as if they
+    // were still at the drifted 3,2 density, when they are exactly 100.
+    // Anchored: 100 (real) + ceil(200 / 3,2) = 100 + 63 = 163.
     vi.mocked(api.ai.chat).mockResolvedValue({
       ok: true,
       value: { content: 's'.repeat(200), promptTokens: 100 }
@@ -111,7 +114,7 @@ describe('context budget', () => {
     await paste(user, 'q'.repeat(20))
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
-    expect(await screen.findByText(/~219 de 32\.768 tokens/)).toBeInTheDocument()
+    expect(await screen.findByText(/~163 de 32\.768 tokens/)).toBeInTheDocument()
   })
 
   it('sends when the turn fits', async () => {

@@ -127,8 +127,16 @@ function ConversationView(): React.JSX.Element {
       ? contextWindow.numCtx
       : null
 
-  const { streaming, streamingReasoning, lastRequestId, state, send, cancel, charsPerToken } =
-    useConversationChat(service, model, settings.numThread, numCtx ?? undefined)
+  const {
+    streaming,
+    streamingReasoning,
+    lastRequestId,
+    state,
+    send,
+    cancel,
+    charsPerToken,
+    anchor
+  } = useConversationChat(service, model, settings.numThread, numCtx ?? undefined)
   const thinking = streamingReasoning !== '' && streaming === ''
   const phase: 'connecting' | 'thinking' | 'responding' =
     streaming !== '' ? 'responding' : thinking ? 'thinking' : 'connecting'
@@ -264,6 +272,7 @@ function ConversationView(): React.JSX.Element {
         limit={numCtx}
         charsPerToken={charsPerToken}
         costed={costed}
+        anchor={anchor}
         historyImageCount={imageCountOf(messages)}
         model={current ?? null}
         // A render-prop, not a plain element (DS4.8): `budget` only exists inside

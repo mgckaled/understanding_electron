@@ -206,6 +206,55 @@ describe('budgetFor', () => {
     expect(budget.fits).toBe(true)
     expect(budget.messageAloneOverflows).toBe(false)
   })
+
+  it('estimates only the chars added since the anchor, not the whole history (21-C, ancoramento pós-fato)', () => {
+    // 1000 known chars measured for real at 50 tokens (a dense ratio no
+    // longer reflected by the current 4 chars/token) — 200 new chars on top,
+    // at the CURRENT ratio. A whole-history estimate would read
+    // ceil(1200/4) = 300; anchored, the known part stays exactly 50.
+    const budget = budgetFor({
+      ...base,
+      historyChars: 1200,
+      draftChars: 0,
+      anchor: { tokens: 50, chars: 1000 }
+    })
+
+    expect(budget.estimated).toBe(50 + 50) // 50 known + ceil(200/4)
+  })
+
+  it('estimates the whole history when there is nothing since the anchor yet', () => {
+    const budget = budgetFor({
+      ...base,
+      historyChars: 1000,
+      draftChars: 0,
+      anchor: { tokens: 50, chars: 1000 }
+    })
+
+    expect(budget.estimated).toBe(50)
+  })
+
+  it('ignores a stale anchor when historyChars has since dropped below it (removeMessage)', () => {
+    // A real path, not a defensive floor: removing a message can shrink the
+    // transcript below the point the anchor was measured at. The fallback is
+    // the SAME estimate an anchor-less call produces — the anchor is simply
+    // set aside until a fresh turn re-measures it, not clamped to a stale
+    // number that would over-estimate (and could wrongly refuse a send).
+    const withStaleAnchor = budgetFor({
+      ...base,
+      historyChars: 10,
+      draftChars: 0,
+      anchor: { tokens: 50, chars: 1000 }
+    })
+    const withoutAnchor = budgetFor({ ...base, historyChars: 10, draftChars: 0 })
+
+    expect(withStaleAnchor).toEqual(withoutAnchor)
+  })
+
+  it('falls back to estimating the whole history when there is no anchor yet, unchanged from before', () => {
+    expect(budgetFor({ ...base, historyChars: 1200, draftChars: 0 })).toEqual(
+      budgetFor({ ...base, historyChars: 1200, draftChars: 0, anchor: undefined })
+    )
+  })
 })
 
 /*

@@ -645,7 +645,16 @@ export const messageSchema = z.object({
    * the interface would open the JSON to know whether to draw a label. Absent
    * means the reply finished.
    */
-  stopped: messageStoppedSchema.optional()
+  stopped: messageStoppedSchema.optional(),
+  /**
+   * The real prompt_eval_count/eval_count the provider reported for this turn
+   * (21-C), persisted instead of discarded after calibrating the meter — the
+   * only place a reasoning-heavy turn's true cost is visible at all, since the
+   * meter itself never resends reasoning (D21A.3) and has nothing to show for
+   * it. Absent for a provider that reports no counters (D15.4).
+   */
+  promptTokens: z.number().int().nonnegative().optional(),
+  evalTokens: z.number().int().nonnegative().optional()
 })
 export type Message = z.infer<typeof messageSchema>
 

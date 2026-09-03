@@ -215,6 +215,21 @@ export function budgetFor(input: {
    * Gemini is excluded here anyway by `costed` being false for it.
    */
   reasoningActive?: boolean
+  /**
+   * The last turn's real prompt_eval_count and the chars that produced it
+   * (21-C, "ancoramento pós-fato") — when present, `charsPerToken` only
+   * estimates what changed SINCE this point, instead of re-deriving the
+   * WHOLE history through the ratio on every call. A ratio error then only
+   * ever multiplies the newest chars, never the chars a previous turn
+   * already measured for real. Undefined before the first reply — every
+   * existing caller/test stays correct unchanged (falls back to `historyChars`
+   * as a whole, exactly today's behavior). Also ignored (same fallback) when
+   * `historyChars` has since dropped BELOW `anchor.chars` — `removeMessage`
+   * can shrink a transcript below the point the anchor was measured at, and
+   * without this guard the estimate would freeze at the stale `anchor.tokens`
+   * instead of shrinking with the history, which can wrongly refuse a send.
+   */
+  anchor?: { tokens: number; chars: number }
 }): Budget {
   const {
     historyChars,
@@ -223,9 +238,14 @@ export function budgetFor(input: {
     charsPerToken,
     flatTokens = 0,
     costed = true,
-    reasoningActive = false
+    reasoningActive = false,
+    anchor
   } = input
-  const estimated = estimateTokens(historyChars + draftChars, charsPerToken) + flatTokens
+  const anchorStale = anchor !== undefined && anchor.chars > historyChars
+  const knownChars = anchor !== undefined && !anchorStale ? anchor.chars : 0
+  const knownTokens = anchor !== undefined && !anchorStale ? anchor.tokens : 0
+  const newChars = Math.max(0, historyChars - knownChars) + draftChars
+  const estimated = knownTokens + estimateTokens(newChars, charsPerToken) + flatTokens
   const draftAlone = estimateTokens(draftChars, charsPerToken)
   const reserve = costed && reasoningActive ? Math.floor(limit * REASONING_OUTPUT_RESERVE_RATIO) : 0
   const allowed = Math.max(0, Math.floor(limit * GATE_MARGIN) - reserve)

@@ -62,5 +62,7 @@ export function toMessage(row: Row): Message {
   // string "null" somewhere on screen.
   if (filled(row['model'])) message.model = String(row['model'])
   if (filled(row['stopped'])) message.stopped = String(row['stopped']) as MessageStopped
+  if (filled(row['prompt_tokens'])) message.promptTokens = Number(row['prompt_tokens'])
+  if (filled(row['eval_tokens'])) message.evalTokens = Number(row['eval_tokens'])
   return message
 }

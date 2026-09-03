@@ -1,5 +1,6 @@
 import type { DatasetPart, DocumentPart, ImagePart, Message, StepProposalPart } from '@shared/ipc'
 import {
+  anchorFromHistory,
   attachmentPartOf,
   imageCountOf,
   isCloudService,
@@ -162,6 +163,71 @@ describe('imageCountOf', () => {
     }
 
     expect(imageCountOf([first, message('assistant', 'ok'), second])).toBe(2)
+  })
+})
+
+describe('anchorFromHistory', () => {
+  it('returns undefined for an empty transcript', () => {
+    expect(anchorFromHistory([])).toBeUndefined()
+  })
+
+  it('returns undefined when no reply carries a real promptTokens', () => {
+    expect(anchorFromHistory([message('user', 'oi'), message('assistant', 'olá')])).toBeUndefined()
+  })
+
+  it('anchors on the one assistant reply that has promptTokens', () => {
+    const question = message('user', 'qual a capital?')
+    const reply: Message = { ...message('assistant', 'Brasília'), promptTokens: 5 }
+
+    // The prefix measured is everything BEFORE the reply — the exact slice
+    // `send` measured `sentChars` on when this turn actually went out.
+    expect(anchorFromHistory([question, reply])).toEqual({
+      tokens: 5,
+      chars: 'qual a capital?'.length,
+      imageCount: 0
+    })
+  })
+
+  it('anchors on the LAST reply with promptTokens, not the first', () => {
+    const q1 = message('user', 'primeira')
+    const r1: Message = { ...message('assistant', 'ok'), promptTokens: 10 }
+    const q2 = message('user', 'segunda pergunta')
+    const r2: Message = { ...message('assistant', 'certo'), promptTokens: 40 }
+
+    const anchor = anchorFromHistory([q1, r1, q2, r2])
+
+    expect(anchor).toEqual({
+      tokens: 40,
+      chars: 'primeira'.length + 'ok'.length + 'segunda pergunta'.length,
+      imageCount: 0
+    })
+  })
+
+  it('falls back past a trailing reply with no promptTokens (provider reported none)', () => {
+    const q1 = message('user', 'primeira')
+    const r1: Message = { ...message('assistant', 'ok'), promptTokens: 10 }
+    const q2 = message('user', 'segunda')
+    const r2 = message('assistant', 'sem contador')
+
+    expect(anchorFromHistory([q1, r1, q2, r2])).toEqual({
+      tokens: 10,
+      chars: 'primeira'.length,
+      imageCount: 0
+    })
+  })
+
+  it('counts an image already covered by the anchored prefix (D17.12)', () => {
+    const withImage: Message = {
+      ...message('user', 'o que é isso?'),
+      parts: [imagePart, { kind: 'text', text: 'o que é isso?' }]
+    }
+    const reply: Message = { ...message('assistant', 'um gráfico'), promptTokens: 300 }
+
+    expect(anchorFromHistory([withImage, reply])).toEqual({
+      tokens: 300,
+      chars: 'o que é isso?'.length,
+      imageCount: 1
+    })
   })
 })
 
