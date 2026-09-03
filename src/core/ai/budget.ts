@@ -27,11 +27,16 @@ export const IMAGE_TOKEN_ESTIMATE = 270
  * chars by it gives this conversation's real density. Falls back to the default
  * when there is nothing to learn from (including a provider with no counters).
  */
-export function calibrateRatio(sentChars: number, promptTokens: number | undefined): number {
+export function calibrateRatio(
+  sentChars: number,
+  promptTokens: number | undefined,
+  previousRatio?: number
+): number {
   if (promptTokens === undefined || promptTokens <= 0 || sentChars <= 0) {
-    return DEFAULT_CHARS_PER_TOKEN
+    return previousRatio ?? DEFAULT_CHARS_PER_TOKEN
   }
-  return sentChars / promptTokens
+  const sample = sentChars / promptTokens
+  return previousRatio === undefined ? sample : previousRatio * 0.6 + sample * 0.4
 }
 
 /** Characters to tokens, at the given density. Always rounds up. */
@@ -48,6 +53,16 @@ export function estimateTokens(chars: number, charsPerToken: number): number {
  * only reports the overflow once it has happened is not a gate, it is a report.
  */
 export const GATE_MARGIN = 0.9
+
+/**
+ * Fraction of the window reserved for what the model still has to GENERATE
+ * (response, plus reasoning when it is on) — the gate above only estimates
+ * the prompt side. Starting point (like MARK_REDUCTION in 21-B), not a
+ * measured number yet: a live sample this session (qwen3.5:2b describing an
+ * image) showed reasoning several times longer than the final answer. Tune
+ * after live testing with reasoning on.
+ */
+export const REASONING_OUTPUT_RESERVE_RATIO = 0.35
 
 /**
  * The window the app reserves when the conversation has not chosen one (D15.2).
@@ -175,11 +190,35 @@ export function budgetFor(input: {
   charsPerToken: number
   /** Flat tokens added on top of the char-based estimate — image cost (D17.12), not proportional to chars. */
   flatTokens?: number
+  /**
+   * Whether `limit` is a real local RAM window Ollama shares between prompt
+   * and generation (D15.13) — cloud's num_ctx is client-side bookkeeping
+   * only and never reaches the request body (`conversationWindow`'s own
+   * docstring), so reserving generation headroom against it is meaningless.
+   * Default true: every existing local caller/test stays correct unchanged.
+   */
+  costed?: boolean
+  /**
+   * hasCapability(model,'thinking') && wantsReasoning — the real on/off
+   * toggle. NOT `exposesReasoning` (21-C-C): whether Gemini SPENDS thinking
+   * tokens and whether this app CAN SHOW them are different questions, and
+   * Gemini is excluded here anyway by `costed` being false for it.
+   */
+  reasoningActive?: boolean
 }): Budget {
-  const { historyChars, draftChars, limit, charsPerToken, flatTokens = 0 } = input
+  const {
+    historyChars,
+    draftChars,
+    limit,
+    charsPerToken,
+    flatTokens = 0,
+    costed = true,
+    reasoningActive = false
+  } = input
   const estimated = estimateTokens(historyChars + draftChars, charsPerToken) + flatTokens
   const draftAlone = estimateTokens(draftChars, charsPerToken)
-  const allowed = Math.floor(limit * GATE_MARGIN)
+  const reserve = costed && reasoningActive ? Math.floor(limit * REASONING_OUTPUT_RESERVE_RATIO) : 0
+  const allowed = Math.max(0, Math.floor(limit * GATE_MARGIN) - reserve)
 
   return {
     estimated,

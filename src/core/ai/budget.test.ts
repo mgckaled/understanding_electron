@@ -69,6 +69,23 @@ describe('calibrateRatio', () => {
       estimateTokens(10_000, DEFAULT_CHARS_PER_TOKEN)
     )
   })
+
+  it('blends toward a new sample instead of replacing the previous ratio outright', () => {
+    // First turn: 2 chars/token, no previous — a pure sample, same as today.
+    // Second turn: 8 chars/token observed, blended 60/40 against the first —
+    // 2 * 0.6 + 8 * 0.4 = 4.4, not 8 (a straight overwrite would report 8,
+    // and a single dense/sparse turn would swing the meter every time).
+    const first = calibrateRatio(80, 40)
+    expect(first).toBe(2)
+
+    const second = calibrateRatio(80, 10, first)
+    expect(second).toBe(4.4)
+  })
+
+  it('ignores a turn with no counters when blending, keeping the previous ratio', () => {
+    expect(calibrateRatio(1000, undefined, 4)).toBe(4)
+    expect(calibrateRatio(1000, 0, 4)).toBe(4)
+  })
 })
 
 describe('budgetFor', () => {
@@ -144,6 +161,50 @@ describe('budgetFor', () => {
     })
 
     expect(budget.fits).toBe(false)
+  })
+
+  it('reserves nothing for generation by default, unchanged from before 21-C-A', () => {
+    const budget = budgetFor({ ...base, historyChars: 3000, draftChars: 0 })
+    expect(budget.fits).toBe(true)
+  })
+
+  it('reserves generation headroom only when both costed and reasoningActive are true', () => {
+    // 4096 window: unreserved allowed is 3686 (GATE_MARGIN), reserved allowed
+    // drops to 2253 (minus 35% of 4096) — 12.000 chars at 4/token is 3000
+    // tokens, which fits the first ceiling and not the second.
+    const withoutReasoning = budgetFor({ ...base, historyChars: 12_000, draftChars: 0 })
+    const notCosted = budgetFor({
+      ...base,
+      historyChars: 12_000,
+      draftChars: 0,
+      costed: false,
+      reasoningActive: true
+    })
+    const reserved = budgetFor({
+      ...base,
+      historyChars: 12_000,
+      draftChars: 0,
+      costed: true,
+      reasoningActive: true
+    })
+
+    expect(withoutReasoning.fits).toBe(true)
+    expect(notCosted.fits).toBe(true)
+    expect(reserved.fits).toBe(false)
+  })
+
+  it('never lets the reserve push allowed below zero', () => {
+    const budget = budgetFor({
+      historyChars: 0,
+      draftChars: 0,
+      limit: 10,
+      charsPerToken: 4,
+      costed: true,
+      reasoningActive: true
+    })
+
+    expect(budget.fits).toBe(true)
+    expect(budget.messageAloneOverflows).toBe(false)
   })
 })
 

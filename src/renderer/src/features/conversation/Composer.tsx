@@ -34,6 +34,8 @@ type ComposerProps = {
   /** The reserved window, or null when it cannot be known yet. */
   limit: number | null
   charsPerToken: number
+  /** Whether `limit` is a real local RAM window (21-C-A) — passed straight through to budgetFor. */
+  costed: boolean
   /** How many image parts the transcript already carries — folded into the flat image cost (D17.12) and the vision gate below (D17.11). */
   historyImageCount: number
   /** The conversation's resolved model, or null — the send-side half of the vision gate (D17.11); the compose-side half lives in AttachButton. */
@@ -56,6 +58,7 @@ function Composer({
   historyChars,
   limit,
   charsPerToken,
+  costed,
   historyImageCount,
   model,
   modelSelector
@@ -73,6 +76,10 @@ function Composer({
   // Images contribute no chars (D17.5) but a fixed token cost each (D17.12) —
   // history's already-sent images plus the one about to be attached, if any.
   const imageCount = historyImageCount + (attachment?.kind === 'image' ? 1 : 0)
+  // The real on/off toggle (21-C-A) — NOT exposesReasoning (21-C-C): Gemini
+  // spends thinking tokens regardless of what this app can show, but it is
+  // excluded from the reserve below anyway because it is never `costed`.
+  const reasoningActive = model !== null && hasCapability(model, 'thinking') && wantsReasoning
   const budget =
     limit === null
       ? null
@@ -81,7 +88,9 @@ function Composer({
           draftChars: draft.length + attachmentChars,
           limit,
           charsPerToken,
-          flatTokens: imageCount * IMAGE_TOKEN_ESTIMATE
+          flatTokens: imageCount * IMAGE_TOKEN_ESTIMATE,
+          costed,
+          reasoningActive
         })
 
   // The gate (D15.5): nothing is truncated in silence — when the next turn will

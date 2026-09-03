@@ -86,6 +86,20 @@ describe('context budget', () => {
     // characters — question plus reply — which is 240 tokens. The cancelling
     // formula reports 40: exactly the count of the question alone.
     expect(await screen.findByText(/~240 de 32\.768 tokens/)).toBeInTheDocument()
+
+    // Second turn (21-C-A): a dense reply on its own would push the ratio to
+    // 5 chars/token (500 chars / 100 tokens) — an outright overwrite would
+    // read ~140, and no update at all would still read ~350. The EMA blends
+    // the two (2 * 0.6 + 5 * 0.4 = 3,2), landing on neither: 700 chars now in
+    // the transcript at 3,2 chars/token is ~219.
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: { content: 's'.repeat(200), promptTokens: 100 }
+    })
+    await paste(user, 'q'.repeat(20))
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    expect(await screen.findByText(/~219 de 32\.768 tokens/)).toBeInTheDocument()
   })
 
   it('sends when the turn fits', async () => {

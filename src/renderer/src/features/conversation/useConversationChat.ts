@@ -8,6 +8,7 @@ import type {
   Message,
   MessagePart
 } from '@shared/ipc'
+import { calibrateRatio, DEFAULT_CHARS_PER_TOKEN } from '@core/ai/budget'
 import { imageCountOf, toChatMessages } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
@@ -44,11 +45,12 @@ export function useConversationChat(
   lastRequestId: string | null
   state: ViewState<ChatReply>
   /**
-   * The last call's two halves: the chars SENT, and the `prompt_eval_count` the
-   * provider reported for exactly them — together because a ratio built from one
-   * and a figure from another moment is not a ratio (D15.14).
+   * This conversation's own chars-per-token density, an exponential moving
+   * average advanced once per SETTLED turn (21-C-A) — not recomputed every
+   * render, which would re-blend once per streaming chunk and evaporate the
+   * smoothing before a turn even finishes.
    */
-  lastPrompt: { chars: number; tokens: number } | undefined
+  charsPerToken: number
   send: (
     prompt: string,
     attachment: AttachmentPart | null,
@@ -62,9 +64,11 @@ export function useConversationChat(
   const [streaming, setStreaming] = useState('')
   const [streamingReasoning, setStreamingReasoning] = useState('')
   const [lastRequestId, setLastRequestId] = useState<string | null>(null)
-  const [lastPrompt, setLastPrompt] = useState<{ chars: number; tokens: number } | undefined>(
-    undefined
-  )
+  // undefined, not DEFAULT_CHARS_PER_TOKEN: the default is only a display
+  // fallback (applied at the return below) — seeding it here would make
+  // calibrateRatio blend the very first real sample toward it instead of
+  // accepting the sample outright.
+  const [charsPerToken, setCharsPerToken] = useState<number | undefined>(undefined)
   const [jobId, setJobId] = useState<JobId | null>(null)
   const { state, run } = useAsyncAction<ChatReply>()
 
@@ -161,7 +165,8 @@ export function useConversationChat(
         // turn carrying an image is skipped entirely (D17.12): its flat token
         // cost would poison the ratio for every turn after, char-based or not.
         if (result.value.promptTokens !== undefined && imageCountOf(history) === 0) {
-          setLastPrompt({ chars: sentChars, tokens: result.value.promptTokens })
+          const promptTokens = result.value.promptTokens
+          setCharsPerToken((previous) => calibrateRatio(sentChars, promptTokens, previous))
         }
         // Reasoning rides ahead of text, never resent to a provider (D21A.3) —
         // it is a MessagePart, not a ChatReply field a second call reads back.
@@ -221,5 +226,13 @@ export function useConversationChat(
     if (jobId !== null) void window.api.job.cancel(jobId)
   }, [jobId])
 
-  return { streaming, streamingReasoning, lastRequestId, state, lastPrompt, send, cancel }
+  return {
+    streaming,
+    streamingReasoning,
+    lastRequestId,
+    state,
+    charsPerToken: charsPerToken ?? DEFAULT_CHARS_PER_TOKEN,
+    send,
+    cancel
+  }
 }

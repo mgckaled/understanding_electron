@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { AiModel, AiService, AppError, ConversationSettings } from '@shared/ipc'
 import { imageCountOf, toChatMessages } from '@core/ai/messages'
-import { calibrateRatio, conversationWindow } from '@core/ai/budget'
+import { conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
 import Button from '../../shared/ui/Button/Button'
@@ -127,7 +127,7 @@ function ConversationView(): React.JSX.Element {
       ? contextWindow.numCtx
       : null
 
-  const { streaming, streamingReasoning, lastRequestId, state, send, cancel, lastPrompt } =
+  const { streaming, streamingReasoning, lastRequestId, state, send, cancel, charsPerToken } =
     useConversationChat(service, model, settings.numThread, numCtx ?? undefined)
   const thinking = streamingReasoning !== '' && streaming === ''
   const phase: 'connecting' | 'thinking' | 'responding' =
@@ -145,10 +145,6 @@ function ConversationView(): React.JSX.Element {
     (total, message) => total + message.content.length,
     0
   )
-  // Generic ratio on the first turn, this conversation's own after (the exact
-  // count exists only AFTER a call, D15.4). NOT `historyChars`: it already holds
-  // the reply the measured call never sent, which cancels the formula (D15.14).
-  const charsPerToken = calibrateRatio(lastPrompt?.chars ?? 0, lastPrompt?.tokens)
   const isLoading = state.status === 'loading'
   const isReady = availability.status === 'ready'
   // The in-flight surface belongs to the conversation the request was sent
@@ -267,6 +263,7 @@ function ConversationView(): React.JSX.Element {
         historyChars={historyChars}
         limit={numCtx}
         charsPerToken={charsPerToken}
+        costed={costed}
         historyImageCount={imageCountOf(messages)}
         model={current ?? null}
         // A render-prop, not a plain element (DS4.8): `budget` only exists inside
