@@ -437,6 +437,7 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 | R-3 | [R-3](plan/implemented/R-3-sincronizacao-de-docs-e-skill-de-dados.md) | sincronização de docs pós-18/N-1 e nascimento da skill `data` |
 | R-4 | [R-4](plan/implemented/R-4-reconciliacao-das-skills-tecnicas.md) | reconciliação factual das cinco skills técnicas |
 | R-5 | [R-5](plan/implemented/R-5-indice-de-decisoes.md) | índice tabular das decisões dentro de cada plano, `DECISOES.md` |
+| R-6 | [R-6](plan/implemented/R-6-nascimento-da-skill-ai.md) | nascimento da skill `ai`, alívio dirigido de `docs/`/`CLAUDE.md`, achado real reverte hipótese sobre `reference/reasoning/` (R6.5) |
 
 ---
 
