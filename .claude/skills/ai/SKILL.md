@@ -151,4 +151,4 @@ Três timeouts distintos, cada um medido: `PING_TIMEOUT_MS = 10s` (disponibilida
 
 ## O corte do arco 21, e o que falta
 
-21-A, 21-B, 21-C-A, 21-C-B e 21-C-C estão implementados — o conteúdo acima já reflete o código real deles (motivo de parada, faixas de contexto, ancoramento pós-fato). **21-C-B e 21-C-C têm verificação ao vivo pendente** (fica com o usuário, `plan/active/`), o que não bloqueia o nascimento desta skill: a lógica já está no código, só a confirmação final ao vivo falta. **21-D, quando nascer, escreve nesta skill** — não gera mais um documento solto em `reference/`.
+21-A, 21-B, 21-C-A, 21-C-B e 21-C-C estão **implementados e verificados ao vivo** (`plan/implemented/`) — o conteúdo acima já reflete o código real deles (motivo de parada, faixas de contexto, ancoramento pós-fato). **21-D é o próximo corte do arco, ainda sem arquivo, e escreve nesta skill** quando nascer — não gera mais um documento solto em `reference/`.
