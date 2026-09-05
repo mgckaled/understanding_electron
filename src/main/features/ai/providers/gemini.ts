@@ -140,10 +140,6 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
       if (step === undefined) {
         const known = type === 'thought' || type === 'model_output'
         if (!known) console.error(`[gemini] unknown step type: ${type}, ignoring`)
-        // Temporary visibility, D21D.1: whether a `thought` step ever shows
-        // up at all is still unconfirmed live — this is the only way to
-        // learn that without guessing from the absence of other logs.
-        else console.error(`[gemini] step ${index} started as: ${type}`)
         step = { type, known, signature: '', reasoningText: '', contentText: '' }
         steps.set(index, step)
       }
@@ -330,7 +326,7 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     }
 
     if (promptTokens === undefined) {
-      console.error('[gemini] no usage_metadata seen in this turn — token counters unavailable')
+      console.error('[gemini] no usage seen in this turn — token counters unavailable')
     }
 
     return {
