@@ -403,7 +403,7 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     expect('stopped' in result).toBe(false)
   })
 
-  it('treats status: budget_exceeded as a distinct upstream error, never collapsed into context-exhausted (D21D.1)', async () => {
+  it('logs status: budget_exceeded but still returns content that already arrived, never collapsing it into context-exhausted (D21D.1)', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     stubStream([
       sse([
@@ -412,9 +412,10 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
       ])
     ])
 
-    await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toBeInstanceOf(
-      UpstreamError
-    )
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('parcial')
+    expect('stopped' in result).toBe(false)
     expect(consoleSpy).toHaveBeenCalledWith(
       '[gemini] budget_exceeded status seen — treating as upstream error, not context exhaustion'
     )
@@ -487,7 +488,8 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
     })
   })
 
-  it('grau 2: throws when a thought step closes without ever receiving a signature', async () => {
+  it('grau 1: a thought step closed without a signature is dropped, not fatal — it has no consumer until 21-D-B', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     stubStream([
       sse([
         {
@@ -499,8 +501,44 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
       ])
     ])
 
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('ok')
+    expect('reasoning' in result).toBe(false)
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[gemini] thought step closed without a signature, ignoring it'
+    )
+
+    consoleSpy.mockRestore()
+  })
+
+  it('grau 2: throws when a completed turn produced a model_output step with no text at all', async () => {
+    stubStream([
+      sse([{ event_type: 'step.start', index: 0, step: { type: 'model_output', content: [] } }])
+    ])
+
     await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
       message: 'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
+    })
+  })
+
+  it('treats a mid-stream error object (HTTP 200, error in body) as an upstream error, not a shape mismatch', async () => {
+    stubStream([sse([{ error: { message: 'quota exceeded' } }])])
+
+    await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
+      status: null,
+      message: 'quota exceeded'
+    })
+  })
+
+  it('budget_exceeded still throws when nothing usable arrived before it', async () => {
+    stubStream([
+      sse([{ event_type: 'interaction.completed', interaction: { status: 'budget_exceeded' } }])
+    ])
+
+    await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
+      message:
+        'A Interactions API sinalizou budget_exceeded antes de qualquer resposta utilizável chegar.'
     })
   })
 
