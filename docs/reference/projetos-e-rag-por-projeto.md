@@ -55,7 +55,9 @@ O custo das quatro peças **não é uniforme** — é o fio condutor do resto do
 
 Primeira leitura desta conversa (incorreta, registrada aqui para não se repetir): apliquei [`ESCOPO.md` linha 27](../ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo) — *"projeto paralelo com vida própria... ela virou outro produto"* — como se a proposta de "Projetos" fosse o exemplo que a régua recusa. **Errado.**
 
-✅ **Decidido, e a evidência que corrige a leitura:** [`ESCOPO.md § Ferramentas do chat`](../ESCOPO.md#ferramentas-do-chat) já aprova busca web, documentação (MCP) e raciocínio visível pelo mesmo teste, e essas três chegam **pelo *tool calling* do Ollama** — o mesmo padrão de "ação sob demanda, sem estado que sobreviva à conversa" que uma busca em documentos de projeto usaria. A própria régua (linha 27) permite "ação executada, contexto consumido, ou artefato que o app já sabe persistir" — system prompt de projeto e documento anexado caem no lado permitido.
+✅ **Decidido, e a evidência que corrige a leitura:** a própria régua permite *"ação executada, contexto consumido, ou artefato que o app já sabe persistir"* — prompt de sistema de projeto e documento anexado caem no lado permitido, e conversa é artefato que o app já persiste.
+
+> ⚠️ **A evidência original desta seção envelheceu, e foi substituída pela acima (6ª revisão de escopo).** Ela dizia que busca web, MCP e raciocínio visível *"chegam pelo tool calling do Ollama"*, e usava esse padrão comum como analogia para a busca em documentos de projeto. **O arco 21 derrubou a premissa:** raciocínio chega por campo nativo do fio em cada provedor, sem *tool calling* em nenhum — e o `ESCOPO.md` deixou de tratar raciocínio como ferramenta. A conclusão desta seção não dependia dessa analogia e segue de pé pelo texto literal da régua; a analogia, não. Como uma busca de projeto seria acionada é decisão do plano que a construir, não algo que este levantamento possa presumir.
 
 O que de fato dispara o teste (linha 29) é **"artefato que sobrevive fora da conversa E uma tela própria para gerenciá-lo"** — os exemplos reais recusados são "PDF anotado salvo" e "painel com filtros cruzados", ambos de natureza BI/exportação, não configuração de chat. Uma tela de projeto (nome, prompt, lista de documentos) é da mesma família de superfície que a sidebar de conversas e o seletor de modelo já são hoje.
 
@@ -145,9 +147,9 @@ LIMIT 5;
 
 Ponto levantado pelo usuário e que corrige a primeira resposta desta conversa: a proposta não é recolocar trechos recuperados numa posição fixa do prompt a cada pergunta (o design que o `HISTORY.md` já mediu como caro) — é dar ao modelo uma **ferramenta** de busca semântica com filtros, que ele aciona quando decide.
 
-✅ **Isso já é o padrão aprovado do projeto** — [`ESCOPO.md § Ferramentas do chat`](../ESCOPO.md#ferramentas-do-chat): busca web, MCP e raciocínio chegam assim. Busca em documento de projeto seria uma quarta ferramenta da mesma família, não um mecanismo novo.
+⚠️ **Corrigido na 6ª revisão de escopo — este parágrafo dizia que *"busca web, MCP e raciocínio chegam assim"*, e a segunda metade é falsa** (ver a correção na § 2). O [`ESCOPO.md § Ferramentas do chat`](../ESCOPO.md#ferramentas-do-chat) hoje registra **três** formas possíveis de acionar uma ferramenta — *tool call* do modelo, endereço fornecido pelo usuário, ou capacidade nativa do provedor de nuvem — sem eleger uma canônica. Busca em documento de projeto pode ser qualquer uma delas, e a escolha é do plano que a construir.
 
-❓ **A restrição que discrimina de verdade:** *tool calling* exige `capabilities: tools`. `gemma3:4b` — modelo padrão, único com `vision` — **não tem**. Uma conversa de projeto com busca roda a vida inteira num modelo não-padrão, ou abre mão de visão nessa conversa.
+❓ **A restrição que esta seção chamava de decisiva deixou de decidir.** O argumento era: *tool calling* exige `capabilities: tools`, e o modelo padrão com `vision` não as tem, logo uma conversa de projeto com busca abriria mão de visão. **`qwen3.5:2b` junta `vision`, `tools` e `thinking`** — a exclusão deixou de ser universal, e o que fazer com o gate é decisão de produto própria (`F-6`, [`ROADMAP § 1`](../ROADMAP.md#1-a-sequência)). A restrição continua real para *outros* modelos da frota: quais juntam o quê é de [`reference/models/`](models/README.md).
 
 ⚠️ **Aritmética de bancada, candidatos com `tools` + `nomic-embed-text` (274 MB), contra as três faixas de RAM livre medidas ([`CLAUDE.md`](../../CLAUDE.md): ~9 GB só Electron · ~7,5 GB só VS Code · ~6 GB sessão típica):**
 

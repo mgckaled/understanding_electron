@@ -38,7 +38,7 @@ O que faz as duas conviverem é o limite do que cada uma grava: instrumentação
 
 Eixos, inventário e o critério de qual armazenamento recebe o quê: [`reference/observatory/`](reference/observatory/README.md).
 
-> **Caso em aberto, ainda sem veredito:** agrupar conversas num "projeto" com prompt de sistema e busca semântica dedicados — o padrão de "Projects" do Claude Desktop/ChatGPT — foi levantado e cruza este teste de um jeito que ainda não fechou. Prompt de sistema e documento anexado por projeto caem do lado permitido (contexto consumido, artefato que o app já sabe persistir); o que decide é quanto da superfície de gerência (biblioteca de documentos, status de reindexação, seletor de embedder) de fato exige tela própria, e quanto é extensão do que já existe. Sem compromisso de construir — levantamento completo em [`reference/projetos-e-rag-por-projeto.md`](reference/projetos-e-rag-por-projeto.md).
+O caso que mais exercita os dois testes ao mesmo tempo é o **projeto** — agrupar conversas sob contexto comum. Ele passa em parte e é recusado em parte, e por isso tem [seção própria](#projeto-agrupar-conversas).
 
 ---
 
@@ -140,6 +140,20 @@ Três regras decorrem, e as três existem para o aplicativo não engordar em sil
 > **O anexo é guardado por conteúdo, não por caminho.** O arquivo é copiado para `userData/attachments/<hash>` e a conversa guarda a referência. Ao contrário do resultado, os bytes de um PDF **não** são rederiváveis — o arquivo original pode ter sido movido, renomeado ou apagado —, então guardar o caminho seria guardar uma promessa. Guardar por hash traz dois efeitos de graça: o mesmo arquivo anexado duas vezes ocupa espaço uma vez, e excluir uma conversa precisa conferir se outro anexo ainda aponta para aquele hash.
 
 > **Resultado passa por verificação antes de virar resposta.** Coluna inteiramente nula, zero linhas, conversão que anulou tudo — cada um vira **aviso visível**, nunca uma tabela apresentada como se estivesse certa. SQL válido que executa sem erro e devolve a resposta errada é o modo de falha que o usuário não tem como detectar sozinho.
+
+---
+
+## Projeto: agrupar conversas
+
+**No escopo, ainda não construído.** Um projeto reúne várias conversas sob um contexto comum: um nome, um prompt de sistema próprio, e um conjunto de documentos que vale para todas as conversas dele.
+
+Pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo), isso cai inteiro do lado permitido — prompt de sistema e documento anexado são *contexto consumido*, e conversa é artefato que o aplicativo já sabe persistir. O projeto não inventa um objeto novo; ele **escopa** os que já existem.
+
+O que fica de fora é a **gerência do índice** como superfície: biblioteca de documentos com estado de reindexação, escolha de embedder, painel de índice. Aí o objeto deixa de ser contexto e vira coisa a administrar, com tela própria — o outro lado do mesmo teste.
+
+> ⚠️ **Projeto não implica busca semântica.** As duas nascem juntas em outras ferramentas, e isso faz parecer que uma exige a outra. Enquanto os documentos de um projeto couberem no [teto por documento](#o-teto-do-documento-é-tempo-não-tamanho), mandá-los inteiros é **melhor** que recuperar trechos: o trecho recuperado muda a cada pergunta e descarta o cache de prefixo, enquanto o documento inteiro paga uma vez. A busca semântica entra pelo gatilho que ela já tem — o documento que estoura aquele teto —, e esse gatilho vale igual para conversa avulsa.
+
+**Aprendizado sobre o dado (agrupar, detectar anomalia, imputar) não pertence aqui**, e sim ao pilar de dados: ele opera sobre dataset, não sobre conversa. Estado e ordem das três frentes: [`ROADMAP § 1`](ROADMAP.md#1-a-sequência); o levantamento que decompõe custo e alternativas, em [`reference/projetos-e-rag-por-projeto.md`](reference/projetos-e-rag-por-projeto.md).
 
 ---
 
