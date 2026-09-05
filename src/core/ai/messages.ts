@@ -52,6 +52,18 @@ export function reasoningPartOf(message: Message): ReasoningPart | null {
 }
 
 /**
+ * Chars of every persisted reasoning trace with a signature, resent as a
+ * Gemini thought step (D21D.9) — kept separate from {@link partForProvider},
+ * which stays `''` for reasoning (D21D.7), so the two are never both counted.
+ */
+export function reasoningResendChars(messages: Message[]): number {
+  return messages.reduce((total, message) => {
+    const part = reasoningPartOf(message)
+    return part?.signature === undefined ? total : total + part.text.length
+  }, 0)
+}
+
+/**
  * Every attachment in the transcript, oldest first (DF3B.2).
  *
  * Derived from {@link attachmentPartOf} rather than re-scanning parts, so
@@ -94,11 +106,11 @@ export function anchorFromHistory(
     const message = messages[index]
     if (message.role === 'assistant' && message.promptTokens !== undefined) {
       const prefix = messages.slice(0, index)
-      const chars = toChatMessages(prefix).reduce(
-        (total, chatMessage) => total + chatMessage.content.length,
-        0
-      )
-      return { tokens: message.promptTokens, chars, imageCount: imageCountOf(prefix) }
+      return {
+        tokens: message.promptTokens,
+        chars: historyCharsOf(prefix),
+        imageCount: imageCountOf(prefix)
+      }
     }
   }
   return undefined
@@ -153,6 +165,20 @@ export function toChatMessages(messages: Message[]): ChatMessage[] {
 }
 
 /**
+ * What `budgetFor`'s `historyChars` means everywhere it is computed —
+ * {@link toChatMessages} content plus {@link reasoningResendChars} — so the
+ * three call sites (Composer, `useConversationChat`, `anchorFromHistory`)
+ * never drift onto different totals (D21D.9).
+ */
+export function historyCharsOf(messages: Message[]): number {
+  const contentChars = toChatMessages(messages).reduce(
+    (total, message) => total + message.content.length,
+    0
+  )
+  return contentChars + reasoningResendChars(messages)
+}
+
+/**
  * Same translation as {@link toChatMessages}, plus base64 image bytes
  * (D17.5) — async and main-only: a sandboxed renderer has no `fs` to read
  * `userData/attachments/<hash>` with. `resolveImageBytes` is injected, same
@@ -165,15 +191,29 @@ export async function toChatMessagesWithImages(
 ): Promise<ChatMessage[]> {
   const result: ChatMessage[] = []
   for (const message of messages) {
+    const reasoning = reasoningPartOf(message)
+    const reasoningSignatures: ChatMessage['reasoningSignatures'] =
+      reasoning?.signature === undefined
+        ? undefined
+        : [{ text: reasoning.text, signature: reasoning.signature }]
     const imageParts = message.parts.filter((part): part is ImagePart => part.kind === 'image')
     if (imageParts.length === 0) {
-      result.push({ role: message.role, content: contentOf(message) })
+      result.push({
+        role: message.role,
+        content: contentOf(message),
+        ...(reasoningSignatures === undefined ? {} : { reasoningSignatures })
+      })
       continue
     }
     const images = await Promise.all(
       imageParts.map(async (part) => (await resolveImageBytes(part.hash)).toString('base64'))
     )
-    result.push({ role: message.role, content: contentOf(message), images })
+    result.push({
+      role: message.role,
+      content: contentOf(message),
+      images,
+      ...(reasoningSignatures === undefined ? {} : { reasoningSignatures })
+    })
   }
   return result
 }

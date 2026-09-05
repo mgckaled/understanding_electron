@@ -181,7 +181,9 @@ export const chatMessageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant']),
   content: z.string(),
   /** Base64-encoded image bytes (plano 17, D17.5) — populated by the main-side materializer only; no consumer yet. */
-  images: z.array(z.string()).optional()
+  images: z.array(z.string()).optional(),
+  /** Signed reasoning blocks to resend as Gemini `thought` steps (D21D.8) — populated only from a `ReasoningPart` that carries a `signature`; Ollama/GLM ignore it, like `images` outside `vision`. */
+  reasoningSignatures: z.array(z.object({ text: z.string(), signature: z.string() })).optional()
 })
 export type ChatRole = ChatMessage['role']
 export type ChatMessage = z.infer<typeof chatMessageSchema>
@@ -239,6 +241,8 @@ export type ChatReply = {
   nativeEvalDurationMs?: number
   /** Assembled reasoning trace, only when the caller asked for it (arco 21). */
   reasoning?: string
+  /** The reasoning trace's signature (D21D.6) — set only when the provider actually returned one; never fabricated. */
+  reasoningSignature?: string
   /**
    * Set when the provider's own done/finish reason says the window filled
    * before the model was finished generating (21-C-B) — distinct from
@@ -600,10 +604,11 @@ export const stepProposalPartSchema = z.object({
 })
 export type StepProposalPart = z.infer<typeof stepProposalPartSchema>
 
-/** The model's reasoning trace for one assistant turn (arco 21, D21A.3) — never sent back to a provider (core/ai/messages.ts). */
+/** The model's reasoning trace for one assistant turn (arco 21, D21A.3) — never sent back as text (core/ai/messages.ts); `signature` (D21D.6), when present, is resent as a Gemini `thought` step instead. */
 export const reasoningPartSchema = z.object({
   kind: z.literal('reasoning'),
-  text: z.string()
+  text: z.string(),
+  signature: z.string().optional()
 })
 export type ReasoningPart = z.infer<typeof reasoningPartSchema>
 
