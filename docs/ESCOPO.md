@@ -22,7 +22,7 @@ Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa,
 
 ## O teste que separa pilar de produto novo
 
-Um chat multiuso corre um risco que uma bancada de dados sozinha não corre: toda ideia parece caber, porque "está dentro da mesma conversa" é critério fraco demais para recusar coisa nenhuma. A régua precisa ser mecânica, não de gosto — e são **duas**, porque há dois tipos de capacidade.
+Um chat multiuso corre um risco que uma ferramenta de um pilar só não corre: toda ideia parece caber, porque "está dentro da mesma conversa" é critério fraco demais para recusar coisa nenhuma. A régua precisa ser mecânica, não de gosto — e são **duas**, porque há dois tipos de capacidade.
 
 **A primeira governa tudo que produz ou consome conteúdo do usuário:**
 
@@ -172,7 +172,7 @@ O modelo precisa saber o bastante para ser útil e o mínimo para ser seguro. S�
 O nível 2 é o `SUMMARIZE` do DuckDB, e é o que produz uma avaliação de qualidade digna do nome. As regras:
 
 - **Top-N só para coluna de baixa cardinalidade.** Os cinco valores mais frequentes de `cidade` são estatística; os cinco mais frequentes de `cpf` são vazamento com outro nome. O limiar é relativo à contagem de linhas, e a decisão mora em `core/`, nunca ao lado de um chamador — ver [`ARMADILHAS.md`](ARMADILHAS.md).
-- **O nível 3 é opt-in por anexo, em qualquer provedor.** Local (Ollama, na sua máquina) libera a um clique; nuvem pede o mesmo opt-in, sem bloqueio adicional — quem decide o que sai da máquina, anexo por anexo, é o usuário (revisão de escopo, 5ª, ago/2026).
+- **O nível 3 é opt-in por anexo, em qualquer provedor.** Local (Ollama, na sua máquina) libera a um clique; nuvem pede o mesmo opt-in, sem bloqueio adicional — quem decide o que sai da máquina, anexo por anexo, é o usuário.
 - **Um cartão de dados só.** `core/ai/dataCard.ts` produz um objeto, consumido por todos os caminhos — conversa, consulta, passos, busca. Contexto montado por feature é como se produzem duas qualidades de resposta sobre o mesmo arquivo.
 
 ### Documento e imagem são nível 3 por construção
@@ -347,11 +347,11 @@ Daí a regra que vale sempre, independentemente do tamanho do arquivo:
 
 Adotada desde o início, ela custa zero e o teto passa a ser o disco. Retrofitada depois, é reescrever todo caminho de dados. É também a resposta para o custo da pré-visualização na conversa: ela é sempre uma página, tenha o arquivo 15 linhas ou 2 GB.
 
-**Configuração decorrente:** `memory_limit` do DuckDB fixado explicitamente — não o padrão de 80% da RAM, que brigaria com o Chromium do próprio app — e `temp_directory` apontando para `userData/duckdb-tmp`, para que o derramamento tenha onde acontecer. O valor de `memory_limit` é remedido contra a RAM livre da máquina no momento da implementação, não copiado de sessão em sessão — no plano 18-A (ago/2026) ficou em `2GB`, abaixo do ~4 GB antes escrito aqui; ver [`plan/implemented/18-A-motor-e-worker.md`](plan/implemented/18-A-motor-e-worker.md) § D18A.4.
+**Configuração decorrente:** `memory_limit` do DuckDB fixado explicitamente — não o padrão de 80% da RAM, que brigaria com o Chromium do próprio app — e `temp_directory` apontando para `userData/duckdb-tmp`, para que o derramamento tenha onde acontecer. O valor de `memory_limit` é remedido contra a RAM livre da máquina no momento da implementação, nunca copiado de um documento para outro; ver [`plan/implemented/18-A-motor-e-worker.md`](plan/implemented/18-A-motor-e-worker.md) § D18A.4.
 
 ### O teto do documento é tempo, não tamanho
 
-Dado tabular tem teto de bytes; documento tem teto de **segundos de prefill**, e ele é muito mais baixo. Medido contra o Ollama real em ago/2026, na máquina registrada em [`CLAUDE.md`](../CLAUDE.md) — CPU sem aceleração, `gemma3:4b`:
+Dado tabular tem teto de bytes; documento tem teto de **segundos de prefill**, e ele é muito mais baixo. Medido contra o Ollama real na máquina registrada em [`CLAUDE.md`](../CLAUDE.md) — CPU sem aceleração, `gemma3:4b`:
 
 | | |
 |---|---|
@@ -388,7 +388,7 @@ Isso não é gratuito, e as três consequências ficam registradas agora:
 
 ## Exportação da resposta como arquivo
 
-Diferente do documento **anexado** — que só entra como contexto e nunca produz saída (ver [Duas classes de arquivo](#duas-classes-de-arquivo-e-a-linha-entre-elas)) —, a **resposta do modelo**, sob pedido explícito do usuário, pode virar um arquivo novo. São objetos diferentes: um é o material que o usuário trouxe para dentro da conversa; o outro é o que a conversa produziu. Confundir os dois foi o erro da terceira revisão de escopo que esta seção corrige.
+Diferente do documento **anexado** — que só entra como contexto e nunca produz saída (ver [Duas classes de arquivo](#duas-classes-de-arquivo-e-a-linha-entre-elas)) —, a **resposta do modelo**, sob pedido explícito do usuário, pode virar um arquivo novo. São objetos diferentes: um é o material que o usuário trouxe para dentro da conversa; o outro é o que a conversa produziu. Confundi-los é o erro que esta seção existe para prevenir.
 
 **Por que isto é pilar, não produto novo.** O teste da seção acima já admite *"dado tratado e exportado"* como artefato que sobrevive fora da conversa sem precisar de estado próprio — mesma categoria de um `.parquet` exportado pelo verbo *tratar*. Um `.docx` salvo no disco do usuário não pede tela de gerência dentro do app.
 
