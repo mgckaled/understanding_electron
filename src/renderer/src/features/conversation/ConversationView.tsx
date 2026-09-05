@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { AiModel, AiService, AppError, ConversationSettings } from '@shared/ipc'
-import { imageCountOf, toChatMessages } from '@core/ai/messages'
+import { historyCharsOf, imageCountOf } from '@core/ai/messages'
 import { conversationWindow } from '@core/ai/budget'
 import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
@@ -147,12 +147,9 @@ function ConversationView(): React.JSX.Element {
 
   // What the next send would carry: the whole transcript, since the provider
   // is stateless and every turn resends everything. Routed through
-  // toChatMessages, not messageText — a dataset part has no text, so summing
+  // historyCharsOf, not messageText — a dataset part has no text, so summing
   // messageText would count a card's hundreds of chars as zero (D16.5).
-  const historyChars = toChatMessages(messages).reduce(
-    (total, message) => total + message.content.length,
-    0
-  )
+  const historyChars = historyCharsOf(messages)
   const isLoading = state.status === 'loading'
   const isReady = availability.status === 'ready'
   // The in-flight surface belongs to the conversation the request was sent

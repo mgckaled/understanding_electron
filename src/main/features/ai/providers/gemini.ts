@@ -21,17 +21,26 @@ function contentOf(message: ChatMessage): unknown[] {
   return [...imageParts, { type: 'text', text: message.content }]
 }
 
-// D21D.8/D21D.8.1 (21-D-B) will insert reconstructed `thought` entries ahead
-// of a `model_output` here, read from `ChatMessage.reasoningSignatures` — the
-// flat list this app has never persisted from Google's own steps[] (D21D.5.1).
+// D21D.8.1: a signed reasoning trace is reconstructed as its own `thought`
+// step, ahead of the `model_output` step for that same turn — the order the
+// stateless Interactions API expects steps concatenated in (D21D.5.1).
 function toInteractionsInput(messages: ChatMessage[]): unknown[] {
   return messages
     .filter((message) => message.role !== 'system')
-    .map((message) =>
-      message.role === 'assistant'
-        ? { type: 'model_output', content: [{ type: 'text', text: message.content }] }
-        : { type: 'user_input', content: contentOf(message) }
-    )
+    .flatMap((message): unknown[] => {
+      if (message.role !== 'assistant') {
+        return [{ type: 'user_input', content: contentOf(message) }]
+      }
+      const thoughts = (message.reasoningSignatures ?? []).map((signed) => ({
+        type: 'thought',
+        signature: signed.signature,
+        summary: [{ text: signed.text }]
+      }))
+      return [
+        ...thoughts,
+        { type: 'model_output', content: [{ type: 'text', text: message.content }] }
+      ]
+    })
 }
 
 function systemInstructionOf(messages: ChatMessage[]): string | undefined {
@@ -290,16 +299,18 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
 
     let content = ''
     let reasoning = ''
+    let reasoningSignature = ''
     let sawModelOutput = false
     for (const step of steps.values()) {
       if (!step.known) continue
       if (step.type === 'thought') {
-        // The text is shown regardless of signature — nothing in this plan
-        // persists or resends a signature yet (that is 21-D-B), so an absent
-        // one has no consumer to protect. Only the signature itself is
-        // skipped when missing, never the reasoning a real turn produced.
+        // The text is shown regardless of signature — an absent one has no
+        // consumer to protect (D21D.3.7). The last non-empty signature seen
+        // wins if a turn ever produces more than one thought step (D21D.8).
         if (step.signature === '') {
           console.error('[gemini] thought step closed without a signature')
+        } else {
+          reasoningSignature = step.signature
         }
         reasoning += step.reasoningText
       } else if (step.type === 'model_output') {
@@ -332,6 +343,7 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     return {
       content,
       ...(reasoning === '' ? {} : { reasoning }),
+      ...(reasoningSignature === '' ? {} : { reasoningSignature }),
       ...(promptTokens === undefined ? {} : { promptTokens }),
       ...(evalTokens === undefined ? {} : { evalTokens }),
       ...(stopped === undefined ? {} : { stopped })

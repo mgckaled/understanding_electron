@@ -9,7 +9,7 @@ import type {
   MessagePart
 } from '@shared/ipc'
 import { calibrateRatio, DEFAULT_CHARS_PER_TOKEN } from '@core/ai/budget'
-import { anchorFromHistory, imageCountOf, toChatMessages } from '@core/ai/messages'
+import { anchorFromHistory, historyCharsOf, imageCountOf } from '@core/ai/messages'
 import { useAsyncAction } from '../../shared/hooks/useAsyncAction'
 import { useJobChunks } from '../../shared/hooks/useJobChunks'
 import { useJobReasoning } from '../../shared/hooks/useJobReasoning'
@@ -175,16 +175,13 @@ export function useConversationChat(
       const draftMessage: Message = { id: 'draft', role: 'user', parts, createdAt: 0 }
       // ai:chat now carries Message[] (D17.5) — main materializes it, since a
       // future image part needs bytes this sandboxed renderer cannot read.
-      // toChatMessages stays useful here regardless: it is still how sentChars
+      // historyCharsOf stays useful here regardless: it is still how sentChars
       // is measured, on the exact payload this call is about to send.
       const history: Message[] = [...previous, draftMessage]
       // Measured HERE, on the payload, and not recomputed from the transcript
       // afterwards: by then the transcript also holds the reply, which this call
       // did not send (D15.14).
-      const sentChars = toChatMessages(history).reduce(
-        (total, message) => total + message.content.length,
-        0
-      )
+      const sentChars = historyCharsOf(history)
 
       append(conversationId, { role: 'user', parts })
       clearStreaming()
@@ -227,13 +224,20 @@ export function useConversationChat(
           // covers for real.
           setAnchor({ tokens: promptTokens, chars: sentChars, imageCount: imageCountOf(history) })
         }
-        // Reasoning rides ahead of text, never resent to a provider (D21A.3) —
-        // it is a MessagePart, not a ChatReply field a second call reads back.
+        // Reasoning rides ahead of text, never resent as text to a provider
+        // (D21A.3) — its `signature` (D21D.6), when the provider returned
+        // one, is what gemini.ts resends as a `thought` step instead.
         const replyParts: MessagePart[] =
           result.value.reasoning === undefined
             ? [{ kind: 'text', text: result.value.content }]
             : [
-                { kind: 'reasoning', text: result.value.reasoning },
+                {
+                  kind: 'reasoning',
+                  text: result.value.reasoning,
+                  ...(result.value.reasoningSignature === undefined
+                    ? {}
+                    : { signature: result.value.reasoningSignature })
+                },
                 { kind: 'text', text: result.value.content }
               ]
         // Addressed to the conversation captured at send time, never whichever is
