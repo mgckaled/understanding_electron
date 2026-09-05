@@ -1,6 +1,6 @@
 # Plano 21-D-B — assinatura do raciocínio: persistência, reenvio e orçamento
 
-> Segundo de dois planos que promovem o gatilho parado no [`ROADMAP § 121`](../../ROADMAP.md). Depende do [`21-D-A`](../implemented/21-D-A-interactions-api-o-parser-novo.md) (endpoint e parser novos) já fechado — este plano assume que `gemini.ts` já fala com a Interactions API e já extrai `reasoning`/`signature` de um `thought` step.
+> Segundo de dois planos que promovem o gatilho parado no [`ROADMAP § 121`](../../ROADMAP.md). Depende do [`21-D-A`](../implemented/21-D-A-interactions-api-o-parser-novo.md) (endpoint e parser novos) já fechado — este plano assume que `gemini.ts` já fala com a Interactions API e já extrai `reasoning`/`signature` de um `thought` step. **Concluído em 05/09/2026** — implementado por completo; verificação ao vivo do reenvio propriamente dito fica pendente de o Gemini algum dia devolver uma `signature` real (nunca observada em todo o 21-D-A/21-D-B).
 
 ## Contexto
 

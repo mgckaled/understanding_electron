@@ -1,6 +1,6 @@
 # Plano 21-D-A — Interactions API do Gemini: endpoint e parser novos
 
-> Primeiro de dois planos que promovem o gatilho parado no [`ROADMAP § 121`](../../ROADMAP.md) — "alguém precisar do raciocínio visível do Gemini de verdade". Decisão do usuário: promover agora, em vez de deixar o gatilho aberto sem número, com um requisito adicional — o parser não pode quebrar em silêncio se o contrato mudar de novo. **Concluído em 05/09/2026, verificado ao vivo.** Segundo plano: [`21-D-B`](../active/21-D-B-signature-resend-e-orcamento.md) (persistência/reenvio da `signature`), ainda não implementado.
+> Primeiro de dois planos que promovem o gatilho parado no [`ROADMAP § 121`](../../ROADMAP.md) — "alguém precisar do raciocínio visível do Gemini de verdade". Decisão do usuário: promover agora, em vez de deixar o gatilho aberto sem número, com um requisito adicional — o parser não pode quebrar em silêncio se o contrato mudar de novo. **Concluído em 05/09/2026, verificado ao vivo.** Segundo plano: [`21-D-B`](21-D-B-signature-resend-e-orcamento.md) (persistência/reenvio da `signature`), implementado no mesmo dia — reenvio em si segue não verificável ao vivo (nenhuma `signature` real chegou do Gemini).
 
 ## Contexto
 
