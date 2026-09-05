@@ -1,6 +1,7 @@
 import { afterEach, vi } from 'vitest'
-import type { ChatMessage } from '@shared/ipc'
+import type { ChatMessage, Message } from '@shared/ipc'
 import { UpstreamError } from '@core/ai/types'
+import { toChatMessagesWithImages } from '@core/ai/messages'
 import { makeGeminiChat, makeGeminiProbe } from './gemini'
 
 const messages: ChatMessage[] = [{ role: 'user', content: 'oi' }]
@@ -220,6 +221,32 @@ describe('makeGeminiChat — request shape', () => {
       type: 'thought',
       signature: 'sig-2',
       summary: [{ text: 'Segundo' }]
+    })
+  })
+
+  it('resends a signed reasoning trace end to end, from a persisted Message through toChatMessagesWithImages into a real thought step', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
+    const history: Message[] = [
+      { id: 'm1', role: 'user', parts: [{ kind: 'text', text: 'oi' }], createdAt: 0 },
+      {
+        id: 'm2',
+        role: 'assistant',
+        parts: [
+          { kind: 'reasoning', text: 'Pensando', signature: 'sig-live' },
+          { kind: 'text', text: 'olá' }
+        ],
+        createdAt: 1
+      }
+    ]
+    const chatMessages = await toChatMessagesWithImages(history, vi.fn())
+
+    await chat(chatMessages, { model: 'gemini-3.7-flash' })
+
+    const input = requestBody(fetchMock).input as { type: string }[]
+    expect(input).toContainEqual({
+      type: 'thought',
+      signature: 'sig-live',
+      summary: [{ text: 'Pensando' }]
     })
   })
 
