@@ -4,26 +4,7 @@ import { UpstreamError } from '@core/ai/types'
 import { GEMINI_MODELS } from '@core/ai/models'
 import { describeUpstreamError } from '@core/ai/upstreamError'
 
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
-
-// Legacy streamGenerateContent + ?alt=sse (Context7, N-1-C) — NOT the newer
-// "Interactions" API, which wants server-side previous_interaction_id and
-// would break the stateless full-history-resend model this app uses for
-// every provider. ?alt=sse is what turns the response into real "data:
-// {...}" lines instead of a plain chunked JSON array.
-function streamUrl(model: string): string {
-  return `${GEMINI_BASE}/${model}:streamGenerateContent?alt=sse`
-}
-
-// One line of the Gemini SSE stream. Same candidate shape whether streamed
-// or not — confirmed via Context7 against the official REST reference.
-type GeminiChunk = {
-  candidates?: {
-    content?: { parts?: { text?: string; thought?: boolean }[] }
-    finishReason?: string
-  }[]
-  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number }
-}
+const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions'
 
 // ESCOPO.md normalizes every image to PNG or JPEG, so the first bytes suffice.
 function imageMimeType(base64: string): 'image/png' | 'image/jpeg' {
@@ -31,28 +12,30 @@ function imageMimeType(base64: string): 'image/png' | 'image/jpeg' {
   return first === 0x89 && second === 0x50 ? 'image/png' : 'image/jpeg'
 }
 
-function partsOf(message: ChatMessage): unknown[] {
+function contentOf(message: ChatMessage): unknown[] {
   const imageParts = (message.images ?? []).map((data) => ({
-    inlineData: { mimeType: imageMimeType(data), data }
+    type: 'image',
+    mime_type: imageMimeType(data),
+    data
   }))
-  return [...imageParts, { text: message.content }]
+  return [...imageParts, { type: 'text', text: message.content }]
 }
 
-// Gemini uses role 'model', not 'assistant', and has no 'system' role inside
-// `contents` — a system message goes in the separate `systemInstruction`
-// field. The two real differences from GLM's OpenAI-compatible shape.
-function toGeminiContents(messages: ChatMessage[]): unknown[] {
+// D21D.8/D21D.8.1 (21-D-B) will insert reconstructed `thought` entries ahead
+// of a `model_output` here, read from `ChatMessage.reasoningSignatures` — the
+// flat list this app has never persisted from Google's own steps[] (D21D.5.1).
+function toInteractionsInput(messages: ChatMessage[]): unknown[] {
   return messages
     .filter((message) => message.role !== 'system')
-    .map((message) => ({
-      role: message.role === 'assistant' ? 'model' : 'user',
-      parts: partsOf(message)
-    }))
+    .map((message) =>
+      message.role === 'assistant'
+        ? { type: 'model_output', content: [{ type: 'text', text: message.content }] }
+        : { type: 'user_input', content: contentOf(message) }
+    )
 }
 
-function systemInstructionOf(messages: ChatMessage[]): unknown | undefined {
-  const system = messages.find((message) => message.role === 'system')
-  return system === undefined ? undefined : { parts: [{ text: system.content }] }
+function systemInstructionOf(messages: ChatMessage[]): string | undefined {
+  return messages.find((message) => message.role === 'system')?.content
 }
 
 /**
@@ -66,33 +49,58 @@ export function makeGeminiProbe(hasKey: () => boolean): ProbeFn {
   }
 }
 
+// Loosely typed on purpose: `event_type` is the only field this parser trusts
+// enough to switch on (D21D.3) — everything else is read defensively through
+// optional chaining, never assumed present just because one event shape is.
+type InteractionsEvent = {
+  event_type: string
+  index?: number
+  step?: {
+    type?: string
+    signature?: string
+    summary?: { text?: string }[]
+    content?: { type?: string; text?: string }[]
+  }
+  delta?: { type?: string; text?: string; signature?: string }
+  interaction?: {
+    status?: string
+    usage_metadata?: { prompt_token_count?: number; candidates_token_count?: number }
+  }
+}
+
+type StepAccumulator = {
+  type: string
+  known: boolean
+  signature: string
+  reasoningText: string
+  contentText: string
+}
+
+// D21D.1: incomplete reads directly as "hit the output budget" in the docs
+// ("completed, but contains incomplete results, e.g. hitting max_tokens") —
+// budget_exceeded is a distinct condition, never collapsed into the same
+// label until a live call proves otherwise (see the plan's "Verificação ao
+// vivo"). D21D.3: an unrecognized step type is a known extension point
+// (function_call, file_search_call, code_execution_call, and whatever the
+// provider adds next) — degrade by ignoring it, never abort the turn.
 export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
   return async (messages, { model, signal, onChunk, onThinking }) => {
     const apiKey = getApiKey()
     if (apiKey === null) throw new UpstreamError(null, 'no api key stored')
 
     const systemInstruction = systemInstructionOf(messages)
-    const response = await fetch(streamUrl(model), {
+    const response = await fetch(GEMINI_INTERACTIONS_URL, {
       method: 'POST',
-      // x-goog-api-key, not Authorization: Bearer — confirmed via Context7
-      // against the official docs, unlike GLM's OpenAI-compatible header.
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
-        contents: toGeminiContents(messages),
-        ...(systemInstruction === undefined ? {} : { systemInstruction }),
-        // thinkingLevel replaces thinkingBudget for the 3.x generation
-        // (Context7) — but the valid ENUM differs by model: gemini-3.5-flash-lite
-        // accepts 'minimal', gemini-3.7-flash does not (measured live, N-1-C —
-        // "Thinking level MINIMAL is not supported for this model", HTTP 400).
-        // 'low' is the lowest level confirmed valid for both, and stays fixed:
-        // there is no true off switch in this family (D21A.6). includeThoughts
-        // is sent but no part.thought ever came back live, on either model —
-        // cause not established, D21A.10.
-        generationConfig: {
-          thinkingConfig: {
-            thinkingLevel: 'low',
-            ...(onThinking !== undefined ? { includeThoughts: true } : {})
-          }
+        model,
+        input: toInteractionsInput(messages),
+        store: false,
+        stream: true,
+        ...(systemInstruction === undefined ? {} : { system_instruction: systemInstruction }),
+        generation_config: {
+          thinking_level: 'low',
+          thinking_summaries: onThinking !== undefined ? 'auto' : 'none'
         }
       }),
       signal
@@ -106,13 +114,22 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-    let assembled = ''
-    let reasoningAssembled = ''
+    const steps = new Map<number, StepAccumulator>()
     let buffer = ''
     let promptTokens: number | undefined
     let evalTokens: number | undefined
-    // 'MAX_TOKENS' when the window filled before generation finished (21-C-B).
-    let finishedByLength = false
+    let stopped: 'context-exhausted' | undefined
+
+    function stepFor(index: number, type: string): StepAccumulator {
+      let step = steps.get(index)
+      if (step === undefined) {
+        const known = type === 'thought' || type === 'model_output'
+        if (!known) console.error(`[gemini] unknown step type: ${type}, ignoring`)
+        step = { type, known, signature: '', reasoningText: '', contentText: '' }
+        steps.set(index, step)
+      }
+      return step
+    }
 
     try {
       for (;;) {
@@ -128,45 +145,116 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
           buffer = buffer.slice(newline + 1)
           if (line === '' || !line.startsWith('data: ')) continue
 
-          const payload = line.slice('data: '.length)
-          const chunk = JSON.parse(payload) as GeminiChunk
-          const parts = chunk.candidates?.[0]?.content?.parts ?? []
-          // D21A.6: thought and answer share the same `parts` array — must
-          // split by `part.thought` before joining, or reasoning text lands
-          // inside `content` with no error to signal it.
-          const thinkingPiece = parts
-            .filter((part) => part.thought === true)
-            .map((part) => part.text ?? '')
-            .join('')
-          if (thinkingPiece !== '') {
-            reasoningAssembled += thinkingPiece
-            onThinking?.(thinkingPiece)
+          const event = JSON.parse(line.slice('data: '.length)) as InteractionsEvent
+
+          if (event.event_type === 'step.start' && event.index !== undefined) {
+            const type = event.step?.type ?? 'unknown'
+            const step = stepFor(event.index, type)
+            if (step.known && type === 'thought') {
+              step.signature = event.step?.signature ?? ''
+              const summary = (event.step?.summary ?? []).map((part) => part.text ?? '').join('')
+              if (summary !== '') {
+                step.reasoningText += summary
+                onThinking?.(summary)
+              }
+            } else if (step.known && type === 'model_output') {
+              const text = (event.step?.content ?? [])
+                .filter((part) => part.type === 'text' || part.type === undefined)
+                .map((part) => part.text ?? '')
+                .join('')
+              if (text !== '') {
+                step.contentText += text
+                onChunk?.(text)
+              }
+            }
+            continue
           }
-          const piece = parts
-            .filter((part) => part.thought !== true)
-            .map((part) => part.text ?? '')
-            .join('')
-          if (piece !== '') {
-            assembled += piece
-            onChunk?.(piece)
+
+          if (event.event_type === 'step.delta' && event.index !== undefined) {
+            const step = steps.get(event.index)
+            if (step === undefined || !step.known) continue
+            const delta = event.delta
+            if (delta?.type === 'thought_signature' && delta.signature !== undefined) {
+              step.signature = delta.signature
+            } else if (delta?.type === 'thought_summary' && delta.text !== undefined) {
+              step.reasoningText += delta.text
+              onThinking?.(delta.text)
+            } else if (step.type === 'model_output' && delta?.text !== undefined) {
+              step.contentText += delta.text
+              onChunk?.(delta.text)
+            }
+            continue
           }
-          if (chunk.usageMetadata !== undefined) {
-            promptTokens = chunk.usageMetadata.promptTokenCount
-            evalTokens = chunk.usageMetadata.candidatesTokenCount
+
+          const status = event.interaction?.status
+          if (status === 'incomplete') stopped = 'context-exhausted'
+          else if (status === 'budget_exceeded') {
+            console.error(
+              '[gemini] budget_exceeded status seen — treating as upstream error, not context exhaustion'
+            )
+            throw new UpstreamError(
+              null,
+              'A Interactions API sinalizou budget_exceeded — formato de resposta inesperado, verifique o log.'
+            )
           }
-          if (chunk.candidates?.[0]?.finishReason === 'MAX_TOKENS') finishedByLength = true
+
+          const usage = event.interaction?.usage_metadata
+          if (usage !== undefined) {
+            promptTokens = usage.prompt_token_count
+            evalTokens = usage.candidates_token_count
+          }
         }
       }
     } finally {
       reader.releaseLock()
     }
 
+    if (steps.size === 0) {
+      console.error('[gemini] unexpected Interactions API shape: no steps in response')
+      throw new UpstreamError(
+        null,
+        'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
+      )
+    }
+
+    let content = ''
+    let reasoning = ''
+    let sawModelOutput = false
+    for (const step of steps.values()) {
+      if (!step.known) continue
+      if (step.type === 'thought') {
+        if (step.signature === '') {
+          console.error(
+            '[gemini] unexpected Interactions API shape: thought step closed without a signature'
+          )
+          throw new UpstreamError(
+            null,
+            'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
+          )
+        }
+        reasoning += step.reasoningText
+      } else if (step.type === 'model_output') {
+        sawModelOutput = true
+        content += step.contentText
+      }
+    }
+
+    if (!sawModelOutput) {
+      console.error(
+        '[gemini] unexpected Interactions API shape: no model_output step in a completed turn'
+      )
+      throw new UpstreamError(
+        null,
+        'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
+      )
+    }
+
     return {
-      content: assembled,
-      ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
+      content,
+      ...(reasoning === '' ? {} : { reasoning }),
       ...(promptTokens === undefined ? {} : { promptTokens }),
       ...(evalTokens === undefined ? {} : { evalTokens }),
-      ...(finishedByLength ? { stopped: 'context-exhausted' as const } : {})
+      ...(stopped === undefined ? {} : { stopped })
     }
   }
 }
