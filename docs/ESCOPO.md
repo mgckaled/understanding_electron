@@ -205,19 +205,22 @@ Quando o modelo expõe o próprio raciocínio, ele aparece **separado da respost
 
 ## Ferramentas do chat
 
-Três capacidades — busca web, documentação e raciocínio visível — chegam pelo *tool calling* do Ollama, propostas em [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md). Cada uma é pilar próprio pelo [teste acima](#o-teste-que-separa-pilar-de-produto-novo) — vive inteira dentro da conversa, sem estado que sobreviva a ela.
+Duas capacidades trazem para dentro da conversa algo que estava fora dela — busca web e documentação —, propostas em [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md). Cada uma é pilar próprio pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo): vive inteira dentro da conversa, sem estado que sobreviva a ela. Raciocínio visível **não** é ferramenta — é capacidade do modelo, e tem [seção própria](#raciocínio-é-do-produto-não-do-provedor).
 
 | | Faz | Não faz |
 |---|---|---|
-| **Busca web** | O modelo pede uma URL; o app busca e extrai o texto principal como contexto da resposta | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
-| **Documentação (MCP)** | Um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
-| **Raciocínio visível** | Alternável por turno; o texto de raciocínio do modelo aparece separado da resposta final (21-A, set/2026) — persiste com a mensagem, confirmado ao vivo em Ollama e GLM | Ainda **não** recolhível/com acabamento — 21-A prova o caminho ponta a ponta com exibição mínima; o bloco recolhível de verdade é do 21-B. **No Gemini, hoje não entrega nada** — o app manda `includeThoughts`, mas o endpoint usado (`streamGenerateContent`) não devolveu texto de raciocínio em nenhuma das duas tentativas ao vivo (causa a esclarecer, não suposição de "nunca funcionou"); degrada sem quebrar, ver [`docs/reference/reasoning/README.md`](reference/reasoning/README.md) |
+| **Busca web** | uma URL vira contexto da resposta: o app busca e extrai o texto principal | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
+| **Documentação (MCP)** | um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
 
-⚠️ **Busca web, MCP e raciocínio pedem `tools`; anexo de imagem pede `vision`. Nenhum modelo desta máquina declara os dois** (ver [`CLAUDE.md`](../CLAUDE.md)) — então, hoje, usar estas ferramentas e anexar imagem são caminhos mutuamente exclusivos na mesma conversa. Trocar de modelo no meio dela resolve, ao custo do descarregamento já registrado acima.
+**Como a ferramenta é acionada é decisão do plano que a construir, não premissa deste documento.** São três caminhos possíveis, com fronteiras de privacidade diferentes: o modelo pedir, por *tool calling* (exige `tools`); o usuário fornecer o endereço (não exige capacidade nenhuma); ou o provedor de nuvem resolver por conta própria. Nenhum é o caminho canônico — e o precedente que desautoriza presumir um deles é o raciocínio visível, que está entregue e **não** chegou por *tool calling* em provedor nenhum.
 
-A URL que o modelo pede precisa passar pelo mesmo ponto único de validação em `src/core/url.ts` — nunca um segundo caminho até a rede. Hoje esse ponto (`checkExternalUrl`) só confere o esquema (`http:`/`https:`); busca disparada por URL escolhida pelo modelo, e não pelo usuário clicando um link, também precisa recusar *loopback* e faixas privadas, o que abrir no navegador do sistema nunca precisou fazer.
+⚠️ **A capacidade exigida limita quais modelos servem à conversa.** *Tool calling* pede `tools`; anexo de imagem pede `vision`. Quando o modelo escolhido não junta as duas, usar a ferramenta e anexar imagem são caminhos exclusivos naquela conversa — trocar de modelo resolve, ao custo do descarregamento. Quais modelos juntam o quê: [`reference/models/`](reference/models/README.md).
 
-Sequência e planos: [`ROADMAP § 1`](ROADMAP.md#1-a-sequência), planos 21–23.
+### A URL escolhida pelo modelo não é a URL clicada pelo usuário
+
+Toda saída à rede passa por um **ponto único** de validação, nunca por um segundo caminho — e esse ponto precisa distinguir quem escolheu o endereço. Para um link que o usuário clica, conferir o esquema (`http:`/`https:`) basta. Para **uma URL que o modelo produziu, é preciso recusar também *loopback* e faixas privadas**: sem isso, texto gerado alcança serviço que só existe dentro da máquina — coisa que abrir link no navegador do sistema nunca pôde fazer.
+
+Sequência e planos: [`ROADMAP § 1`](ROADMAP.md#1-a-sequência).
 
 ---
 
