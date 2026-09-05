@@ -62,10 +62,10 @@ type InteractionsEvent = {
     content?: { type?: string; text?: string }[]
   }
   delta?: { type?: string; text?: string; signature?: string }
-  interaction?: {
-    status?: string
-    usage_metadata?: { prompt_token_count?: number; candidates_token_count?: number }
-  }
+  // Confirmed live (D21D.1): status arrives on `interaction.status_update`
+  // events as a plain top-level field, not nested under `interaction`.
+  status?: string
+  usage_metadata?: { prompt_token_count?: number; candidates_token_count?: number }
   // Ollama/GLM already prove this shape: HTTP 200 with an error object inside
   // the stream body (UpstreamError with status: null). Checked before either
   // contract guard below, so a mid-stream failure reads as what it is, not as
@@ -213,28 +213,44 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
             continue
           }
 
-          const status = event.interaction?.status
-          if (status === 'incomplete') stopped = 'context-exhausted'
-          else if (status === 'budget_exceeded') {
-            // Distinct from context-exhausted (D21D.1) — but whatever it
-            // means, throwing away a reply that already arrived would be its
-            // own silent-breakage bug. Only refuses the turn below if
-            // nothing usable came back at all.
-            console.error(
-              '[gemini] budget_exceeded status seen — treating as upstream error, not context exhaustion'
-            )
-            sawBudgetExceeded = true
+          // A step closes explicitly (confirmed live) — finalization already
+          // happens once at the end of the stream below, so there is nothing
+          // to do here yet beyond recognizing the event as expected noise.
+          if (event.event_type === 'step.stop') continue
+
+          // status and usage_metadata are checked independently, never one
+          // inside an early return for the other's event_type — confirmed
+          // live that interaction.status_update carries a bare top-level
+          // `status`, and whether a single event ever carries both fields at
+          // once is exactly the kind of assumption this parser stopped
+          // making after the last two live surprises (D21D.1).
+          let recognized = event.event_type === 'interaction.created'
+
+          if (event.status !== undefined) {
+            recognized = true
+            if (event.status === 'incomplete') stopped = 'context-exhausted'
+            else if (event.status === 'budget_exceeded') {
+              // Distinct from context-exhausted (D21D.1) — but whatever it
+              // means, throwing away a reply that already arrived would be
+              // its own silent-breakage bug. Only refuses the turn below if
+              // nothing usable came back at all.
+              console.error(
+                '[gemini] budget_exceeded status seen — treating as upstream error, not context exhaustion'
+              )
+              sawBudgetExceeded = true
+            }
           }
 
-          const usage = event.interaction?.usage_metadata
-          if (usage !== undefined) {
-            promptTokens = usage.prompt_token_count
-            evalTokens = usage.candidates_token_count
-          } else if (status === undefined && event.event_type !== 'interaction.created') {
+          if (event.usage_metadata !== undefined) {
+            recognized = true
+            promptTokens = event.usage_metadata.prompt_token_count
+            evalTokens = event.usage_metadata.candidates_token_count
+          }
+
+          if (!recognized) {
             // Same diagnostic purpose: an event_type this parser has no
-            // branch for at all (not step.start/step.delta, no status, no
-            // usage) — the live shape of the completion/status event is
-            // still unconfirmed (D21D.1).
+            // branch for at all — the live shape keeps revealing pieces this
+            // parser did not know about yet (D21D.1).
             console.error(
               `[gemini] unrecognized event_type: ${event.event_type}, payload: ${payload}`
             )
