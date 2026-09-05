@@ -22,11 +22,21 @@ Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa,
 
 ## O teste que separa pilar de produto novo
 
-Um chat multiuso corre um risco que uma bancada de dados sozinha não corre: toda ideia parece caber, porque "está dentro da mesma conversa" é critério fraco demais para recusar coisa nenhuma. A régua que substitui "não é um chat genérico" precisa ser mecânica, não de gosto — é a mesma que já decidia a fronteira do gráfico, generalizada para toda capacidade:
+Um chat multiuso corre um risco que uma bancada de dados sozinha não corre: toda ideia parece caber, porque "está dentro da mesma conversa" é critério fraco demais para recusar coisa nenhuma. A régua precisa ser mecânica, não de gosto — e são **duas**, porque há dois tipos de capacidade.
 
-> **Uma capacidade é pilar do crivo enquanto viver dentro da conversa** — como ação executada, contexto consumido, ou um dos artefatos que o app já sabe persistir (mensagem, receita, dado tratado e exportado). **No instante em que ela precisar de estado próprio, gerido fora da conversa** — layout salvo, arquivo reexportado, projeto paralelo com vida própria — **ela virou outro produto.**
+**A primeira governa tudo que produz ou consome conteúdo do usuário:**
 
-É o teste que já respondia "salvar o PDF anotado" e "painel com filtros cruzados": os dois pedem um artefato que sobrevive fora da conversa e uma tela própria para gerenciá-lo. Continua respondendo à mesma pergunta agora que o motivo deixou de ser "isso não é chat" — o motivo é "isso não vive dentro de uma conversa".
+> **Uma capacidade é pilar do crivo enquanto viver dentro da conversa** — como ação executada, contexto consumido, ou um dos artefatos que o app já sabe persistir (mensagem, receita, dado tratado e exportado). **No instante em que ela precisar de estado próprio, gerido fora da conversa** — layout salvo, arquivo reexportado — **ela virou outro produto.**
+
+É o teste que responde "salvar o PDF anotado" e "painel com filtros cruzados": os dois pedem um artefato que sobrevive fora da conversa e uma tela própria para gerenciá-lo.
+
+**A segunda governa o que o aplicativo faz sobre si mesmo.** O observatório — os painéis em que o app se descreve: memória e processos, canais e jobs, os dois motores, uso de disco, fluxo de eventos, desempenho por modelo e o livro-razão do que saiu da máquina — **não passa no teste acima, e não deveria**: nada ali vive dentro de uma conversa, tem tela própria e grava estado que sobrevive a todas elas. Não é exceção aberta ao primeiro teste; é outra categoria, com fronteira própria e igualmente mecânica:
+
+> **Instrumentação é pilar enquanto observar o próprio aplicativo, nunca o dado do usuário** — (i) lendo o que o app já faz, (ii) gravando apenas sobre si mesma, em armazenamento separado do da conversa, e (iii) sem produzir artefato que saia do app. **No instante em que virar relatório exportável ou painel configurável, cai de volta no primeiro teste** — e virou outro produto.
+
+O que faz as duas conviverem é o limite do que cada uma grava: instrumentação registra o que o **aplicativo** fez — nunca o conteúdo do que o usuário digitou, anexou ou recebeu. É por isso que ela mede um envio de nuvem sem guardar o que foi enviado.
+
+Eixos, inventário e o critério de qual armazenamento recebe o quê: [`reference/observatory/`](reference/observatory/README.md).
 
 > **Caso em aberto, ainda sem veredito:** agrupar conversas num "projeto" com prompt de sistema e busca semântica dedicados — o padrão de "Projects" do Claude Desktop/ChatGPT — foi levantado e cruza este teste de um jeito que ainda não fechou. Prompt de sistema e documento anexado por projeto caem do lado permitido (contexto consumido, artefato que o app já sabe persistir); o que decide é quanto da superfície de gerência (biblioteca de documentos, status de reindexação, seletor de embedder) de fato exige tela própria, e quanto é extensão do que já existe. Sem compromisso de construir — levantamento completo em [`reference/projetos-e-rag-por-projeto.md`](reference/projetos-e-rag-por-projeto.md).
 
