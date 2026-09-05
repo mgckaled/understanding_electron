@@ -313,6 +313,29 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     expect(result.reasoning).toBe('Pensando')
   })
 
+  it('reads a thought_summary delta wrapped in content: {text, type} — the shape confirmed live, not a bare text field', async () => {
+    stubStream([
+      sse([
+        { event_type: 'step.start', index: 0, step: { type: 'thought' } },
+        {
+          event_type: 'step.delta',
+          index: 0,
+          delta: { type: 'thought_summary', content: { text: 'Analisando a imagem', type: 'text' } }
+        },
+        modelOutput(1, 'Pronto')
+      ])
+    ])
+    const reasoning: string[] = []
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      onThinking: (t) => reasoning.push(t)
+    })
+
+    expect(reasoning).toEqual(['Analisando a imagem'])
+    expect(result.reasoning).toBe('Analisando a imagem')
+  })
+
   it('preserves the order of multiple thought steps interleaved with a model_output step (D21D.5.1)', async () => {
     stubStream([
       sse([
@@ -349,14 +372,16 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     expect('reasoning' in result).toBe(false)
   })
 
-  it('reads usage_metadata from an interaction.status_update event carrying it (confirmed live, D21D.1)', async () => {
+  it('reads usage from an interaction.completed event, nested and named differently than status_update (confirmed live, D21D.1)', async () => {
     stubStream([
       sse([
         modelOutput(0, 'ok'),
         {
-          event_type: 'interaction.status_update',
-          status: 'completed',
-          usage_metadata: { prompt_token_count: 8, candidates_token_count: 3 }
+          event_type: 'interaction.completed',
+          interaction: {
+            status: 'completed',
+            usage: { total_input_tokens: 8, total_output_tokens: 3 }
+          }
         }
       ])
     ])
@@ -517,7 +542,7 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
     })
   })
 
-  it('grau 1: a thought step closed without a signature is dropped, not fatal — it has no consumer until 21-D-B', async () => {
+  it('grau 1: a thought step closed without a signature still shows its text — only the signature is skipped, not fatal (D21D.3, 21-D-B consumes it later)', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     stubStream([
       sse([
@@ -533,10 +558,8 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
     const result = await chat(messages, { model: 'gemini-3.7-flash' })
 
     expect(result.content).toBe('ok')
-    expect('reasoning' in result).toBe(false)
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[gemini] thought step closed without a signature, ignoring it'
-    )
+    expect(result.reasoning).toBe('Pensando')
+    expect(consoleSpy).toHaveBeenCalledWith('[gemini] thought step closed without a signature')
 
     consoleSpy.mockRestore()
   })
