@@ -155,13 +155,41 @@ Os três níveis funcionam porque dado tabular **pode ser agregado**: existe uma
 
 Logo, **todo anexo de documento ou imagem herda a regra do nível 3**: opt-in explícito, em qualquer provedor — local ou nuvem, sem distinção. Nenhum mecanismo novo — a mesma porta.
 
+---
+
+## A administração do modelo é parte do produto
+
+Um aplicativo que apenas encaminha texto a um modelo deixa quatro decisões para o acaso: qual modelo responde, quanto de contexto ele reserva, o que ele é capaz de receber, e o que sai da máquina. Aqui as quatro são do produto, e visíveis.
+
+> **O aplicativo nunca deixa o modelo decidir em silêncio o que descartar.** Ele mede antes, recusa antes, e mostra o custo.
+
+Numa máquina cujo limite é a RAM, isso não é refinamento: um `num_ctx` que não comporta o prompt não produz erro — o provedor descarta o começo da conversa e responde normalmente, sobre um contexto que perdeu metade. Medir e recusar é o que separa um resultado errado de um resultado errado **e invisível**.
+
+| Decisão | O que o aplicativo faz |
+|---|---|
+| **Qual modelo responde** | escolhido por mensagem, entre os instalados na máquina e os de nuvem que o usuário habilitou. Provedor de nuvem só existe depois que uma chave é gravada |
+| **Quanto de contexto** | a janela é escolhida por conversa e **trava no primeiro envio**, junto do modelo. Antes disso deriva livremente do que a máquina comporta |
+| **O que o modelo pode receber** | anexo só vai a modelo que declare a capacidade correspondente — ver o gate, abaixo |
+| **Quanto já foi gasto** | o medidor da conversa se calibra pela contagem real que cada resposta devolve, e o envio é recusado quando não cabe |
+| **O que sai da máquina** | os [três níveis](#o-que-a-ia-vê-do-seu-dado), opt-in por anexo, em qualquer provedor |
+
+**A janela trava porque encolher em silêncio é o modo de falha pior.** Uma reserva feita com a máquina ociosa pode não caber quando ela não estiver mais — e nesse caso a conversa recusa em vez de reduzir por conta própria. O mesmo vale ao trocar de modelo: um histórico que cabia no teto de um não cabe no de outro.
+
+**Um modelo residente é recurso da máquina, não detalhe de implementação.** Ele ocupa RAM na ordem de gigabytes, e dois residentes ao mesmo tempo é troca de disco, não lentidão. Ao trocar de modelo, o aplicativo descarrega o anterior antes de chamar o novo; o estado fica visível, com o que está carregado e por quanto tempo ainda.
+
+Como cada número é calculado — cache KV por token, margem, faixas de janela, contagem de tokens — é da skill [`ai`](../.claude/skills/ai/SKILL.md); o custo de cada modelo, de [`reference/models/`](reference/models/README.md).
+
 ### O gate de capacidade é correção, não cortesia
 
-Anexo de imagem exige modelo que declare `vision` nas `capabilities` — lidas do **`/api/show`**, nunca do `/api/tags`. Se o modelo selecionado não declara, o aplicativo **recusa o envio** — não envia sem a imagem, não avisa depois.
+Um anexo só é enviado a um modelo que declare a capacidade correspondente — `vision`, no caso de imagem. Quando o modelo selecionado não declara, o aplicativo **recusa o envio**: não manda sem a imagem, não avisa depois.
 
-> ⚠️ **A fonte importa, e a errada é a intuitiva.** Medido em ago/2026 no Ollama 0.32.6: o `/api/tags` traz um campo `capabilities`, mas ele **omite `vision`** — o `gemma3:4b` aparece ali como `["completion"]` e no `/api/show` como `["completion","vision"]`. `tools` aparece nos dois, que é o que torna a armadilha convincente. Um gate construído sobre o `/api/tags` recusaria o único modelo com visão desta máquina. O teto de contexto também só existe no `/api/show`. Detalhe e custo em [`plan/implemented/15-orcamento-de-contexto-e-modelo.md`](plan/implemented/15-orcamento-de-contexto-e-modelo.md).
+O motivo não é elegância de interface. Sem receber a imagem, o modelo responde assim mesmo — descreve um gráfico inteiro, com números plausíveis e nenhuma hesitação, sobre um arquivo que nunca viu. É a mesma classe da [falha silenciosa do NL→SQL](HISTORY.md): num caminho gerado por modelo, o perigo não é a exceção, é o sucesso. Anexo que falha em silêncio não produz erro — produz resposta convincente sobre um arquivo inexistente.
 
-O motivo não é elegância de interface. Medido em ago/2026: dado o prompt *"descreva o conteúdo desta imagem"* **sem imagem nenhuma**, o `gemma3:4b` descreveu um gráfico de barras inteiro, com quatro produtos e quatro números, todos inventados, sem uma palavra de hesitação. É a mesma classe da [falha silenciosa do NL→SQL](HISTORY.md) — num caminho gerado por modelo, o perigo não é a exceção, é o sucesso. Anexo que falha em silêncio não produz erro: produz resposta convincente sobre um arquivo que o modelo nunca viu.
+De onde vem cada capacidade, e por que a fonte intuitiva é a errada: skill [`ai`](../.claude/skills/ai/SKILL.md).
+
+### Raciocínio é do produto, não do provedor
+
+Quando o modelo expõe o próprio raciocínio, ele aparece **separado da resposta final**, alternável por turno, e persiste com a mensagem. É capacidade de modelo como `vision`: quem não a tem responde sem ela, sem que nada quebre.
 
 ---
 
@@ -411,12 +439,6 @@ arquivo → extrator por tipo → MessagePart tipada → userData/attachments/<h
 ```
 
 Nunca se relê o PDF a cada turno. É o mesmo princípio do cache de prefixo do Ollama e a mesma forma do "um cartão de dados só": paga-se caro uma vez, e o resultado é dado de primeira classe daí em diante.
-
-### O modelo carregado é recurso da máquina, e o aplicativo o administra
-
-Um modelo residente ocupa RAM na ordem de gigabytes (números por modelo em [`CLAUDE.md`](../CLAUDE.md)), e a [fase 13](plan/implemented/13-casca-do-aplicativo.md) permite trocar de modelo **por mensagem** — então dois residentes é um estado alcançável, e nesta máquina isso é *swap*, não lentidão.
-
-**Regra:** ao trocar de modelo, o aplicativo descarrega o anterior antes de chamar o novo. Custa zero no caso comum, porque trocar de modelo já invalida o cache de prefixo de qualquer forma; o custo real (recarga do disco) só aparece em quem volta ao modelo anterior. O estado fica visível em Configurações, com o que o `/api/ps` reporta — e é o primeiro medidor do observatório do [`ROADMAP § 1`](ROADMAP.md) a se pagar sozinho. Mecanismo do lado do código (`ai:loaded`/`ai:unload`, seams `LoadedFn`/`UnloadFn`): skill [`ai`](../.claude/skills/ai/SKILL.md).
 
 ---
 
