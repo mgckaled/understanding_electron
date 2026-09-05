@@ -61,11 +61,20 @@ type InteractionsEvent = {
     summary?: { text?: string }[]
     content?: { type?: string; text?: string }[]
   }
-  delta?: { type?: string; text?: string; signature?: string }
-  // Confirmed live (D21D.1): status arrives on `interaction.status_update`
-  // events as a plain top-level field, not nested under `interaction`.
+  // Confirmed live (D21D.1): a thought_summary/thought_signature delta wraps
+  // its payload in `content`, matching the same Content-union shape a
+  // model_output step uses — not a bare `text`/`signature` field.
+  delta?: { type?: string; content?: { text?: string }; text?: string; signature?: string }
+  // Confirmed live (D21D.1): `interaction.status_update` carries a bare
+  // top-level `status`; `interaction.completed` nests both `status` and the
+  // final `usage` under `interaction` instead, with different field names
+  // (`total_input_tokens`/`total_output_tokens`, never `usage_metadata`) —
+  // two distinct completion-ish event shapes, not one, so both are read.
   status?: string
-  usage_metadata?: { prompt_token_count?: number; candidates_token_count?: number }
+  interaction?: {
+    status?: string
+    usage?: { total_input_tokens?: number; total_output_tokens?: number }
+  }
   // Ollama/GLM already prove this shape: HTTP 200 with an error object inside
   // the stream body (UpstreamError with status: null). Checked before either
   // contract guard below, so a mid-stream failure reads as what it is, not as
@@ -200,14 +209,16 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
             const step = steps.get(event.index)
             if (step === undefined || !step.known) continue
             const delta = event.delta
-            if (delta?.type === 'thought_signature' && delta.signature !== undefined) {
-              step.signature = delta.signature
-            } else if (delta?.type === 'thought_summary' && delta.text !== undefined) {
-              step.reasoningText += delta.text
-              onThinking?.(delta.text)
-            } else if (step.type === 'model_output' && delta?.text !== undefined) {
-              step.contentText += delta.text
-              onChunk?.(delta.text)
+            const deltaSignature = delta?.signature
+            const deltaText = delta?.content?.text ?? delta?.text
+            if (delta?.type === 'thought_signature' && deltaSignature !== undefined) {
+              step.signature = deltaSignature
+            } else if (delta?.type === 'thought_summary' && deltaText !== undefined) {
+              step.reasoningText += deltaText
+              onThinking?.(deltaText)
+            } else if (step.type === 'model_output' && deltaText !== undefined) {
+              step.contentText += deltaText
+              onChunk?.(deltaText)
             } else {
               // Diagnostic only (D21D.3 grau 1 spirit) — the real delta
               // sub-type/field names are not confirmed live yet, so surface
@@ -229,11 +240,12 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
           // once is exactly the kind of assumption this parser stopped
           // making after the last two live surprises (D21D.1).
           let recognized = event.event_type === 'interaction.created'
+          const status = event.status ?? event.interaction?.status
 
-          if (event.status !== undefined) {
+          if (status !== undefined) {
             recognized = true
-            if (event.status === 'incomplete') stopped = 'context-exhausted'
-            else if (event.status === 'budget_exceeded') {
+            if (status === 'incomplete') stopped = 'context-exhausted'
+            else if (status === 'budget_exceeded') {
               // Distinct from context-exhausted (D21D.1) — but whatever it
               // means, throwing away a reply that already arrived would be
               // its own silent-breakage bug. Only refuses the turn below if
@@ -245,10 +257,11 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
             }
           }
 
-          if (event.usage_metadata !== undefined) {
+          const usage = event.interaction?.usage
+          if (usage !== undefined) {
             recognized = true
-            promptTokens = event.usage_metadata.prompt_token_count
-            evalTokens = event.usage_metadata.candidates_token_count
+            promptTokens = usage.total_input_tokens
+            evalTokens = usage.total_output_tokens
           }
 
           if (!recognized) {
@@ -285,15 +298,14 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     for (const step of steps.values()) {
       if (!step.known) continue
       if (step.type === 'thought') {
-        // A signature-less thought has no consumer yet — 21-D-B is what
-        // starts depending on it for resend. Degrading (grau 1) here, not
-        // refusing the turn, keeps a real, usable reply from being thrown
-        // away over a field this plan never reads back.
+        // The text is shown regardless of signature — nothing in this plan
+        // persists or resends a signature yet (that is 21-D-B), so an absent
+        // one has no consumer to protect. Only the signature itself is
+        // skipped when missing, never the reasoning a real turn produced.
         if (step.signature === '') {
-          console.error('[gemini] thought step closed without a signature, ignoring it')
-        } else {
-          reasoning += step.reasoningText
+          console.error('[gemini] thought step closed without a signature')
         }
+        reasoning += step.reasoningText
       } else if (step.type === 'model_output') {
         sawModelOutput = true
         content += step.contentText
