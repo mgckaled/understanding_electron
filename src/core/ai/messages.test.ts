@@ -2,10 +2,12 @@ import type { DatasetPart, DocumentPart, ImagePart, Message, StepProposalPart } 
 import {
   anchorFromHistory,
   attachmentPartOf,
+  historyCharsOf,
   imageCountOf,
   isCloudService,
   messageText,
   reasoningPartOf,
+  reasoningResendChars,
   toChatMessages,
   toChatMessagesWithImages
 } from './messages'
@@ -229,6 +231,24 @@ describe('anchorFromHistory', () => {
       imageCount: 1
     })
   })
+
+  it('adds resent reasoning chars from a signed turn in the anchored prefix (D21D.9)', () => {
+    const question = message('user', 'oi')
+    const signedReply: Message = {
+      id: 'm-signed',
+      role: 'assistant',
+      parts: [
+        { kind: 'reasoning', text: 'abcde', signature: 'sig-1' },
+        { kind: 'text', text: 'olá' }
+      ],
+      createdAt: 1
+    }
+    const nextReply: Message = { ...message('assistant', 'certo'), promptTokens: 20 }
+
+    const anchor = anchorFromHistory([question, signedReply, nextReply])
+
+    expect(anchor?.chars).toBe('oi'.length + 'olá'.length + 'abcde'.length)
+  })
 })
 
 describe('toChatMessages', () => {
@@ -378,6 +398,91 @@ describe('toChatMessagesWithImages', () => {
     expect(result[1]).toEqual({ role: 'assistant', content: 'ok' })
     expect(result[2]).toMatchObject({ role: 'user', content: 'e essa imagem?' })
     expect(result[2]?.images).toHaveLength(1)
+  })
+
+  it('populates reasoningSignatures from a signed ReasoningPart (D21D.8)', async () => {
+    const withSignedReasoning: Message = {
+      id: 'm1',
+      role: 'assistant',
+      parts: [
+        { kind: 'reasoning', text: 'pensando', signature: 'sig-1' },
+        { kind: 'text', text: 'pronto' }
+      ],
+      createdAt: 0
+    }
+    const resolveImageBytes = vi.fn()
+
+    const result = await toChatMessagesWithImages([withSignedReasoning], resolveImageBytes)
+
+    expect(result).toEqual([
+      {
+        role: 'assistant',
+        content: 'pronto',
+        reasoningSignatures: [{ text: 'pensando', signature: 'sig-1' }]
+      }
+    ])
+  })
+
+  it('omits reasoningSignatures when the reasoning part carries no signature', async () => {
+    const withUnsignedReasoning: Message = {
+      id: 'm1',
+      role: 'assistant',
+      parts: [
+        { kind: 'reasoning', text: 'pensando' },
+        { kind: 'text', text: 'pronto' }
+      ],
+      createdAt: 0
+    }
+    const resolveImageBytes = vi.fn()
+
+    const result = await toChatMessagesWithImages([withUnsignedReasoning], resolveImageBytes)
+
+    expect(result).toEqual([{ role: 'assistant', content: 'pronto' }])
+  })
+})
+
+describe('reasoningResendChars', () => {
+  it('sums the text of every signed reasoning part, ignoring unsigned ones', () => {
+    const signed: Message = {
+      id: 'm1',
+      role: 'assistant',
+      parts: [{ kind: 'reasoning', text: 'abcde', signature: 'sig-1' }],
+      createdAt: 0
+    }
+    const unsigned: Message = {
+      id: 'm2',
+      role: 'assistant',
+      parts: [{ kind: 'reasoning', text: 'this text is not counted' }],
+      createdAt: 1
+    }
+
+    expect(reasoningResendChars([signed, unsigned])).toBe(5)
+  })
+
+  it('is zero for a history with no reasoning at all', () => {
+    expect(reasoningResendChars([message('user', 'oi'), message('assistant', 'olá')])).toBe(0)
+  })
+})
+
+describe('historyCharsOf', () => {
+  it('adds reasoningResendChars on top of toChatMessages content length', () => {
+    const conversation = [message('user', 'oi'), message('assistant', 'olá')]
+    const signed: Message = {
+      id: 'm3',
+      role: 'assistant',
+      parts: [
+        { kind: 'reasoning', text: 'abcde', signature: 'sig-1' },
+        { kind: 'text', text: 'pronto' }
+      ],
+      createdAt: 2
+    }
+
+    const withoutReasoning = historyCharsOf(conversation)
+    const withReasoning = historyCharsOf([...conversation, signed])
+
+    // 'pronto'.length (6) from content, plus 'abcde'.length (5) resent — not
+    // one or the other, since content and resend are two separate terms.
+    expect(withReasoning - withoutReasoning).toBe(11)
   })
 })
 

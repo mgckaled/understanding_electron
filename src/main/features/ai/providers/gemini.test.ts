@@ -153,6 +153,76 @@ describe('makeGeminiChat — request shape', () => {
     ])
   })
 
+  it('reconstructs a thought step from reasoningSignatures ahead of the model_output step (D21D.8.1)', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
+    const history: ChatMessage[] = [
+      { role: 'user', content: 'oi' },
+      {
+        role: 'assistant',
+        content: 'olá',
+        reasoningSignatures: [{ text: 'Pensando', signature: 'sig-1' }]
+      }
+    ]
+
+    await chat(history, { model: 'gemini-3.7-flash' })
+
+    expect(requestBody(fetchMock).input).toEqual([
+      { type: 'user_input', content: [{ type: 'text', text: 'oi' }] },
+      { type: 'thought', signature: 'sig-1', summary: [{ text: 'Pensando' }] },
+      { type: 'model_output', content: [{ type: 'text', text: 'olá' }] }
+    ])
+  })
+
+  it('sends no thought step when reasoningSignatures is absent (no prior signed reasoning)', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
+    const history: ChatMessage[] = [
+      { role: 'user', content: 'oi' },
+      { role: 'assistant', content: 'olá' }
+    ]
+
+    await chat(history, { model: 'gemini-3.7-flash' })
+
+    expect(requestBody(fetchMock).input).toEqual([
+      { type: 'user_input', content: [{ type: 'text', text: 'oi' }] },
+      { type: 'model_output', content: [{ type: 'text', text: 'olá' }] }
+    ])
+  })
+
+  it('preserves the order of multiple reconstructed thought steps, not just their presence', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
+    const history: ChatMessage[] = [
+      { role: 'user', content: 'oi' },
+      {
+        role: 'assistant',
+        content: 'olá',
+        reasoningSignatures: [
+          { text: 'Primeiro', signature: 'sig-1' },
+          { text: 'Segundo', signature: 'sig-2' }
+        ]
+      }
+    ]
+
+    await chat(history, { model: 'gemini-3.7-flash' })
+
+    const input = requestBody(fetchMock).input as { type: string }[]
+    expect(input.map((entry) => entry.type)).toEqual([
+      'user_input',
+      'thought',
+      'thought',
+      'model_output'
+    ])
+    expect(input[1]).toEqual({
+      type: 'thought',
+      signature: 'sig-1',
+      summary: [{ text: 'Primeiro' }]
+    })
+    expect(input[2]).toEqual({
+      type: 'thought',
+      signature: 'sig-2',
+      summary: [{ text: 'Segundo' }]
+    })
+  })
+
   it('omits system_instruction when there is no system message', async () => {
     const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
 
@@ -370,6 +440,40 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
 
     expect('reasoning' in result).toBe(false)
+  })
+
+  it('returns the thought step signature as reasoningSignature (D21D.8), for 21-D-B to resend', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: 'sig-abc', summary: [{ text: 'Pensando' }] }
+        },
+        modelOutput(1, 'Pronto')
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
+
+    expect(result.reasoningSignature).toBe('sig-abc')
+  })
+
+  it('omits reasoningSignature when the thought step never carries one (never observed live, D21D.1)', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: '', summary: [{ text: 'Pensando' }] }
+        },
+        modelOutput(1, 'Pronto')
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
+
+    expect('reasoningSignature' in result).toBe(false)
   })
 
   it('reads usage from an interaction.completed event, nested and named differently than status_update (confirmed live, D21D.1)', async () => {
