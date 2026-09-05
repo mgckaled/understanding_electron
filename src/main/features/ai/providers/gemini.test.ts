@@ -5,8 +5,20 @@ import { makeGeminiChat, makeGeminiProbe } from './gemini'
 
 const messages: ChatMessage[] = [{ role: 'user', content: 'oi' }]
 
+function sse(events: Record<string, unknown>[]): string {
+  return events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('')
+}
+
+function modelOutput(index: number, text: string): Record<string, unknown> {
+  return {
+    event_type: 'step.start',
+    index,
+    step: { type: 'model_output', content: [{ type: 'text', text }] }
+  }
+}
+
 // Same discipline as glm.test.ts's stubStream — pieces enqueued verbatim, so
-// splitting an SSE line across two proves the cross-chunk buffering.
+// splitting a line across two proves the cross-chunk buffering.
 function stubStream(
   pieces: string[],
   init?: { ok?: boolean; status?: number; errorBody?: string }
@@ -62,7 +74,7 @@ describe('makeGeminiProbe', () => {
   })
 })
 
-describe('makeGeminiChat', () => {
+describe('makeGeminiChat — request shape', () => {
   const chat = makeGeminiChat(() => 'test-key')
 
   it('throws without calling fetch when no key is stored', async () => {
@@ -76,81 +88,53 @@ describe('makeGeminiChat', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('sends x-goog-api-key, ?alt=sse, and the model the caller passed, never a literal', async () => {
-    const fetchMock = stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
-    ])
+  it('posts to the Interactions endpoint, not the legacy streamGenerateContent one', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
 
     await chat(messages, { model: 'gemini-3.7-flash' })
 
     expect(requestUrl(fetchMock)).toBe(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:streamGenerateContent?alt=sse'
+      'https://generativelanguage.googleapis.com/v1beta/interactions'
     )
     expect(requestHeaders(fetchMock)['x-goog-api-key']).toBe('test-key')
     expect(requestHeaders(fetchMock).authorization).toBeUndefined()
-    expect(requestBody(fetchMock).generationConfig).toEqual({
-      thinkingConfig: { thinkingLevel: 'low' }
+  })
+
+  it('sends model, store: false, and stream: true at the top level', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
+
+    await chat(messages, { model: 'gemini-3.7-flash' })
+
+    const body = requestBody(fetchMock)
+    expect(body.model).toBe('gemini-3.7-flash')
+    expect(body.store).toBe(false)
+    expect(body.stream).toBe(true)
+  })
+
+  it('sends thinking_summaries: none and keeps thinking_level low without onThinking (D21D.3.1)', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
+
+    await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(requestBody(fetchMock).generation_config).toEqual({
+      thinking_level: 'low',
+      thinking_summaries: 'none'
     })
   })
 
-  it('adds includeThoughts, but keeps thinkingLevel at low, when onThinking is given', async () => {
-    const fetchMock = stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
-    ])
+  it('switches thinking_summaries to auto, but keeps thinking_level low, when onThinking is given', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
 
     await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
 
-    expect(requestBody(fetchMock).generationConfig).toEqual({
-      thinkingConfig: { thinkingLevel: 'low', includeThoughts: true }
+    expect(requestBody(fetchMock).generation_config).toEqual({
+      thinking_level: 'low',
+      thinking_summaries: 'auto'
     })
   })
 
-  it('separates part.thought pieces into onThinking, from plain parts into onChunk', async () => {
-    stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"Pensando","thought":true}]}}]}\n\n',
-      'data: {"candidates":[{"content":{"parts":[{"text":"Pronto"}]}}]}\n\n'
-    ])
-    const reasoning: string[] = []
-    const content: string[] = []
-
-    const result = await chat(messages, {
-      model: 'gemini-3.7-flash',
-      onThinking: (t) => reasoning.push(t),
-      onChunk: (t) => content.push(t)
-    })
-
-    expect(reasoning).toEqual(['Pensando'])
-    expect(content).toEqual(['Pronto'])
-    expect(result).toMatchObject({ content: 'Pronto', reasoning: 'Pensando' })
-  })
-
-  it('splits a single chunk carrying both a thought part and a text part', async () => {
-    stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"Pensando","thought":true},{"text":"Pronto"}]}}]}\n\n'
-    ])
-    const reasoning: string[] = []
-
-    const result = await chat(messages, {
-      model: 'gemini-3.7-flash',
-      onThinking: (t) => reasoning.push(t)
-    })
-
-    expect(reasoning).toEqual(['Pensando'])
-    expect(result.content).toBe('Pronto')
-  })
-
-  it('omits reasoning from the result when no part ever carries thought: true', async () => {
-    stubStream(['data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'])
-
-    const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
-
-    expect('reasoning' in result).toBe(false)
-  })
-
-  it('maps assistant to role "model" and drops system into systemInstruction', async () => {
-    const fetchMock = stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
-    ])
+  it('maps user/assistant messages to user_input/model_output entries, dropping system into system_instruction', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
     const history: ChatMessage[] = [
       { role: 'system', content: 'Seja breve.' },
       { role: 'user', content: 'oi' },
@@ -161,127 +145,49 @@ describe('makeGeminiChat', () => {
     await chat(history, { model: 'gemini-3.7-flash' })
 
     const body = requestBody(fetchMock)
-    expect(body.systemInstruction).toEqual({ parts: [{ text: 'Seja breve.' }] })
-    expect(body.contents).toEqual([
-      { role: 'user', parts: [{ text: 'oi' }] },
-      { role: 'model', parts: [{ text: 'olá' }] },
-      { role: 'user', parts: [{ text: 'tudo bem?' }] }
+    expect(body.system_instruction).toBe('Seja breve.')
+    expect(body.input).toEqual([
+      { type: 'user_input', content: [{ type: 'text', text: 'oi' }] },
+      { type: 'model_output', content: [{ type: 'text', text: 'olá' }] },
+      { type: 'user_input', content: [{ type: 'text', text: 'tudo bem?' }] }
     ])
   })
 
-  it('sends an image part as inlineData, sniffing PNG from the base64 bytes', async () => {
-    const fetchMock = stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
-    ])
+  it('omits system_instruction when there is no system message', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
+
+    await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect('system_instruction' in requestBody(fetchMock)).toBe(false)
+  })
+
+  it('sends an image entry as type: image, sniffing PNG from the base64 bytes', async () => {
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
     const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).toString('base64')
     const withImage: ChatMessage[] = [{ role: 'user', content: 'o que é isso?', images: [png] }]
 
     await chat(withImage, { model: 'gemini-3.7-flash' })
 
-    expect(requestBody(fetchMock).contents).toEqual([
+    expect(requestBody(fetchMock).input).toEqual([
       {
-        role: 'user',
-        parts: [{ inlineData: { mimeType: 'image/png', data: png } }, { text: 'o que é isso?' }]
+        type: 'user_input',
+        content: [
+          { type: 'image', mime_type: 'image/png', data: png },
+          { type: 'text', text: 'o que é isso?' }
+        ]
       }
     ])
   })
 
   it('sniffs JPEG from the base64 bytes too, not just PNG', async () => {
-    const fetchMock = stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
-    ])
+    const fetchMock = stubStream([sse([modelOutput(0, 'ok')])])
     const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0]).toString('base64')
     const withImage: ChatMessage[] = [{ role: 'user', content: 'e essa?', images: [jpeg] }]
 
     await chat(withImage, { model: 'gemini-3.7-flash' })
 
-    const parts = requestBody(fetchMock).contents as {
-      parts: { inlineData?: { mimeType: string } }[]
-    }[]
-    expect(parts[0]?.parts[0]?.inlineData?.mimeType).toBe('image/jpeg')
-  })
-
-  it('omits systemInstruction when there is no system message', async () => {
-    const fetchMock = stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'
-    ])
-
-    await chat(messages, { model: 'gemini-3.7-flash' })
-
-    expect('systemInstruction' in requestBody(fetchMock)).toBe(false)
-  })
-
-  it('assembles content across SSE chunks and forwards each piece to onChunk', async () => {
-    stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"Olá"}]}}]}\n\n',
-      'data: {"candidates":[{"content":{"parts":[{"text":", mundo"}]}}]}\n\n'
-    ])
-    const seen: string[] = []
-
-    const result = await chat(messages, {
-      model: 'gemini-3.7-flash',
-      onChunk: (t) => seen.push(t)
-    })
-
-    expect(result.content).toBe('Olá, mundo')
-    expect(seen).toEqual(['Olá', ', mundo'])
-  })
-
-  it('joins multiple parts within a single chunk instead of taking only the first', async () => {
-    stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"Olá"},{"text":", mundo"}]}}]}\n\n'
-    ])
-
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
-
-    expect(result.content).toBe('Olá, mundo')
-  })
-
-  it('handles an SSE line split across two socket reads', async () => {
-    stubStream(['data: {"candidates":[{"content":{"parts":[{"text":"Ol', 'á"}]}}]}\n\n'])
-
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
-
-    expect(result.content).toBe('Olá')
-  })
-
-  it('reads usageMetadata from whichever chunk carries it — no [DONE] sentinel in this shape', async () => {
-    stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}],"usageMetadata":{"promptTokenCount":8,"candidatesTokenCount":3}}\n\n'
-    ])
-
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
-
-    expect(result).toEqual({ content: 'ok', promptTokens: 8, evalTokens: 3 })
-  })
-
-  it('omits the counters rather than reporting zero when usageMetadata never arrives', async () => {
-    stubStream(['data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}\n\n'])
-
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
-
-    expect(result).toEqual({ content: 'ok' })
-    expect('promptTokens' in result).toBe(false)
-  })
-
-  it('marks a reply that stopped because the window filled up (21-C-B)', async () => {
-    stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"parcial"}]},"finishReason":"MAX_TOKENS"}]}\n\n'
-    ])
-
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
-
-    expect(result).toEqual({ content: 'parcial', stopped: 'context-exhausted' })
-  })
-
-  it('does not mark a reply that finished on its own', async () => {
-    stubStream([
-      'data: {"candidates":[{"content":{"parts":[{"text":"pronto"}]},"finishReason":"STOP"}]}\n\n'
-    ])
-
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
-
-    expect('stopped' in result).toBe(false)
+    const input = requestBody(fetchMock).input as { content: { mime_type?: string }[] }[]
+    expect(input[0]?.content[0]?.mime_type).toBe('image/jpeg')
   })
 
   it('throws UpstreamError on a non-2xx response', async () => {
@@ -310,5 +216,324 @@ describe('makeGeminiChat', () => {
     )
 
     consoleSpy.mockRestore()
+  })
+})
+
+describe('makeGeminiChat — step.start/step.delta parsing', () => {
+  const chat = makeGeminiChat(() => 'test-key')
+
+  it('assembles model_output content across step.delta chunks and forwards each piece to onChunk', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'model_output', content: [{ type: 'text', text: 'Olá' }] }
+        },
+        { event_type: 'step.delta', index: 0, delta: { text: ', mundo' } }
+      ])
+    ])
+    const seen: string[] = []
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      onChunk: (t) => seen.push(t)
+    })
+
+    expect(result.content).toBe('Olá, mundo')
+    expect(seen).toEqual(['Olá', ', mundo'])
+  })
+
+  it('handles an SSE line split across two socket reads', async () => {
+    const whole = sse([modelOutput(0, 'Olá')])
+    const cut = Math.floor(whole.length / 2)
+    stubStream([whole.slice(0, cut), whole.slice(cut)])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('Olá')
+  })
+
+  it('separates a thought step summary into onThinking, and a model_output step into onChunk', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: '', summary: [{ text: 'Pensando' }] }
+        },
+        {
+          event_type: 'step.delta',
+          index: 0,
+          delta: { type: 'thought_signature', signature: 'sig-abc' }
+        },
+        modelOutput(1, 'Pronto')
+      ])
+    ])
+    const reasoning: string[] = []
+    const content: string[] = []
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      onThinking: (t) => reasoning.push(t),
+      onChunk: (t) => content.push(t)
+    })
+
+    expect(reasoning).toEqual(['Pensando'])
+    expect(content).toEqual(['Pronto'])
+    expect(result).toMatchObject({ content: 'Pronto', reasoning: 'Pensando' })
+  })
+
+  it('assembles the thought summary across step.delta events too, not just at step.start', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: '', summary: [] }
+        },
+        { event_type: 'step.delta', index: 0, delta: { type: 'thought_summary', text: 'Pen' } },
+        { event_type: 'step.delta', index: 0, delta: { type: 'thought_summary', text: 'sando' } },
+        {
+          event_type: 'step.delta',
+          index: 0,
+          delta: { type: 'thought_signature', signature: 'sig-abc' }
+        },
+        modelOutput(1, 'Pronto')
+      ])
+    ])
+    const reasoning: string[] = []
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      onThinking: (t) => reasoning.push(t)
+    })
+
+    expect(reasoning).toEqual(['Pen', 'sando'])
+    expect(result.reasoning).toBe('Pensando')
+  })
+
+  it('preserves the order of multiple thought steps interleaved with a model_output step (D21D.5.1)', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: 'sig-1', summary: [{ text: 'Primeiro' }] }
+        },
+        {
+          event_type: 'step.start',
+          index: 1,
+          step: { type: 'thought', signature: 'sig-2', summary: [{ text: 'Segundo' }] }
+        },
+        modelOutput(2, 'Pronto')
+      ])
+    ])
+    const reasoning: string[] = []
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      onThinking: (t) => reasoning.push(t)
+    })
+
+    expect(reasoning).toEqual(['Primeiro', 'Segundo'])
+    expect(result.reasoning).toBe('PrimeiroSegundo')
+    expect(result.content).toBe('Pronto')
+  })
+
+  it('omits reasoning from the result when no thought step ever appears', async () => {
+    stubStream([sse([modelOutput(0, 'ok')])])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
+
+    expect('reasoning' in result).toBe(false)
+  })
+
+  it('reads usage_metadata from an interaction status event carrying it', async () => {
+    stubStream([
+      sse([
+        modelOutput(0, 'ok'),
+        {
+          event_type: 'interaction.completed',
+          interaction: {
+            status: 'completed',
+            usage_metadata: { prompt_token_count: 8, candidates_token_count: 3 }
+          }
+        }
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result).toMatchObject({ content: 'ok', promptTokens: 8, evalTokens: 3 })
+  })
+
+  it('omits the counters rather than reporting zero when no usage_metadata ever arrives', async () => {
+    stubStream([sse([modelOutput(0, 'ok')])])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result).toEqual({ content: 'ok' })
+    expect('promptTokens' in result).toBe(false)
+  })
+
+  it('maps status: incomplete to context-exhausted (D21D.1)', async () => {
+    stubStream([
+      sse([
+        modelOutput(0, 'parcial'),
+        { event_type: 'interaction.completed', interaction: { status: 'incomplete' } }
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result).toMatchObject({ content: 'parcial', stopped: 'context-exhausted' })
+  })
+
+  it('does not mark a reply that finished with status: completed', async () => {
+    stubStream([
+      sse([
+        modelOutput(0, 'pronto'),
+        { event_type: 'interaction.completed', interaction: { status: 'completed' } }
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect('stopped' in result).toBe(false)
+  })
+
+  it('treats status: budget_exceeded as a distinct upstream error, never collapsed into context-exhausted (D21D.1)', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    stubStream([
+      sse([
+        modelOutput(0, 'parcial'),
+        { event_type: 'interaction.completed', interaction: { status: 'budget_exceeded' } }
+      ])
+    ])
+
+    await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toBeInstanceOf(
+      UpstreamError
+    )
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[gemini] budget_exceeded status seen — treating as upstream error, not context exhaustion'
+    )
+
+    consoleSpy.mockRestore()
+  })
+})
+
+describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
+  const chat = makeGeminiChat(() => 'test-key')
+
+  it('grau 1: an unknown step type is logged and ignored, the turn still completes', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    stubStream([
+      sse([
+        { event_type: 'step.start', index: 0, step: { type: 'code_execution_call' } },
+        modelOutput(1, 'ok')
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('ok')
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[gemini] unknown step type: code_execution_call, ignoring'
+    )
+
+    consoleSpy.mockRestore()
+  })
+
+  it('grau 1: a step.delta for an unknown step index never surfaces as content or reasoning', async () => {
+    stubStream([
+      sse([
+        { event_type: 'step.start', index: 0, step: { type: 'file_search_call' } },
+        { event_type: 'step.delta', index: 0, delta: { text: 'should not appear' } },
+        modelOutput(1, 'ok')
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('ok')
+  })
+
+  it('grau 2: throws a named UpstreamError when the response carries no steps at all — proven red first', async () => {
+    // Red: sabotage by feeding an event stream with zero step.start events —
+    // exactly what a reshaped contract (steps renamed again) would produce.
+    stubStream([
+      sse([{ event_type: 'interaction.completed', interaction: { status: 'completed' } }])
+    ])
+
+    await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
+      message: 'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
+    })
+  })
+
+  it('grau 2: throws when a completed turn never produced a model_output step', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: 'sig', summary: [] }
+        }
+      ])
+    ])
+
+    await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
+      message: 'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
+    })
+  })
+
+  it('grau 2: throws when a thought step closes without ever receiving a signature', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: '', summary: [{ text: 'Pensando' }] }
+        },
+        modelOutput(1, 'ok')
+      ])
+    ])
+
+    await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
+      message: 'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
+    })
+  })
+
+  it('does not throw when a thought step receives its signature at step.start already (no delta needed)', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: 'sig-immediate', summary: [{ text: 'Pensando' }] }
+        },
+        modelOutput(1, 'ok')
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result).toMatchObject({ content: 'ok', reasoning: 'Pensando' })
+  })
+})
+
+describe('ai:propose against Gemini (D21D.4.1) — format is still ignored, no regression', () => {
+  const chat = makeGeminiChat(() => 'test-key')
+
+  it('returns loose model_output text even when the caller passes format and no onThinking', async () => {
+    stubStream([sse([modelOutput(0, '{"steps":[]}')])])
+
+    const result = await chat(messages, {
+      model: 'gemini-3.7-flash',
+      format: { type: 'object', properties: {} }
+    })
+
+    expect(result.content).toBe('{"steps":[]}')
+    expect('reasoning' in result).toBe(false)
   })
 })
