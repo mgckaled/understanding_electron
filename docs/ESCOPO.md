@@ -48,12 +48,14 @@ O aplicativo abre duas coisas muito diferentes, e confundi-las corrompe os dois 
 
 | | **Dado tabular** | **Documento** |
 |---|---|---|
-| Formatos | CSV, JSON/NDJSON, Excel · Parquet **no escopo, ainda não no seletor** | `.txt`, `.md`, `.pdf` com texto, código-fonte · `.png`, `.jpeg`, `.svg`, `.webp` |
+| Formatos | CSV, JSON/NDJSON, Excel · ⌛ Parquet | `.txt`, `.md`, `.pdf` com texto · `.png`, `.jpeg`, `.svg`, `.webp` · ⌛ código-fonte |
 | Relação | *perguntar* e *tratar* — os dois verbos abaixo | **ler como contexto**, e nada mais |
 | Motor | DuckDB | nenhum: vai direto ao modelo |
 | Produz | consulta, passos, receita, resultado, gráfico | texto no contexto da conversa |
 | Vira arquivo de saída? | sim — é o ponto do aplicativo | **nunca** |
 | Exposição ao modelo | três níveis, o terceiro opt-in | sempre integral — ver adiante |
+
+⌛ **é formato admitido pelo escopo cujo caminho ainda não existe na interface** — o seletor de arquivo não o oferece. A marca vale em toda tabela de formato deste documento, e existe porque "admitido" e "disponível" leem igual numa tabela: sem ela, o documento promete. O que falta em cada caso está em [`ROADMAP § 4`](ROADMAP.md#4-pendências-pontuais).
 
 Ninguém deduplica um PNG por CPF. **Os dois verbos valem para dado tabular**; documento tem uma terceira relação, mais fraca: material de contexto, que entra na conversa para ser lido e sai dela sem virar arquivo.
 
@@ -280,7 +282,7 @@ Todos os quatro são os dois. Três deles são quase de graça; um não é.
 | Formato | Leitura | Escrita | Observação |
 |---|---|---|---|
 | **CSV / TSV / delimitados** | nativa no DuckDB | nativa | O caso base e o mais bagunçado do mundo real |
-| **Parquet** | nativa | nativa | Colunar, tipado, comprimido — a saída natural do app. ⚠️ **Ainda não implementado:** o DuckDB lê nativamente, mas `pick.ts` não lista `.parquet`; ninguém escreveu o plano |
+| ⌛ **Parquet** | nativa | nativa | Colunar, tipado, comprimido — a saída natural do app. O motor lê e escreve; falta o formato no seletor de arquivo |
 | **JSON / NDJSON** | nativa | nativa | NDJSON é direto; JSON aninhado é **recusado**, com o nome da coluna (18-E, D18E.4) — o motor relacional exige linha/coluna, então não há achatamento automático |
 | **Excel (`.xlsx`)** | extensão `excel` do DuckDB, ou biblioteca à parte | idem | **Assimétrico — ver abaixo** |
 
@@ -291,8 +293,8 @@ A coluna "Escrita" não está vazia por adiamento: documento **nunca** é saída
 | Formato | Leitura | Escrita | Observação |
 |---|---|---|---|
 | **`.txt`, `.md`** | direta | — | detecção de encoding como no CSV; cp1252 é comum no Windows brasileiro |
-| **código-fonte** (`.js`, `.ts`, `.py`, `.go`, `.rs`, `.java`, `.c`/`.cpp`, `.rb`, `.php`, `.sql`, `.sh`, `.css`, `.html`, `.yaml`, `.toml`, entre outras — texto puro) | direta, mesmo extrator de `.txt` | — | extensão compilada/binária (`.class`, `.pyc`, `.o`, ...) fica fora; o modelo identifica a linguagem pelo próprio conteúdo, sem tag exigida |
-| **`.json`, `.ndjson`, `.jsonl` como código/config** (`package.json`, `tsconfig.json`, *fixture* de API, log estruturado) | direta, mesmo extrator de `.txt` | — | **Ainda não implementado** — `document:pick` hoje só filtra `txt`/`md`/`pdf`; entra junto do pilar Código (sem plano numerado, ver `ROADMAP § 4`). JSON neste papel **costuma vir aninhado, com frequência em vários níveis em sequência** — e isso não é problema aqui: o pilar documento nunca interpreta estrutura, só entrega texto cru ao modelo. É o oposto do JSON como *dataset* (tabela acima): lá o aninhamento é recusado (18-E, D18E.4) porque o motor relacional exige linha/coluna; aqui não existe motor nenhum, então não existe restrição. A escolha de caminho é o botão de anexo que o usuário clica (dataset vs. documento), não uma sondagem de conteúdo |
+| ⌛ **código-fonte** (`.js`, `.ts`, `.py`, `.go`, `.rs`, `.java`, `.c`/`.cpp`, `.rb`, `.php`, `.sql`, `.sh`, `.css`, `.html`, `.yaml`, `.toml`, entre outras — texto puro) | direta, mesmo extrator de `.txt` | — | extensão compilada/binária (`.class`, `.pyc`, `.o`, ...) fica fora; o modelo identifica a linguagem pelo próprio conteúdo, sem tag exigida. O extrator já serve; falta o seletor aceitar as extensões |
+| ⌛ **`.json`, `.ndjson`, `.jsonl` como código/config** (`package.json`, `tsconfig.json`, *fixture* de API, log estruturado) | direta, mesmo extrator de `.txt` | — | entra junto do código-fonte, pelo mesmo seletor. JSON neste papel **costuma vir aninhado, com frequência em vários níveis em sequência** — e isso não é problema aqui: o pilar documento nunca interpreta estrutura, só entrega texto cru ao modelo. É o oposto do JSON como *dataset* (tabela acima): lá o aninhamento é recusado (18-E, D18E.4) porque o motor relacional exige linha/coluna; aqui não existe motor nenhum, então não existe restrição. A escolha de caminho é o botão de anexo que o usuário clica (dataset vs. documento), não uma sondagem de conteúdo |
 | **`.pdf` com camada de texto** | `unpdf` | — | zero dependências, sem módulo nativo |
 | **`.pdf` escaneado** | **recusado** | — | sem texto selecionável — ver [Fora do escopo](#fora-do-escopo) |
 | **`.png`, `.jpeg`** | direta ao modelo | — | exige modelo que declare `vision` |
