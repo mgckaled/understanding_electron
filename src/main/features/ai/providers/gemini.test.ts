@@ -446,6 +446,18 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
     consoleSpy.mockRestore()
   })
 
+  it('grau 1: a non-JSON data line (a [DONE] sentinel, a keep-alive) is logged and ignored, never crashes the turn', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    stubStream([sse([modelOutput(0, 'ok')]) + 'data: [DONE]\n\n'])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('ok')
+    expect(consoleSpy).toHaveBeenCalledWith('[gemini] non-JSON data line, ignoring: [DONE]')
+
+    consoleSpy.mockRestore()
+  })
+
   it('grau 1: a step.delta for an unknown step index never surfaces as content or reasoning', async () => {
     stubStream([
       sse([

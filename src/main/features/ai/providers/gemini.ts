@@ -152,7 +152,17 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
           if (line === '' || !line.startsWith('data: ')) continue
 
           const payload = line.slice('data: '.length)
-          const event = JSON.parse(payload) as InteractionsEvent
+          // A non-JSON payload (a `[DONE]` sentinel, a keep-alive) is
+          // protocol noise, not a shape mismatch (D21D.3, grau 1) — the last
+          // thing this parser should do is crash a turn that already
+          // streamed real content over something it was never meant to read.
+          let event: InteractionsEvent
+          try {
+            event = JSON.parse(payload) as InteractionsEvent
+          } catch {
+            console.error(`[gemini] non-JSON data line, ignoring: ${payload}`)
+            continue
+          }
 
           if (event.error !== undefined) {
             console.error('[gemini] mid-stream error', event.error)
