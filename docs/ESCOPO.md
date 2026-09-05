@@ -4,19 +4,19 @@ O que o aplicativo faz, o que ele não faz, e as consequências arquiteturais de
 
 > Este documento é a **definição de produto**. O [`CLAUDE.md`](../CLAUDE.md) diz como o código é escrito; o [`ROADMAP § 1`](ROADMAP.md#1-a-sequência) diz em que ordem construir; o [caderno de estudos](study/README.md) explica o Electron. Aqui está o que se está construindo, e por quê.
 >
-> ⚠️ **O escopo descreve o produto de hoje, não um teto para a arquitetura.** A seção [Fora do escopo](#fora-do-escopo) é firme sobre o que **não se constrói agora** — e continua firme. O que ela não autoriza é estrutura que só saiba abrigar o que está escrito aqui. O critério que separa "não construir" de "não impedir" é dono de [`HISTORY.md`](HISTORY.md) § *flexibilidade é forma de dado e slot*, e o resumo dele é a régua da fase 00: forma de dado que atravessa camadas e costura que custa zero decidem-se agora; feature constrói-se quando existir.
->
-> Esse critério já foi cobrado uma vez e pagou. Quando a decisão citada acima foi escrita, "descrição de imagem por VLM" era o exemplo de feature futura que justificava `Message` nascer como **lista de partes tipadas** em vez de `content: string`. Em ago/2026 a leitura de documento e imagem [entrou no escopo](#duas-classes-de-arquivo-e-a-linha-entre-elas) — e a estrutura que a recebe já estava lá, sem retrofit. Registrado porque é o argumento empírico de que a régua funciona, e não uma previsão de sorte.
+> ⚠️ **O escopo descreve o produto, não um teto para a arquitetura.** A seção [Fora do escopo](#fora-do-escopo) é firme sobre o que **não se constrói** — e continua firme. O que ela não autoriza é estrutura que só saiba abrigar o que está escrito aqui. O critério que separa "não construir" de "não impedir" é dono de [`HISTORY.md`](HISTORY.md) § *flexibilidade é forma de dado e slot*: forma de dado que atravessa camadas e costura que custa zero decidem-se agora; feature constrói-se quando existir.
 
 ---
 
 ## Em uma frase
 
-**Uma bancada de dados local, operada por conversa** — abrir CSV, Excel ou JSON (Parquet no escopo, ainda não no seletor), perguntar sobre ele em português, e sair com uma resposta ou com o arquivo tratado. É o pilar mais maduro do aplicativo, e o que organiza os demais.
+**Uma ferramenta local multiuso, operada por conversa, que administra a inteligência que roda na sua máquina e a que você opta por chamar na nuvem.**
 
-Mas não é só isso, e fingir que é enfraquece o que o app já entrega: na mesma conversa entra o documento que explica o dado (`.md` da especificação, PDF do contrato, captura de tela da planilha), o trecho de código para revisar ou entender, a busca na web, a consulta a documentação de biblioteca, e o raciocínio do modelo em voz alta. **O crivo é uma ferramenta local multiuso, operada por conversa** — e dados é o pilar mais forte e mais antigo dos que ela sustenta, não o único.
+Ela sustenta vários pilares, e **dados é o mais maduro deles** — o que organiza os demais: abrir CSV, Excel ou JSON, perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado. Na mesma conversa entram o documento que explica o dado (o `.md` da especificação, o PDF do contrato, a captura de tela da planilha), o trecho de código para revisar ou entender, a busca na web, a consulta a documentação de biblioteca, e o raciocínio do modelo em voz alta.
 
-Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa, para você entender um resultado que já está na tela; painel, relatório e atualização automática continuam fora — pelo mesmo teste que decide toda fronteira nova, descrito a seguir.
+Administrar a inteligência é pilar como os outros, e tem [seção própria](#a-administração-do-modelo-é-parte-do-produto): qual modelo responde, quanto de contexto ele reserva, o que ele é capaz de receber, e o que sai da máquina quando o provedor é de nuvem.
+
+Não é uma ferramenta de BI. Um gráfico pode aparecer no meio de uma conversa, para você entender um resultado que já está na tela; painel, relatório e atualização automática ficam fora — pelo mesmo teste que decide toda fronteira nova, descrito a seguir.
 
 ---
 
