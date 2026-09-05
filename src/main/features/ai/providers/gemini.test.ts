@@ -349,16 +349,14 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     expect('reasoning' in result).toBe(false)
   })
 
-  it('reads usage_metadata from an interaction status event carrying it', async () => {
+  it('reads usage_metadata from an interaction.status_update event carrying it (confirmed live, D21D.1)', async () => {
     stubStream([
       sse([
         modelOutput(0, 'ok'),
         {
-          event_type: 'interaction.completed',
-          interaction: {
-            status: 'completed',
-            usage_metadata: { prompt_token_count: 8, candidates_token_count: 3 }
-          }
+          event_type: 'interaction.status_update',
+          status: 'completed',
+          usage_metadata: { prompt_token_count: 8, candidates_token_count: 3 }
         }
       ])
     ])
@@ -381,7 +379,7 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     stubStream([
       sse([
         modelOutput(0, 'parcial'),
-        { event_type: 'interaction.completed', interaction: { status: 'incomplete' } }
+        { event_type: 'interaction.status_update', status: 'incomplete' }
       ])
     ])
 
@@ -394,7 +392,7 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     stubStream([
       sse([
         modelOutput(0, 'pronto'),
-        { event_type: 'interaction.completed', interaction: { status: 'completed' } }
+        { event_type: 'interaction.status_update', status: 'completed' }
       ])
     ])
 
@@ -408,7 +406,7 @@ describe('makeGeminiChat — step.start/step.delta parsing', () => {
     stubStream([
       sse([
         modelOutput(0, 'parcial'),
-        { event_type: 'interaction.completed', interaction: { status: 'budget_exceeded' } }
+        { event_type: 'interaction.status_update', status: 'budget_exceeded' }
       ])
     ])
 
@@ -446,6 +444,27 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
     consoleSpy.mockRestore()
   })
 
+  it('recognizes step.stop as expected noise, no diagnostic log (confirmed live, closes a step explicitly)', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'model_output', content: [{ type: 'text', text: 'ok' }] }
+        },
+        { event_type: 'step.stop', index: 0 }
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('ok')
+    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('unrecognized event_type'))
+
+    consoleSpy.mockRestore()
+  })
+
   it('grau 1: a non-JSON data line (a [DONE] sentinel, a keep-alive) is logged and ignored, never crashes the turn', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     stubStream([sse([modelOutput(0, 'ok')]) + 'data: [DONE]\n\n'])
@@ -475,9 +494,7 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
   it('grau 2: throws a named UpstreamError when the response carries no steps at all — proven red first', async () => {
     // Red: sabotage by feeding an event stream with zero step.start events —
     // exactly what a reshaped contract (steps renamed again) would produce.
-    stubStream([
-      sse([{ event_type: 'interaction.completed', interaction: { status: 'completed' } }])
-    ])
+    stubStream([sse([{ event_type: 'interaction.status_update', status: 'completed' }])])
 
     await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
       message: 'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
@@ -544,9 +561,7 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
   })
 
   it('budget_exceeded still throws when nothing usable arrived before it', async () => {
-    stubStream([
-      sse([{ event_type: 'interaction.completed', interaction: { status: 'budget_exceeded' } }])
-    ])
+    stubStream([sse([{ event_type: 'interaction.status_update', status: 'budget_exceeded' }])])
 
     await expect(chat(messages, { model: 'gemini-3.7-flash' })).rejects.toMatchObject({
       message:
