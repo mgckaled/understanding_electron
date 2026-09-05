@@ -66,6 +66,11 @@ type InteractionsEvent = {
     status?: string
     usage_metadata?: { prompt_token_count?: number; candidates_token_count?: number }
   }
+  // Ollama/GLM already prove this shape: HTTP 200 with an error object inside
+  // the stream body (UpstreamError with status: null). Checked before either
+  // contract guard below, so a mid-stream failure reads as what it is, not as
+  // "the API contract may have changed."
+  error?: unknown
 }
 
 type StepAccumulator = {
@@ -119,6 +124,7 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     let promptTokens: number | undefined
     let evalTokens: number | undefined
     let stopped: 'context-exhausted' | undefined
+    let sawBudgetExceeded = false
 
     function stepFor(index: number, type: string): StepAccumulator {
       let step = steps.get(index)
@@ -145,7 +151,13 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
           buffer = buffer.slice(newline + 1)
           if (line === '' || !line.startsWith('data: ')) continue
 
-          const event = JSON.parse(line.slice('data: '.length)) as InteractionsEvent
+          const payload = line.slice('data: '.length)
+          const event = JSON.parse(payload) as InteractionsEvent
+
+          if (event.error !== undefined) {
+            console.error('[gemini] mid-stream error', event.error)
+            throw new UpstreamError(null, describeUpstreamError(null, payload))
+          }
 
           if (event.event_type === 'step.start' && event.index !== undefined) {
             const type = event.step?.type ?? 'unknown'
@@ -189,13 +201,14 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
           const status = event.interaction?.status
           if (status === 'incomplete') stopped = 'context-exhausted'
           else if (status === 'budget_exceeded') {
+            // Distinct from context-exhausted (D21D.1) — but whatever it
+            // means, throwing away a reply that already arrived would be its
+            // own silent-breakage bug. Only refuses the turn below if
+            // nothing usable came back at all.
             console.error(
               '[gemini] budget_exceeded status seen — treating as upstream error, not context exhaustion'
             )
-            throw new UpstreamError(
-              null,
-              'A Interactions API sinalizou budget_exceeded — formato de resposta inesperado, verifique o log.'
-            )
+            sawBudgetExceeded = true
           }
 
           const usage = event.interaction?.usage_metadata
@@ -210,6 +223,12 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     }
 
     if (steps.size === 0) {
+      if (sawBudgetExceeded) {
+        throw new UpstreamError(
+          null,
+          'A Interactions API sinalizou budget_exceeded antes de qualquer resposta utilizável chegar.'
+        )
+      }
       console.error('[gemini] unexpected Interactions API shape: no steps in response')
       throw new UpstreamError(
         null,
@@ -223,30 +242,40 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     for (const step of steps.values()) {
       if (!step.known) continue
       if (step.type === 'thought') {
+        // A signature-less thought has no consumer yet — 21-D-B is what
+        // starts depending on it for resend. Degrading (grau 1) here, not
+        // refusing the turn, keeps a real, usable reply from being thrown
+        // away over a field this plan never reads back.
         if (step.signature === '') {
-          console.error(
-            '[gemini] unexpected Interactions API shape: thought step closed without a signature'
-          )
-          throw new UpstreamError(
-            null,
-            'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
-          )
+          console.error('[gemini] thought step closed without a signature, ignoring it')
+        } else {
+          reasoning += step.reasoningText
         }
-        reasoning += step.reasoningText
       } else if (step.type === 'model_output') {
         sawModelOutput = true
         content += step.contentText
       }
     }
 
-    if (!sawModelOutput) {
+    if (sawBudgetExceeded && content === '') {
+      throw new UpstreamError(
+        null,
+        'A Interactions API sinalizou budget_exceeded antes de qualquer resposta utilizável chegar.'
+      )
+    }
+
+    if (!sawModelOutput || content === '') {
       console.error(
-        '[gemini] unexpected Interactions API shape: no model_output step in a completed turn'
+        `[gemini] unexpected Interactions API shape: ${sawModelOutput ? 'model_output step produced no text' : 'no model_output step in a completed turn'}`
       )
       throw new UpstreamError(
         null,
         'Formato de resposta inesperado — o contrato da Interactions API pode ter mudado.'
       )
+    }
+
+    if (promptTokens === undefined) {
+      console.error('[gemini] no usage_metadata seen in this turn — token counters unavailable')
     }
 
     return {
