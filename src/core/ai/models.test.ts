@@ -397,13 +397,10 @@ describe('exposesReasoning', () => {
     expect(exposesReasoning(GLM_MODELS[0]!)).toBe(true)
   })
 
-  it('is false for Gemini even though it declares thinking too', () => {
-    // The app's own gate, not the model's real ability (D21A.10, 21-C-C):
-    // Gemini's generateContent has no dedicated thought block, so showing
-    // the switch here would promise a summary that never arrives.
+  it('is true for Gemini too, since 21-D-A (D21D.4/D21D.10 revert the 21-C-C exclusion)', () => {
     for (const model of GEMINI_MODELS) {
       expect(hasCapability(model, 'thinking')).toBe(true)
-      expect(exposesReasoning(model)).toBe(false)
+      expect(exposesReasoning(model)).toBe(true)
     }
   })
 

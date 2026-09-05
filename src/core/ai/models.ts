@@ -172,8 +172,11 @@ export function hasCapability(model: AiModel, capability: string): boolean {
  * `thinkingLevel` has no real off switch, D21A.6), and this is the separate
  * question of what this app's current adapter can actually show.
  */
+// Gemini exclusion (D21C.10) reverted in D21D.4/D21D.10: the Interactions
+// API (21-D-A) returns a real `reasoning` string, same shape Ollama/GLM have
+// had since 21-A — nothing here needs the signature resend that 21-D-B adds.
 export function exposesReasoning(model: AiModel): boolean {
-  return hasCapability(model, 'thinking') && model.provider !== 'gemini'
+  return hasCapability(model, 'thinking')
 }
 
 /**
