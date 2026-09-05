@@ -441,15 +441,11 @@ Registrado explicitamente para não ser confundido com "ainda não":
 
 ---
 
-## O que este escopo implica no plano
+## Consequências arquiteturais
 
-### A fundação continua servindo, e a camada de IA sai da fila
+### A conversa é o primeiro dado próprio do aplicativo
 
-Foi conferido item a item na virada. O contrato IPC, o `Result`, o registro de jobs, os tokens e a pirâmide de testes servem a este escopo sem alteração — resultado esperado de uma fundação que não presume o produto. O que mudou de lugar é a **ordem**: a camada de IA deixa de ser a última etapa e passa a ser a interface, então o chat local da [fatia 1](plan/active/09-camada-de-ia.md) vira fundação em vez de adiantamento.
-
-### As conversas são o primeiro dado próprio do aplicativo
-
-Antes eram as receitas. Tudo até aqui é derivado de arquivo do usuário; a conversa não é. Mora em `app.getPath('userData')` e o formato precisa suportar migração desde a primeira versão — a lista de tipos de artefato vai crescer, e a de tipos de passo também. Uma receita salva é uma lista de passos salva: divide o mesmo armazenamento, sem mecanismo novo.
+Todo o resto é derivado de arquivo do usuário; a conversa não é. Mora em `app.getPath('userData')` e o formato precisa suportar migração desde a primeira versão — a lista de tipos de artefato vai crescer, e a de tipos de passo também. Uma receita salva é uma lista de passos salva: divide o mesmo armazenamento, sem mecanismo novo.
 
 ### Cria um pacote novo em `core/`
 
@@ -475,21 +471,7 @@ Nunca se relê o PDF a cada turno. É o mesmo princípio do cache de prefixo do 
 
 ## Ordem de construção
 
-```
-fundação (8 fases) ──► casca conversacional ──► persistência das conversas
-                                                       │
-                                                       ├─► orçamento de contexto e modelo
-                                                       ├─► anexo: mecanismo + dataset (esquema e perfil)
-                                                       ├─► anexo: documento e imagem
-                                                       ├─► camada de dados (DuckDB, Arrow, virtualização)
-                                                       ├─► propor: consulta e passos
-                                                       ├─► gráfico como artefato
-                                                       ├─► receitas salvas e reaplicáveis
-                                                       ├─► JSON/NDJSON · Excel
-                                                       └─► camada 2 do catálogo
-```
-
-O detalhe de cada etapa, com dependências e estado, está no [`ROADMAP § 1`](ROADMAP.md#1-a-sequência).
+A sequência do que falta, com dependências e estado de cada etapa, é do [`ROADMAP § 1`](ROADMAP.md#1-a-sequência) — dono único, para não haver duas ordens divergindo em silêncio.
 
 ---
 
