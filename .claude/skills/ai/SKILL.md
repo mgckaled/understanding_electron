@@ -39,7 +39,7 @@ Todo seam **lança** em vez de devolver `Result` — quem classifica a exceção
 
 ⚠️ **`readAttention()` devolve `null` para arquitetura híbrida (Mamba/atenção), não só para embedder.** `granite4:3b`/`granite4:3b-h` reportam `attention.head_count_kv: null` de verdade (não ausente) junto de um bloco `ssm.*` completo — `readAttention` exige os três campos juntos e cai no mesmo caminho hoje reservado a um embedder. Se um modelo dessa arquitetura entrar na frota, o orçamento de contexto não erra a conta: **não faz conta nenhuma**, em silêncio, como se o modelo não tivesse custo de contexto — o comentário do código já previa dois casos (embedder, formato novo); este é o terceiro, e o perigoso, porque o modelo **é** conversacional (`ARMADILHAS.md` § *`readAttention()` devolve `null` para arquitetura híbrida Mamba/atenção*). Nenhum candidato desta arquitetura está na frota hoje — não corrigido.
 
-⚠️ **`freeBytes` é lido no momento da chamada.** Esta máquina varia ~3 GB conforme o que mais roda (`CLAUDE.md` § Máquina e modelos locais); uma reserva feita ociosa nunca encolhe sozinha — é isso que a trava de janela (abaixo) existe para não deixar acontecer em silêncio.
+⚠️ **`freeBytes` é lido no momento da chamada.** Esta máquina varia ~1,5–2 GB conforme o que mais roda (`CLAUDE.md` § Máquina e modelos locais); uma reserva feita ociosa nunca encolhe sozinha — é isso que a trava de janela (abaixo) existe para não deixar acontecer em silêncio.
 
 ## Orçamento de tokens: quanto a próxima mensagem custa, e se cabe
 
@@ -61,7 +61,7 @@ type ConversationWindow =
   | { status: 'unaffordable'; numCtx: number } // travado, e esta máquina não aguenta mais
 ```
 
-O par `(modelo, num_ctx)` trava no **primeiro envio** — antes disso a janela deriva livremente do que cabe agora. `'unaffordable'` é o modo de falha assimétrico da trava: a reserva é refeita a cada carregamento e a RAM livre varia ~3 GB nesta máquina, então uma janela travada enquanto ociosa pode não alocar depois — **recusar é o ponto**, porque encolher em silêncio é exatamente o que a trava existe para não fazer.
+O par `(modelo, num_ctx)` trava no **primeiro envio** — antes disso a janela deriva livremente do que cabe agora. `'unaffordable'` é o modo de falha assimétrico da trava: a reserva é refeita a cada carregamento e a RAM livre varia ~1,5–2 GB nesta máquina, então uma janela travada enquanto ociosa pode não alocar depois — **recusar é o ponto**, porque encolher em silêncio é exatamente o que a trava existe para não fazer.
 
 ⚠️ **`costed` distingue reserva real de orçamento client-side.** Para Ollama, `num_ctx` é uma reserva de RAM local de verdade, compartilhada entre prompt e geração (por isso `REASONING_OUTPUT_RESERVE_RATIO` só se aplica quando `costed`). Para nuvem, `num_ctx` **nunca chega ao corpo da requisição** — é só contabilidade do lado do cliente — então reservar espaço de geração contra ele não tem sentido, e `conversationWindow` sempre re-deriva em vez de travar, mesmo para uma conversa já travada num valor antigo de antes de este parâmetro existir.
 

@@ -151,7 +151,7 @@ Ponto levantado pelo usuário e que corrige a primeira resposta desta conversa: 
 
 ❓ **A restrição que esta seção chamava de decisiva deixou de decidir.** O argumento era: *tool calling* exige `capabilities: tools`, e o modelo padrão com `vision` não as tem, logo uma conversa de projeto com busca abriria mão de visão. **`qwen3.5:2b` junta `vision`, `tools` e `thinking`** — a exclusão deixou de ser universal, e o que fazer com o gate é decisão de produto própria (`F-6`, [`ROADMAP § 1`](../ROADMAP.md#1-a-sequência)). A restrição continua real para *outros* modelos da frota: quais juntam o quê é de [`reference/models/`](models/README.md).
 
-⚠️ **Aritmética de bancada, candidatos com `tools` + `nomic-embed-text` (274 MB), contra as três faixas de RAM livre medidas ([`CLAUDE.md`](../../CLAUDE.md): ~9 GB só Electron · ~7,5 GB só VS Code · ~6 GB sessão típica):**
+⚠️ **Aritmética de bancada, candidatos com `tools` + `nomic-embed-text` (274 MB), contra as faixas de RAM livre então vigentes (~9 GB só Electron · ~7,5 GB só VS Code · ~6 GB sessão típica). ⚠️ **A RAM foi remedida depois desta bancada** — hoje ~8,5 GB só terminal e 6,5–7,0 GB com VS Code ([`CLAUDE.md`](../../CLAUDE.md)), o que aperta a leitura das duas últimas linhas: reconfira antes de usar esta tabela para escolher modelo.**
 
 | Chat + embedder | Peso + cache a 8k ctx | Peso + cache no teto declarado |
 |---|---|---|
