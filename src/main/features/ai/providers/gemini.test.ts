@@ -169,7 +169,11 @@ describe('makeGeminiChat — request shape', () => {
 
     expect(requestBody(fetchMock).input).toEqual([
       { type: 'user_input', content: [{ type: 'text', text: 'oi' }] },
-      { type: 'thought', signature: 'sig-1', summary: [{ text: 'Pensando' }] },
+      {
+        type: 'thought',
+        signature: 'sig-1',
+        summary: [{ type: 'text', text: 'Pensando' }]
+      },
       { type: 'model_output', content: [{ type: 'text', text: 'olá' }] }
     ])
   })
@@ -215,12 +219,12 @@ describe('makeGeminiChat — request shape', () => {
     expect(input[1]).toEqual({
       type: 'thought',
       signature: 'sig-1',
-      summary: [{ text: 'Primeiro' }]
+      summary: [{ type: 'text', text: 'Primeiro' }]
     })
     expect(input[2]).toEqual({
       type: 'thought',
       signature: 'sig-2',
-      summary: [{ text: 'Segundo' }]
+      summary: [{ type: 'text', text: 'Segundo' }]
     })
   })
 
@@ -246,7 +250,7 @@ describe('makeGeminiChat — request shape', () => {
     expect(input).toContainEqual({
       type: 'thought',
       signature: 'sig-live',
-      summary: [{ text: 'Pensando' }]
+      summary: [{ type: 'text', text: 'Pensando' }]
     })
   })
 

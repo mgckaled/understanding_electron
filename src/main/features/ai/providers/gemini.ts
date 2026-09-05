@@ -34,7 +34,7 @@ function toInteractionsInput(messages: ChatMessage[]): unknown[] {
       const thoughts = (message.reasoningSignatures ?? []).map((signed) => ({
         type: 'thought',
         signature: signed.signature,
-        summary: [{ text: signed.text }]
+        summary: [{ type: 'text', text: signed.text }]
       }))
       return [
         ...thoughts,
