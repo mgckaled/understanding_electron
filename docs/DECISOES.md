@@ -449,6 +449,22 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 
 ---
 
+## Revisão de escopo (6ª)
+
+| trilha | sigla | descrição |
+|---|---|---|
+| — | RE6.1 | a identidade se reescreve, não se emenda — a frase de abertura deixa de ser "bancada de dados" |
+| — | RE6.2 | a administração do modelo vira seção de produto, com princípio próprio |
+| — | RE6.3 | o teste de escopo ganha a segunda categoria, **instrumentação** — legitima a trilha O |
+| — | RE6.4 | raciocínio (e possivelmente busca web) **não** chega por *tool calling* — três caminhos registrados, escolha é do plano |
+| — | RE6.5 | projeto entra como escopo definido e não construído, desacoplado de RAG e ML |
+| — | RE6.6 | o diagrama de ordem de construção é apagado, não atualizado |
+| — | RE6.7 | número datado em `ARMADILHAS.md`/`HISTORY-archive.md` não se corrige — é evidência da decisão da época |
+| — | RE6.8 | a revisão não abre plano de código — F-6, arco 22 e o agrupador de projeto seguem onde estão |
+| — | RE6.9 | o `ESCOPO.md` é atemporal e sem narrativa; a régua é aceite, verificada por grep |
+
+---
+
 ## Plano ainda ativo
 
 Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, até `active/09-camada-de-ia.md` mover para `implemented/`.
