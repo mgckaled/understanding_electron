@@ -204,6 +204,11 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
             } else if (step.type === 'model_output' && delta?.text !== undefined) {
               step.contentText += delta.text
               onChunk?.(delta.text)
+            } else {
+              // Diagnostic only (D21D.3 grau 1 spirit) — the real delta
+              // sub-type/field names are not confirmed live yet, so surface
+              // whatever shows up instead of silently doing nothing with it.
+              console.error(`[gemini] unrecognized step.delta shape: ${JSON.stringify(delta)}`)
             }
             continue
           }
@@ -225,6 +230,14 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
           if (usage !== undefined) {
             promptTokens = usage.prompt_token_count
             evalTokens = usage.candidates_token_count
+          } else if (status === undefined && event.event_type !== 'interaction.created') {
+            // Same diagnostic purpose: an event_type this parser has no
+            // branch for at all (not step.start/step.delta, no status, no
+            // usage) — the live shape of the completion/status event is
+            // still unconfirmed (D21D.1).
+            console.error(
+              `[gemini] unrecognized event_type: ${event.event_type}, payload: ${payload}`
+            )
           }
         }
       }
