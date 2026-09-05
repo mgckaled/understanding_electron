@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **97** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **106** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -397,3 +397,15 @@ A regra "nenhum handler testável importa `electron` por valor" é real, mas a *
 O modo de falha real não é o import, é o **parâmetro com default** — e esse é capturável de forma mecânica: `Function.length` conta os parâmetros **antes do primeiro default**, então `handler.length` cai de 1 para 0 assim que alguém pendura um default de `electron`. Uma asserção de uma linha (`expect(readProcesses.length).toBe(1)`) reprova sob a sabotagem exata e passa sem ela.
 
 Vale além deste handler: sempre que a invariante for "a dependência entra por parâmetro, sem default", `Function.length` é o instrumento; esperar que o import exploda é confiar num erro que não acontece.
+
+### Interactions API do Gemini: linha `data:` não-JSON derruba o turno inteiro (set/2026)
+Um `JSON.parse` sem `try/catch` sobre cada linha `data:` do SSE lança `SyntaxError` quando a linha é uma sentinela não-JSON (`data: [DONE]`, confirmado ao vivo) — não é `UpstreamError`, escapa sem classificação, e `mapProviderError` (`src/main/features/ai/handlers.ts`) cai no fallback genérico `unavailable`. Sintoma: Observatório registra `ai:chat` em ~118s, a tela renderiza conteúdo já recebido por `onChunk` e o substitui por "serviço indisponível" — o defeito descarta uma resposta que já tinha chegado. Conserto: `try/catch` ao redor do `JSON.parse` de cada linha, log nomeado e `continue`, nunca deixar uma falha de parse escapar da guarda de contrato (`src/main/features/ai/providers/gemini.ts`).
+
+### Interactions API do Gemini: `status`/`usage` mudam de forma entre eventos, nunca aninhados do mesmo jeito (set/2026)
+Confirmado ao vivo: `interaction.status_update` (evento intermediário) carrega `status` solto no topo (`{event_type, interaction_id, status}`); `interaction.completed` (evento final) aninha tudo sob `interaction: {status, usage: {...}, model, ...}`, com nomes de campo diferentes do que a documentação sugeria (`total_input_tokens`/`total_output_tokens`, nunca `usage_metadata`/`prompt_token_count`). Existe ainda um evento `step.stop` (`{event_type, index}`) que fecha um step explicitamente, sem carregar mais nada. Conserto: ler `event.status ?? event.interaction?.status` e `event.interaction?.usage` como campos **independentes**, nunca assumir que duas informações relacionadas sempre viajam no mesmo formato de evento.
+
+### Interactions API do Gemini: delta de raciocínio vem embrulhado em `content: {text, type}`, não um campo `text` solto (set/2026)
+Um `step.delta` de tipo `thought_summary`/`thought_signature` usa o mesmo formato de content-union que um `model_output` já usa — o texto mora em `delta.content.text`, não em `delta.text`. Ler o campo errado não lança nada: o texto simplesmente nunca chega a `onThinking`, sem log, sem erro — sintoma "nenhum raciocínio aparece, resposta normal". Conserto: `delta.content?.text ?? delta.text` (o segundo membro cobre a forma solta caso ela apareça em algum evento diferente).
+
+### Consertar "não travar o turno" virou "não mostrar o raciocínio" — o texto foi descartado junto da assinatura ausente (set/2026)
+Uma revisão anterior pediu para não persistir a *assinatura* de um `thought` step quando ausente (nenhum consumidor lê o campo ainda). A implementação leu isso como "descartar o texto do raciocínio inteiro quando a assinatura falta" — `reasoning += step.reasoningText` só rodava dentro do `else` de `signature !== ''`. Como nenhuma `thought_signature` chegou numa chamada real, um raciocínio corretamente calculado (visível nos logs) nunca chegava à interface. Sintoma: resposta normal, zero raciocínio, zero erro. Conserto: o texto é sempre incluído; só a ausência da assinatura vira log informativo. Lição: "não persista o campo X" e "não mostre o dado Y" são duas frases diferentes, e a segunda nunca foi pedida.
