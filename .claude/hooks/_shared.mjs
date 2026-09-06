@@ -12,8 +12,8 @@
  * identical behaviour on every platform.
  */
 
-import { spawnSync } from 'node:child_process'
-import { existsSync, lstatSync, readFileSync } from 'node:fs'
+import { spawn, spawnSync } from 'node:child_process'
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -143,4 +143,128 @@ export function runBin(pkg, args, { binName, timeout = 30_000 } = {}) {
 export function stripComments(source, { lineComments = true } = {}) {
   const withoutBlocks = source.replace(/\/\*[\s\S]*?\*\//g, '')
   return lineComments ? withoutBlocks.replace(/^\s*\/\/.*$/gm, '') : withoutBlocks
+}
+
+/**
+ * Runs a command line through the shell and resolves its result.
+ *
+ * ⚠️ CPU affinity is deliberately NOT applied here. On Windows the mask is
+ * inherited at process creation, and `cmd.exe` spawns the real child within
+ * milliseconds — long before a `Get-Process ... .ProcessorAffinity` call can
+ * land. Measured: the grandchild still reported 8 logical CPUs. The forms that
+ * do pin at creation (`start /affinity`, `Start-Process`) swallow the exit
+ * code (measured: 0 for a child that exited 7), which would leave the gate
+ * unable to fail — the worse trade by far. Worker count is capped in
+ * `vitest.config.ts` instead, and pinning the whole terminal is a machine-level
+ * choice: docs/reference/ambiente/.
+ *
+ * @param commandLine - Full command line, run through the shell.
+ * @returns Exit status and captured output; `status` is null when killed.
+ */
+export function runGate(commandLine, { timeout = 600_000 } = {}) {
+  // A linha inteira, nunca (comando, args) com `shell: true`: essa forma
+  // concatena sem escapar e o Node avisa (DEP0190).
+  const child = spawn(commandLine, { cwd: REPO_ROOT, shell: true, windowsHide: true })
+
+  let stdout = ''
+  let stderr = ''
+  child.stdout?.on('data', (d) => (stdout += d))
+  child.stderr?.on('data', (d) => (stderr += d))
+
+  const killer = setTimeout(() => child.kill(), timeout)
+
+  return new Promise((resolve) => {
+    child.on('error', () => resolve({ status: null, stdout, stderr }))
+    child.on('close', (status) => {
+      clearTimeout(killer)
+      resolve({ status, stdout, stderr })
+    })
+  })
+}
+
+/** Anything here invalidates the code gates (typecheck, lint, suite). */
+export const CODE_PATHS = [
+  'src',
+  'test',
+  'e2e',
+  'config',
+  'scripts',
+  '.claude/hooks',
+  'package.json',
+  'pnpm-lock.yaml',
+  'pnpm-workspace.yaml',
+  'vitest.config.ts',
+  'electron.vite.config.ts',
+  'eslint.config.mjs',
+  'tsconfig.json',
+  'tsconfig.node.json',
+  'tsconfig.web.json',
+  'tsconfig.e2e.json'
+]
+
+/** Anything here only needs the documentation link/section check. */
+export const DOC_PATHS = ['docs', '.claude/skills', 'CLAUDE.md', 'README.md']
+
+const SKIP_DIRS = new Set(['node_modules', 'out', 'dist', '.git', 'coverage'])
+
+/**
+ * Returns the newest mtime under a repo-relative path, or 0 when absent.
+ *
+ * @param rel - File or directory, relative to the repository root.
+ * @returns Epoch milliseconds of the most recently modified entry.
+ */
+export function newestMtime(rel) {
+  let newest = 0
+  const visit = (target) => {
+    let stat
+    try {
+      stat = lstatSync(target)
+    } catch {
+      return
+    }
+    if (stat.isDirectory()) {
+      if (SKIP_DIRS.has(path.basename(target))) return
+      let entries
+      try {
+        entries = readdirSync(target)
+      } catch {
+        return
+      }
+      for (const entry of entries) visit(path.join(target, entry))
+      return
+    }
+    if (stat.mtimeMs > newest) newest = stat.mtimeMs
+  }
+  visit(path.join(REPO_ROOT, rel))
+  return newest
+}
+
+/** Absolute path of a named stamp file under node_modules/.cache. */
+export function stampPath(name) {
+  return path.join(REPO_ROOT, 'node_modules', '.cache', name)
+}
+
+/** Reads a stamp, or 0 when absent or unreadable — which forces the full gate. */
+export function readStamp(name) {
+  try {
+    return Number(readFileSync(stampPath(name), 'utf8')) || 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Records a stamp. Failing to write only means the next run redoes the work.
+ *
+ * @param name - Stamp file name.
+ * @param at - Epoch milliseconds to record; use the time the scan STARTED, so
+ *   a file written during the run is not treated as already verified.
+ */
+export function writeStamp(name, at) {
+  try {
+    mkdirSync(path.dirname(stampPath(name)), { recursive: true })
+    writeFileSync(stampPath(name), String(at))
+  } catch {
+    /* empty */
+  }
 }

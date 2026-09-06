@@ -12,6 +12,15 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### Afinidade de CPU no Windows: as duas formas óbvias falham em direções opostas (set/2026)
+Ao tentar limitar o portão a metade das CPUs, os dois caminhos naturais foram medidos e **os dois são armadilhas**:
+
+**(1) `start /affinity F /wait /b <cmd>` e `Start-Process -PassThru` fixam a máscara, mas engolem o código de saída** — medido: um filho que sai com 7 devolve **0**. Um portão construído sobre eles fica incapaz de reprovar, em silêncio. Mesma família do `args` que deixou os cinco hooks inertes: falha que não falha.
+
+**(2) Setar a afinidade depois, pelo PID (`(Get-Process -Id $pid).ProcessorAffinity = 0x0F`), preserva o código de saída mas não alcança quem importa.** No Windows a máscara é herdada **no momento da criação** do processo; com `shell: true` o `cmd.exe` cria o filho real em milissegundos, muito antes dos ~300 ms que o PowerShell leva para subir. Medido com um processo de 4 s: o neto ainda reportava **8** CPUs lógicas, não 4.
+
+**O que sobra:** limitar o número de workers na ferramenta (`maxWorkers` no `vitest.config.ts`) ou fixar o **terminal inteiro** com `/affinity`, já que a máscara é herdada por toda a descendência — decisão de máquina, em [`reference/ambiente/`](reference/ambiente/README.md). **A prova que separa as duas armadilhas é a mesma:** rodar um filho que sai com código conhecido, e um filho longo que imprime `os.availableParallelism()`. Sem elas, os dois mecanismos *parecem* funcionar.
+
 ### Uma asserção que dá o mesmo resultado com e sem o defeito não é teste, é decoração (ago/set/2026)
 Três vezes na escrita do plano O-4 (antes de qualquer código, pego em revisão): (1) "modal fechado não sonda nada" — o painel nem monta fechado (§4.2/DO1.10 já garantem isso), então a asserção passaria com ou sem `enabled: false`; (2) "só três canais não disparam" enumerava três dos nove pontos sondados e esquecia o quarto, exatamente o que provaria o furo; (3) uma sigla nova (`audio` → `'AU'`) coincidia byte a byte com o que o fallback `UNKNOWN` já produzia (`capability.slice(0,2).toUpperCase()`), então testar a sigla não provava que a entrada nova existia. **Diagnóstico em um toque, antes de escrever a asserção:** calcule o que ela avalia **com o defeito presente** — se o valor é o mesmo com e sem a mudança, a asserção não é o teste, é decoração. **Conserto:** mover a afirmação para o que realmente diverge — o estado **depois de montado mas antes do clique**, a lista completa de pontos sondados, o label/ícone em vez da sigla.
 

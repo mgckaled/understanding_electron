@@ -18,6 +18,7 @@
     "test:e2e": "pnpm run build && playwright test --project=dev",
     "test:e2e:packaged": "pnpm run build:unpack && playwright test --project=packaged",
     "check:docs": "node scripts/check-doc-links.mjs",
+    "check:turn": "pnpm run typecheck && pnpm run lint && pnpm run check:docs",
     "check:fast": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run check:docs",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",

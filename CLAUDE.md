@@ -308,7 +308,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 ### Commits
 
 - **Commit nunca leva `Co-authored-by`** mencionando Claude, Anthropic ou qualquer assistente de IA. Autoria é de quem revisa e decide, não de quem redige — e isso é **hook**, não convenção lembrada: [`no_ai_coauthor.mjs`](.claude/hooks/no_ai_coauthor.mjs) bloqueia o comando antes do commit acontecer.
-- Os outros quatro, em `.claude/settings.json`: `format_fix` (Prettier + ESLint `--fix`), `guard` (**11 invariantes** que o lint não expressa — dez sobre código, a 11ª sobre link relativo quebrado em `.md`), `test_related` (`vitest related` no arquivo tocado) e um `Stop` que roda **o portão que corresponde ao que mudou** — `check:fast` se algo de código foi tocado, `check:docs` se só documentação, nada se nada mudou ([`stop_gate.mjs`](.claude/hooks/stop_gate.mjs), decidido por mtime contra um marcador, nunca por `git status`: commitar no meio da sessão limpa o status sem limpar o risco). **Na dúvida — marcador ausente, caminho fora das duas listas — roda tudo.** **Só o que está registrado em `settings.json` roda** — hook que existe como arquivo não é hook ativo.
+- Os outros cinco, em `.claude/settings.json`: `format_fix` (Prettier + ESLint `--fix`), `guard` (**11 invariantes** que o lint não expressa — dez sobre código, a 11ª sobre link relativo quebrado em `.md`), `test_related` (`vitest related` no arquivo tocado), e **dois portões que dividem o custo por momento**: o `Stop` roda [`stop_gate.mjs`](.claude/hooks/stop_gate.mjs) — `check:turn` (typecheck + lint + docs, ~35 s) quando código mudou, `check:docs` quando só documentação, nada quando nada mudou; e o `PreToolUse` de `git commit` roda [`commit_gate.mjs`](.claude/hooks/commit_gate.mjs), que é onde **a suíte inteira** roda, uma vez por commit em vez de uma vez por resposta. Os dois decidem por mtime contra um marcador, nunca por `git status` (commitar no meio da sessão limpa o status sem limpar o risco), e **na dúvida rodam tudo**. **Só o que está registrado em `settings.json` roda** — hook que existe como arquivo não é hook ativo.
 - ⚠️ **O `command` leva a linha inteira, com caminho absoluto via `$CLAUDE_PROJECT_DIR`.** Não há campo `args` no schema, e caminho relativo deixa de resolver quando o diretório da sessão muda. As duas formas erradas falham com saída 1, que **não bloqueia**: o hook fica inerte e o aviso vira ruído. Ambas já aconteceram aqui ([`ARMADILHAS.md`](docs/ARMADILHAS.md)). **Ao mexer num hook, prove por provocação.**
 - ⚠️ **O `guard` só vê escrita por `Edit`/`Write`.** `sed`/`python` via Bash não dispara hook nenhum — para essas, `pnpm exec node scripts/check-doc-links.mjs` verifica caminho e seção citada.
 
@@ -316,7 +316,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo — **107 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **108 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|
