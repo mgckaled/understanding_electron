@@ -101,7 +101,7 @@ Registrado para não virar surpresa:
 - **Persistir o resultado tratado como tabela nova** — D19.4 escolhe pré-visualização; materializar é decisão de armazenamento própria.
 - **"Receita salva"** (pipeline nomeado e reaplicável entre conversas) — continua sem plano numerado, fatia 5/6 do [plano 09](../active/09-camada-de-ia.md) seguem no backlog.
 - **UI de montagem manual de passo** — este plano nasce a partir da proposta do modelo; um construtor manual de pipeline, se vier, é decisão separada.
-- **RAG sobre cartões/receitas** — dado de fora do escopo deste plano; ver [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto.md) para o levantamento correlato, ainda sem plano.
+- **RAG sobre cartões/receitas** — dado de fora do escopo deste plano; ver [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto/README.md) para o levantamento correlato, ainda sem plano.
 - **Edição de parâmetro de um passo** — o passo 6 só permite remover; trocar `column`/`value`/`operator` de um passo proposto pede um construtor de formulário por tipo de passo, fora do corte (ver D19.7 abaixo, o motivo prático que torna essa lacuna mais sentida do que parecia no esboço).
 - **Filtro de exclusão múltipla ou de união** ("remover nomes com A, D e F", "manter só X ou Y") — decisão adiada pelo usuário na revisão ao vivo (D19.8): o catálogo de seis operações só combina condições em E entre passos, sem `notContains`/`isIn`. Gatilho em [`ROADMAP § 2`](../../ROADMAP.md#2-gatilhos-de-revisão).
 

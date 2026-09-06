@@ -155,7 +155,7 @@ O que fica de fora é a **gerência do índice** como superfície: biblioteca de
 
 > ⚠️ **Projeto não implica busca semântica.** As duas nascem juntas em outras ferramentas, e isso faz parecer que uma exige a outra. Enquanto os documentos de um projeto couberem no [teto por documento](#o-teto-do-documento-é-tempo-não-tamanho), mandá-los inteiros é **melhor** que recuperar trechos: o trecho recuperado muda a cada pergunta e descarta o cache de prefixo, enquanto o documento inteiro paga uma vez. A busca semântica entra pelo gatilho que ela já tem — o documento que estoura aquele teto —, e esse gatilho vale igual para conversa avulsa.
 
-**Aprendizado sobre o dado (agrupar, detectar anomalia, imputar) não pertence aqui**, e sim ao pilar de dados: ele opera sobre dataset, não sobre conversa. Estado e ordem das três frentes: [`ROADMAP § 1`](ROADMAP.md#1-a-sequência); o levantamento que decompõe custo e alternativas, em [`reference/projetos-e-rag-por-projeto.md`](reference/projetos-e-rag-por-projeto.md).
+**Aprendizado sobre o dado (agrupar, detectar anomalia, imputar) não pertence aqui**, e sim ao pilar de dados: ele opera sobre dataset, não sobre conversa. Estado e ordem das três frentes: [`ROADMAP § 1`](ROADMAP.md#1-a-sequência); o levantamento que decompõe custo e alternativas, em [`reference/projetos-e-rag-por-projeto/README.md`](reference/projetos-e-rag-por-projeto/README.md).
 
 ---
 
@@ -221,7 +221,7 @@ Quando o modelo expõe o próprio raciocínio, ele aparece **separado da respost
 
 ## Ferramentas do chat
 
-Duas capacidades trazem para dentro da conversa algo que estava fora dela — busca web e documentação —, propostas em [`reference/web-fetch_mcp_thinking.md`](reference/web-fetch_mcp_thinking.md). Cada uma é pilar próprio pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo): vive inteira dentro da conversa, sem estado que sobreviva a ela. Raciocínio visível **não** é ferramenta — é capacidade do modelo, e tem [seção própria](#raciocínio-é-do-produto-não-do-provedor).
+Duas capacidades trazem para dentro da conversa algo que estava fora dela — busca web e documentação —, propostas em [`reference/web-fetch-mcp-thinking/README.md`](reference/web-fetch-mcp-thinking/README.md). Cada uma é pilar próprio pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo): vive inteira dentro da conversa, sem estado que sobreviva a ela. Raciocínio visível **não** é ferramenta — é capacidade do modelo, e tem [seção própria](#raciocínio-é-do-produto-não-do-provedor).
 
 | | Faz | Não faz |
 |---|---|---|

@@ -23,7 +23,7 @@ O sintoma canônico está nas linhas 15 e 17: a 15 abre em negrito com *"Uma ban
 - As sete skills invocadas pelo Skill tool nesta sessão.
 - Conferido contra o código: `draft:*` é escopado por `conversationId` (`src/shared/ipc.ts`) — o rascunho **passa** no teste de escopo vigente, o que dá o contraste que sustenta o Passo 3.
 - Inventário das citações de RAM livre: `CLAUDE.md:276` (dono), `.claude/skills/ai/SKILL.md` linhas 42 e 64, `reference/projetos-e-rag-por-projeto.md` § 7. As citações em `ARMADILHAS.md:159` e `HISTORY-archive.md` são **registro datado de decisão** e não se corrigem.
-- [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto.md) lido por inteiro (levantamento de 25/08/2026) — é o insumo do Passo 5, e ele próprio tem duas premissas envelhecidas, tratadas no Passo 5.
+- [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto/README.md) lido por inteiro (levantamento de 25/08/2026) — é o insumo do Passo 5, e ele próprio tem duas premissas envelhecidas, tratadas no Passo 5.
 
 ---
 
@@ -112,7 +112,7 @@ O caso está declarado como aberto na linha 31. Este plano **fecha o veredito** 
 **O veredito, aplicando o teste com honestidade:**
 
 - **Dentro:** agrupar conversas sob um prompt de sistema e um conjunto de documentos. São *"contexto consumido"* e *"artefato que o app já sabe persistir"* — os dois termos permitidos da linha 27. O `project_id` é uma coluna, e o slot de prompt de sistema **já existe** no `settings JSON` por conversa (D14.1); falta elevá-lo de conversa para projeto.
-- **Fora:** a superfície de **gerência** — biblioteca de documentos com status de reindexação, seletor de embedder, painel de índice. Tela própria com estado próprio, do lado "outro produto". Reforço prático de [`projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto.md) § 6: existe **um** embedder qualificado na máquina (`nomic-embed-text`), então "escolher embedder" hoje é escolher entre um e nada.
+- **Fora:** a superfície de **gerência** — biblioteca de documentos com status de reindexação, seletor de embedder, painel de índice. Tela própria com estado próprio, do lado "outro produto". Reforço prático de [`projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto/README.md) § 6: existe **um** embedder qualificado na máquina (`nomic-embed-text`), então "escolher embedder" hoje é escolher entre um e nada.
 
 ⚠️ **Duas premissas do levantamento envelheceram, e este plano as corrige lá também** — senão o documento que um plano futuro vai consumir continua apoiado em fato morto:
 
@@ -148,7 +148,7 @@ Números novos, informados pelo usuário nesta sessão (05/09/2026), substituind
 
 - [`CLAUDE.md`](../../../CLAUDE.md) § *Máquina e modelos locais* — o dono, linha 276.
 - [`skill ai`](../../../.claude/skills/ai/SKILL.md) — duas menções a "~3 GB" (`freeBytes` lido no momento da chamada; `ConversationWindow`/`unaffordable`).
-- [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto.md) § 7 — a tabela de bancada compara contra as três faixas antigas.
+- [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto/README.md) § 7 — a tabela de bancada compara contra as três faixas antigas.
 
 ⚠️ **Não corrigir** `ARMADILHAS.md:159` nem `HISTORY-archive.md`: são registro **datado** de uma decisão tomada com o número da época. Reescrevê-los apagaria a evidência de por que a decisão foi tomada assim, e `archive/` é só leitura.
 

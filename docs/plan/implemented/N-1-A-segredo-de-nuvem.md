@@ -2,7 +2,7 @@
 
 **Depende de:** D9.2 (`ChatFn` injetável), D9.3 (gate uniforme `{ kind: 'unavailable', service, hint }`), `CLAUDE.md § Segurança` (regra de mão única, já fixada desde a fase 03) · **Entrega:** o subsistema de segredo inteiro — tabela própria no SQLite, `safeStorage` com a guarda do `basic_text` do Linux, três canais IPC, semente de desenvolvimento via `.env`, e o campo de dois estados no modal de Configurações para os dois provedores já confirmados (Gemini, GLM).
 
-> Primeiro sub-plano da trilha **N** (nuvem) — ver [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência). Cortado pelas "peças" que [`docs/reference/cloud-optin-implementation-guide.md`](../../reference/cloud-optin-implementation-guide.md) já levantou: este plano fecha a **Peça A** (sistema de segredo) por inteiro. **N-1-B** (um provedor ponta a ponta — segundo valor de `AiModel.provider`, adaptador, streaming, `isAvailable` com semântica de nuvem, recusa de nível 3) e **N-1-C** (segundo provedor + cota/limite de taxa, Peça E) seguem sem arquivo — nascem quando forem os próximos a executar, mesma regra do arco 13-23.
+> Primeiro sub-plano da trilha **N** (nuvem) — ver [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência). Cortado pelas "peças" que [`docs/reference/cloud-optin-implementation-guide.md`](../../reference/cloud-optin-implementation-guide/README.md) já levantou: este plano fecha a **Peça A** (sistema de segredo) por inteiro. **N-1-B** (um provedor ponta a ponta — segundo valor de `AiModel.provider`, adaptador, streaming, `isAvailable` com semântica de nuvem, recusa de nível 3) e **N-1-C** (segundo provedor + cota/limite de taxa, Peça E) seguem sem arquivo — nascem quando forem os próximos a executar, mesma regra do arco 13-23.
 
 **Fora deste plano:** qualquer coisa que fale com a API de um provedor de verdade — adaptador (`main/features/ai/providers/`), streaming, `ai:isAvailable`/`ai:chat` estendidos, `AiModel.provider` ganhando um segundo valor, desbloqueio dos cards "Locais/Nuvem" no `ModelPicker`. Este plano só guarda e recupera a chave; **N-1-B** é quem a usa. Também fora: os quatro elegíveis via provedor terceirizado (Groq/Cerebras/SambaNova) — decisão de adiar registrada abaixo.
 
@@ -10,7 +10,7 @@
 
 ## Contexto
 
-O levantamento já existe e é denso — [`models/README.md`](../../reference/models/README.md), [`models/cloud-optin.md`](../../reference/models/cloud-optin.md) e [`cloud-optin-implementation-guide.md`](../../reference/cloud-optin-implementation-guide.md) (Peças A–G) respondem a maior parte de "o que muda na arquitetura" antes deste plano começar. Este documento **consome** esse guia, não o reabre — só a Peça A (segredo) vira código aqui.
+O levantamento já existe e é denso — [`models/README.md`](../../reference/models/README.md), [`models/cloud-optin.md`](../../reference/models/cloud-optin.md) e [`cloud-optin-implementation-guide.md`](../../reference/cloud-optin-implementation-guide/README.md) (Peças A–G) respondem a maior parte de "o que muda na arquitetura" antes deste plano começar. Este documento **consome** esse guia, não o reabre — só a Peça A (segredo) vira código aqui.
 
 **Os dois provedores já estão confirmados pelo usuário**, com nome exato e uso recente comprovado no mill.tools: `gemini-2.5-flash` (Google, contexto 1.048.576 tokens) e `glm-4.7-flash` (Z.ai, 200.000 tokens, tier grátis recorrente). Isso muda o que o passo 1 precisa fazer — deixou de ser "qual modelo" (já respondido, com evidência de produção real, mais forte que a ficha isolada) e virou só "o preço e a cota que a ficha registrou em 20/08/2026 ainda valem".
 

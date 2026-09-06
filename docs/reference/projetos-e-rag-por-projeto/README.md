@@ -14,7 +14,7 @@
 | ❓ **questão em aberto** | identificada nesta conversa, sem resposta — um plano futuro decide, não este guia |
 | ⚠️ **estimativa/não verificado** | conta de bancada ou fonte de terceiro, sem medição ao vivo nesta máquina — confirmar antes de virar código |
 
-Companheiros: [`ESCOPO.md § O teste que separa pilar de produto novo`](../ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo) e [`§ Ferramentas do chat`](../ESCOPO.md#ferramentas-do-chat), [`plan/active/09-camada-de-ia.md`](../plan/active/09-camada-de-ia.md) (D9.2, D9.5), [`HISTORY.md`](../HISTORY.md) (§ RAG entra por capacidade; § flexibilidade é forma de dado e slot), [`plan/implemented/14-persistencia-das-conversas.md`](../plan/implemented/14-persistencia-das-conversas.md), [`reference/arte-anterior-milltools.md`](arte-anterior-milltools.md), [`CLAUDE.md § Máquina e modelos locais`](../../CLAUDE.md).
+Companheiros: [`ESCOPO.md § O teste que separa pilar de produto novo`](../ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo) e [`§ Ferramentas do chat`](../ESCOPO.md#ferramentas-do-chat), [`plan/active/09-camada-de-ia.md`](../plan/active/09-camada-de-ia.md) (D9.2, D9.5), [`HISTORY.md`](../HISTORY.md) (§ RAG entra por capacidade; § flexibilidade é forma de dado e slot), [`plan/implemented/14-persistencia-das-conversas.md`](../plan/implemented/14-persistencia-das-conversas.md), [`reference/arte-anterior-milltools/README.md`](arte-anterior-milltools/README.md), [`CLAUDE.md § Máquina e modelos locais`](../../CLAUDE.md).
 
 ---
 
@@ -137,7 +137,7 @@ LIMIT 5;
 
 ✅ **Decidido pelo usuário nesta conversa:** o embedder trava no primeiro evento que precisa de embedding (documento anexado **ou** cartão/receita gerado, o que vier primeiro) — mesmo princípio de travar modelo/contexto no primeiro envio de uma conversa. Depois de travado, não muda dentro daquele projeto.
 
-✅ **Lição já paga pelo mill.tools, citada em [`arte-anterior-milltools.md`](arte-anterior-milltools.md):** *"a assinatura de cache precisa conter tudo que muda a saída"* — a tabela de vetores precisa de uma coluna `embed_space_id` (`modelo:dimensão:esquema`) junto de cada linha, para nunca comparar cosseno entre dois espaços de embedding diferentes sem perceber ("prevendo lixo em silêncio", nas palavras deles).
+✅ **Lição já paga pelo mill.tools, citada em [`arte-anterior-milltools/README.md`](arte-anterior-milltools/README.md):** *"a assinatura de cache precisa conter tudo que muda a saída"* — a tabela de vetores precisa de uma coluna `embed_space_id` (`modelo:dimensão:esquema`) junto de cada linha, para nunca comparar cosseno entre dois espaços de embedding diferentes sem perceber ("prevendo lixo em silêncio", nas palavras deles).
 
 ⚠️ **Limite prático hoje, verificado por grep em `src/main/features/ai/providers/`:** existe **um único** embedder qualificado — `nomic-embed-text` (274 MB, 768 dims, teto de contexto **2.048 tokens** — documento precisa de chunking antes de indexar). Não existe adaptador de embedding de nuvem — os provedores hoje (`Gemini`, `GLM`) só têm completion. "Escolher entre embedders antes do primeiro arquivo" hoje é escolher entre um e nada; virar escolha real exige construir um segundo adaptador na fronteira injetável do `embed_fn` (D9.2).
 

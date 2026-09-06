@@ -1,6 +1,6 @@
 # Handoff da ferramenta Claude Design — ago/2026
 
-**12/08/2026.** O que voltou da ferramenta externa de design, depois de curado. O que foi **pedido** a ela está em [`../BRIEF-claude-design.md`](../BRIEF-claude-design.md); o que se **decidiu** a partir do que voltou está em [`../../HISTORY.md`](../../HISTORY.md) § *Tailwind v4 entra* e nos planos da [trilha DS](../../plan/active/README.md#a-trilha-de-design-system-ds-n).
+**12/08/2026.** O que voltou da ferramenta externa de design, depois de curado. O que foi **pedido** a ela está em [`../brief-claude-design/README.md`](../brief-claude-design/README.md); o que se **decidiu** a partir do que voltou está em [`../../HISTORY.md`](../../HISTORY.md) § *Tailwind v4 entra* e nos planos da [trilha DS](../../plan/active/README.md#a-trilha-de-design-system-ds-n).
 
 > ⚠️ **Status revisto em 12/08/2026, a pedido, e a revisão é o que este documento tem de mais importante.** O que voltou **não é insumo de onde se garimpam ideias — é o alvo visual da trilha DS**, e o aceite dela é chegar o mais perto possível. A curadoria abaixo continua valendo para o que foi descartado (cópia de token, componente em CSS-in-JS, ícone do template); o que muda é o peso do que **sobrou**. Consequência imediata: o que este README mandava embora por "ter outro dono" precisa ser relido item a item — a busca de conversas do alvo é filtro de título no cliente, não a FTS5 do gatilho.
 

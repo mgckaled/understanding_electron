@@ -4,7 +4,7 @@
 
 > **O que este documento é:** o inventário do que se pode observar, com cada item classificado, e o porquê de cada regra de contenção.
 > **O que ele não é:** um plano. Nenhum passo, nenhum commit. Os planos são `O-1`, `O-2`, `O-3`… — numerados, nunca com letra, cada um do tamanho de um corte.
-> **O que ele não repete:** o princípio de instrumentar no ponto de estrangulamento já é da [arte anterior](../arte-anterior-milltools.md) § _Para o observatório_. Aqui ele é aplicado, não reapresentado.
+> **O que ele não repete:** o princípio de instrumentar no ponto de estrangulamento já é da [arte anterior](../arte-anterior-milltools/README.md) § _Para o observatório_. Aqui ele é aplicado, não reapresentado.
 
 O material bruto — as cinco frentes do mill.tools descritas pelo usuário, com capturas — está em [`notes/observatory/brief.md`](../../../notes/observatory/brief.md).
 
@@ -119,7 +119,7 @@ Um app local-first deve isso ao usuário, e é o painel que mais o diferencia de
 
 ### 2.6 O painel de RAG já nasce especificado — e o levantamento é dele
 
-O [levantamento de "Projetos" e RAG particionado](../projetos-e-rag-por-projeto.md) (25/08/2026) decidiu, para outra finalidade, quatro coisas que **definem o painel de RAG antes de ele existir**. Ele é o dono desses fatos; aqui fica só o que muda a especificação do painel:
+O [levantamento de "Projetos" e RAG particionado](../projetos-e-rag-por-projeto/README.md) (25/08/2026) decidiu, para outra finalidade, quatro coisas que **definem o painel de RAG antes de ele existir**. Ele é o dono desses fatos; aqui fica só o que muda a especificação do painel:
 
 | Fato já decidido lá                                                                   | O que impõe ao painel                                                                                                     |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -470,7 +470,7 @@ O-7 primeiro — cria o ponto de instrumentação em `chat()` (`main/features/ai
 
 Leitura de fonte (mill.tools, `C:\rocketseat\projetos\python\yt-transcriber`): `src/core/observatory/*.py`, `src/gui/modules/observatory/*.py`, `src/cli/observatory.py`, `src/core/rag/{stats,analytics,eval,feedback}.py`, `docs/estudo/modulos/observatorio.md`.
 
-Documentos deste repositório que são donos de fatos citados aqui: [`projetos-e-rag-por-projeto.md`](../projetos-e-rag-por-projeto.md) (§ 2.6), [`arte-anterior-milltools.md`](../arte-anterior-milltools.md) (§ 1.5), [`plano 09`](../../plan/active/09-camada-de-ia.md) (D9.5, D9.6), [`models/`](../models/README.md) (frota e embedder).
+Documentos deste repositório que são donos de fatos citados aqui: [`projetos-e-rag-por-projeto/README.md`](../projetos-e-rag-por-projeto/README.md) (§ 2.6), [`arte-anterior-milltools/README.md`](../arte-anterior-milltools/README.md) (§ 1.5), [`plano 09`](../../plan/active/09-camada-de-ia.md) (D9.5, D9.6), [`models/`](../models/README.md) (frota e embedder).
 
 Documentação externa consultada em 28/08/2026:
 
