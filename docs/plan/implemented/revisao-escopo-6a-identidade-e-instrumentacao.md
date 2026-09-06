@@ -146,7 +146,7 @@ Números novos, informados pelo usuário nesta sessão (05/09/2026), substituind
 
 **Consequência que muda texto em três lugares: a variação é de ~1,5–2 GB, não de ~3 GB.** O argumento que ela sustenta (o teto de contexto se lê em runtime em vez de ser chumbado; uma janela travada enquanto ocioso pode não alocar depois) **continua de pé** — só o número muda. Corrigir em:
 
-- [`CLAUDE.md`](../../../CLAUDE.md) § *Máquina e modelos locais* — o dono, linha 276.
+- [`reference/ambiente/`](../../reference/ambiente/README.md) § *Máquina e modelos locais* — o dono, linha 276.
 - [`skill ai`](../../../.claude/skills/ai/SKILL.md) — duas menções a "~3 GB" (`freeBytes` lido no momento da chamada; `ConversationWindow`/`unaffordable`).
 - [`reference/projetos-e-rag-por-projeto.md`](../../reference/projetos-e-rag-por-projeto/README.md) § 7 — a tabela de bancada compara contra as três faixas antigas.
 

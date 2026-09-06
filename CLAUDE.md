@@ -13,15 +13,16 @@ Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**
 | **Diário de execução** | tabela no fim do plano em `docs/plan/active/` | uma sessão | antes de encerrar **toda** sessão |
 | **Entrada de histórico** | [`docs/HISTORY.md`](docs/HISTORY.md) | um marco concluído | ao mover um plano para `implemented/` — **ou ao terminar um trabalho que mudou o projeto sem ter plano** (revisão de escopo, manutenção de documentação) |
 
-**Escalonamento — a regra que faz o sistema funcionar:** observação do diário que valha **além daquele plano** sobe para o `HISTORY.md` **na mesma sessão** (ou para o [`ARMADILHAS.md`](docs/ARMADILHAS.md), se for erro diagnosticado). O teste é *"isto vai custar tempo de novo?"* — armadilha diagnosticada, alternativa tentada e descartada, número medido: sobe. "Terminei o passo 3": morre com o plano.
+**Escalonamento — a regra que faz o sistema funcionar:** observação do diário que valha **além daquele plano** sobe **na mesma sessão** — para o `HISTORY.md`, ou para o [`ARMADILHAS.md`](docs/ARMADILHAS.md) se for erro diagnosticado. O teste é *"isto vai custar tempo de novo?"*: armadilha diagnosticada, alternativa tentada e descartada, número medido — sobe. "Terminei o passo 3" morre com o plano.
 
-**Auto-conservação — o mesmo cuidado, voltado para fora do plano.** Ao encerrar um plano ou uma tarefa pontual, **três** tipos de deriva, tratados diferente porque cada um falha de um jeito:
+**Auto-conservação — o mesmo cuidado, voltado para fora do plano.** Ao encerrar um plano ou tarefa, **quatro** tipos de deriva, tratados diferente porque cada um falha de um jeito:
 
-- **(a) nome ou caminho que mudou** — ao renomear/mover algo, `grep` o nome antigo em `.claude/skills/` e `docs/` **antes** de commitar; se aparecer, é referência a atualizar junto, não depois.
-- **(b) contagem que envelheceu** (canais IPC, número de teste, linhas de skill) — não é greppável por natureza, então remedir é o próprio ato de conservar: nunca copiar um número de um documento para outro sem reconferir a fonte (código, `pnpm test`) na hora.
-- **(c) documento que estourou o teto** — ao escrever a 11ª entrada de marco em `HISTORY.md`, a mais antiga desce para o `HISTORY-archive.md` na mesma edição. Teto por arquivo e o que fazer quando estoura: [`docs/README.md`](docs/README.md#régua-de-tamanho-de-documento). Documento que cresce sem teto não avisa — ele cobra em tokens de leitura, na sessão de outra pessoa.
+- **(a) nome ou caminho que mudou** — `grep` o nome antigo em `.claude/skills/` e `docs/` **antes** de commitar. ⚠️ Mover um arquivo conserta os links **para** ele e quebra os **de dentro** dele: `pnpm exec node scripts/check-doc-links.mjs`.
+- **(b) contagem que envelheceu** (canais IPC, número de teste, tamanho de documento) — não é greppável, então **remedir é o próprio ato de conservar**: nunca copiar um número de um documento para outro sem reconferir a fonte na hora. E remeça **depois** de terminar de editar, nunca no meio.
+- **(c) ponteiro por seção** (`arquivo.md § Nome`) — apodrece sem sinal quando a seção muda de arquivo, porque o alvo do link continua existindo. **Cite a sigla** (`DT7`, `D15.2`), que não se move; o mesmo script acima pega o resto.
+- **(d) documento que estourou o teto** — ao escrever a 11ª entrada de marco em `HISTORY.md`, a mais antiga desce para o `HISTORY-archive.md` na mesma edição. Tetos e o que fazer: [`docs/README.md`](docs/README.md#régua-de-tamanho-de-documento).
 
-Se a mudança tocou um fato citável em mais de um lugar e nenhuma das três se aplicou, o próximo a ler paga sem saber que está pagando. É o motivo declarado da trilha R-2 (ver `HISTORY.md`), e o objetivo é não precisar de uma R-3.
+Se a mudança tocou um fato citável em mais de um lugar e nenhuma das quatro se aplicou, o próximo a ler paga sem saber que está pagando.
 
 Regra completa e formato em [`docs/README.md`](docs/README.md#os-dois-registros-e-por-que-são-dois).
 
@@ -29,64 +30,47 @@ Regra completa e formato em [`docs/README.md`](docs/README.md#os-dois-registros-
 
 ## Princípio: funil antes de abrir
 
-**Nunca passe para o LLM o que uma ferramenta de shell pode filtrar primeiro.** É o guarda-chuva das duas seções abaixo — vale para ler, buscar, mapear, escrever e verificar, em documentação e em código-fonte/saída de comando igualmente. Dono desta frase é esta seção; as duas abaixo apontam para ela, não a repetem.
+**Nunca passe para o LLM o que uma ferramenta de shell pode filtrar primeiro.** Vale para ler, buscar, mapear, escrever e verificar — em documentação e em código igualmente.
 
-Para **ler, buscar e mapear**, o guarda-chuva vira um mecanismo concreto, sempre em três passos — o **funil arquivo → linha → bloco**: `Grep`/`rg -l` decide o arquivo, `-n` decide a linha, `-A`/`-B`/`offset`+`limit` decide o bloco — nunca abrir um arquivo inteiro para confirmar o que uma linha de contexto já mostraria, nem reler do zero quando o `limit` não bastou. **Escrever e verificar não têm bloco a decidir**; seguem o mesmo guarda-chuva por outro caminho (ferramenta certa para a escrita, filtro na saída do comando) — cada um com tabela própria, não com o funil.
+Para **ler, buscar e mapear**, o guarda-chuva vira o **funil arquivo → linha → bloco**: `Grep`/`rg -l` decide o arquivo, `-n` decide a linha, `-A`/`-B`/`offset`+`limit` decide o bloco. Nunca abrir um arquivo inteiro para confirmar o que uma linha de contexto já mostraria, nem reler do zero quando o `limit` não bastou. **Escrever e verificar não têm bloco a decidir** e seguem o mesmo princípio por outro caminho: ferramenta certa para a escrita, filtro na saída do comando.
 
-As duas seções abaixo aplicam o guarda-chuva a domínios diferentes, e cada uma guarda só a particularidade que ele não cobre:
-
-- **Protocolo de leitura da documentação** (a seguir) — a tabela por-arquivo, porque cada arquivo de `docs/` tem uma exceção própria ao funil (alguns vetam até o `Read` com `offset`).
-- **Operações de arquivo** (mais abaixo) — a tabela por-ferramenta para as cinco operações (ler, buscar, escrever, verificar, mapear) sobre código-fonte, log e saída de comando.
+Duas seções aplicam isto a domínios diferentes, cada uma guardando só a particularidade que o princípio não cobre: o **protocolo de leitura da documentação** (a tabela por-arquivo de `docs/`) e as **operações de arquivo** (a tabela por-ferramenta, sobre código, log e saída de comando).
 
 ---
 
 ## Organização da documentação
 
-```text
-docs/
-├── README.md        # mapa, ciclo de vida do plano, convenção de fonte única
-├── ESCOPO.md        # o que o app faz e não faz
-├── HISTORY.md       # os 10 marcos mais recentes — só marcos
-├── HISTORY-archive.md  # marcos além dos 10 — fila, só leitura
-├── ARMADILHAS.md    # erro diagnosticado, buscável por sintoma
-├── DECISOES.md      # índice tabular das decisões dentro de cada plano — derivado
-├── ROADMAP.md       # o que ainda falta
-├── study/           # cadernos didáticos
-├── reference/       # consulta técnica estável
-└── plan/{active,implemented,archive}/
-```
+A tabela do protocolo abaixo lista cada arquivo de `docs/`, o peso dele e como consultá-lo — é o mapa e a régua no mesmo lugar. O mapa completo da pasta, o ciclo de vida de um plano e a convenção de fonte única são de [`docs/README.md`](docs/README.md).
 
-Ciclo de um plano: nasce em `active/` → cada sessão acrescenta uma linha ao diário dele → ao concluir, **move** para `implemented/` e ganha uma entrada em `HISTORY.md`. Plano abandonado vai para `archive/` **com o motivo** registrado no histórico.
+Ciclo de um plano, em uma linha: nasce em `plan/active/` → cada sessão acrescenta uma linha ao diário dele → ao concluir, **move** para `plan/implemented/` e ganha uma entrada em `HISTORY.md`. Plano abandonado vai para `plan/archive/` **com o motivo** registrado.
 
 ### Protocolo de leitura da documentação
 
-Aplica o funil arquivo → linha → bloco do princípio acima; a tabela abaixo é a particularidade de `docs/` — qual exceção cada arquivo específico impõe ao funil geral.
+Aplica o funil arquivo → linha → bloco do princípio acima; a tabela é a particularidade de `docs/` — qual exceção cada arquivo impõe.
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta inteira soma **~1,94 MB / ~525k tokens** (97 arquivos) — os sete arquivos soltos são só ~123k dela, e `plan/implemented/` sozinho é **~302k**, mais que o dobro disso. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão. A regra é mecânica, não uma sugestão de bom senso:
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,45 MB / ~660k tokens** em 117 arquivos, e `plan/implemented/` sozinho responde por **60%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| `ARMADILHAS.md` | ~28k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
-| `HISTORY-archive.md` | ~35k | `Grep` no nome do plano/fase. **Nunca** `Read` |
-| `HISTORY.md` | ~15k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
-| `ESCOPO.md` | ~12k | `Grep` no pilar ou na operação |
-| `ROADMAP.md` | ~16k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
-| `DECISOES.md` | ~14k | `Grep` na sigla `D<n>.<n>` — é tabela, uma linha responde |
-| `README.md` | ~4k | único que cabe inteiro |
-| **`plan/implemented/`** (60 arq.) | **~291k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". É a maior pasta do repositório e a de consulta mais rara |
-| `reference/` (19 arq.) | ~54k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| **`plan/implemented/`** (74 arq.) | **~392k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
+| `reference/` (22 arq.) | ~77k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| `HISTORY-archive.md` | ~53k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
 | `study/` (12 arq.) | ~39k | `Grep` no conceito; `Read` com `offset` na seção achada |
-| `plan/active/` (1 arq.) | ~3k | o plano **em execução** se lê inteiro; os demais, `Grep` |
+| `ARMADILHAS.md` | ~31k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
+| `DECISOES.md` | ~18k | `Grep` na sigla (`D<n>.<n>`, `DT<n>`) — é tabela, uma linha responde |
+| `ROADMAP.md` | ~14k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
+| `ESCOPO.md` | ~12k | `Grep` no pilar ou na operação |
+| `HISTORY.md` | ~8k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
+| `plan/active/` (3 arq.) | ~9k | o plano **em execução** se lê inteiro; os demais, `Grep` |
+| `README.md` | ~4k | único que cabe inteiro |
 
-⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** `plan/active/`/`plan/implemented/` remedidos em 31/08/2026, ao fechar a trilha O (§ 6); os demais seguem datados de 28/08/2026 — a ordem de grandeza é o que importa aqui, não o dígito. ⚠️ **Cinco tetos estão estourados** (`ARMADILHAS.md`, este arquivo, e agora `ROADMAP.md`, `DECISOES.md` e `ESCOPO.md`) — registrado com o conserto no [`ROADMAP § 2`](docs/ROADMAP.md).
+⚠️ **Estes números envelhecem — remeça antes de citá-los em outro lugar.** O status de cada teto, com a série medida, é do [`ROADMAP § 2`](docs/ROADMAP.md).
 
 **Como fazer certo, em ordem:** (1) `Grep -n` pelo termo → devolve linha e arquivo; (2) `Read` com `offset` = linha achada menos 5, `limit` 40–60; (3) se a seção continuar além, estenda o `limit`, não releia do zero. Um `Grep` com `-C 3` resolve a maioria das perguntas **sem nenhum `Read`**.
 
 **As três exceções que se leem inteiras:** este `CLAUDE.md`, `docs/README.md` e o plano ativo em que se está trabalhando. Mais nada.
 
-⚠️ **Plano em `implemented/` é o caso que mais engana.** Ele parece a fonte completa — e é, mas de um trabalho já terminado. O que dele ainda vale já subiu para `HISTORY.md`, `ARMADILHAS.md` ou `DECISOES.md`; abrir o plano inteiro paga **~20 KB de média** (o `15` custa 86 KB) para reler o que o dono já responde numa linha.
-
-⚠️ **Isto vale também para você mesmo daqui a vinte turnos.** A tentação aparece como *"agora preciso do contexto completo"* — não precisa: a pergunta que motivou a leitura tem um termo, e o termo é grepável. Se realmente não houver termo, a pergunta ainda não está formada.
+⚠️ **Plano em `implemented/` é o caso que mais engana.** Parece a fonte completa — e é, mas de um trabalho terminado. O que dele ainda vale já subiu para `HISTORY.md`, `ARMADILHAS.md` ou `DECISOES.md`; abrir o plano inteiro paga ~20 KB de média para reler o que o dono responde numa linha. **E vale para você mesmo daqui a vinte turnos:** a tentação aparece como *"agora preciso do contexto completo"* — não precisa. A pergunta que motivou a leitura tem um termo, e o termo é grepável; se não houver termo, a pergunta ainda não está formada.
 
 ### Fonte única por assunto
 
@@ -239,55 +223,11 @@ pnpm build:win    # instalador NSIS para Windows
 `pnpm typecheck` roda **três** projetos TypeScript separados (`tsconfig.node.json`, `tsconfig.web.json` e `tsconfig.e2e.json`) porque main/preload, renderer e os specs de ponta a ponta vivem em ambientes diferentes. Rodar só um dá falsa sensação de segurança.
 
 ---
-
 ## Ambiente de desenvolvimento
 
-### O que está versionado
+Exclusões do Windows Defender, ajustes do VS Code, ficha da máquina (CPU, RAM livre medida, GPU, versão do Ollama) e o que está pendente: [`docs/reference/ambiente/`](docs/reference/ambiente/README.md). Nada ali decide a primeira linha de um arquivo — por isso não é lido em toda sessão.
 
-`.vscode/settings.json` exclui `node_modules`, `out` e `dist` do observador de arquivos — com pnpm, o `.pnpm` tem dezenas de milhares de entradas, e o padrão do VS Code só exclui o primeiro nível. Também fixa `typescript.tsdk` no TypeScript do projeto, para o editor não divergir do `pnpm typecheck`.
-
-⚠️ **Consequência operacional:** com `node_modules` fora do watcher, o editor não percebe pacote novo sozinho. Depois de `pnpm add`, rode `Ctrl+Shift+P → Developer: Reload Window`. Sintoma quando esquecer: import válido marcado como não resolvido.
-
-`.vscode/extensions.json` recomenda ESLint, Prettier e EditorConfig, e marca as extensões de Python como indesejadas.
-
-### O que **não** está versionado (registrado aqui porque não deixa rastro)
-
-**Exclusões do Windows Defender**, aplicadas em 3 de agosto de 2026 na máquina de desenvolvimento:
-
-```powershell
-Add-MpPreference -ExclusionPath "C:\rocketseat\projetos"
-Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\pnpm"
-Add-MpPreference -ExclusionProcess "node.exe"
-```
-
-*Motivo:* o antivírus escaneia em tempo real cada arquivo lido. `pnpm install`, indexação do TypeScript e build do Vite leem dezenas de milhares de arquivos pequenos — no Windows, isso costuma responder pela maior parte da lentidão percebida.
-
-*Custo assumido:* proteção em tempo real reduzida nesses caminhos. O raciocínio é que o conteúdo é controlado e o `minimumReleaseAge` do pnpm 11 já filtra pacote recém-publicado. **É uma troca, não um ajuste gratuito.**
-
-*Para reverter:* `Remove-MpPreference -ExclusionPath "..."` com os mesmos caminhos.
-
-*Ao trocar de máquina:* precisa ser refeito, e os caminhos provavelmente mudam.
-
-**Máquina e modelos locais** — registrado aqui porque **decide escolhas do aplicativo** e não deixa rastro no repositório (medido em ago/2026):
-
-| | |
-|---|---|
-| CPU | Intel i5-8265U — 4 núcleos / 8 threads |
-| RAM | 16 GB. **Não há um número de "livre" — há uma faixa**, remedida em 05/09/2026: **~8,5 GB** com só o terminal (o gerenciador de tarefas reporta 8,7–8,9; arredondado para baixo de propósito) · **6,5–7,0 GB** com o VS Code aberto, variando conforme o que ele está fazendo. A variação de ~1,5–2 GB é da ordem do peso de um modelo da frota, e é por isso que o teto de contexto se lê em runtime em vez de ser chumbado — ver [`plan/implemented/15`](docs/plan/implemented/15-orcamento-de-contexto-e-modelo.md) § D15.2. ⚠️ Um terceiro cenário (ambiente com navegador e mensageiro abertos) já foi medido no passado e **não** foi remedido — remeça antes de citar um número para ele |
-| GPU | NVIDIA MX150, 2 GB VRAM, CUDA configurado (herança do mill.tools, que a reserva para o Whisper) — mas o app roda **CPU-only por decisão testada, não por ausência de hardware**: `num_gpu` forçado no `gemma3:1b` foi medido e descartado para geração, penalidade já presente em contexto comum (não só extremo), sem estouro de VRAM — números e protocolo em [`docs/reference/models/ollama-models-gpu-analysis.md`](docs/reference/models/ollama-models-gpu-analysis.md) |
-| Ollama | 0.32.14 (atualizado fora do app, 18/08/2026 — era 0.32.6), servindo de `C:\ollama-models` (`OLLAMA_MODELS` do `ollama serve`; o app é agnóstico ao caminho) |
-
-**Frota Ollama: 8 modelos distintos** (13 entradas no `/api/tags`, 5 delas variantes `-custom`).
-
-📖 **Tabela completa** — peso, teto treinado, KV/token, `capabilities`, papel, desinstalados e o porquê de o teto de contexto ser da máquina: [`docs/reference/models/README.md`](docs/reference/models/README.md#frota-instalada). O dono mudou de lugar em ago/2026 justamente porque este arquivo é lido em **toda** sessão, inclusive nas que não tocam IA. **Ao instalar ou remover um modelo, é lá que se atualiza.**
-
-As quatro regras de escolha de modelo, o protocolo de sonda de um modelo residente por vez, e a armadilha `capabilities`/`/api/show` (R-6, ago/2026): skill [`ai`](.claude/skills/ai/SKILL.md).
-
-**Ao trocar de máquina, refazer a medição** antes de reaproveitar qualquer decisão que dependa destes números (default de `num_thread`, modelo padrão, recusa de *tool calling*).
-
-### Pendente
-
-**Perfil do VS Code.** A extensão do Python continua ativa e carregando neste workspace; `python.analysis.exclude` silencia os avisos do node-gyp, mas não impede o carregamento. Um perfil (`File → Preferences → Profiles`) contendo só ESLint, Prettier e EditorConfig resolveria de verdade. Note que perfil é configuração de máquina — não viaja no repositório.
+⚠️ **A RAM livre desta máquina é uma faixa, não um número** (~8,5 GB só com o terminal · 6,5–7,0 GB com o VS Code aberto), e a variação é da ordem do peso de um modelo da frota. É o motivo de o teto de contexto ser lido em runtime em vez de chumbado. Frota Ollama instalada e custo por modelo: [`docs/reference/models/`](docs/reference/models/README.md); regras de escolha: skill [`ai`](.claude/skills/ai/SKILL.md).
 
 ---
 
@@ -295,15 +235,15 @@ As quatro regras de escolha de modelo, o protocolo de sonda de um modelo residen
 
 ### Ao escrever código novo — o que decide a primeira linha
 
-Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha. Aqui fica o essencial e o ponteiro; o porquê está na skill indicada.
+Cada uma, ignorada, produz código estruturalmente errado desde a primeira linha. Aqui fica a regra; o porquê está na skill indicada.
 
-- **Camadas e quem importa quem.** Seis pastas em `src/` (`shared`, `core`, `main`, `workers`, `preload`, `renderer`), com a regra de importação verificada por ESLint. Decida a camada antes de criar o arquivo — skill [`architecture`](.claude/skills/architecture/SKILL.md).
-- **Todo canal novo nasce em `src/shared/ipc.ts`** e toca seis lugares, na ordem que a skill lista; é registrado pelo `handle()` genérico de `src/main/ipc/`, e não existe `ipcMain.handle` avulso. O handler é função exportada, testável sem subir o Electron — skill [`ipc`](.claude/skills/ipc/SKILL.md).
-- **`Result` para falha esperada, exceção para bug.** O que atravessa o IPC e pode falhar retorna união discriminada (`AppError`); payload fora do schema **lança**. Canal que não tem como falhar não embrulha — skill `ipc`.
+- **Camadas e quem importa quem.** Seis pastas em `src/` (`shared`, `core`, `main`, `workers`, `preload`, `renderer`), com a regra de importação verificada por ESLint. Decida a camada **antes** de criar o arquivo — skill [`architecture`](.claude/skills/architecture/SKILL.md).
+- **Todo canal novo nasce em `src/shared/ipc.ts`** e toca seis lugares, na ordem que a skill lista. Não existe `ipcMain.handle` avulso, e o handler é função **exportada**, testável sem subir o Electron — skill [`ipc`](.claude/skills/ipc/SKILL.md).
+- **`Result` para falha esperada, exceção para bug.** O que atravessa o IPC e pode falhar retorna união discriminada (`AppError`); payload fora do schema **lança**. Canal sem modo de falha não embrulha — skill `ipc`.
 - **Componente só toca token semântico** (`var(--color-*)`): nenhum `#hex` nem `var(--gray-N)` fora de `tokens.css` — skill [`design-system`](.claude/skills/design-system/SKILL.md).
-- **O design system é um envelope: define a linguagem visual, não constrói feature.** Diante de um alvo visual, o que **já existe** ganha a linguagem (é da trilha DS); o que **ainda não existe** nasce depois, no plano da própria feature, já vestido. Alvo não é checklist de feature — ler a régua antes de tratar uma ausência como pendência, skill `design-system`.
-- **Cinco níveis de teste**, cada coisa no seu. `core`/`shared` (1), `renderer` (2) e handlers do `main` (3) rodam em `check:fast` e no hook de edição; E2E em dev (4) e empacotado (5) ficam fora do ciclo — skill [`testing`](.claude/skills/testing/SKILL.md).
-- **Todo comentário e docstring sai no padrão ao tocar o arquivo.** Duas perguntas em ordem — comentar? (só o que o código não diz; narrativa de decisão vai ao `HISTORY.md` citada por id, não ao `.ts`) e, se for docstring, forma TSDoc (`@param nome - desc`, `@returns`, sem tipo entre chaves, só tags Core). Divide-se ao tocar, não varre a base — skill [`comments`](.claude/skills/comments/SKILL.md).
+- **O design system é um envelope: define a linguagem visual, não constrói feature.** O que **já existe** ganha a linguagem; o que **ainda não existe** nasce no plano da própria feature, já vestido. Alvo visual não é checklist de feature — skill `design-system`.
+- **Cinco níveis de teste**, cada coisa no seu. `core`/`shared` (1), `renderer` (2) e handlers do `main` (3) rodam em `check:fast`; E2E em dev (4) e empacotado (5) ficam fora do ciclo — skill [`testing`](.claude/skills/testing/SKILL.md).
+- **Comentário e docstring saem no padrão ao tocar o arquivo.** Duas perguntas em ordem: comentar? (só o que o código não diz — narrativa vai ao `HISTORY.md`, citada pela sigla) e, se for docstring, forma TSDoc. Divide-se ao tocar, não varre a base — skill [`comments`](.claude/skills/comments/SKILL.md).
 - **Régua de tamanho** — arquivo que cresce é sintoma. Tabela abaixo.
 
 #### Régua de tamanho
@@ -333,12 +273,11 @@ Código em inglês, sempre — identificador, comentário, docstring e log, sem 
 
 ### Segurança
 
-- Todo acesso a dados passa pelo **preload** via `contextBridge` — o renderer nunca fala direto com o main
-- Tipos do contrato IPC ficam declarados em `src/shared/ipc.ts`, e todo canal novo passa por lá
-- Decisão de segurança que dois processos precisam tomar nasce em `core/`, nunca ao lado de um dos chamadores — validação colocada junto de um deles vira bypass no segundo, ver [`docs/HISTORY.md`](docs/HISTORY.md)
-- Segredo é de mão única: o renderer grava e consulta se existe, **nunca lê** — ver [`docs/HISTORY.md`](docs/HISTORY.md)
-- O que a IA vê do dado tem **três níveis** — esquema · perfil agregado · amostra de linhas. Os três são **opt-in por anexo**, em qualquer provedor (local ou nuvem) — nível 3 não tem bloqueio a mais na nuvem desde a revisão de escopo (5ª, ago/2026): o usuário decide caso a caso o que anexa. A montagem do contexto mora em `core/`, com teste que falha se um valor do arquivo vazar nos níveis 1 e 2. Dono: [`docs/ESCOPO.md`](docs/ESCOPO.md)
-- SQL gerado por modelo roda com o **motor restringido** (`allowed_directories`, `enable_external_access = false`, `lock_configuration = true`), nunca com o texto inspecionado por expressão regular — ver [`docs/HISTORY.md`](docs/HISTORY.md)
+- Todo acesso a dados passa pelo **preload** via `contextBridge`; o renderer nunca fala com o main direto, e todo canal novo nasce em `src/shared/ipc.ts`.
+- **Decisão de segurança que dois processos tomam nasce em `core/`**, nunca ao lado de um dos chamadores — validação colocada junto de um deles vira bypass no segundo ([`HISTORY-archive.md`](docs/HISTORY-archive.md)).
+- **Segredo é de mão única:** o renderer grava e consulta se existe, **nunca lê** — `secrets:read` não existe por desenho (`DN1A.3`).
+- **O que a IA vê do dado tem três níveis** — esquema · perfil agregado · amostra de linhas —, todos **opt-in por anexo**, em qualquer provedor. A montagem mora em `core/`, com teste que falha se um valor do arquivo vazar nos níveis 1 e 2. Dono: [`docs/ESCOPO.md`](docs/ESCOPO.md).
+- **SQL gerado por modelo roda com o motor restringido**, nunca com o texto inspecionado por expressão regular. A garantia é do motor, e a ordem dos `SET` não é livre: skill [`data`](.claude/skills/data/SKILL.md).
 
 Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented/03-sandbox-e-seguranca.md):
 
@@ -368,10 +307,10 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ### Commits
 
-- Commit nunca leva `Co-authored-by` mencionando Claude, Anthropic ou qualquer assistente de IA. Autoria é de quem revisa e decide, não de quem redige o texto.
-- Isto é aplicado por hook, não por convenção lembrada em cada sessão: [`.claude/hooks/no_ai_coauthor.mjs`](.claude/hooks/no_ai_coauthor.mjs), registrado como `PreToolUse` em `.claude/settings.json` para `Bash` e `PowerShell`. Bloqueia (saída 2) qualquer comando cujo texto contenha esse trailer, antes do commit acontecer.
-- Além do `no_ai_coauthor`, o `.claude/settings.json` liga três hooks `PostToolUse` (`Edit|Write`) — `format_fix` (Prettier + ESLint `--fix`), `guard` (**11 invariantes** que o lint não expressa, bloqueia com saída 2 — dez sobre código, e a 11ª sobre `.md`: link relativo cujo alvo não existe, a única verificação automática que a documentação tem) e `test_related` (`vitest related` no arquivo tocado) — e um `Stop` que roda `pnpm check:fast`. O princípio segue de pé: só o que está registrado em `.claude/settings.json` roda; hook que existe como arquivo não é hook ativo.
-- ⚠️ **O `command` de um hook leva a linha inteira, com caminho absoluto via `$CLAUDE_PROJECT_DIR`.** Não existe campo `args` no schema, e caminho relativo deixa de resolver assim que o diretório da sessão muda. As duas formas erradas falham com saída 1, que **não bloqueia** — o hook fica inerte e o aviso vira ruído. Ambas já aconteceram aqui: [`ARMADILHAS.md`](docs/ARMADILHAS.md). **Ao mexer num hook, prove por provocação** — dispare a violação e confirme que ele recusa.
+- **Commit nunca leva `Co-authored-by`** mencionando Claude, Anthropic ou qualquer assistente de IA. Autoria é de quem revisa e decide, não de quem redige — e isso é **hook**, não convenção lembrada: [`no_ai_coauthor.mjs`](.claude/hooks/no_ai_coauthor.mjs) bloqueia o comando antes do commit acontecer.
+- Os outros quatro, em `.claude/settings.json`: `format_fix` (Prettier + ESLint `--fix`), `guard` (**11 invariantes** que o lint não expressa — dez sobre código, a 11ª sobre link relativo quebrado em `.md`), `test_related` (`vitest related` no arquivo tocado) e um `Stop` que roda `pnpm check:fast`. **Só o que está registrado em `settings.json` roda** — hook que existe como arquivo não é hook ativo.
+- ⚠️ **O `command` leva a linha inteira, com caminho absoluto via `$CLAUDE_PROJECT_DIR`.** Não há campo `args` no schema, e caminho relativo deixa de resolver quando o diretório da sessão muda. As duas formas erradas falham com saída 1, que **não bloqueia**: o hook fica inerte e o aviso vira ruído. Ambas já aconteceram aqui ([`ARMADILHAS.md`](docs/ARMADILHAS.md)). **Ao mexer num hook, prove por provocação.**
+- ⚠️ **O `guard` só vê escrita por `Edit`/`Write`.** `sed`/`python` via Bash não dispara hook nenhum — para essas, `pnpm exec node scripts/check-doc-links.mjs` verifica caminho e seção citada.
 
 ---
 

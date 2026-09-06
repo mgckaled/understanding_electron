@@ -39,7 +39,7 @@ Todo seam **lança** em vez de devolver `Result` — quem classifica a exceção
 
 ⚠️ **`readAttention()` devolve `null` para arquitetura híbrida (Mamba/atenção), não só para embedder.** `granite4:3b`/`granite4:3b-h` reportam `attention.head_count_kv: null` de verdade (não ausente) junto de um bloco `ssm.*` completo — `readAttention` exige os três campos juntos e cai no mesmo caminho hoje reservado a um embedder. Se um modelo dessa arquitetura entrar na frota, o orçamento de contexto não erra a conta: **não faz conta nenhuma**, em silêncio, como se o modelo não tivesse custo de contexto — o comentário do código já previa dois casos (embedder, formato novo); este é o terceiro, e o perigoso, porque o modelo **é** conversacional (`ARMADILHAS.md` § *`readAttention()` devolve `null` para arquitetura híbrida Mamba/atenção*). Nenhum candidato desta arquitetura está na frota hoje — não corrigido.
 
-⚠️ **`freeBytes` é lido no momento da chamada.** Esta máquina varia ~1,5–2 GB conforme o que mais roda (`CLAUDE.md` § Máquina e modelos locais); uma reserva feita ociosa nunca encolhe sozinha — é isso que a trava de janela (abaixo) existe para não deixar acontecer em silêncio.
+⚠️ **`freeBytes` é lido no momento da chamada.** Esta máquina varia ~1,5–2 GB conforme o que mais roda ([`reference/ambiente/`](../../../docs/reference/ambiente/README.md)); uma reserva feita ociosa nunca encolhe sozinha — é isso que a trava de janela (abaixo) existe para não deixar acontecer em silêncio.
 
 ## Orçamento de tokens: quanto a próxima mensagem custa, e se cabe
 
