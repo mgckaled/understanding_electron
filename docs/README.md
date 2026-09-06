@@ -2,7 +2,7 @@
 
 Esta pasta é a documentação versionada do projeto, organizada **por finalidade**: escopo, história, roadmap, estudo, referência e planos por estado.
 
-> Este arquivo é o mapa. A tabela de fonte única aqui cobre a documentação em `docs/`; o [`CLAUDE.md`](../CLAUDE.md) traz a versão que inclui também os assuntos que ainda não têm dono próprio (IA de nuvem, ML, RAG — hoje em [`plan/active/09-camada-de-ia.md`](plan/active/09-camada-de-ia.md)) — é ela, hoje, a mais completa das duas.
+> Este arquivo é o mapa da pasta e o dono das **regras de registro** — os dois registros, o escalonamento, a régua de tamanho. A tabela de fonte única do [`CLAUDE.md`](../CLAUDE.md) é a completa, porque cobre também o que ainda não tem dono próprio; a daqui cobre só `docs/`. **Ao mover um assunto de dono, as duas mudam juntas.**
 
 ---
 
@@ -55,7 +55,7 @@ Esta é a parte que decide se o histórico sobrevive. São dois registros com **
 
 ### A linha do diário tem uma régua, e ela é curta
 
-`| data | passos | estado | o que mudou |` — e a última coluna cabe em **~200 caracteres**. Não é estética: o que passa disso é narrativa de investigação, que tem dono fora do plano.
+`| # | data | o que mudou |` — e a última coluna cabe em **~200 caracteres**. Não é estética: o que passa disso é narrativa de investigação, que tem dono fora do plano.
 
 ⚠️ **Estourar essa régua é o sintoma de escalonamento que não aconteceu.** Se a frase não cabe, a pergunta certa não é "como resumo?", é **"para onde isto sobe?"** — armadilha para [`ARMADILHAS.md`](ARMADILHAS.md), alternativa descartada para [`HISTORY.md`](HISTORY.md), número medido para o dono do número. Só o que sobra depois disso fica na linha. Uma célula de milhares de caracteres não é diário longo: é uma pilha de escalonamentos adiados.
 
@@ -125,11 +125,11 @@ Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca du
 | Convenção de comentário e docstring (TSDoc)                                                                              | skill `comments`                                                             | apontam                                                      |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow, motor restrito)                                                        | skill `data`                                                                 | apontam                                                      |
 | Camada de IA — provedor/streaming, orçamento de contexto e RAM, raciocínio, proposta NL→passo                           | skill `ai`                                                                   | apontam                                                      |
-| Ferramentas do chat (busca web, MCP, raciocínio visível)                                                                 | [`reference/web-fetch-mcp-thinking/README.md`](reference/web-fetch-mcp-thinking/README.md) | apontam                                                      |
+| Ferramentas do chat — busca web e documentação (MCP). Raciocínio **não** é ferramenta: é capacidade de modelo, dona a skill `ai` | [`reference/web-fetch-mcp-thinking/README.md`](reference/web-fetch-mcp-thinking/README.md) | apontam                                                      |
 | Frota Ollama instalada, peso/cache KV, ficha técnica dos modelos de nuvem opt-in, elegibilidade, inviáveis e descartados | [`reference/models/`](reference/models/README.md)                            | apontam — **inclusive a frota instalada**    |
 | Stack fixada, versões, regras invioláveis, protocolo de leitura                                                          | [`CLAUDE.md`](../CLAUDE.md)                                                  | apontam                                                      |
-| Armadilhas diagnosticadas                                                                                                | [`ARMADILHAS.md`](ARMADILHAS.md) + `study/04-diario-de-bordo.md`             | apontam — busca **por sintoma**, não por data                   |
-| Histórico, decisões, alternativas descartadas                                                                            | [`HISTORY.md`](HISTORY.md)                                                   | apontam                                                      |
+| Armadilhas diagnosticadas                                                                                                | [`ARMADILHAS.md`](ARMADILHAS.md)                                             | apontam — busca **por sintoma**, não por data. O `study/04` narra as da montagem inicial, como caderno; o dono é este |
+| Marcos entregues, e o que foi descartado no caminho                                                                      | [`HISTORY.md`](HISTORY.md) (10 mais recentes) + [`HISTORY-archive.md`](HISTORY-archive.md) | apontam — decisão arquitetural vive no archive, indexada por sigla em `DECISOES.md` |
 | Índice tabular por decisão individual (trilha, sigla, título)                                                            | [`DECISOES.md`](DECISOES.md)                                                 | derivado — sem narrativa própria, nunca duplica `HISTORY.md` |
 | Marcos além dos 10 mais recentes, comprimidos                                                                            | [`HISTORY-archive.md`](HISTORY-archive.md)                                   | apontam — nunca se conserta link interno lá dentro           |
 | Pendências e gatilhos de revisão                                                                                         | [`ROADMAP.md`](ROADMAP.md)                                                   | apontam                                                      |

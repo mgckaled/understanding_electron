@@ -123,13 +123,13 @@ Uma linha por medição — a forma é regra, ver [`README § Número que se rem
 | ago/2026 | 18-E | 71 / 607 | **~57s** | medido a frio, como o gatilho pedia — confirma que os ~88s eram ruído |
 | 26/08/2026 | — (enxugamento das skills) | 93 / 832 | **42,7s** | `vitest run` isolado; `environment` soma 82,9s entre workers |
 | 26/08/2026 | F-3-A/B/C | 100 / 882 | **81s** | portão inteiro cronometrado (não só o `vitest run`), o que explica o salto sobre a linha acima |
-| 28/08/2026 | E-2-A/B | 116 / 1130 | **~80s** | portão inteiro. **Bundle do renderer: 3.025,32 → 3.287,07 kB (+261,75 kB)** pelas ~27 gramáticas de código — 2,2× o que a sonda do E-2-B previu, e ~112 kB do salto ficaram **não atribuídos** |
-| 27/08/2026 | E-1-F | 113 / 1047 | **~82s** | portão inteiro. Uma corrida **caiu por instabilidade** e as duas seguintes passaram — terceira vez que isso acontece na série, sempre com o teste todo verde na repetição. O gatilho de investigar o `check:fast` segue aberto |
-| 27/08/2026 | E-1-E | 112 / 1028 | **~63s** | portão inteiro. A milésima asserção do projeto caiu no passo 2; os 25 testes a mais custaram ~2s, dentro do ruído que a série já mede |
-| 27/08/2026 | E-1-D | 110 / 997 | **~61s** | portão inteiro. Uma corrida caiu de 997 testes por instabilidade e passou nas duas seguintes — a série continua medindo ambiente tanto quanto código |
-| 27/08/2026 | E-1-C | 108 / 961 | **~68s** | portão inteiro. Nove testes a mais e o CodeMirror no bundle; a variação entre corridas do mesmo commit (61s–80s nesta sessão) continua maior que o efeito de um plano |
-| 27/08/2026 | E-1-A/B | 108 / 952 | **~64s** | portão inteiro. Três arquivos e quarenta testes a mais, +14s — e a maior parte não é asserção: `environment` sozinho é ~140s de tempo somado. A variação de ~50s a ~69s entre corridas **do mesmo commit** foi vista nesta sessão, então a série continua medindo ambiente tanto quanto código |
 | 27/08/2026 | F-3-D/E/F | 105 / 912 | **~50s** | portão inteiro, mesma medida da linha acima — cinco arquivos e trinta testes a mais, e **caiu** 30s. O pico anterior era ambiente, como a série já sugeria |
+| 27/08/2026 | E-1-A/B | 108 / 952 | **~64s** | portão inteiro. Três arquivos e quarenta testes a mais, +14s — e a maior parte não é asserção: `environment` sozinho é ~140s de tempo somado. A variação de ~50s a ~69s entre corridas **do mesmo commit** foi vista nesta sessão, então a série continua medindo ambiente tanto quanto código |
+| 27/08/2026 | E-1-C | 108 / 961 | **~68s** | portão inteiro. Nove testes a mais e o CodeMirror no bundle; a variação entre corridas do mesmo commit (61s–80s nesta sessão) continua maior que o efeito de um plano |
+| 27/08/2026 | E-1-D | 110 / 997 | **~61s** | portão inteiro. Uma corrida caiu de 997 testes por instabilidade e passou nas duas seguintes — a série continua medindo ambiente tanto quanto código |
+| 27/08/2026 | E-1-E | 112 / 1028 | **~63s** | portão inteiro. A milésima asserção do projeto caiu no passo 2; os 25 testes a mais custaram ~2s, dentro do ruído que a série já mede |
+| 27/08/2026 | E-1-F | 113 / 1047 | **~82s** | portão inteiro. Uma corrida **caiu por instabilidade** e as duas seguintes passaram — terceira vez que isso acontece na série, sempre com o teste todo verde na repetição. O gatilho de investigar o `check:fast` segue aberto |
+| 28/08/2026 | E-2-A/B | 116 / 1130 | **~80s** | portão inteiro. **Bundle do renderer: 3.025,32 → 3.287,07 kB (+261,75 kB)** pelas ~27 gramáticas de código — 2,2× o que a sonda do E-2-B previu, e ~112 kB do salto ficaram **não atribuídos** |
 
 **O que a série provou, e uma medição isolada não provaria:** de 24 para 93 arquivos e de 172 para 832 testes, o total **não** cresceu proporcionalmente. Um pico isolado (os ~88s do 18-D) é suspeito de ambiente, não de regressão — e foi remedir a frio que decidiu.
 
@@ -198,6 +198,10 @@ A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resoluçã
 
 **Segundo `Record<AiService, string>` exaustivo, achado só na revisão de fechamento.** `ConversationView.tsx` ganhou `SERVICE_LABEL: Record<AiService, string>` (rótulo do provedor na UI), ao lado do `HINTS: Record<AiService, string>` que já existia em `main/features/ai/handlers.ts` (DN1B.5) — o plano tinha gravado um grep por `Record<AiService` no passo 1, mas esse grep rodou **antes** deste segundo mapa nascer no passo 6. Não é bug: os dois compilam hoje e `pnpm typecheck` reprova os dois quando um `AiService` novo entra, o que já é a garantia que se quer. Só registrado para N-1-C não se surpreender: adicionar `'gemini'` vai apontar o compilador para **dois** arquivos, não um.
 
+### Parquet não está no seletor de arquivo
+
+O motor lê e escreve Parquet nativamente, e o [`ESCOPO.md`](ESCOPO.md#formatos) o lista como formato do produto — mas `src/main/features/dataset/pick.ts` não oferece `.parquet` nas extensões do diálogo, então nenhum arquivo desses chega ao app. É a marca ⌛ do escopo: admitido, sem caminho na interface. O conserto é abrir o filtro do diálogo; o que **não** é trivial é decidir se Parquet ganha pré-visualização e perfil pelos mesmos caminhos do CSV (provavelmente sim, o motor não distingue) e se a exportação passa a oferecê-lo como saída padrão, que é a promessa mais forte do escopo — *"a saída natural do app"*.
+
 ### O pilar "Código" não tem plano numerado
 O `CLAUDE.md` já lista código ao lado de documento, imagem, busca web, MCP e raciocínio como pilar próprio — mas, diferente de Web Search/Thinking/MCP (planos 21-23 já reservados), código não tem lugar na sequência ainda. O [F-2](plan/implemented/F-2-composer-modelo-sidebar.md) deu a ele o primeiro item visível na tela — desabilitado, no menu de anexo — e conferiu que o mecanismo **não** está pronto por baixo, ao contrário do que a tabela de formatos do [`ESCOPO.md`](ESCOPO.md) sugere à primeira leitura: o extrator de `.txt` já sabe ler código-fonte, mas o diálogo do canal `document:pick` filtra só `txt/md/pdf`, então nenhum arquivo de código chega lá hoje. Registrado para o item desabilitado não ficar mudo — quando este pilar ganhar prioridade, decide-se então se é só abrir o filtro do diálogo ou se pede ficha própria (com realce de sintaxe, já que o plano 12 entrega a paleta).
 
@@ -224,4 +228,4 @@ O Electron passou a **fixar Downloads** como diretório inicial dos diálogos, e
 
 ## 5. Fora de escopo
 
-Não são pendências. Estão em [`ESCOPO.md`](ESCOPO.md) com justificativa: visualização e BI, edição célula a célula, banco de dados remoto, execução agendada sem interface, colaboração multiusuário, versionamento de dados, PDF escaneado e OCR, `.docx`/`.pptx`, edição ou exportação de documento, e índice vetorial de imagens.
+Não são pendências. Estão em [`ESCOPO.md`](ESCOPO.md) com justificativa: visualização e BI, edição célula a célula, banco de dados remoto, execução agendada sem interface, colaboração multiusuário, versionamento de dados, PDF escaneado e OCR, **ler** `.docx`/`.pptx` como anexo, edição ou exportação do documento anexado, `.odp`/`.ppt`, `.xml`, e índice vetorial de imagens. ⚠️ **Gerar** `.docx` já funciona e `.pptx` está previsto (E-3) — o que está fora é ler os dois.
