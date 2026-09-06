@@ -7,7 +7,7 @@
 | **A** | `reference/` — uma pasta por referência | ✅ | — |
 | **B** | os registros — `HISTORY.md` fica só com marcos; `DECISOES.md` recupera a seção final | ✅ | — |
 | **C** | produto e processo — `ESCOPO.md`, `ROADMAP.md`, `docs/README.md`, e os tetos novos | ✅ | A |
-| **D** | leitura de toda sessão — `CLAUDE.md`, skills, `README.md` da raiz, fechamento | | A, B, C |
+| **D** | leitura de toda sessão — `CLAUDE.md`, skills, `README.md` da raiz, fechamento | ✅ | A, B, C |
 
 ---
 
@@ -78,11 +78,9 @@ O erro a evitar é aplicar a régua do `ESCOPO.md` em tudo: um documento atempor
 
 **R7.15 — Verificação mora em script versionado, não em one-liner dentro do `.md`.** O `ROADMAP § 4` registrava a varredura de links como `node -e "…"` de uma linha; ao tentar registrar a de seção do mesmo jeito, o regex não sobreviveu à cópia — barras se perdem entre heredoc, shell e `node -e`, e o comando registrado **não roda**. Os dois viraram `scripts/check-doc-links.mjs`, ao lado do `check-main-bundle.mjs`, que é o precedente do projeto para verificação de artefato. Ele achou dois defeitos reais na primeira execução (o ponteiro do Primer e os 56 links do R7.13). **Não entra no `check:fast` ainda** — mexer no portão pede medir o custo.
 
----
+**R7.16 — No `CLAUDE.md`, o que sai é seção inteira que muda de dono, não frase comprimida.** A prosa é 58% do arquivo e a tabela 42%; comprimir só a prosa, mesmo em 40%, pararia 21% acima do teto. *Ambiente de desenvolvimento* foi para [`reference/ambiente/`](../../reference/ambiente/README.md) porque só se consulta ao montar máquina ou decidir modelo — e a tabela viajou junto com a seção, o que **não** é editar tabela. A árvore de `docs/` saiu por outro motivo: a tabela do protocolo de leitura, logo abaixo, já listava os mesmos arquivos com peso e forma de consulta.
 
-## O que cada corte restante precisa saber
-
-**D.** Seis defasagens no `README.md` da raiz: a identidade é a anterior à 6ª revisão; raciocínio visível e exportação de documento estão em *"o que ainda falta"* estando entregues; a trilha O não é mencionada; `.pptx` lê como recusa depois de a 6ª revisão movê-lo para *previsto*; e três documentos dão três números diferentes para o tamanho de `docs/` (~490k, ~523k, ~525k).
+**R7.17 — Numa skill, sai a proveniência; o fato e o aviso ficam.** É a régua oposta à do `ESCOPO.md`, e confundi-las destrói a skill: `"medido, não suposto: JSON venceu Arrow"` sem o *medido* vira opinião. O que saiu foram datas de verificação, o nome do plano onde um primitivo subiu (a régua do segundo chamador já explica), o número exato que uma seção já afirmou errado, e um relato de reversão em primeira pessoa. Nenhuma skill estourava o teto — **o corte foi de teor, e não tinha byte como meta.**
 
 ---
 
@@ -94,3 +92,4 @@ O erro a evitar é aplicar a régua do `ESCOPO.md` em tudo: um documento atempor
 | 2 | 06/09/2026 | Corte B. `HISTORY.md` 50,3 → **30,8 kB** (−39%), dez marcos e nenhuma decisão; `DECISOES.md` 66,0 → 68,5 (teto novo 100), com `## Transversais` e a `## Trilha E` recuperando as 68 linhas que `Plano ainda ativo` retinha. Dois achados: eram 17 decisões e 8 já tinham sigla (R7.9); e dois marcos estavam arquivados sob a seção errada (R7.8). |
 | 3 | 06/09/2026 | Corte C. `ROADMAP` 69,6 → **54,7 kB** (−21%): oito células de trilha concluída comprimidas (R7.10), treze gatilhos cumpridos viram uma linha (R7.11), a célula dos tetos vira série (R7.12). `docs/README` 18,8 → **16,8**, com os tetos novos escritos. `ESCOPO` 47,8 → **47,9** — sete pontos de detalhe de código e proveniência trocados por prosa de escopo; o ganho foi de teor, **não de bytes**, e o arquivo segue acima do teto de 45. |
 | 4 | 06/09/2026 | Revisão dos três documentos do corte C, a pedido. Consertos: 19 ponteiros por seção redirecionados (R7.14), 56 links internos dos arquivos movidos no corte A (R7.13), três erros de redação que os cortes B e C deixaram, e a prosa do `§ 1` que a compressão de células não alcançava — `ROADMAP` 58,3 → **52,8 kB**. Nasce `scripts/check-doc-links.mjs` (R7.15), verde. |
+| 5 | 06/09/2026 | Corte D, quatro commits. `README.md` da raiz (seis defasagens), `CLAUDE.md` 41,0 → **35,1 kB** movendo *Ambiente* para `reference/ambiente/` (R7.16), skills sem proveniência (R7.17), e os itens 4 e 5 da revisão — a duplicação declarada da tabela de fonte única, a régua do diário que descrevia quatro colunas, a entrada de Parquet que faltava no `§ 4`, e a série do `check:fast` fora de ordem. |

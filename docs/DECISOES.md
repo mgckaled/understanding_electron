@@ -541,6 +541,30 @@ chamada de modelo no main (`D9.1`).
 
 ---
 
+## Trilha R-7 — refatoração documental
+
+| trilha | sigla | descrição |
+|---|---|---|
+| R-7 | [R7.1](plan/implemented/R-7-refatoracao-documental.md) | o corte do `ARMADILHAS.md` é avaliado e **abortado**, com o número que justifica — teto vai a 150 kB |
+| R-7 | [R7.2](plan/implemented/R-7-refatoracao-documental.md) | uma pasta por referência (`<slug>/README.md`), com slug fiel ao nome citado |
+| R-7 | [R7.3](plan/implemented/R-7-refatoracao-documental.md) | a decisão do R-2 de *marcar em vez de mover* os consumidos é revista por fato novo, não por preferência |
+| R-7 | [R7.4](plan/implemented/R-7-refatoracao-documental.md) | em registro histórico, o **alvo** do link se conserta; o **texto** do link, não |
+| R-7 | [R7.5](plan/implemented/R-7-refatoracao-documental.md) | o `HISTORY-archive.md` recebe, mas não se reescreve — acrescentar à fila não é editar o que já está lá |
+| R-7 | [R7.6](plan/implemented/R-7-refatoracao-documental.md) | as 17 decisões do `HISTORY.md` descem para o **fim** de uma seção que já existia com esse nome |
+| R-7 | [R7.7](plan/implemented/R-7-refatoracao-documental.md) | o teto de 25 kB do `CLAUDE.md` era inalcançável; o novo é **35** |
+| R-7 | [R7.8](plan/implemented/R-7-refatoracao-documental.md) | ao acrescentar ao archive, a **seção** é escolhida — append cego escreve no fim do arquivo, não da seção |
+| R-7 | [R7.9](plan/implemented/R-7-refatoracao-documental.md) | decisão que já tem sigla não ganha outra; a narrativa desce e o índice fica onde está |
+| R-7 | [R7.10](plan/implemented/R-7-refatoracao-documental.md) | trilha concluída comprime; trilha planejada **sem arquivo** não — a célula é o único dono do desenho |
+| R-7 | [R7.11](plan/implemented/R-7-refatoracao-documental.md) | gatilho cumprido sai do `ROADMAP.md`, que é dono do que **falta** |
+| R-7 | [R7.12](plan/implemented/R-7-refatoracao-documental.md) | número que se remede vira série, não parágrafo — a regra existia e o documento vizinho a violava |
+| R-7 | [R7.13](plan/implemented/R-7-refatoracao-documental.md) | mover um arquivo conserta os links **para** ele e quebra os **de dentro** dele |
+| R-7 | [R7.14](plan/implemented/R-7-refatoracao-documental.md) | ponteiro por seção (`§ Nome`) apodrece sem sinal; **cite a sigla**, que não se move |
+| R-7 | [R7.15](plan/implemented/R-7-refatoracao-documental.md) | verificação mora em script versionado, não em one-liner dentro do `.md` |
+| R-7 | [R7.16](plan/implemented/R-7-refatoracao-documental.md) | no `CLAUDE.md` sai seção inteira que muda de dono, não frase comprimida — a tabela viaja junto |
+| R-7 | [R7.17](plan/implemented/R-7-refatoracao-documental.md) | numa skill sai a **proveniência**; o fato e o aviso ficam — régua oposta à do `ESCOPO.md` |
+
+---
+
 ## Revisão de escopo (5ª)
 
 | trilha | sigla | descrição |
