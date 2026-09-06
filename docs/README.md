@@ -12,7 +12,7 @@ Esta pasta é a documentação versionada do projeto, organizada **por finalidad
 docs/
 ├── README.md        # este arquivo — mapa, ciclo de vida e convenção de fonte única
 ├── ESCOPO.md        # o que o app faz e não faz — definição de produto
-├── HISTORY.md       # changelog: os 10 marcos mais recentes + decisões arquiteturais
+├── HISTORY.md       # changelog: os 10 marcos mais recentes — só marcos
 ├── HISTORY-archive.md  # marcos além dos 10 — fila de saída, só leitura
 ├── ARMADILHAS.md    # erro diagnosticado — buscável por sintoma, não por data
 ├── DECISOES.md      # índice tabular das decisões dentro de cada plano — derivado, não narra

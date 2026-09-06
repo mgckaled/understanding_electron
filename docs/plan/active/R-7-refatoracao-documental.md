@@ -5,7 +5,7 @@
 | | Corte | Escopo | Pré-req. |
 |---|---|---|---|
 | **A** | `reference/` — uma pasta por referência | ✅ | — |
-| **B** | os registros — `HISTORY.md` fica só com marcos; `DECISOES.md` recupera a seção final | | — |
+| **B** | os registros — `HISTORY.md` fica só com marcos; `DECISOES.md` recupera a seção final | ✅ | — |
 | **C** | produto e processo — `ESCOPO.md`, `ROADMAP.md`, `docs/README.md`, e os tetos novos | | A |
 | **D** | leitura de toda sessão — `CLAUDE.md`, skills, `README.md` da raiz, fechamento | | A, B, C |
 
@@ -58,15 +58,17 @@ O erro a evitar é aplicar a régua do `ESCOPO.md` em tudo: um documento atempor
 
 **R7.5 — O `HISTORY-archive.md` recebe, mas não se reescreve.** A isenção declarada nele existe para poupar trabalho, não para preservar link quebrado quando o conserto é gratuito — um link entrou no mesmo `sed` dos outros 25. Acrescentar à fila não é editar o que já está lá.
 
-**R7.6 — As 16 decisões do `HISTORY.md` vão para o fim de uma seção que já existe com esse nome.** `HISTORY-archive.md § Decisões arquiteturais (justificativas citáveis)` já abre com *"decisões que valem além do plano onde nasceram"*. Entram no **fim**, ponto cronologicamente mais antigo — são da fundação e dos planos 00–15. Furar a fila pelo topo invalidaria o propósito do archive.
+**R7.6 — As 17 decisões do `HISTORY.md` vão para o fim de uma seção que já existe com esse nome.** `HISTORY-archive.md § Decisões arquiteturais (justificativas citáveis)` já abre com *"decisões que valem além do plano onde nasceram"*. Entram no **fim**, ponto cronologicamente mais antigo — são da fundação e dos planos 00–15. Furar a fila pelo topo invalidaria o propósito do archive.
 
 **R7.7 — O teto de 25 kB do `CLAUDE.md` era inalcançável; o novo é 35.** Tabela 16,5 kB (42%), prosa 22,8 (58%): comprimir a prosa em 40% daria 30,2, ainda 21% acima. O conteúdo se paga — o protocolo que ele carrega reduz o consumo de toda sessão. Tabela não se toca; o que sai são seções que mudam de dono, e a tabela viaja junto com a seção.
+
+**R7.8 — Ao acrescentar ao `HISTORY-archive.md`, a seção é escolhida, não herdada do fim do arquivo.** Dois marcos (`F-3-A`, `F-3-B`) estavam sob `## Armadilhas diagnosticadas` — uma seção que hoje é só ponteiro —, porque um append anterior escreveu no fim do arquivo em vez de no fim da seção certa. Devolvidos a `## Entregas (marcos)`. O append cego é barato de fazer e invisível depois: o arquivo continua lendo bem, e só um `awk` por seção mostra o erro.
+
+**R7.9 — Decisão que já tem sigla não ganha outra; a narrativa desce e o índice fica onde está.** Eram **17** decisões no `HISTORY.md`, não 16 — e **8 delas já tinham linha no `DECISOES.md`** (`D2`, `D3`, `D3.4`, `D5.1`, `D6.2`, `D8.1`, `D9.1`, `D12.1`). Criar `DT*` para essas oito teria produzido exatamente a duplicação que o corte existe para desfazer. As nove sem sigla ganharam `DT1`–`DT9`, e a seção `## Transversais` registra por escrito quais foram as oito e onde estão — sem isso, quem lê a narrativa no archive não tem como voltar ao índice.
 
 ---
 
 ## O que cada corte restante precisa saber
-
-**B.** As 16 seções `### Decisão:` são 19,4 kB — 39% do `HISTORY.md`, contra 26,6 kB dos dez marcos. Saem porque o teto do arquivo é *10 marcos* e não as alcança: são bloco permanente dentro de um mecanismo de contenção que não as vê. Há duplicação real — `SOLID entra parcial` = `D2`, `Erro é dado` = `D3`, ambas também regra viva em skill. Junto: `DECISOES.md § Plano ainda ativo` tem **68 linhas, 62 apontando para `plan/implemented/`** — as trilhas E-1/E-2 fecharam e as linhas nunca saíram; sobram as seis `D9.x`.
 
 **C.** O cabeçalho do `ROADMAP § 1` promete *"entrega em uma linha"* e há células de 1.500+ caracteres.
 
@@ -79,3 +81,4 @@ O erro a evitar é aplicar a régua do `ESCOPO.md` em tudo: um documento atempor
 | # | Data | O que aconteceu |
 |---|---|---|
 | 1 | 06/09/2026 | Brief medido antes do plano. Dois achados mudaram o desenho: a série do `§ 2` já mentia por medição feita antes da última edição, e mover armadilha entre seções do mesmo arquivo não recupera byte — o corte do `ARMADILHAS` foi abortado com teto de 150 kB (R7.1). Corte A executado. |
+| 2 | 06/09/2026 | Corte B. `HISTORY.md` 50,3 → **30,8 kB** (−39%), dez marcos e nenhuma decisão; `DECISOES.md` 66,0 → 68,5 (teto novo 100), com `## Transversais` e a `## Trilha E` recuperando as 68 linhas que `Plano ainda ativo` retinha. Dois achados: eram 17 decisões e 8 já tinham sigla (R7.9); e dois marcos estavam arquivados sob a seção errada (R7.8). |

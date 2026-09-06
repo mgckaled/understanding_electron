@@ -19,6 +19,31 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 
 ---
 
+## Transversais
+
+Decisões que valem além do plano onde nasceram — a narrativa de cada uma está em
+[`HISTORY-archive.md`](HISTORY-archive.md) § *Decisões arquiteturais*.
+
+| trilha | sigla | descrição |
+|---|---|---|
+| — | [DT1](ESCOPO.md) | Pipeline de passos, não SQL-first |
+| — | [DT2](plan/active/09-camada-de-ia.md) | Dois verbos: NL→SQL para *perguntar*, NL→passo para *tratar* |
+| — | [DT3](plan/implemented/19-propor-consulta-e-passos.md) | Um schema zod restringe a geração **e** valida a resposta |
+| — | [DT4](plan/implemented/14-persistencia-das-conversas.md) | Persistência em `node:sqlite`; relacional descartado |
+| — | [DT5](plan/implemented/18-A-motor-e-worker.md) | SQL gerado por modelo roda com o motor restringido, não com o texto inspecionado |
+| — | [DT6](plan/active/09-camada-de-ia.md) | RAG entra por capacidade, nunca por eficiência — o cache de prefixo é o motivo |
+| — | [DT7](plan/active/README.md) | Flexibilidade é forma de dado e slot, nunca ponto de extensão |
+| — | [DT8](plan/implemented/14-persistencia-das-conversas.md) | Um hook público sobrevive à troca de fonte quando o tipo que ele devolve tem nome próprio |
+| — | [DT9](plan/implemented/14-persistencia-das-conversas.md) | O mock de armazenamento delega aos handlers reais, não a uma fake escrita à mão |
+
+**Outras oito decisões do mesmo bloco não ganharam sigla nova, porque já tinham uma** — a narrativa
+desceu ao archive e o índice continua sendo a linha que já existia: erro que atravessa o IPC é dado
+(`D3`), segredo é de mão única (`D3.4`), SOLID entra parcial (`D2`), TanStack Query adiado (`D6.2`),
+tokens em custom properties (`D5.1`), realce com `highlight.js` (`D12.1`), hooks em `.mjs` (`D8.1`),
+chamada de modelo no main (`D9.1`).
+
+---
+
 ## Fundação (planos 00–12)
 
 | trilha | sigla | descrição |
@@ -293,6 +318,81 @@ Levantamento mecânico (grep sobre os headings dos planos, não transcrição ma
 
 ---
 
+## Trilha E — exportação de documento
+
+| trilha | sigla | descrição |
+|---|---|---|
+| E-1-A | [DE1A.1](plan/implemented/E-1-A-o-rascunho-existe.md) | O rascunho é **tabela própria**, não parte de mensagem |
+| E-1-A | [DE1A.2](plan/implemented/E-1-A-o-rascunho-existe.md) | `source_message_id` é **procedência**, não posse — e por isso não é chave estrangeira |
+| E-1-A | [DE1A.3](plan/implemented/E-1-A-o-rascunho-existe.md) | "Já rascunhei esta resposta?" é estado **derivado**, nunca um sinalizador |
+| E-1-A | [DE1A.4](plan/implemented/E-1-A-o-rascunho-existe.md) | O título nasce da primeira linha, e a regra mora em `core/` |
+| E-1-A | [DE1A.5](plan/implemented/E-1-A-o-rascunho-existe.md) | `draft:*` **não** retorna `Result` |
+| E-1-A | [DE1A.6](plan/implemented/E-1-A-o-rascunho-existe.md) | Identidade nasce no renderer |
+| E-1-A | [DE1A.7](plan/implemented/E-1-A-o-rascunho-existe.md) | Este plano **não** tem painel, e isso é o corte, não um adiamento |
+| E-1-B | [DE1B.1](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Um alvo aberto, duas seleções: a exclusão é estrutural |
+| E-1-B | [DE1B.2](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | A casca sai para `shared/ui/SidePanel/`; o corpo fica onde está |
+| E-1-B | [DE1B.3](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Cada inquilino guarda a própria largura |
+| E-1-B | [DE1B.4](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | `Tabs` não sobe neste plano |
+| E-1-B | [DE1B.5](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | `Ctrl+D` no mesmo ouvinte do `Ctrl+B` |
+| E-1-B | [DE1B.6](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O `Esc` do `Dialog` para de vazar, e o conserto é no primitivo |
+| E-1-B | [DE1B.7](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Apagar o rascunho aberto cai para o mais recente que sobrou |
+| E-1-B | [DE1B.8](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O contador vira botão, e continua nunca somado ao clipe |
+| E-1-C | [DE1C.1](plan/implemented/E-1-C-o-rascunho-se-edita.md) | CodeMirror 6, montado à mão, sem invólucro de React |
+| E-1-C | [DE1C.2](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Um objeto de tema serve aos **dois** temas do app |
+| E-1-C | [DE1C.3](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Extensões compostas à mão, nunca `basicSetup` |
+| E-1-C | [DE1C.4](plan/implemented/E-1-C-o-rascunho-se-edita.md) | `Tabs` sobe para `shared/ui/`, com montagem persistente **opt-in** |
+| E-1-C | [DE1C.5](plan/implemented/E-1-C-o-rascunho-se-edita.md) | `Tab` sai do campo, e agora por padrão do próprio editor |
+| E-1-C | [DE1C.6](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Grava no `blur`; trocar de rascunho grava antes e **reinicia o documento** |
+| E-1-C | [DE1C.7](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Editar retitula, e o título continua derivado |
+| E-1-C | [DE1C.8](plan/implemented/E-1-C-o-rascunho-se-edita.md) | O que o nível 2 alcança, e o que só a prova ao vivo alcança |
+| E-1-C | [DE1C.9](plan/implemented/E-1-C-o-rascunho-se-edita.md) | A prévia não ganha código |
+| E-1-D | [DE1D.1](plan/implemented/E-1-D-o-caminho-de-saida.md) | Um canal só, do diálogo à gravação |
+| E-1-D | [DE1D.2](plan/implemented/E-1-D-o-caminho-de-saida.md) | A escrita atômica ganha repetição, porque no Windows ela não é atômica |
+| E-1-D | [DE1D.3](plan/implemented/E-1-D-o-caminho-de-saida.md) | `file-in-use` é um `kind` novo, e a razão é o Windows, não a novidade da falha |
+| E-1-D | [DE1D.4](plan/implemented/E-1-D-o-caminho-de-saida.md) | O nome sugerido é saneado em `core/`, e o teste é a tabela do Windows |
+| E-1-D | [DE1D.5](plan/implemented/E-1-D-o-caminho-de-saida.md) | A última pasta é lembrada, e mora onde configuração de máquina já mora |
+| E-1-D | [DE1D.6](plan/implemented/E-1-D-o-caminho-de-saida.md) | `.txt` é markdown despido, e o remark chega aqui |
+| E-1-D | [DE1D.7](plan/implemented/E-1-D-o-caminho-de-saida.md) | A confirmação é uma linha `role="status"` no rodapé; o Toast vira **F-5** |
+| E-1-D | [DE1D.8](plan/implemented/E-1-D-o-caminho-de-saida.md) | O que se exporta é o documento do editor, não o gravado |
+| E-1-D | [DE1D.9](plan/implemented/E-1-D-o-caminho-de-saida.md) | O bundle do `main` ganha uma checagem, porque nenhum teste o alcança |
+| E-1-E | [DE1E.1](plan/implemented/E-1-E-o-rascunho-vira-word.md) | `docx` cru + emissor próprio, não conversor pronto |
+| E-1-E | [DE1E.2](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O parse vira fonte única, e GFM sozinho **não** bastava — corrigida pela DE1E.9 |
+| E-1-E | [DE1E.3](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Externo ou embutido é decidido por sonda, e é o passo 1 |
+| E-1-E | [DE1E.4](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Lista numerada custa configuração, e a profundidade é travada em 5 níveis |
+| E-1-E | [DE1E.5](plan/implemented/E-1-E-o-rascunho-vira-word.md) | `render` vira assíncrono; é a única costura no `main` |
+| E-1-E | [DE1E.6](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O que decide mora em dado plano; o `docx` só serializa |
+| E-1-E | [DE1E.7](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O emissor nunca perde texto: o que não mapeia vira parágrafo |
+| E-1-E | [DE1E.8](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O documento sai parecendo Word, não parecendo o crivo |
+| E-1-E | [DE1E.9](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `.txt` sai do mesmo `Block[]` do `.docx`, e o `strip-markdown` deixa o projeto |
+| E-1-E | [DE1E.10](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Tabela vira `Table` de verdade; o gatilho adiado disparou na primeira exportação |
+| E-1-E | [DE1E.11](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `styles.xml` do `docx` vem sem espaçamento nenhum, e é preciso repor |
+| E-1-F | [DE1F.1](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | `printToPDF`, e o HTML sai do `Block[]` — terceiro renderizador, não segundo pipeline |
+| E-1-F | [DE1F.2](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | A janela offscreen copia o molde do `rasterizeToPng`, e a carga é em dois tempos |
+| E-1-F | [DE1F.3](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Todo texto é escapado, e o documento nasce com `default-src 'none'` |
+| E-1-F | [DE1F.4](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Paginação é CSS, e são quatro regras que importam |
+| E-1-F | [DE1F.5](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Tipografia do sistema; só normal × monoespaçada precisam diferir |
+| E-1-F | [DE1F.6](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | A impressão é injetada, como o diálogo já era |
+| E-1-F | [DE1F.7](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Sem `generateDocumentOutline`/`generateTaggedPDF` — experimentais, um com issue aberta |
+| E-1-F | [DE1F.8](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | O doctype pertence à **primeira** carga, ou o PDF sai em modo quirks |
+| E-1-F | [DE1F.9](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Número de página entra, e o template do Chromium não herda estilo nenhum |
+| E-2-A | [DE2A.1](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | Código é um rascunho, e a distinção viaja no item |
+| E-2-A | [DE2A.2](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | `kind` e `language` são duas colunas, não uma |
+| E-2-A | [DE2A.3](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | `hasDraftOf` filtra por `kind`, ou o botão do turno mente |
+| E-2-A | [DE2A.4](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O título de código não passa pelo `strip` da prosa |
+| E-2-A | [DE2A.5](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O seletor distingue por chip, e o contador não se divide |
+| E-2-A | [DE2A.6](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O botão chega ao `CodeBlock` por prop, e `components` deixa de ser constante |
+| E-2-A | [DE2A.7](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O canal não nasce novo; `draft:create` ganha dois campos |
+| E-2-A | [DE2A.8](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O botão do bloco tem estado, e a chave inclui o conteúdo |
+| E-2-A | [DE2A.9](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | Código não passa pelo renderizador de markdown, em nenhuma das duas abas |
+| E-2-B | [DE2B.1](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Um `Highlighter` só, duas renderizações |
+| E-2-B | [DE2B.2](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | `legacy-modes`, não os `lang-*` oficiais |
+| E-2-B | [DE2B.3](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | A cerca é texto livre, então a tabela normaliza e mapeia numa etapa |
+| E-2-B | [DE2B.4](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Cerca sem linguagem continua sem gramática e sai `.txt` |
+| E-2-B | [DE2B.5](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Rascunho de código exporta verbatim, e o seletor de formato vira rótulo |
+| E-2-B | [DE2B.6](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Numeração, rolagem lateral e linha do cursor: a premissa da DE1C.3 mudou |
+
+---
+
 ## Trilha N — nuvem opt-in
 
 | trilha | sigla | descrição |
@@ -471,74 +571,6 @@ Este plano não fechou — as linhas abaixo podem mudar de id, ou desaparecer, a
 
 | trilha | sigla | descrição |
 |---|---|---|
-| E-1-A | [DE1A.1](plan/implemented/E-1-A-o-rascunho-existe.md) | O rascunho é **tabela própria**, não parte de mensagem |
-| E-1-A | [DE1A.2](plan/implemented/E-1-A-o-rascunho-existe.md) | `source_message_id` é **procedência**, não posse — e por isso não é chave estrangeira |
-| E-1-A | [DE1A.3](plan/implemented/E-1-A-o-rascunho-existe.md) | "Já rascunhei esta resposta?" é estado **derivado**, nunca um sinalizador |
-| E-1-A | [DE1A.4](plan/implemented/E-1-A-o-rascunho-existe.md) | O título nasce da primeira linha, e a regra mora em `core/` |
-| E-1-A | [DE1A.5](plan/implemented/E-1-A-o-rascunho-existe.md) | `draft:*` **não** retorna `Result` |
-| E-1-A | [DE1A.6](plan/implemented/E-1-A-o-rascunho-existe.md) | Identidade nasce no renderer |
-| E-1-A | [DE1A.7](plan/implemented/E-1-A-o-rascunho-existe.md) | Este plano **não** tem painel, e isso é o corte, não um adiamento |
-| E-1-B | [DE1B.1](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Um alvo aberto, duas seleções: a exclusão é estrutural |
-| E-1-B | [DE1B.2](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | A casca sai para `shared/ui/SidePanel/`; o corpo fica onde está |
-| E-1-B | [DE1B.3](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Cada inquilino guarda a própria largura |
-| E-1-B | [DE1B.4](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | `Tabs` não sobe neste plano |
-| E-1-B | [DE1B.5](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | `Ctrl+D` no mesmo ouvinte do `Ctrl+B` |
-| E-1-B | [DE1B.6](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O `Esc` do `Dialog` para de vazar, e o conserto é no primitivo |
-| E-1-B | [DE1B.7](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | Apagar o rascunho aberto cai para o mais recente que sobrou |
-| E-1-B | [DE1B.8](plan/implemented/E-1-B-a-regiao-ganha-um-segundo-inquilino.md) | O contador vira botão, e continua nunca somado ao clipe |
-| E-1-C | [DE1C.1](plan/implemented/E-1-C-o-rascunho-se-edita.md) | CodeMirror 6, montado à mão, sem invólucro de React |
-| E-1-C | [DE1C.2](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Um objeto de tema serve aos **dois** temas do app |
-| E-1-C | [DE1C.3](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Extensões compostas à mão, nunca `basicSetup` |
-| E-1-C | [DE1C.4](plan/implemented/E-1-C-o-rascunho-se-edita.md) | `Tabs` sobe para `shared/ui/`, com montagem persistente **opt-in** |
-| E-1-C | [DE1C.5](plan/implemented/E-1-C-o-rascunho-se-edita.md) | `Tab` sai do campo, e agora por padrão do próprio editor |
-| E-1-C | [DE1C.6](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Grava no `blur`; trocar de rascunho grava antes e **reinicia o documento** |
-| E-1-C | [DE1C.7](plan/implemented/E-1-C-o-rascunho-se-edita.md) | Editar retitula, e o título continua derivado |
-| E-1-C | [DE1C.8](plan/implemented/E-1-C-o-rascunho-se-edita.md) | O que o nível 2 alcança, e o que só a prova ao vivo alcança |
-| E-1-C | [DE1C.9](plan/implemented/E-1-C-o-rascunho-se-edita.md) | A prévia não ganha código |
-| E-1-D | [DE1D.1](plan/implemented/E-1-D-o-caminho-de-saida.md) | Um canal só, do diálogo à gravação |
-| E-1-D | [DE1D.2](plan/implemented/E-1-D-o-caminho-de-saida.md) | A escrita atômica ganha repetição, porque no Windows ela não é atômica |
-| E-1-D | [DE1D.3](plan/implemented/E-1-D-o-caminho-de-saida.md) | `file-in-use` é um `kind` novo, e a razão é o Windows, não a novidade da falha |
-| E-1-D | [DE1D.4](plan/implemented/E-1-D-o-caminho-de-saida.md) | O nome sugerido é saneado em `core/`, e o teste é a tabela do Windows |
-| E-1-D | [DE1D.5](plan/implemented/E-1-D-o-caminho-de-saida.md) | A última pasta é lembrada, e mora onde configuração de máquina já mora |
-| E-1-D | [DE1D.6](plan/implemented/E-1-D-o-caminho-de-saida.md) | `.txt` é markdown despido, e o remark chega aqui |
-| E-1-D | [DE1D.7](plan/implemented/E-1-D-o-caminho-de-saida.md) | A confirmação é uma linha `role="status"` no rodapé; o Toast vira **F-5** |
-| E-1-D | [DE1D.8](plan/implemented/E-1-D-o-caminho-de-saida.md) | O que se exporta é o documento do editor, não o gravado |
-| E-1-D | [DE1D.9](plan/implemented/E-1-D-o-caminho-de-saida.md) | O bundle do `main` ganha uma checagem, porque nenhum teste o alcança |
-| E-1-E | [DE1E.1](plan/implemented/E-1-E-o-rascunho-vira-word.md) | `docx` cru + emissor próprio, não conversor pronto |
-| E-1-E | [DE1E.2](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O parse vira fonte única, e GFM sozinho **não** bastava — corrigida pela DE1E.9 |
-| E-1-E | [DE1E.3](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Externo ou embutido é decidido por sonda, e é o passo 1 |
-| E-1-E | [DE1E.4](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Lista numerada custa configuração, e a profundidade é travada em 5 níveis |
-| E-1-E | [DE1E.5](plan/implemented/E-1-E-o-rascunho-vira-word.md) | `render` vira assíncrono; é a única costura no `main` |
-| E-1-E | [DE1E.6](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O que decide mora em dado plano; o `docx` só serializa |
-| E-1-E | [DE1E.7](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O emissor nunca perde texto: o que não mapeia vira parágrafo |
-| E-1-E | [DE1E.8](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O documento sai parecendo Word, não parecendo o crivo |
-| E-1-E | [DE1E.9](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `.txt` sai do mesmo `Block[]` do `.docx`, e o `strip-markdown` deixa o projeto |
-| E-1-E | [DE1E.10](plan/implemented/E-1-E-o-rascunho-vira-word.md) | Tabela vira `Table` de verdade; o gatilho adiado disparou na primeira exportação |
-| E-1-E | [DE1E.11](plan/implemented/E-1-E-o-rascunho-vira-word.md) | O `styles.xml` do `docx` vem sem espaçamento nenhum, e é preciso repor |
-| E-1-F | [DE1F.1](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | `printToPDF`, e o HTML sai do `Block[]` — terceiro renderizador, não segundo pipeline |
-| E-1-F | [DE1F.2](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | A janela offscreen copia o molde do `rasterizeToPng`, e a carga é em dois tempos |
-| E-1-F | [DE1F.3](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Todo texto é escapado, e o documento nasce com `default-src 'none'` |
-| E-1-F | [DE1F.4](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Paginação é CSS, e são quatro regras que importam |
-| E-1-F | [DE1F.5](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Tipografia do sistema; só normal × monoespaçada precisam diferir |
-| E-1-F | [DE1F.6](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | A impressão é injetada, como o diálogo já era |
-| E-1-F | [DE1F.7](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Sem `generateDocumentOutline`/`generateTaggedPDF` — experimentais, um com issue aberta |
-| E-1-F | [DE1F.8](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | O doctype pertence à **primeira** carga, ou o PDF sai em modo quirks |
-| E-1-F | [DE1F.9](plan/implemented/E-1-F-o-rascunho-vira-pdf.md) | Número de página entra, e o template do Chromium não herda estilo nenhum |
-| E-2-A | [DE2A.1](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | Código é um rascunho, e a distinção viaja no item |
-| E-2-A | [DE2A.2](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | `kind` e `language` são duas colunas, não uma |
-| E-2-A | [DE2A.3](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | `hasDraftOf` filtra por `kind`, ou o botão do turno mente |
-| E-2-A | [DE2A.4](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O título de código não passa pelo `strip` da prosa |
-| E-2-A | [DE2A.5](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O seletor distingue por chip, e o contador não se divide |
-| E-2-A | [DE2A.6](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O botão chega ao `CodeBlock` por prop, e `components` deixa de ser constante |
-| E-2-A | [DE2A.7](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O canal não nasce novo; `draft:create` ganha dois campos |
-| E-2-A | [DE2A.8](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | O botão do bloco tem estado, e a chave inclui o conteúdo |
-| E-2-A | [DE2A.9](plan/implemented/E-2-A-o-rascunho-aceita-codigo.md) | Código não passa pelo renderizador de markdown, em nenhuma das duas abas |
-| E-2-B | [DE2B.1](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Um `Highlighter` só, duas renderizações |
-| E-2-B | [DE2B.2](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | `legacy-modes`, não os `lang-*` oficiais |
-| E-2-B | [DE2B.3](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | A cerca é texto livre, então a tabela normaliza e mapeia numa etapa |
-| E-2-B | [DE2B.4](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Cerca sem linguagem continua sem gramática e sai `.txt` |
-| E-2-B | [DE2B.5](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Rascunho de código exporta verbatim, e o seletor de formato vira rótulo |
-| E-2-B | [DE2B.6](plan/implemented/E-2-B-cada-linguagem-no-seu-dialeto.md) | Numeração, rolagem lateral e linha do cursor: a premissa da DE1C.3 mudou |
 | 09 (ativo) | [D9.1](plan/active/09-camada-de-ia.md) | A chamada de LLM roda no main, não no `utilityProcess` |
 | 09 (ativo) | [D9.2](plan/active/09-camada-de-ia.md) | Uma fronteira de rede, injetável, exatamente como o `embed_fn` |
 | 09 (ativo) | [D9.3](plan/active/09-camada-de-ia.md) | Nuvem é opt-in, e o gate é o mesmo formato para os três |

@@ -46,7 +46,7 @@ As duas seções abaixo aplicam o guarda-chuva a domínios diferentes, e cada um
 docs/
 ├── README.md        # mapa, ciclo de vida do plano, convenção de fonte única
 ├── ESCOPO.md        # o que o app faz e não faz
-├── HISTORY.md       # os 10 marcos mais recentes + decisões arquiteturais
+├── HISTORY.md       # os 10 marcos mais recentes — só marcos
 ├── HISTORY-archive.md  # marcos além dos 10 — fila, só leitura
 ├── ARMADILHAS.md    # erro diagnosticado, buscável por sintoma
 ├── DECISOES.md      # índice tabular das decisões dentro de cada plano — derivado
