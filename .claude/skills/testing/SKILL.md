@@ -58,7 +58,7 @@ Forma comum aos cinco: **o ambiente de teste tem padrões, e padrão é decisão
 
 - `scroll` é assíncrono — jsdom não tem cadência de token nem layout, nenhum teste de nível 2 poderia ter pego. § *O evento `scroll` é assíncrono*.
 - `<dialog>` não é implementado — `HTMLDialogElement` é subclasse vazia. § *O jsdom não implementa `<dialog>`*.
-- CSS não é aplicado — nível 2 clica em botão `visibility: hidden` que só o `:hover` revela. § *Teste de nível 2 clica em botão que o CSS esconde*. ⚠️ **Mas o que a ausência de CSS impede é menos do que parece:** *classe* é atribuída normalmente. No E-2-B, editor e prévia emitem as classes `.tok-*` do destaque de sintaxe sob jsdom — o que **não** se prova é a cor delas. Antes de declarar algo "só ao vivo", verifique se a asserção pode ser feita sobre a classe em vez do estilo; eu havia escrito no plano que o editor não era testável, e metade dele era.
+- CSS não é aplicado — nível 2 clica em botão `visibility: hidden` que só o `:hover` revela. § *Teste de nível 2 clica em botão que o CSS esconde*. ⚠️ **Mas o que a ausência de CSS impede é menos do que parece:** *classe* é atribuída normalmente. Editor e prévia emitem as classes `.tok-*` do destaque de sintaxe sob jsdom — o que **não** se prova é a cor delas. **Antes de declarar algo "só ao vivo", verifique se a asserção pode ser feita sobre a classe em vez do estilo** — o veredito "não é testável" já saiu errado por metade uma vez.
 - `prefers-color-scheme` — Playwright emula `'light'` por padrão, ganha do `nativeTheme`. § *O Playwright emula `prefers-color-scheme: light`*.
 - Eventos de animação não chegam ao React — `window.AnimationEvent` é `undefined`. § *`animationiteration` borbulha de 14 filhos*.
 - CodeMirror **lança ao montar** — mede texto por `Range`/`elementFromPoint`, que o jsdom não implementa; e digitação real (`contenteditable` + `beforeinput`) segue fora de alcance mesmo com os mocks. § *CodeMirror não monta sob jsdom*.
@@ -108,7 +108,7 @@ Dentro de `shared/`, nem tudo é lógica: um arquivo de só-constante (`APP_ID`)
 
 `build` continua `typecheck` + `electron-vite build`. Teste roda em `check:fast` (`typecheck && lint && test`), o único comando que o *hook* de edição e o pré-commit chamam — um lugar para manter alinhado, não três configs espalhadas.
 
-⚠️ **A duração e a contagem de testes NÃO moram aqui.** O dono é o [`ROADMAP § 2`](../../../docs/ROADMAP.md), que guarda a série inteira de medições — e a série é o que dá sentido a um número isolado. Uma segunda lista aqui envelheceria calada, como já envelheceu: até ago/2026 esta seção afirmava "452 testes" quando eram 832. **Remeça, não copie.** O achado estável, esse sim, fica: a maior fatia do tempo é `environment` (a subida do jsdom, uma por arquivo), não as asserções — o que redireciona a investigação de otimização.
+⚠️ **A duração e a contagem de testes NÃO moram aqui.** O dono é o [`ROADMAP § 2`](../../../docs/ROADMAP.md), que guarda a série inteira de medições — e a série é o que dá sentido a um número isolado. Uma segunda lista aqui envelheceria calada, e já envelheceu uma vez — por quase o dobro. **Remeça, não copie.** O achado estável, esse sim, fica: a maior fatia do tempo é `environment` (a subida do jsdom, uma por arquivo), não as asserções — o que redireciona a investigação de otimização.
 
 ## Globals do Vitest declarados manualmente no ESLint
 

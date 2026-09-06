@@ -64,7 +64,7 @@ if (!parsed.success) throw new Error(`IPC ${channel}: payload inválido — ...`
 
 **Uma exceção existe e é justificada:** `settings:read` valida com zod o que leu do disco (D14.7). Não é a saída do main sendo desconfiada — são bytes de uma tabela chave-valor sem esquema para migrar, e a validação na leitura **é** a migração ali.
 
-> 🔍 **A validação funciona; quem costuma mentir é o chamador.** Em ago/2026 o `conversation:settings` passou a recusar payload com `numCtx: 0`, e a causa não estava no schema: um controle numérico desenhado com `max={0}` clampava um 1024 digitado para zero. Ler a recusa do zod como "o schema está apertado demais" teria escondido o defeito. Ver [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md).
+> 🔍 **A validação funciona; quem costuma mentir é o chamador.** O `conversation:settings` já recusou payload com `numCtx: 0` sem que a causa estivesse no schema: um controle numérico desenhado com `max={0}` clampava um 1024 digitado para zero. Ler a recusa do zod como "o schema está apertado demais" teria escondido o defeito. Ver [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md).
 
 ## Evento não é canal, e o nome dele mora noutro arquivo
 
@@ -89,7 +89,7 @@ Duas regras de evento que vêm junto:
 
 ## Payload binário: **não existe zero-cópia**, e a palavra "transferível" engana
 
-Verificado no fonte do Electron 42 em ago/2026, não suposto:
+Verificado no fonte do Electron 42, não suposto:
 
 - `invoke`, `send` e `sendSync` serializam por `CloneableMessage` e **não aceitam lista de transferência nenhuma**;
 - a lista de transferência do `postMessage` extrai **apenas `MessagePort`** — `ArrayBuffer` não entra nem ali;
@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**50 canais em `IpcContract`**, conferidos contra o código em 01/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — o quinquagésimo é `privacy:list`, O-8.
+**50 canais em `IpcContract`**, conferidos contra o código em 06/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — o quinquagésimo é `privacy:list`, O-8.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
