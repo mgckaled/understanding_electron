@@ -228,7 +228,11 @@ Duas capacidades trazem para dentro da conversa algo que estava fora dela — bu
 | **Busca web** | uma URL vira contexto da resposta: o app busca e extrai o texto principal | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
 | **Documentação (MCP)** | um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
 
+Ao avaliar um servidor MCP futuro, a diretriz — recomendação, não regra — é que ele tende a fazer sentido quando traz para dentro da conversa algo que está fora dela e que o aplicativo não produz localmente. O que o aplicativo já é, como o motor de dados e a leitura de arquivo escolhida pelo usuário, raramente ganha em ser terceirizado.
+
 **Como a ferramenta é acionada é decisão do plano que a construir, não premissa deste documento.** São três caminhos possíveis, com fronteiras de privacidade diferentes: o modelo pedir, por *tool calling* (exige `tools`); o usuário fornecer o endereço (não exige capacidade nenhuma); ou o provedor de nuvem resolver por conta própria. Nenhum é o caminho canônico — e o precedente que desautoriza presumir um deles é o raciocínio visível, que está entregue e **não** chegou por *tool calling* em provedor nenhum.
+
+**Quem executa a busca web — o próprio app ou um servidor MCP de busca — é decisão em aberto**, e não altera a fronteira do pilar.
 
 ⚠️ **A capacidade exigida limita quais modelos servem à conversa.** *Tool calling* pede `tools`; anexo de imagem pede `vision`. Quando o modelo escolhido não junta as duas, usar a ferramenta e anexar imagem são caminhos exclusivos naquela conversa — trocar de modelo resolve, ao custo do descarregamento. Quais modelos juntam o quê: [`reference/models/`](reference/models/README.md).
 
