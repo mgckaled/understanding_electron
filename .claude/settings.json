@@ -39,8 +39,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && pnpm check:fast",
-            "timeout": 180
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop_gate.mjs\"",
+            "timeout": 600
           }
         ]
       }

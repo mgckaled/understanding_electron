@@ -128,7 +128,10 @@ Uma linha por medição — a forma é regra, ver [`README § Número que se rem
 | 27/08/2026 | E-1-C | 108 / 961 | **~68s** | portão inteiro. Nove testes a mais e o CodeMirror no bundle; a variação entre corridas do mesmo commit (61s–80s nesta sessão) continua maior que o efeito de um plano |
 | 27/08/2026 | E-1-D | 110 / 997 | **~61s** | portão inteiro. Uma corrida caiu de 997 testes por instabilidade e passou nas duas seguintes — a série continua medindo ambiente tanto quanto código |
 | 27/08/2026 | E-1-E | 112 / 1028 | **~63s** | portão inteiro. A milésima asserção do projeto caiu no passo 2; os 25 testes a mais custaram ~2s, dentro do ruído que a série já mede |
-| 27/08/2026 | E-1-F | 113 / 1047 | **~82s** | portão inteiro. Uma corrida **caiu por instabilidade** e as duas seguintes passaram — terceira vez que isso acontece na série, sempre com o teste todo verde na repetição. O gatilho de investigar o `check:fast` segue aberto |
+| 27/08/2026 | E-1-F | 113 / 1047 | **~82s** | portão inteiro. Uma corrida **caiu por instabilidade** e as duas seguintes passaram — terceira vez na série, sempre com o teste todo verde na repetição — e houve uma **quarta** em 06/09/2026, mesma forma. O gatilho de investigar o `check:fast` segue aberto |
+| 06/09/2026 | R-7 (`maxWorkers`) | 148 / 1379 | **97,6s** | 8 workers, o default sem `watch` (um por thread lógica). Satura a máquina: 65,6% de CPU só em Node, 8 processos |
+| 06/09/2026 | R-7 (`maxWorkers`) | 148 / 1379 | **107,3s** | `--maxWorkers=4`. Metade dos processos custa **+10%** — o paralelismo efetivo em 8 era ~2x, o resto era contenção. Adotado como `'50%'` no `vitest.config.ts`, percentual e não número fixo |
+| 06/09/2026 | R-7 (`stop_gate`) | 148 / 1379 | **132,4s** | mesma config, máquina mais carregada — a variação entre corridas do mesmo commit segue maior que o efeito de uma mudança |
 | 28/08/2026 | E-2-A/B | 116 / 1130 | **~80s** | portão inteiro. **Bundle do renderer: 3.025,32 → 3.287,07 kB (+261,75 kB)** pelas ~27 gramáticas de código — 2,2× o que a sonda do E-2-B previu, e ~112 kB do salto ficaram **não atribuídos** |
 
 **O que a série provou, e uma medição isolada não provaria:** de 24 para 93 arquivos e de 172 para 832 testes, o total **não** cresceu proporcionalmente. Um pico isolado (os ~88s do 18-D) é suspeito de ambiente, não de regressão — e foi remedir a frio que decidiu.
