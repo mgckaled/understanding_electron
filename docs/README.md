@@ -111,6 +111,27 @@ A régua de tamanho do [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) mede códig
 
 ---
 
+## Régua de redação — o que sai de cada documento
+
+A régua de tamanho acima diz **quanto** cabe. Esta diz **o quê**, e ela **muda por tipo de documento** — aplicar a do `ESCOPO.md` numa skill destrói a skill, porque os dois falham por motivos opostos.
+
+| Documento | Sai | Fica |
+|---|---|---|
+| `ESCOPO.md` | marca temporal, narrativa, medição com proveniência, detalhe de código (nome de `.ts`, constante, assinatura) | o número que decide produto |
+| `ROADMAP.md` | a entrega recontada dentro da célula; gatilho já cumprido | a linha de uma linha, e a **sigla** que leva ao dono |
+| este arquivo | história do gatilho, status de teto (dono é o [`ROADMAP § 2`](ROADMAP.md)) | a régua, o ciclo, o formato |
+| skill | **proveniência** — em que plano nasceu, quando, o que se pensava antes, relato de reversão | o **fato** e o **aviso** |
+| `CLAUDE.md` | o que tem outro dono; prosa que a tabela ao lado já diz | tabela e a regra que decide a primeira linha |
+| `HISTORY.md` | decisão arquitetural — desce para o archive, indexada por sigla | marco de ciclo de plano |
+
+**O teste, um por tipo:** o `ESCOPO` pergunta *"esta frase envelhece sozinha?"*. A skill pergunta *"tirar isto enfraquece o aviso?"* — `"medido, não suposto: JSON venceu Arrow"` sem o *medido* vira opinião.
+
+⚠️ **Verificar por `grep`, nunca por leitura.** Numa revisão de escopo, a leitura deixou passar cinco marcas temporais depois de nove passos de revisão consciente; o `grep` achou as cinco. Vale o mesmo motivo do `git diff` acima: **texto que sobrou nunca parece errado no lugar onde está.**
+
+⚠️ **Régua de redação não é verificação factual, e o R-7 só cobriu a primeira.** Uma frase pode estar sem data, sem narrativa, com o ponteiro certo — e descrever comportamento que o código já não tem. O único juiz disso é `grep` contra `src/`, e ele não roda sozinho. Decisões `R7.1`–`R7.17`, [`DECISOES.md`](DECISOES.md).
+
+---
+
 ## Convenção "fonte única + ponteiro"
 
 Cada assunto tem **um** documento dono. Todos os demais **apontam** — nunca duplicam.

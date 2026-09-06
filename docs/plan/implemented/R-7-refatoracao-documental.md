@@ -29,6 +29,8 @@
 
 ## A régua de redação, e ela muda por tipo de documento
 
+> ⚠️ **Escalonada: o dono é [`docs/README.md § Régua de redação`](../../README.md#régua-de-redação--o-que-sai-de-cada-documento)**, ao lado das regras irmãs de registro. A tabela abaixo é o registro de como ela nasceu; quem for aplicá-la lê o dono, não este plano.
+
 O erro a evitar é aplicar a régua do `ESCOPO.md` em tudo: um documento atemporal e uma skill falham por motivos opostos.
 
 | Documento | Sai | Fica |
