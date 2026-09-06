@@ -24,7 +24,7 @@
 
 ## O que é
 
-O **crivo** ajuda você a **entender e limpar planilhas e arquivos de dados** — o tipo de trabalho que hoje se faz na mão, célula por célula, ou com um script descartável que ninguém mais consegue ler depois.
+O **crivo** administra a inteligência que roda na sua máquina e a que você opta por chamar na nuvem, e a coloca para trabalhar sobre os seus arquivos. O pilar mais maduro é **entender e limpar dados** — o tipo de trabalho que hoje se faz na mão, célula por célula, ou com um script descartável que ninguém mais consegue ler depois.
 
 A diferença é a forma de usar: em vez de menus e botões, você **conversa** com o arquivo, em português.
 
@@ -68,6 +68,9 @@ O projeto tem **dois objetivos de peso igual**: entregar a ferramenta acima, e s
 | ✅ | **A IA propondo passos de tratamento** — lista editável, aplicada sobre o dataset com antes/depois |
 | ✅ | IA de nuvem opt-in (GLM e Gemini), com segredo salvo localmente e nunca relido pela interface |
 | ✅ | Segurança fechada: o app roda isolado, sem acesso indevido ao sistema |
+| ✅ | **Raciocínio visível** — o modelo mostra como pensou, separado da resposta, nos três provedores |
+| ✅ | **Exportar a resposta** como `.md`, `.txt`, `.pdf` ou `.docx` — e um bloco de código sai verbatim, com a extensão da linguagem |
+| ✅ | **Observatório** — oito painéis em que o app se descreve: memória, processos, canais, motores, disco, desempenho por modelo e o livro-razão do que saiu da máquina |
 | ✅ | Cinco níveis de teste, do unitário ao aplicativo já empacotado |
 
 **O que ainda falta:**
@@ -75,9 +78,9 @@ O projeto tem **dois objetivos de peso igual**: entregar a ferramenta acima, e s
 | | |
 |---|---|
 | ⬜ | Tabela grande exibida com fluidez, e gráficos como resultado |
-| ⬜ | Busca web, documentação (MCP) e raciocínio visível no chat |
+| ⬜ | Busca web e documentação (MCP) no chat |
 | ⬜ | Receitas salvas e reaplicáveis |
-| ⬜ | Exportar a resposta como documento (`.md`, `.pdf`, `.docx`) |
+| ⬜ | Projeto — agrupar conversas sob um contexto comum |
 | ⬜ | Parquet no seletor de arquivo |
 | ⬜ | Instalador assinado e distribuível |
 
@@ -92,7 +95,7 @@ Registrado de propósito, para não ser confundido com "ainda não":
 - **Não é uma ferramenta de BI.** Um gráfico pode aparecer numa conversa para explicar um resultado — mas painel, relatório e atualização automática ficam de fora.
 - **Não edita célula a célula** como uma planilha. O trabalho é por passos, não por digitação direta.
 - **Não conecta a bancos remotos** nem a APIs. É local, e trabalha sobre arquivos.
-- **Não faz OCR** de PDF escaneado, nem lê `.docx`/`.pptx`.
+- **Não faz OCR** de PDF escaneado, nem **lê** `.docx`/`.pptx` como anexo. (Gerar `.docx` como saída da resposta já funciona; `.pptx` está previsto.)
 - **Não é multiusuário.** Um app, uma pessoa, uma máquina.
 
 ---
@@ -186,15 +189,15 @@ Cada assunto tem **um** dono; os demais apontam para ele, nunca duplicam.
 |---|---|
 | [`docs/README.md`](docs/README.md) | **Mapa da documentação** — organização, ciclo de vida de um plano, réguas de tamanho |
 | [`docs/ESCOPO.md`](docs/ESCOPO.md) | O que o aplicativo faz e não faz |
-| [`docs/HISTORY.md`](docs/HISTORY.md) | Decisões e alternativas descartadas — os 10 marcos mais recentes |
+| [`docs/HISTORY.md`](docs/HISTORY.md) | Os 10 marcos mais recentes — o que foi entregue, e o que foi descartado no caminho |
 | [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md) | Erro já diagnosticado, buscável **pelo sintoma** — o primeiro lugar a consultar quando algo quebra |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | O que ainda falta, e o evento que reabre cada decisão adiada |
 | [`docs/DECISOES.md`](docs/DECISOES.md) | Índice tabular de cada decisão, por sigla |
 | [`docs/study/`](docs/study/README.md) | Caderno didático, do zero ao estado atual |
 | [`CLAUDE.md`](CLAUDE.md) | Stack fixada, regras do projeto e ambiente de desenvolvimento |
-| [`.claude/skills/`](.claude/skills/) | Dono técnico por assunto — camadas, contrato IPC, design system, testes, comentários, camada de dados |
+| [`.claude/skills/`](.claude/skills/) | Dono técnico por assunto — camadas, contrato IPC, design system, testes, comentários, camada de dados e camada de IA |
 
-⚠️ **A documentação é grande de propósito e não se lê inteira.** São ~490k tokens; o protocolo de consulta — buscar pelo termo, ler só a seção — está em [`CLAUDE.md § Protocolo de leitura`](CLAUDE.md#protocolo-de-leitura-da-documentação).
+⚠️ **A documentação é grande de propósito e não se lê inteira.** São ~660k tokens em 117 arquivos, dos quais `plan/implemented/` responde por quase 60%; o protocolo de consulta — buscar pelo termo, ler só a seção — está em [`CLAUDE.md § Protocolo de leitura`](CLAUDE.md#protocolo-de-leitura-da-documentação).
 
 ---
 
