@@ -193,7 +193,7 @@ Numa máquina cujo limite é a RAM, isso não é refinamento: um `num_ctx` que n
 
 | Decisão | O que o aplicativo faz |
 |---|---|
-| **Qual modelo responde** | escolhido por mensagem, entre os instalados na máquina e os de nuvem que o usuário habilitou. Provedor de nuvem só existe depois que uma chave é gravada |
+| **Qual modelo responde** | escolhido **por conversa**, entre os instalados na máquina e os de nuvem que o usuário habilitou — e travado junto da janela no primeiro envio. Provedor de nuvem só existe depois que uma chave é gravada |
 | **Quanto de contexto** | a janela é escolhida por conversa e **trava no primeiro envio**, junto do modelo. Antes disso deriva livremente do que a máquina comporta |
 | **O que o modelo pode receber** | anexo só vai a modelo que declare a capacidade correspondente — ver o gate, abaixo |
 | **Quanto já foi gasto** | o medidor da conversa se calibra pela contagem real que cada resposta devolve, e o envio é recusado quando não cabe |

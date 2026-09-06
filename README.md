@@ -60,7 +60,7 @@ O projeto tem **dois objetivos de peso igual**: entregar a ferramenta acima, e s
 | ✅ | Conversa com modelo local via Ollama, resposta aparecendo aos poucos |
 | ✅ | Respostas em markdown, com **realce de cor** em blocos de código |
 | ✅ | Histórico que **sobrevive ao fechar o app** — banco local, sem servidor |
-| ✅ | Trocar de modelo no meio da conversa, mensagem por mensagem |
+| ✅ | Escolher o modelo por conversa, entre os locais e os de nuvem habilitados — o par modelo + janela **trava no primeiro envio**, e trocar depois é conversa nova |
 | ✅ | Tema claro e escuro, com contraste de cor medido |
 | ✅ | Orçamento de contexto por conversa — teto do modelo, medidor e recusa de envio que estouraria a janela |
 | ✅ | Anexar dataset, documento (`.txt`/`.md`/PDF) e imagem à mesma conversa, com gate de capacidade (`vision`) |
