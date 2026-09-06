@@ -173,7 +173,7 @@ O nível 2 é o `SUMMARIZE` do DuckDB, e é o que produz uma avaliação de qual
 
 - **Top-N só para coluna de baixa cardinalidade.** Os cinco valores mais frequentes de `cidade` são estatística; os cinco mais frequentes de `cpf` são vazamento com outro nome. O limiar é relativo à contagem de linhas, e a decisão mora em `core/`, nunca ao lado de um chamador — ver [`ARMADILHAS.md`](ARMADILHAS.md).
 - **O nível 3 é opt-in por anexo, em qualquer provedor.** Local (Ollama, na sua máquina) libera a um clique; nuvem pede o mesmo opt-in, sem bloqueio adicional — quem decide o que sai da máquina, anexo por anexo, é o usuário.
-- **Um cartão de dados só.** `core/ai/dataCard.ts` produz um objeto, consumido por todos os caminhos — conversa, consulta, passos, busca. Contexto montado por feature é como se produzem duas qualidades de resposta sobre o mesmo arquivo.
+- **Um cartão de dados só**, produzido num lugar e consumido por todos os caminhos — conversa, consulta, passos, busca. Contexto montado por feature é como se produzem duas qualidades de resposta sobre o mesmo arquivo.
 
 ### Documento e imagem são nível 3 por construção
 
@@ -325,7 +325,7 @@ Somado ao limite do próprio formato — 1.048.576 linhas por planilha — o Exc
 
 E traz um mundo próprio de decisões que os outros não têm: múltiplas planilhas (qual abrir?), células mescladas, tipo por célula em vez de por coluna, fórmulas (valor ou expressão?), datas como número serial, e a diferença entre o que está armazenado e o que está formatado na tela.
 
-**"Data como número serial" é o caso particular de uma regra mais ampla: célula é tipada pela formatação, não pelo valor** — medido ao vivo no 18-F. Uma coluna de números inteiros sem formatação de "inteiro" no Excel de origem (o comum: a formatação padrão "Geral") lê como `DOUBLE`, não `BIGINT` — o motor não tem como saber que `1`, `2`, `3` deveriam ser inteiros só olhando o valor. Não é defeito do app: `DOUBLE` já é o tipo que qualquer CSV com coluna decimal produz, e o resto do caminho (perfil, pré-visualização, consulta) não distingue a origem. É dado de entrada ambíguo, mesma classe da data sem formatação — ver [`plan/implemented/18-F-excel.md`](plan/implemented/18-F-excel.md) § passo 5.
+**"Data como número serial" é o caso particular de uma regra mais ampla: célula é tipada pela formatação, não pelo valor.** Uma coluna de números inteiros sem formatação de "inteiro" no Excel de origem (o comum: a formatação padrão "Geral") lê como `DOUBLE`, não `BIGINT` — o motor não tem como saber que `1`, `2`, `3` deveriam ser inteiros só olhando o valor. Não é defeito do app: `DOUBLE` já é o tipo que qualquer CSV com coluna decimal produz, e o resto do caminho (perfil, pré-visualização, consulta) não distingue a origem. É dado de entrada ambíguo, mesma classe da data sem formatação — ver [`plan/implemented/18-F-excel.md`](plan/implemented/18-F-excel.md) § passo 5.
 
 **Decisão:** Excel entra no escopo, e entra por último entre os quatro. Ao chegar, começa pelo caminho simples — uma planilha, primeira linha como cabeçalho, valores calculados — com o resto explicitamente adiado.
 
@@ -347,11 +347,11 @@ Daí a regra que vale sempre, independentemente do tamanho do arquivo:
 
 Adotada desde o início, ela custa zero e o teto passa a ser o disco. Retrofitada depois, é reescrever todo caminho de dados. É também a resposta para o custo da pré-visualização na conversa: ela é sempre uma página, tenha o arquivo 15 linhas ou 2 GB.
 
-**Configuração decorrente:** `memory_limit` do DuckDB fixado explicitamente — não o padrão de 80% da RAM, que brigaria com o Chromium do próprio app — e `temp_directory` apontando para `userData/duckdb-tmp`, para que o derramamento tenha onde acontecer. O valor de `memory_limit` é remedido contra a RAM livre da máquina no momento da implementação, nunca copiado de um documento para outro; ver [`plan/implemented/18-A-motor-e-worker.md`](plan/implemented/18-A-motor-e-worker.md) § D18A.4.
+**Configuração decorrente:** o teto de memória do motor é fixado explicitamente — não o padrão de 80% da RAM, que brigaria com o Chromium do próprio app —, e o derramamento tem pasta própria em `userData`. O valor se remede contra a máquina, nunca se copia de um documento para outro: skill [`data`](../.claude/skills/data/SKILL.md).
 
 ### O teto do documento é tempo, não tamanho
 
-Dado tabular tem teto de bytes; documento tem teto de **segundos de prefill**, e ele é muito mais baixo. Medido contra o Ollama real na máquina registrada em [`CLAUDE.md`](../CLAUDE.md) — CPU sem aceleração, `gemma3:4b`:
+Dado tabular tem teto de bytes; documento tem teto de **segundos de prefill**, e ele é muito mais baixo. Contra modelo local numa CPU sem aceleração:
 
 | | |
 |---|---|
@@ -376,7 +376,7 @@ O app **pode** sobrescrever o arquivo de origem, mediante confirmação explíci
 
 Isso não é gratuito, e as três consequências ficam registradas agora:
 
-**Escrita atômica, sempre.** Grava em arquivo temporário no mesmo volume e só então renomeia sobre o original. ⚠️ **No Windows o rename não é atômico** — vira `MoveFileEx`, honra os modos de compartilhamento e falha com `EPERM`/`EACCES`/`EBUSY` quando o destino está travado, inclusive por trava passageira do antivírus ou do indexador. A garantia que **sobra** é a que importa (o destino fica intacto quando algo falha no meio), mas exige repetição e limpeza do temporário, medido e implementado em [`E-1-D`](plan/implemented/E-1-D-o-caminho-de-saida.md) § DE1D.2. Escrita direta que falha na metade — falta de espaço, queda de energia, cancelamento — destrói o dado de entrada, e não há desfazer.
+**Escrita atômica, sempre.** Grava em arquivo temporário no mesmo volume e só então renomeia sobre o original. ⚠️ **No Windows o rename não é atômico** e falha quando o destino está travado — inclusive por trava passageira do antivírus ou do indexador. A garantia que **sobra** é a que importa: o destino fica intacto quando algo falha no meio. Exige repetição e limpeza do temporário ([`E-1-D`](plan/implemented/E-1-D-o-caminho-de-saida.md) § DE1D.2). Escrita direta que falha na metade — falta de espaço, queda de energia, cancelamento — destrói o dado de entrada, e não há desfazer.
 
 **Arquivo aberto em outro programa.** No Windows, um `.xlsx` aberto no Excel tem bloqueio exclusivo, e o rename falha com `WinError 32`. É o mesmo tipo de armadilha que o mill.tools já documenta para o `.temp` do yt-dlp. Precisa de erro claro — "feche o arquivo no Excel" — e não de uma falha genérica.
 
@@ -397,10 +397,10 @@ Diferente do documento **anexado** — que só entra como contexto e nunca produ
 | Formato | Como se gera | Observação |
 |---|---|---|
 | `.md` | texto que o modelo já produziu, salvo direto | sem biblioteca — não é motor, é `writeFile` |
-| `.txt` | o texto sem a marcação | **não** é `replace` de símbolo, nem serialização de volta ao markdown: sai do **mesmo mapeamento que o `.docx`** (`core/export/blocks.ts`), o que mantém os dois formatos consistentes por construção e impede que código exportado saia escapado (E-1-E) |
+| `.txt` | o texto sem a marcação | **não** é `replace` de símbolo, nem serialização de volta ao markdown: sai do **mesmo mapeamento que o `.docx`**, o que mantém os dois formatos consistentes por construção e impede que código exportado saia escapado (E-1-E) |
 | `.pdf` | **`webContents.printToPDF`**, sem dependência | ⚠️ `pdf-lib` foi **descartado no E-1-F** exatamente pelo motivo que esta linha registrava: desenha texto em coordenadas, **sem paginação automática de prosa longa** — e resposta de modelo é isso. O Chromium que já está no app pagina de graça |
 | `.docx` | `docx` (dolanmiu) | API declarativa por parágrafo, Node puro, sem módulo nativo |
-| a extensão da linguagem (`.py`, `.sql`, …) | bytes escritos como estão | **Só para bloco de código** (trilha E-2). Os quatro formatos acima passam por `core/export/blocks.ts`, que lê o texto como markdown — e markdown junta linhas consecutivas e trata quatro espaços como bloco aninhado, o que **destrói código**. Por isso um trecho de código não escolhe formato: sai verbatim, com a extensão que a linguagem pede ou `.txt` quando a cerca não a nomeou |
+| a extensão da linguagem (`.py`, `.sql`, …) | bytes escritos como estão | **Só para bloco de código** (trilha E-2). Os quatro formatos acima passam por um mapeamento que lê o texto como markdown — e markdown junta linhas consecutivas e trata quatro espaços como bloco aninhado, o que **destrói código**. Por isso um trecho de código não escolhe formato: sai verbatim, com a extensão que a linguagem pede ou `.txt` quando a cerca não a nomeou |
 
 ⌛ `.pptx` está no escopo e vem **depois do gráfico**, que é quem produz a imagem que um deck precisa carregar; layout em slide pede ainda um esquema de deck e uma decisão própria sobre catálogo de template. `.odp` e `.ppt` ficam fora do escopo, registrado abaixo.
 

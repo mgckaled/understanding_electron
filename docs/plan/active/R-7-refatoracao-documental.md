@@ -6,7 +6,7 @@
 |---|---|---|---|
 | **A** | `reference/` — uma pasta por referência | ✅ | — |
 | **B** | os registros — `HISTORY.md` fica só com marcos; `DECISOES.md` recupera a seção final | ✅ | — |
-| **C** | produto e processo — `ESCOPO.md`, `ROADMAP.md`, `docs/README.md`, e os tetos novos | | A |
+| **C** | produto e processo — `ESCOPO.md`, `ROADMAP.md`, `docs/README.md`, e os tetos novos | ✅ | A |
 | **D** | leitura de toda sessão — `CLAUDE.md`, skills, `README.md` da raiz, fechamento | | A, B, C |
 
 ---
@@ -66,11 +66,15 @@ O erro a evitar é aplicar a régua do `ESCOPO.md` em tudo: um documento atempor
 
 **R7.9 — Decisão que já tem sigla não ganha outra; a narrativa desce e o índice fica onde está.** Eram **17** decisões no `HISTORY.md`, não 16 — e **8 delas já tinham linha no `DECISOES.md`** (`D2`, `D3`, `D3.4`, `D5.1`, `D6.2`, `D8.1`, `D9.1`, `D12.1`). Criar `DT*` para essas oito teria produzido exatamente a duplicação que o corte existe para desfazer. As nove sem sigla ganharam `DT1`–`DT9`, e a seção `## Transversais` registra por escrito quais foram as oito e onde estão — sem isso, quem lê a narrativa no archive não tem como voltar ao índice.
 
+**R7.10 — Trilha concluída comprime; trilha planejada sem arquivo, não.** A célula de uma trilha já entregue é resumo — o dono é o plano e o `HISTORY.md`. A de uma trilha **sem arquivo** é o **único** dono do desenho: o `F-5` carrega a pesquisa do Toast (`popover="manual"`, `role="status"`, o que a WCAG 2.2.1 exige), o `F-6` carrega a hipótese a verificar antes de corrigir. Comprimir essas apagaria trabalho que não está em lugar nenhum. Oito células comprimidas, quatro preservadas.
+
+**R7.11 — Gatilho cumprido sai do `ROADMAP.md`.** Treze itens tachados ocupavam 8,2 kB. Nenhuma regra escrita os preservava, e o `ROADMAP` é o dono declarado do que **falta** — o registro de cada disparo já mora no plano que o cumpriu. Viraram uma linha só, que nomeia os treze e aponta para os donos.
+
+**R7.12 — O `docs/README.md` mandava o que a célula dos tetos desobedecia.** A regra *"número que se remede vira linha de série, nunca parágrafo concatenado"* está escrita nele; a célula de tetos do `ROADMAP § 2` era 2,3 kB de série narrada em prosa, com a história de cada remedição intercalada. Reescrita como série pura mais os dois avisos que decidem (crescem por construção; byte ÷ 1000). O padrão a notar: **a regra existia e o documento vizinho a violava** — o que falha não é escrever a régua, é verificá-la.
+
 ---
 
 ## O que cada corte restante precisa saber
-
-**C.** O cabeçalho do `ROADMAP § 1` promete *"entrega em uma linha"* e há células de 1.500+ caracteres.
 
 **D.** Seis defasagens no `README.md` da raiz: a identidade é a anterior à 6ª revisão; raciocínio visível e exportação de documento estão em *"o que ainda falta"* estando entregues; a trilha O não é mencionada; `.pptx` lê como recusa depois de a 6ª revisão movê-lo para *previsto*; e três documentos dão três números diferentes para o tamanho de `docs/` (~490k, ~523k, ~525k).
 
@@ -82,3 +86,4 @@ O erro a evitar é aplicar a régua do `ESCOPO.md` em tudo: um documento atempor
 |---|---|---|
 | 1 | 06/09/2026 | Brief medido antes do plano. Dois achados mudaram o desenho: a série do `§ 2` já mentia por medição feita antes da última edição, e mover armadilha entre seções do mesmo arquivo não recupera byte — o corte do `ARMADILHAS` foi abortado com teto de 150 kB (R7.1). Corte A executado. |
 | 2 | 06/09/2026 | Corte B. `HISTORY.md` 50,3 → **30,8 kB** (−39%), dez marcos e nenhuma decisão; `DECISOES.md` 66,0 → 68,5 (teto novo 100), com `## Transversais` e a `## Trilha E` recuperando as 68 linhas que `Plano ainda ativo` retinha. Dois achados: eram 17 decisões e 8 já tinham sigla (R7.9); e dois marcos estavam arquivados sob a seção errada (R7.8). |
+| 3 | 06/09/2026 | Corte C. `ROADMAP` 69,6 → **54,7 kB** (−21%): oito células de trilha concluída comprimidas (R7.10), treze gatilhos cumpridos viram uma linha (R7.11), a célula dos tetos vira série (R7.12). `docs/README` 18,8 → **16,8**, com os tetos novos escritos. `ESCOPO` 47,8 → **47,9** — sete pontos de detalhe de código e proveniência trocados por prosa de escopo; o ganho foi de teor, **não de bytes**, e o arquivo segue acima do teto de 45. |
