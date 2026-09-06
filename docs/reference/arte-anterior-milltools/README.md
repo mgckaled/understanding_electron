@@ -2,9 +2,9 @@
 
 > ⛔ **Documento consumido — leitura histórica, não fonte de regra.** Ele próprio já declarava a regra: *item adotado sai deste documento e vira decisão no dono*. A varredura terminou em ago/2026 e os donos estão populados — nenhuma skill nem o `ROADMAP` o citam mais. **Não `Read` inteiro** — `Grep` se quiser conferir a formulação original de alguma ideia portada.
 
-**Data:** 2026-08-09 · **Motivou:** a [virada de ago/2026](../HISTORY.md) reaproveitou várias ideias do mill.tools de forma dispersa, ao longo de uma sessão de planejamento. Este documento lê as skills dele de uma vez, com o arco 13–19 já desenhado, e separa o que converge, o que vale trazer e o que não vale — enquanto a comparação ainda está fresca.
+**Data:** 2026-08-09 · **Motivou:** a [virada de ago/2026](../../HISTORY.md) reaproveitou várias ideias do mill.tools de forma dispersa, ao longo de uma sessão de planejamento. Este documento lê as skills dele de uma vez, com o arco 13–19 já desenhado, e separa o que converge, o que vale trazer e o que não vale — enquanto a comparação ainda está fresca.
 
-> ⚠️ **Arte anterior, não fonte de regra.** Nada aqui vale para o crivo por estar escrito aqui. Item adotado **sai deste documento e vira decisão no dono** — skill, [`ROADMAP`](../ROADMAP.md), [`HISTORY`](../HISTORY.md) ou o plano da vez. Este arquivo continua sendo o que era: notas de leitura de um projeto irmão, consultáveis quando a mesma pergunta voltar.
+> ⚠️ **Arte anterior, não fonte de regra.** Nada aqui vale para o crivo por estar escrito aqui. Item adotado **sai deste documento e vira decisão no dono** — skill, [`ROADMAP`](../../ROADMAP.md), [`HISTORY`](../../HISTORY.md) ou o plano da vez. Este arquivo continua sendo o que era: notas de leitura de um projeto irmão, consultáveis quando a mesma pergunta voltar.
 
 **O que foi lido** (`C:\rocketseat\projetos\python\yt-transcriber\.claude\skills\`):
 
@@ -38,10 +38,10 @@ Registrado porque convergência é evidência: quando dois projetos chegam à me
 | Core puro, rede/modelo injetável | princípio inviolável nº 1 e nº 2 | D2 da visão geral · `ChatFn`/`ProbeFn` |
 | Ping curto, operação longa | `AVAILABILITY_TIMEOUT=10s` / `EMBED_TIMEOUT=300s` | D9.3 · 10s / 300s na fatia 1 |
 | Gate que desabilita com dica, nunca quebra | princípio nº 6 | `AppError.kind='unavailable'` + `hint` |
-| IA de dados recebe só esquema, nunca linhas | regra de fronteira nº 3 | os três níveis do [`ESCOPO`](../ESCOPO.md) |
+| IA de dados recebe só esquema, nunca linhas | regra de fronteira nº 3 | os três níveis do [`ESCOPO`](../../ESCOPO.md) |
 | Tokens sem dependência de framework | `tokens.py` é puro Python | `tokens.css` é a fonte única |
 | Constante de layout é token | `Layout.form_width = 380` | largura da sidebar, plano 13 |
-| Régua de tamanho + "divide-se ao tocar" | seção 3 | régua do [`CLAUDE.md`](../../CLAUDE.md) |
+| Régua de tamanho + "divide-se ao tocar" | seção 3 | régua do [`CLAUDE.md`](../../../CLAUDE.md) |
 | Propor, nunca executar | `nl2cli` gera o comando e **só copia** | `kind: 'query' \| 'steps'` com revisão |
 | Anti-drift por introspecção | `cli/reference.py` lê os parsers argparse reais | `z.toJSONSchema()` deriva do mesmo schema que valida |
 
@@ -77,7 +77,7 @@ O análogo no crivo é direto e ainda não decidido: o **cartão de dados vai se
 
 **Não use RAG sobre o catálogo, e o gatilho para reabrir está escrito.** A decisão do `nl2cli`: o corpus inteiro de CLI (~54 operações, ~8,5k caracteres) cabe no contexto de um modelo local, e *"RAG trocaria 'o modelo vê tudo' por 'vê top-k', o que pioraria a acurácia num corpus desse tamanho. Só reabrir se o corpus de CLI multiplicar de tamanho."* O catálogo camada 1 do crivo tem ~25 operações — mesma ordem, mesma conclusão, mesmo gatilho.
 
-> 🔍 **Convergência confirmada por outro caminho, em ago/2026.** A [decisão sobre RAG](../HISTORY.md) do crivo chegou ao mesmo veredito para anexo de documento, e por um argumento **de custo**, não de acurácia: o cache de prefixo do Ollama faz o documento inteiro ser pago uma vez, enquanto os trechos recuperados mudam a cada pergunta e são pagos sempre. Duas rotas independentes — acurácia lá, tempo de prefill aqui — apontando para "mande tudo enquanto couber" reforçam o gatilho comum: **RAG entra quando não couber, nunca antes.**
+> 🔍 **Convergência confirmada por outro caminho, em ago/2026.** A [decisão sobre RAG](../../HISTORY.md) do crivo chegou ao mesmo veredito para anexo de documento, e por um argumento **de custo**, não de acurácia: o cache de prefixo do Ollama faz o documento inteiro ser pago uma vez, enquanto os trechos recuperados mudam a cada pergunta e são pagos sempre. Duas rotas independentes — acurácia lá, tempo de prefill aqui — apontando para "mande tudo enquanto couber" reforçam o gatilho comum: **RAG entra quando não couber, nunca antes.**
 
 **Protocolo de retry que o crivo ainda não desenhou.** O `nl2cli` reprompta **uma vez** anexando o erro de validação; a segunda falha levanta. E resposta vazia é **recusa deliberada** (pedido fora do escopo do app), que nunca passa pelo validador. Três estados — válido, retentável, recusa — em vez de dois.
 
@@ -132,4 +132,4 @@ Registradas porque a comparação também serve para não herdar problema.
 
 ---
 
-**Índice:** [Referência](README.md) · [Escopo](../ESCOPO.md) · [Histórico](../HISTORY.md) · [Roadmap](../ROADMAP.md)
+**Índice:** [Referência](../README.md) · [Escopo](../../ESCOPO.md) · [Histórico](../../HISTORY.md) · [Roadmap](../../ROADMAP.md)

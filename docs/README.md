@@ -57,7 +57,7 @@ Esta é a parte que decide se o histórico sobrevive. São dois registros com **
 
 `| data | passos | estado | o que mudou |` — e a última coluna cabe em **~200 caracteres**. Não é estética: o que passa disso é narrativa de investigação, que tem dono fora do plano.
 
-⚠️ **Estourar essa régua é o sintoma de escalonamento que não aconteceu.** Se a frase não cabe, a pergunta certa não é "como resumo?", é **"para onde isto sobe?"** — armadilha para [`ARMADILHAS.md`](ARMADILHAS.md), alternativa descartada para [`HISTORY.md`](HISTORY.md), número medido para o dono do número. Só o que sobra depois disso fica na linha. Medido em 26/08/2026: os diários somavam **193 KB**, com células de até **7.056 caracteres** — cada uma delas um escalonamento adiado.
+⚠️ **Estourar essa régua é o sintoma de escalonamento que não aconteceu.** Se a frase não cabe, a pergunta certa não é "como resumo?", é **"para onde isto sobe?"** — armadilha para [`ARMADILHAS.md`](ARMADILHAS.md), alternativa descartada para [`HISTORY.md`](HISTORY.md), número medido para o dono do número. Só o que sobra depois disso fica na linha. Uma célula de milhares de caracteres não é diário longo: é uma pilha de escalonamentos adiados.
 
 ⚠️ **Ao comprimir, o `git diff` é a verificação — reler o texto resultante não é**, porque texto comprimido nunca parece incompleto: uma alternativa descartada some sem deixar buraco na frase. Diagnóstico em [`ARMADILHAS.md`](ARMADILHAS.md).
 
@@ -81,7 +81,7 @@ A regra prática: **subiu se for custar tempo de novo.** Erro que já custou hor
 
 Alguns números são medidos de novo a cada plano — a duração do `check:fast` é o caso vivo. O valor deles **está na série**, não no último valor: foi comparar 88s contra 57s que provou que os ~88s eram ruído de máquina suja, não um patamar novo.
 
-Por isso a forma importa: **uma linha por medição, numa tabela própria** (`data · plano · escala · resultado`). O que **não** fazer é acrescentar mais um parágrafo à mesma célula — foi o que aconteceu com o gatilho do `check:fast` no [`ROADMAP § 2`](ROADMAP.md), que chegou a **2.388 caracteres numa única célula**, ilegível e crescendo a cada plano.
+Por isso a forma importa: **uma linha por medição, numa tabela própria** (`data · plano · escala · resultado`). O que **não** fazer é acrescentar mais um parágrafo à mesma célula: ela fica ilegível e cresce a cada plano. A série do `check:fast` no [`ROADMAP § 2`](ROADMAP.md) é a forma certa — e chegou lá depois de ser exatamente esse parágrafo.
 
 A regra de conservação continua valendo por cima: **remedir é o ato de conservar** — nunca copie um número de um documento para outro sem reconferir a fonte na hora.
 
@@ -99,7 +99,7 @@ A régua de tamanho do [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) mede códig
 | `ARMADILHAS.md` | ~150 KB | comprimir as mais antigas (número + mecanismo + conserto; a narrativa sai). O teto é alto porque o arquivo se busca **por sintoma** e nunca se lê inteiro |
 | `HISTORY-archive.md` | — | sem teto: é fila de saída, nunca lido inteiro |
 | `DECISOES.md` | ~100 KB | é tabela, e uma linha responde — mesmo argumento do `ARMADILHAS.md` |
-| `ESCOPO.md`, `ROADMAP.md` | ~45 KB | desmembrar por assunto em `reference/`, com ponteiro. Os dois crescem **por construção** — um gatilho, uma decisão por vez —, então editar com cuidado não os segura |
+| `ESCOPO.md`, `ROADMAP.md` | ~45 KB | desmembrar por assunto em `reference/`, com ponteiro. O `ROADMAP` cresce **por construção** — um gatilho por vez —, então editar com cuidado não o segura; o `ESCOPO` não cresce sozinho, mas o conserto dele também é desmembrar, porque o que sobra é fato de produto |
 | `CLAUDE.md` | **~35 KB** | é lido em **toda** sessão — o que tem outro dono sai e vira ponteiro. Comprimir só a prosa não alcança o teto: o que sai são seções inteiras, e a tabela viaja junto com a seção |
 | plano individual (`plan/**`) | **~35 KB** | o excesso é quase sempre diário de execução: comprimir à régua de uma linha por sessão (abaixo) |
 | skill (`SKILL.md`) | ~40 KB | dividir em arquivo auxiliar na pasta da skill |

@@ -1,6 +1,6 @@
 # Brief para o Claude Design — camada Tailwind v4 sobre o design system do crivo
 
-> ⛔ **Documento consumido — leitura histórica, não fonte de regra.** Era um prompt de uso único, para colar na ferramenta Claude Design; foi usado, e a trilha DS que ele abriu encerrou no DS-8 (ago/2026). O que valeu virou decisão no dono: skill [`design-system`](../../.claude/skills/design-system/SKILL.md) e [`HISTORY-archive.md`](../HISTORY-archive.md). **Não `Read` inteiro** — `Grep` se precisar do texto original de alguma restrição.
+> ⛔ **Documento consumido — leitura histórica, não fonte de regra.** Era um prompt de uso único, para colar na ferramenta Claude Design; foi usado, e a trilha DS que ele abriu encerrou no DS-8 (ago/2026). O que valeu virou decisão no dono: skill [`design-system`](../../../.claude/skills/design-system/SKILL.md) e [`HISTORY-archive.md`](../../HISTORY-archive.md). **Não `Read` inteiro** — `Grep` se precisar do texto original de alguma restrição.
 
 **ago/2026.** Motivado pela decisão de adotar o Tailwind v4 sem meia migração, tomada quando os protótipos gerados pela ferramenta Claude Design tornaram concreta a pergunta que a D5.1 tinha deixado em aberto desde a fase 05.
 
@@ -8,7 +8,7 @@
 >
 > **O que ficou de fora, de propósito**, porque é trabalho deste repositório e não dele: configuração do `electron.vite.config.ts`, instalação e `allowBuilds` do pnpm, o ramo `.tsx` do `guard.mjs`, o `tokens.contrast.test.ts`, o `prettier-plugin-tailwindcss`, a régua de tamanho e a ordem de migração. Isso vira plano em `docs/plan/active/`, a partir do guia que ele devolver.
 >
-> Motivo das decisões que o brief impõe: [`HISTORY.md`](../HISTORY.md) § *Tailwind v4 entra*.
+> Motivo das decisões que o brief impõe: [`HISTORY-archive.md`](../../HISTORY-archive.md) § *Tailwind v4 entra*.
 
 ---
 

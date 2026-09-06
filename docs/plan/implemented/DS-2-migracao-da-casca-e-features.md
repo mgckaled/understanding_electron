@@ -10,7 +10,7 @@
 
 ## O caso
 
-O DS-1 provou a camada e migrou os seis primitivos, tirando 177 linhas de CSS de `shared/ui/`. Sobram **11 módulos, 877 linhas**, e é onde mora a maior parte do estilo do aplicativo. Enquanto eles existirem, o projeto tem **dois** mecanismos para a mesma decisão — o que o [`HISTORY.md`](../../HISTORY.md) § *Tailwind v4 entra* nomeia como a única forma de meia migração que importa: *dois lugares decidindo o padding do mesmo botão*.
+O DS-1 provou a camada e migrou os seis primitivos, tirando 177 linhas de CSS de `shared/ui/`. Sobram **11 módulos, 877 linhas**, e é onde mora a maior parte do estilo do aplicativo. Enquanto eles existirem, o projeto tem **dois** mecanismos para a mesma decisão — o que o [`HISTORY-archive.md`](../../HISTORY-archive.md) § *Tailwind v4 entra* nomeia como a única forma de meia migração que importa: *dois lugares decidindo o padding do mesmo botão*.
 
 **O que este plano não é:** um redesenho, e nem sequer uma reorganização. Nenhum componente muda de forma, de estrutura de DOM ou de aparência. Só o veículo do estilo muda.
 

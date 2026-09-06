@@ -91,7 +91,7 @@ Responsabilidades por processo:
 
 ## Feature 3 — Thinking Mode
 
-> ⚠️ **Superada.** Esta seção tinha pouca profundidade — não lia os três adaptadores reais nem as APIs primárias. O levantamento vivo do arco 21 é [`reference/reasoning/README.md`](reasoning/README.md); use este parágrafo só como ponto de partida histórico.
+> ⚠️ **Superada.** Esta seção tinha pouca profundidade — não lia os três adaptadores reais nem as APIs primárias. O levantamento vivo do arco 21 é [`reference/reasoning/README.md`](../reasoning/README.md); use este parágrafo só como ponto de partida histórico.
 
 **Objetivo:** permitir que o usuário ative/desative o raciocínio interno do modelo (chain-of-thought) por turno, direto na UI de chat.
 

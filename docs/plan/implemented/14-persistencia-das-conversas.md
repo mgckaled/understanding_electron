@@ -47,7 +47,7 @@ Refeito nesta sessão de planejamento, porque cada linha abaixo **decide uma lin
 
 ### D14.1 — Duas tabelas, e `parts` é coluna JSON
 
-O [`HISTORY.md`](../../HISTORY.md) § *persistência em `node:sqlite`* é o dono da escolha do motor, e o argumento que ele usa contra banco documental **dita o esquema**: *"numa base documental a conversa é um documento, e cada mensagem nova reescreve o documento inteiro"*. Logo, **mensagem é linha**, não item dentro de um blob de conversa.
+O [`HISTORY-archive.md`](../../HISTORY-archive.md) § *persistência em `node:sqlite`* é o dono da escolha do motor, e o argumento que ele usa contra banco documental **dita o esquema**: *"numa base documental a conversa é um documento, e cada mensagem nova reescreve o documento inteiro"*. Logo, **mensagem é linha**, não item dentro de um blob de conversa.
 
 ```sql
 conversations(id TEXT PK, title TEXT NOT NULL, created_at INTEGER NOT NULL,
@@ -63,7 +63,7 @@ Dois índices: `messages(conversation_id, created_at)` e `conversations(updated_
 
 `parts` é JSON pelo mesmo motivo, com uma consequência que vale escrever: **as variantes `dataset` (plano 16) e `document`/`image` (plano 17) não vão exigir migração nenhuma.** É a flexibilidade que o `HISTORY` chama de legítima — "metadados que variam por mensagem" —, não *schemaless* disfarçado, porque tudo que se consulta é coluna.
 
-A segunda dessas variantes é evidência, não previsão: ela **não existia** quando esta decisão foi escrita. A revisão de escopo de ago/2026 acrescentou duas classes de anexo dias depois, e o custo em esquema foi zero. Uma aposta dessas confirmada uma vez é sorte; a régua que a produziu está no [`HISTORY`](../../HISTORY.md) § *flexibilidade é forma de dado e slot*, e é ela que se cita, não o acerto.
+A segunda dessas variantes é evidência, não previsão: ela **não existia** quando esta decisão foi escrita. A revisão de escopo de ago/2026 acrescentou duas classes de anexo dias depois, e o custo em esquema foi zero. Uma aposta dessas confirmada uma vez é sorte; a régua que a produziu está no [`HISTORY`](../../HISTORY-archive.md) § *flexibilidade é forma de dado e slot*, e é ela que se cita, não o acerto.
 
 ### D14.2 — A escada de migração nasce **exercitada**, não só escrita
 

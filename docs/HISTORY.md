@@ -22,7 +22,7 @@ Uma entrada nasce quando um plano sai de `active/` para `implemented/`. O format
 ```markdown
 ### Título do marco (mês/ano)
 Origem: o que motivou. Entrega: o que passou a existir. Decisões: o que foi escolhido
-e o que foi descartado, com o porquê. [`plan/implemented/NOME.md`](plan/implemented/NOME.md).
+e o que foi descartado, com o porquê. Termina com o **link para o plano** em `plan/implemented/`, sempre.
 ```
 
 Três a oito linhas. Se precisar de mais, o detalhe pertence ao plano, não aqui.

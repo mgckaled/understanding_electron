@@ -4,7 +4,7 @@
 
 > Primeiro da [trilha DS](../active/README.md#a-trilha-de-design-system-ds-n). **Aceite global, e é o que define o plano: zero mudança visual.** Nenhum pixel muda. Se a tela ficou diferente, algo saiu errado — é o critério mais barato de verificar que existe para uma migração, e o motivo de os ajustes de interface estarem no DS-3 e não aqui.
 >
-> Motivo da adoção e as alternativas descartadas: [`HISTORY.md`](../../HISTORY.md) § *Tailwind v4 entra*. As restrições que a ferramenta externa de design recebeu: [`reference/BRIEF-claude-design.md`](../../reference/brief-claude-design/README.md).
+> Motivo da adoção e as alternativas descartadas: [`HISTORY-archive.md`](../../HISTORY-archive.md) § *Tailwind v4 entra*. As restrições que a ferramenta externa de design recebeu: [`reference/BRIEF-claude-design.md`](../../reference/brief-claude-design/README.md).
 >
 > **O design system é um envelope** — define a linguagem visual e não constrói feature. A régua e o porquê são da skill [`design-system`](../../../.claude/skills/design-system/SKILL.md); o alvo e a tabela de distância são do [handoff](../../reference/handoff-ds-ago2026/README.md). **O que isso significa aqui:** este plano entrega o *vocabulário* do envelope — a camada de utilidade e os seis primitivos —, não a aparência final. Consequência prática nos passos 4 e 5: quando um primitivo precisar de uma variante que o alvo pede e hoje não existe (botão de ícone circular, `Button` contornado), **anote e não construa** — variante sem consumidor é ponto de extensão especulativo, que o [`CLAUDE.md`](../../../CLAUDE.md) recusa, e o DS-3 a cria junto com quem a usa.
 

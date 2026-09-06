@@ -1,6 +1,6 @@
 # Subproduto "Projetos" e RAG particionado (levantamento prévio)
 
-**Data:** 25/08/2026. **Motivo:** conversa exploratória sobre adaptar ao crivo o padrão de "Projetos" do Claude Desktop/ChatGPT — agrupar conversas, prompt de sistema e busca semântica exclusivos por frente de trabalho. Rascunho original do usuário em [`notes/proposta_projetos-chat.md`](../../notes/proposta_projetos-chat.md) (fora de `docs/`, não versionado como plano).
+**Data:** 25/08/2026. **Motivo:** conversa exploratória sobre adaptar ao crivo o padrão de "Projetos" do Claude Desktop/ChatGPT — agrupar conversas, prompt de sistema e busca semântica exclusivos por frente de trabalho. Rascunho original do usuário em [`notes/proposta_projetos-chat.md`](../../../notes/proposta_projetos-chat.md) (fora de `docs/`, não versionado como plano).
 
 **Status declarado pelo usuário: proposta sem compromisso, última prioridade do que já está previsto.** Este documento não abre plano, não toca `ESCOPO.md`, não decide se e quando "Projetos" será construído — registra o que a conversa apurou, para não precisar ser rederivado quando (e se) a decisão de construir chegar.
 
@@ -14,7 +14,7 @@
 | ❓ **questão em aberto** | identificada nesta conversa, sem resposta — um plano futuro decide, não este guia |
 | ⚠️ **estimativa/não verificado** | conta de bancada ou fonte de terceiro, sem medição ao vivo nesta máquina — confirmar antes de virar código |
 
-Companheiros: [`ESCOPO.md § O teste que separa pilar de produto novo`](../ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo) e [`§ Ferramentas do chat`](../ESCOPO.md#ferramentas-do-chat), [`plan/active/09-camada-de-ia.md`](../plan/active/09-camada-de-ia.md) (D9.2, D9.5), [`HISTORY.md`](../HISTORY.md) (§ RAG entra por capacidade; § flexibilidade é forma de dado e slot), [`plan/implemented/14-persistencia-das-conversas.md`](../plan/implemented/14-persistencia-das-conversas.md), [`reference/arte-anterior-milltools/README.md`](arte-anterior-milltools/README.md), [`CLAUDE.md § Máquina e modelos locais`](../../CLAUDE.md).
+Companheiros: [`ESCOPO.md § O teste que separa pilar de produto novo`](../../ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo) e [`§ Ferramentas do chat`](../../ESCOPO.md#ferramentas-do-chat), [`plan/active/09-camada-de-ia.md`](../../plan/active/09-camada-de-ia.md) (D9.2, D9.5), [`HISTORY-archive.md`](../../HISTORY-archive.md) (§ RAG entra por capacidade; § flexibilidade é forma de dado e slot), [`plan/implemented/14-persistencia-das-conversas.md`](../../plan/implemented/14-persistencia-das-conversas.md), [`reference/arte-anterior-milltools/README.md`](../arte-anterior-milltools/README.md), [`CLAUDE.md § Máquina e modelos locais`](../../../CLAUDE.md).
 
 ---
 
@@ -53,7 +53,7 @@ O custo das quatro peças **não é uniforme** — é o fio condutor do resto do
 
 ## 2. O teste de escopo — leitura corrigida
 
-Primeira leitura desta conversa (incorreta, registrada aqui para não se repetir): apliquei [`ESCOPO.md` linha 27](../ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo) — *"projeto paralelo com vida própria... ela virou outro produto"* — como se a proposta de "Projetos" fosse o exemplo que a régua recusa. **Errado.**
+Primeira leitura desta conversa (incorreta, registrada aqui para não se repetir): apliquei [`ESCOPO.md` linha 27](../../ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo) — *"projeto paralelo com vida própria... ela virou outro produto"* — como se a proposta de "Projetos" fosse o exemplo que a régua recusa. **Errado.**
 
 ✅ **Decidido, e a evidência que corrige a leitura:** a própria régua permite *"ação executada, contexto consumido, ou artefato que o app já sabe persistir"* — prompt de sistema de projeto e documento anexado caem no lado permitido, e conversa é artefato que o app já persiste.
 
@@ -61,7 +61,7 @@ Primeira leitura desta conversa (incorreta, registrada aqui para não se repetir
 
 O que de fato dispara o teste (linha 29) é **"artefato que sobrevive fora da conversa E uma tela própria para gerenciá-lo"** — os exemplos reais recusados são "PDF anotado salvo" e "painel com filtros cruzados", ambos de natureza BI/exportação, não configuração de chat. Uma tela de projeto (nome, prompt, lista de documentos) é da mesma família de superfície que a sidebar de conversas e o seletor de modelo já são hoje.
 
-❓ **Questão em aberto, não resolvida por este documento:** a recusa de "camada de workspace antes de existir o segundo tipo de coisa" ([`HISTORY.md` § flexibilidade é forma de dado e slot](../HISTORY.md)) foi uma recusa de **sequência** (não construir especulativamente), não de conceito. Se "Projetos" vier a ser decidido, vale registrar isso como uma decisão explícita — o mecanismo já usado para revisão de escopo é [`plan/implemented/revisao-escopo-nivel-3-nuvem.md`](../plan/implemented/revisao-escopo-nivel-3-nuvem.md), citado aqui só como precedente de formato, não como recomendação de abrir um agora.
+❓ **Questão em aberto, não resolvida por este documento:** a recusa de "camada de workspace antes de existir o segundo tipo de coisa" ([`HISTORY-archive.md` § flexibilidade é forma de dado e slot](../../HISTORY-archive.md)) foi uma recusa de **sequência** (não construir especulativamente), não de conceito. Se "Projetos" vier a ser decidido, vale registrar isso como uma decisão explícita — o mecanismo já usado para revisão de escopo é [`plan/implemented/revisao-escopo-nivel-3-nuvem.md`](../../plan/implemented/revisao-escopo-nivel-3-nuvem.md), citado aqui só como precedente de formato, não como recomendação de abrir um agora.
 
 ---
 
@@ -137,7 +137,7 @@ LIMIT 5;
 
 ✅ **Decidido pelo usuário nesta conversa:** o embedder trava no primeiro evento que precisa de embedding (documento anexado **ou** cartão/receita gerado, o que vier primeiro) — mesmo princípio de travar modelo/contexto no primeiro envio de uma conversa. Depois de travado, não muda dentro daquele projeto.
 
-✅ **Lição já paga pelo mill.tools, citada em [`arte-anterior-milltools/README.md`](arte-anterior-milltools/README.md):** *"a assinatura de cache precisa conter tudo que muda a saída"* — a tabela de vetores precisa de uma coluna `embed_space_id` (`modelo:dimensão:esquema`) junto de cada linha, para nunca comparar cosseno entre dois espaços de embedding diferentes sem perceber ("prevendo lixo em silêncio", nas palavras deles).
+✅ **Lição já paga pelo mill.tools, citada em [`arte-anterior-milltools/README.md`](../arte-anterior-milltools/README.md):** *"a assinatura de cache precisa conter tudo que muda a saída"* — a tabela de vetores precisa de uma coluna `embed_space_id` (`modelo:dimensão:esquema`) junto de cada linha, para nunca comparar cosseno entre dois espaços de embedding diferentes sem perceber ("prevendo lixo em silêncio", nas palavras deles).
 
 ⚠️ **Limite prático hoje, verificado por grep em `src/main/features/ai/providers/`:** existe **um único** embedder qualificado — `nomic-embed-text` (274 MB, 768 dims, teto de contexto **2.048 tokens** — documento precisa de chunking antes de indexar). Não existe adaptador de embedding de nuvem — os provedores hoje (`Gemini`, `GLM`) só têm completion. "Escolher entre embedders antes do primeiro arquivo" hoje é escolher entre um e nada; virar escolha real exige construir um segundo adaptador na fronteira injetável do `embed_fn` (D9.2).
 
@@ -147,11 +147,11 @@ LIMIT 5;
 
 Ponto levantado pelo usuário e que corrige a primeira resposta desta conversa: a proposta não é recolocar trechos recuperados numa posição fixa do prompt a cada pergunta (o design que o `HISTORY.md` já mediu como caro) — é dar ao modelo uma **ferramenta** de busca semântica com filtros, que ele aciona quando decide.
 
-⚠️ **Corrigido na 6ª revisão de escopo — este parágrafo dizia que *"busca web, MCP e raciocínio chegam assim"*, e a segunda metade é falsa** (ver a correção na § 2). O [`ESCOPO.md § Ferramentas do chat`](../ESCOPO.md#ferramentas-do-chat) hoje registra **três** formas possíveis de acionar uma ferramenta — *tool call* do modelo, endereço fornecido pelo usuário, ou capacidade nativa do provedor de nuvem — sem eleger uma canônica. Busca em documento de projeto pode ser qualquer uma delas, e a escolha é do plano que a construir.
+⚠️ **Corrigido na 6ª revisão de escopo — este parágrafo dizia que *"busca web, MCP e raciocínio chegam assim"*, e a segunda metade é falsa** (ver a correção na § 2). O [`ESCOPO.md § Ferramentas do chat`](../../ESCOPO.md#ferramentas-do-chat) hoje registra **três** formas possíveis de acionar uma ferramenta — *tool call* do modelo, endereço fornecido pelo usuário, ou capacidade nativa do provedor de nuvem — sem eleger uma canônica. Busca em documento de projeto pode ser qualquer uma delas, e a escolha é do plano que a construir.
 
-❓ **A restrição que esta seção chamava de decisiva deixou de decidir.** O argumento era: *tool calling* exige `capabilities: tools`, e o modelo padrão com `vision` não as tem, logo uma conversa de projeto com busca abriria mão de visão. **`qwen3.5:2b` junta `vision`, `tools` e `thinking`** — a exclusão deixou de ser universal, e o que fazer com o gate é decisão de produto própria (`F-6`, [`ROADMAP § 1`](../ROADMAP.md#1-a-sequência)). A restrição continua real para *outros* modelos da frota: quais juntam o quê é de [`reference/models/`](models/README.md).
+❓ **A restrição que esta seção chamava de decisiva deixou de decidir.** O argumento era: *tool calling* exige `capabilities: tools`, e o modelo padrão com `vision` não as tem, logo uma conversa de projeto com busca abriria mão de visão. **`qwen3.5:2b` junta `vision`, `tools` e `thinking`** — a exclusão deixou de ser universal, e o que fazer com o gate é decisão de produto própria (`F-6`, [`ROADMAP § 1`](../../ROADMAP.md#1-a-sequência)). A restrição continua real para *outros* modelos da frota: quais juntam o quê é de [`reference/models/`](../models/README.md).
 
-⚠️ **Aritmética de bancada, candidatos com `tools` + `nomic-embed-text` (274 MB), contra as faixas de RAM livre então vigentes (~9 GB só Electron · ~7,5 GB só VS Code · ~6 GB sessão típica). ⚠️ **A RAM foi remedida depois desta bancada** — hoje ~8,5 GB só terminal e 6,5–7,0 GB com VS Code ([`CLAUDE.md`](../../CLAUDE.md)), o que aperta a leitura das duas últimas linhas: reconfira antes de usar esta tabela para escolher modelo.**
+⚠️ **Aritmética de bancada, candidatos com `tools` + `nomic-embed-text` (274 MB), contra as faixas de RAM livre então vigentes (~9 GB só Electron · ~7,5 GB só VS Code · ~6 GB sessão típica). ⚠️ **A RAM foi remedida depois desta bancada** — hoje ~8,5 GB só terminal e 6,5–7,0 GB com VS Code ([`CLAUDE.md`](../../../CLAUDE.md)), o que aperta a leitura das duas últimas linhas: reconfira antes de usar esta tabela para escolher modelo.**
 
 | Chat + embedder | Peso + cache a 8k ctx | Peso + cache no teto declarado |
 |---|---|---|
@@ -165,7 +165,7 @@ Ponto levantado pelo usuário e que corrige a primeira resposta desta conversa: 
 
 ## 8. O custo real: cache de prefixo e o que muda com *tool calling*
 
-✅ **Medido, `HISTORY.md` § RAG entra por capacidade:** injeção automática numa posição fixa custa 200s (1º turno) / ~3s (seguintes) para documento inteiro, contra 39s de indexação + **~27s por turno** para RAG — porque o trecho recuperado muda a cada pergunta e invalida o cache de prefixo dali para frente. Empate em ~6 turnos.
+✅ **Medido, `HISTORY-archive.md` § RAG entra por capacidade:** injeção automática numa posição fixa custa 200s (1º turno) / ~3s (seguintes) para documento inteiro, contra 39s de indexação + **~27s por turno** para RAG — porque o trecho recuperado muda a cada pergunta e invalida o cache de prefixo dali para frente. Empate em ~6 turnos.
 
 ⚠️ **Busca via *tool call* não elimina esse custo — desloca para outro formato**, e a fonte que mudou minha avaliação: parte do resultado recuperado numa pergunta permanece no contexto (mensagem de `tool_result`) mesmo depois que deixou de ser relevante — o contexto cresce de forma monótona com resultado velho, em vez de recalcular tudo a cada turno. Cálculo de bancada: `qwen2.5-coder:3b` (36 KB/token de cache), 10 buscas numa conversa, ~3 trechos de 400 tokens cada = 12.000 tokens acumulados ≈ **37% do teto de 32.768**, e **~422 MB** de cache só desse acúmulo.
 
@@ -199,7 +199,7 @@ Leitura: "total" é a soma de **todos** os projetos já indexados pelo app. Sem 
 - Não decide **se** "Projetos" será construído, nem em que ordem relativa às demais fatias do plano 09.
 - Não define nomes de canal IPC, nomes de tabela definitivos, nem o esquema exato de migração — isso é trabalho de plano, quando (e se) existir.
 - Não resolve a questão em aberto da seção 4 (arquitetura de duas instâncias DuckDB) nem confirma a fonte não-oficial da seção 8 (templates do Ollama e cache) — ambas precisam de investigação/medição própria antes de virar decisão.
-- Não estende `ESCOPO.md` nem abre uma revisão de escopo — se a decisão de construir chegar, o precedente de formato é [`revisao-escopo-nivel-3-nuvem.md`](../plan/implemented/revisao-escopo-nivel-3-nuvem.md).
+- Não estende `ESCOPO.md` nem abre uma revisão de escopo — se a decisão de construir chegar, o precedente de formato é [`revisao-escopo-nivel-3-nuvem.md`](../../plan/implemented/revisao-escopo-nivel-3-nuvem.md).
 
 ---
 

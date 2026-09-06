@@ -65,7 +65,7 @@ App.tsx                 composição — quem entra em qual slot, e a casca
 
 > **`app/` nunca importa de `features/`.** Quem compõe é o `App.tsx`. É a regra que faz a casca sobreviver ao arco: tela de configurações, bloco de passos revisáveis e o que vier entram por composição, sem tocar o fonte da casca — e a régua de tamanho de componente do [`CLAUDE.md`](../../../CLAUDE.md) nunca é gasta com ela.
 
-**Slot não é ponto de extensão.** Um `AppShell` que recebe `main` como prop tem exatamente o mesmo número de linhas que um que renderiza a conversa direto — é o mesmo código, menos acoplado. **Slot é a recusa a fixar**, não um recurso a demonstrar: não invente uma segunda tela para provar que o slot funciona. A distinção que impede isto de virar OCP disfarçado está em [`HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
+**Slot não é ponto de extensão.** Um `AppShell` que recebe `main` como prop tem exatamente o mesmo número de linhas que um que renderiza a conversa direto — é o mesmo código, menos acoplado. **Slot é a recusa a fixar**, não um recurso a demonstrar: não invente uma segunda tela para provar que o slot funciona. A distinção que impede isto de virar OCP disfarçado está em [`HISTORY-archive.md`](../../../docs/HISTORY-archive.md) § *flexibilidade é forma de dado e slot* (`DT7`).
 
 **Entre `features/` a importação é livre**, e acontece: `conversation` lê `useSettings()` de `features/settings/` porque a chamada ao modelo precisa do teto de threads da máquina. O que a tabela acima restringe é travessia de **processo**, não vizinhança dentro do renderer. ⚠️ **O gatilho da sexta fatia disparou no E-1-B** (`artifact`, `attachment`, `conversation`, `draft`, `panel`, `settings`) e **está aberto**: trocar o `no-restricted-imports` por `eslint-plugin-boundaries` é dependência nova, então passa pela régua abaixo e por um plano próprio — [`ROADMAP § 2`](../../../docs/ROADMAP.md).
 
@@ -91,7 +91,7 @@ App.tsx                 composição — quem entra em qual slot, e a casca
 
 O que fica nesta skill, porque é de camada e não de contrato:
 
-⚠️ **Tipo em `shared/ipc.ts` não implica canal.** `Conversation`/`Message`/`MessagePart` entraram **sem schema zod e sem canal**, de propósito: schema existe para validar payload de IPC, e não havia IPC ainda. O que se decide cedo é a **forma do dado** que atravessa camadas; o canal nasce quando alguém o chama — e chamou: `MessagePart` ganhou schema completo e canal por variante (`dataset:attach`, `document:attach`, `image:attach`). O princípio segue valendo para o próximo tipo que entrar assim. Ver [`HISTORY.md`](../../../docs/HISTORY.md) § *flexibilidade é forma de dado e slot*.
+⚠️ **Tipo em `shared/ipc.ts` não implica canal.** `Conversation`/`Message`/`MessagePart` entraram **sem schema zod e sem canal**, de propósito: schema existe para validar payload de IPC, e não havia IPC ainda. O que se decide cedo é a **forma do dado** que atravessa camadas; o canal nasce quando alguém o chama — e chamou: `MessagePart` ganhou schema completo e canal por variante (`dataset:attach`, `document:attach`, `image:attach`). O princípio segue valendo para o próximo tipo que entrar assim. Ver [`HISTORY-archive.md`](../../../docs/HISTORY-archive.md) § *flexibilidade é forma de dado e slot* (`DT7`).
 
 ## Jobs: o registro cancelável
 
