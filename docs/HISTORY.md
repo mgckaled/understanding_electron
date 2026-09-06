@@ -35,6 +35,17 @@ Três a oito linhas. Se precisar de mais, o detalhe pertence ao plano, não aqui
 
 ## Entregas (marcos)
 
+### Portões por momento: o turno deixa de pagar pela suíte (set/2026)
+Origem: o `Stop` rodava `pnpm check:fast` ao fim de **toda** resposta — ~150 s de CPU saturada por turno, com a máquina travando para obedecer comando. Trabalho sem plano, aberto por um relato de uso e fechado no mesmo dia.
+
+**Duas medições reformaram o desenho.** A suíte é **87%** do portão (typecheck 14,7 s + lint 3,8 s + docs 0,3 s contra ~130 s de testes), e ela **duplica o `test_related`**, que já roda os testes do grafo de imports a cada arquivo editado, durante o turno. Além disso, **só o Vitest paraleliza** — `typecheck` é 1 processo, `lint` é 0 —, então os oito processos Node que saturavam eram exclusivamente workers de teste.
+
+Entrega: o custo passa para o momento que a régua do projeto sempre nomeou. O `Stop` roda `check:turn` (typecheck + lint + docs) quando código mudou, `check:docs` quando só documentação, **nada** quando nada mudou; a suíte inteira vai para um `PreToolUse` de `git commit`, que **bloqueia** se falhar. Os dois decidem por mtime contra um marcador, nunca por `git status` — commitar no meio da sessão limpa o status sem limpar o risco. **Turno: 150 s → 35 s**, e commits seguidos sem tocar código pulam a suíte.
+
+**Afinidade de CPU foi tentada, medida e removida** — e é o achado que sobrevive ao trabalho. As duas formas óbvias falham em direções opostas: `start /affinity`/`Start-Process` fixam a máscara mas **engolem o código de saída** (medido: 0 para um filho que saiu 7 — portão incapaz de reprovar, em silêncio, mesma família do `args` que já deixou cinco hooks inertes); setar pelo PID preserva o código mas **não alcança os netos**, porque no Windows a máscara é herdada na criação e o `cmd.exe` cria o filho antes de o PowerShell subir (medido: neto ainda via 8 CPUs). O que funciona — fixar o terminal inteiro — é decisão de máquina, com a comparação dos quatro modos em [`reference/ambiente/`](reference/ambiente/README.md). Diagnóstico: [`ARMADILHAS.md`](ARMADILHAS.md).
+
+Junto: `maxWorkers: '50%'` no Vitest, `check-doc-links.mjs` no portão, e a régua de redação subindo do plano `R-7` para o [`docs/README.md`](README.md), seu dono permanente.
+
 ### R-7 — Refatoração documental: o ruído sai, o fato fica (set/2026)
 Origem: pedido do usuário, adiado desde a trilha R-2 — *"ruído exagerado de história, narração e medição onde não deveria ter"*, com cinco tetos estourados. Cinco frentes viraram **quatro cortes**, um commit cada, e **nenhuma linha de `src/`**.
 
@@ -113,15 +124,6 @@ Decisões: só chamada de nuvem grava (`isCloudService`), local nunca produz lin
 Ficou nomeada, não corrigida, uma lacuna menor: `ai:propose` manda nível 1 (schema) **e** nível 2 (perfil de coluna, com `min`/`max`/`avg` reais) na mesma chamada, e a contagem atual não distingue os dois sob o mesmo `datasetCount: 1` — depende do seletor de nível por anexo que ainda não existe em lugar nenhum do renderer.
 
 Teste de ausência (chamada local nunca grava) visto vermelho antes de verde, nos dois handlers, sabotando o guard manualmente. `check:fast` final: 146 arquivos, 1283 testes. Conferência ao vivo do usuário confirmou o painel com uma chamada real ao Gemini com documento anexado; achou "1 chamadas" no singular, corrigido na hora. [`plan/implemented/O-8-livro-razao-de-privacidade.md`](plan/implemented/O-8-livro-razao-de-privacidade.md)
-
-### O-7 — Desempenho por modelo: rede+prefill, decode e tokens/s de entrada/saída (set/2026)
-Origem: sétimo corte da trilha O — `promptTokens`/`evalTokens` já eram extraídos uniformemente dos três provedores (Ollama, GLM, Gemini) desde antes de a trilha O existir, nunca cronometrados nem persistidos. Entrega: tabela `performance_events` em `observatory.db` (schema `v2`, estendido por `v3` com `prompt_tokens`), `measureChatTiming` instrumentando `chat()` com três marcas de wall-clock (antes da chamada, no primeiro pedaço streamado, na resolução), e o painel Desempenho (segundo inquilino do grupo Atividade) com o resumo por `(service, model)`: rede+prefill, decode, tokens/s de entrada (prefill) e de saída (decode) — média/mediana/p90 — e carga de pico do modelo.
-
-Decisões: tokens/s de saída usa piso de 5 tokens (DO7.8) — medido ao vivo contra o Ollama que uma resposta de 2 tokens produzia +12,6% de viés contra a taxa nativa (`eval_count ÷ eval_duration`); a correção óbvia (subtrair um token do numerador) foi testada e piorou o caso curto para −43%, então a saída é **descartar a amostra curta demais**, não corrigir a fórmula. Tokens/s de entrada (DO7.9) não precisa desse piso — vem de `promptTokens ÷ promptEvalDurationMs`, os dois nativos do provedor para a mesma chamada, sem o viés de "primeiro pedaço" que motiva o piso do decode.
-
-**O mesmo tipo de contaminação foi achado e corrigido duas vezes na mesma sessão, em colunas diferentes, porque o Ollama reporta `load_duration` em toda chamada — não só na fria.** A carga do modelo virou **máximo**, não média (`maxLoadDurationMs`): uma carga fria de ~13,5 s e uma quente de ~6 ms no mesmo bucket, medidas ao vivo em sequência, produziriam uma média que não descreve nenhuma das duas. O tempo de rede+prefill (`avgNetworkPrefillMs`) tinha o defeito gêmeo — achado pelo advisor Opus na revisão da própria correção — e a saída foi subtrair `loadDurationMs` de `ttftMs` antes de agregar, verificado decompondo `ttftMs` ao vivo (`≈ carga + prefill + 24–66 ms de transporte local`). Nenhuma das duas correções foi deduzida sem medir.
-
-Quatro rodadas de advisor (duas sobre o plano escrito, duas sobre a implementação) acharam, ao todo: um número de tamanho de arquivo desatualizado citado em dois lugares divergentes do `ROADMAP.md`; um handler já acima do teto de 150 linhas sem o plano prever a divisão (isolada em `main/observatory/chatTiming.ts`); uma decisão (DO7.5) se contradizendo com o passo de implementação sobre o que o canal devolve; e uma premissa falsa no texto original da DO7.4 — GLM/Gemini **streamam** de verdade numa chamada `format`-constrained, só o Ollama tem caminho separado; a razão real de `ai:propose` nunca gravar desempenho é estrutural (a função nunca chama `measureChatTiming`), não a diferença entre provedores. `check:fast` final: 143 arquivos, 1264 testes. Conferência ao vivo do usuário confirmou os três provedores lado a lado, com "—" honesto onde o dado nativo não existe (nuvem) e nas linhas gravadas antes desta extensão (backfill `NULL` de `prompt_tokens`, não bug). [`plan/implemented/O-7-desempenho-por-modelo.md`](plan/implemented/O-7-desempenho-por-modelo.md)
 
 ## Decisões arquiteturais
 
