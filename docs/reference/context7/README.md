@@ -1,0 +1,185 @@
+# Context7 — guia de implementação (arco 23)
+
+> **As 32 decisões estão fechadas** (06–07/09/2026). Este é o material de entrada do arco 23: o que foi medido, o que foi decidido e com que base, e o desenho do painel. Ele para de ser atualizado quando o plano nascer em `plan/active/` — daí em diante o dono da narrativa é o plano, e este guia vira consulta por `Grep`.
+>
+> Siglas `DM-n` são provisórias. A definitiva (`D23.n`) nasce com o plano.
+>
+> **Três anexos**, porque cada um é lido num momento diferente do arco: [`api.md`](api.md) (sondagens, formatos, medições — o 23-A vive nele), [`decisoes.md`](decisoes.md) (as 32, com a base de cada uma) e [`painel.md`](painel.md) (o desenho da interface — do 23-D em diante).
+
+---
+
+## Por que este documento existe em vez de `plan/active/23.md`
+
+Porque o guia anterior — [`web-fetch-mcp-thinking/README.md`](../web-fetch-mcp-thinking/README.md) — foi escrito **antes** de olhar o código e o protocolo, e errou na premissa: propunha *tool calling* como espinha dorsal comum de três capacidades, premissa que RE6.4 derrubou com o resultado do arco 21. Ele também descreve um app com um provedor só, um orçamento de RAM chumbado em 7 GB e uma API (`ollama.chat`) que este projeto não usa.
+
+O padrão que funcionou no arco 21 foi o oposto: levantar contra o código e contra a fonte primária, medir o que dá para medir, e listar explicitamente o que ficou por verificar. É o que este documento faz.
+
+O guia antigo será marcado `⛔ consumido` quando este substituí-lo.
+
+---
+
+---
+
+## DECIDIDO — DM-0: REST, não MCP
+
+O Context7 entra pela **REST API pública**, não pelo protocolo MCP.
+
+A consequência atravessa o arco inteiro: consultar documentação deixa de ser **capacidade do modelo** e passa a ser **operação do aplicativo**. Ninguém precisa de `tools`; nenhum provedor precisa saber que o Context7 existe; não há loop de *tool calling* a construir.
+
+### O par de números que decidiu
+
+| | Custo |
+|---|---|
+| Definir as duas ferramentas MCP | **2.060 tokens**, reenviados em toda requisição |
+| Uma resposta inteira de `/v2/context` | **352 a 1.244 tokens** (n=6) |
+
+A resposta completa custa entre um sexto e seis décimos do que o MCP cobra só para existir.
+
+### O argumento estrutural
+
+As ferramentas MCP aceitam **duas strings cada** (`resolve-library-id`: `libraryName`, `query` · `query-docs`: `libraryId`, `query`) e devolvem prosa num `content[]`. A REST aceita quatro parâmetros e devolve estrutura com o custo de cada trecho contado. **As ferramentas MCP são um envelope que esconde os parâmetros da REST.**
+
+Pelo MCP se trunca; pela REST se seleciona — e selecionar é o princípio que o [`ESCOPO`](../../ESCOPO.md) já fixou como seção de produto: *o app nunca deixa o modelo decidir em silêncio o que descartar*.
+
+### O que se perde, e por que é aceitável
+
+O acionamento pelo modelo. Quem pede a documentação passa a ser o usuário.
+
+RE6.4 já registra que nenhum caminho de acionamento é canônico, e o precedente que desautoriza presumir *tool calling* é o raciocínio visível — entregue, e por outro caminho em todos os provedores. Some-se que um modelo de 2B decidindo sozinho quando consultar documentação é a parte menos confiável do arranjo.
+
+**O loop de *tool calling* não se constrói aqui.** Se for necessário depois — pilar de código, arco 22 por *tool calling* —, nasce lá, num plano que o justifique.
+
+### Especulação sem compromisso — REST no local, MCP na nuvem (07/09/2026)
+
+⚠️ **Levantada em conversa, sem sonda nenhuma, e nada foi firmado — DM-0 segue valendo inteiro.** A ideia é usar REST para Ollama e MCP para os provedores opt-in, apostando que os 2.060 tokens de definição são ruído numa janela de nuvem e caros num `num_ctx` reservado em RAM. O que a torna inviável hoje não é o custo: são **três** caminhos, não dois — Gemini teria MCP *server-side* (`{type: 'mcp_server', url}`, só na Interactions API, que o adaptador atual não usa), GLM não tem esse recurso e pagaria o custo inteiro que DM-0 rejeitou sem nenhum ganho, e Ollama seguiria REST. Pior, a entrega do arco não é a consulta, é o painel: ele vive de resposta estruturada (`codeSnippets[]` com contagem por trecho), e MCP devolve prosa — no Gemini *server-side* o app sequer vê a chamada acontecer, o que apaga as onze etapas da tabela de fluxo e a coluna de controle junto. O desejo legítimo por trás disso é **agência** (o modelo decidir consultar), e ela não exige MCP: uma ferramenta local única, `consultar_documentacao(biblioteca, pergunta)`, cujo corpo faz a mesma chamada REST, custa ~200 tokens de definição em vez de 2.060, devolve o mesmo objeto que o painel já saberá renderizar e serve qualquer provedor com `tools` — corte futuro sobre a REST, não alternativa a ela. Procedência: o MCP *server-side* do Gemini vem de pesquisa, nunca de sonda; é a primeira coisa a medir se isto voltar à mesa.
+
+### Consequências a executar junto do plano
+
+1. O pilar muda de nome no `ESCOPO`: "Documentação (MCP)" → "Documentação (Context7)".
+2. Esta pasta muda de nome junto; os apontadores são tocados na mesma edição.
+3. `DM-19` (a chave) é revista — ver [`api.md`](api.md) § *Medições*.
+4. O `ESCOPO.md` registra que **consultar documentação envia a pergunta do usuário a um terceiro, inclusive em conversa local** (DM-22). É fato de fronteira do app, e o `ESCOPO` é o dono — uma linha, no mesmo peso normativo da diretriz de MCP já registrada lá.
+
+---
+
+---
+
+## Estado atual do código (confirmado lendo, 06/09/2026)
+
+| Peça | Como está | Onde isto encaixa |
+|---|---|---|
+| `PanelKind` (`features/panel/panelContext.ts`) | `'artifact' \| 'draft'` | ganha um terceiro inquilino; `raise`/`toggle`/`close`/`release`, `width` por inquilino e `onShortcut` já existem |
+| `StepProposalLine.tsx` | linha-botão na transcrição que chama `toggle(target, event.currentTarget, messageId)` | molde exato da linha na conversa (DF3F.1/DF3F.2) |
+| `DocumentPart` (`shared/ipc.ts`) | `{ kind, hash, fileName, format, text }` — texto **inline** | molde da forma do dado |
+| `partForProvider` (`core/ai/messages.ts`) | `switch` por `kind`; `document → formatDocumentCard` | um `case` novo |
+| `AttachmentPart` | `DatasetPart \| DocumentPart \| ImagePart` | o comentário convida um quarto membro — mas ver DM-23 |
+| `checkExternalUrl` (`core/url.ts`, 33 linhas) | valida esquema para `shell.openExternal` | **não** está no caminho: host fixo, é `fetch`, e não é o SO resolvendo protocolo |
+| `describeUpstreamError` (`core/ai/upstreamError.ts`) | trata `{error: string}` e `{error: {message}}` por classe de status | a forma do Context7 é `{ error, message }` — cai no fallback de classe hoje |
+| `SidePanel` (`shared/ui/`) | primitivo desde o E-1-B: `<aside>`, fade, resizer, foco ao abrir, `Esc`; `header`/`children` por slot | **a casca do painel já existe** — o arco não desenha estrutura, só conteúdo |
+| `Tabs` (`shared/ui/`) | primitivo com `keepMounted` opcional | se o painel tiver abas (trechos · metadados), está pronto |
+| `ViewState` / `StateView` (`shared/ui/state.ts`) | seis estados, `loading` com barra determinada quando há `total` | o estado da consulta usa isto, não um booleano |
+| `messages.ts` (`shared/ui/`) | `Record<ErrorKind, string>` — `typecheck` falha se faltar entrada | ver DM-12: `AppError` novo **obriga** texto em português |
+
+O achado mais útil está no docstring de `DocumentPart`: o texto vai inline e é **reenviado inteiro todo turno**, por decisão consciente — *"the chat is stateless and resends the transcript every turn, so what must not repeat is the extraction, not the resend."* Na ordem de grandeza medida (centenas de tokens), esse precedente serve direto.
+
+⚠️ **Nada disto é trabalho de design system.** O painel do Context7 **ainda não existe**, e pela régua do envelope (skill [`design-system`](../../../.claude/skills/design-system/SKILL.md)) o que não existe nasce no plano da própria feature, já vestido. As peças acima estão prontas para ser usadas, não para ser construídas.
+
+---
+
+---
+
+## O fluxo, e onde está o controle
+
+Onze etapas, do gatilho ao orçamento. A coluna que importa é a última.
+
+| # | Etapa | Onde | Controle |
+|---|---|---|---|
+| 1 | gatilho | renderer | **total** — item da lista de anexos (DM-29) |
+| 2 | `GET /v2/libs/search` | `core/context7/` | **parcial** — entrada sim, ranking não |
+| 3 | desambiguação | a decidir | **total** — o critério é seu (DM-30) |
+| 4 | fixar versão | idem | **parcial** — só entre as indexadas |
+| 5 | `GET /v2/context` | `core/context7/` | **mínimo — quatro parâmetros** |
+| 6 | tratar a resposta | `core/context7/` | **total** |
+| 7 | montar a parte | `shared/ipc.ts` · `core/ai/messages.ts` | total |
+| 8 | persistir | `crivo.db`, coluna `parts` | total |
+| 9 | renderizar | `MessageList` · `DocsPanel.tsx` | total |
+| 10 | enviar ao modelo | `partForProvider` | total |
+| 11 | orçamento | `budgetFor` | total — sem caminho especial |
+
+**A forma do controle é uma só: não se modula o que vem, modula-se o que se faz com o que veio.** O Context7 rerankeia e corta do lado dele — sempre 4–5 trechos — e não aceita instrução sobre isso. Não há `limit`, `tokens`, `topic` nem `page` na v2.
+
+O único volante *antes* da resposta é a **pergunta**, e é isso que dá peso a DM-22: `query` é o que ordena o resultado. O que salva o arranjo é o corte deles ser generoso o bastante (≤1.244 tokens medidos); com 30k, a ausência de `limit` seria bloqueante.
+
+Na etapa 5 o app não controla: quantos trechos · quais · em que ordem · o tamanho · se vem `infoSnippets` · se vem `rules` · o formato de `codeId`.
+
+---
+
+---
+
+## Os cortes
+
+Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **nunca subcorte**.
+
+> ⚠️ **Não existe `23-A-1`.** O arco 21 produziu essa forma e ela não se pagou: um filho carrega o contexto do pai junto, o que anula o ganho de fatiar. **Corte que crescer demais vira dois irmãos** — se o 23-D não couber, ele passa a ser 23-D e 23-K, ambos no mesmo nível, cada um com o próprio arquivo e o próprio diário. A letra é etiqueta, não hierarquia.
+
+**A ordem das letras é sugestão; a dependência é lei.** Divergência entre plano e execução é esperada — o encaixe reordena sem renomear nada.
+
+| Corte | Entrega | Depende de |
+|---|---|---|
+| **23-A** | **o cliente, em `core/context7/`.** Tipos, `fetch` injetado, parse das duas respostas, classificação de status (400 · 404 · 202 · 429 · 401/403 · 5xx), descarte de `rules`, `codeId` → URL com falha tratada, filtro de `__branch__*`, ordenação estável. Fixtures gravadas da API real. **Inclui a fase de sonda** (abaixo). Nível 1, nada visível | — |
+| **23-B** | **a fronteira.** Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa | A |
+| **23-C** | **a parte e a persistência.** Schema da variante, `docsPartOf`, o `case` em `partForProvider`, o booleano de ativa/desligada. Nível 1 e 3, ainda sem interface | A |
+| **23-D** | **o painel nasce.** Terceiro valor de `PanelKind`, `DocsPanel.tsx` sobre `SidePanel`, cabeçalho, o gatilho no `AttachButton`, o formulário do Estado 1 com o aviso de privacidade. Primeira coisa visível | B |
+| **23-E** | **desambiguação.** Estado 2: lista sempre visível, ordenada pelo app, versões filtradas, seletor de versão | D |
+| **23-F** | **o resultado.** Estado 3 e as três abas — Trechos, Notas, Regras (esta só quando `rules` vier) | D |
+| **23-G** | **seleção e orçamento.** Caixas por trecho, total ao vivo no rodapé, `Anexar` desabilitado quando não cabe | F · C |
+| **23-H** | **a conversa.** A linha retrátil, o contador no cabeçalho, o `histórico` com o desligar, o rótulo `fora do contexto` | C · F |
+| **23-I** | **os nove erros.** Cada situação com o seu texto e a sua ação, incluindo os dois textos opostos do 429 | D (encaixa em qualquer ponto depois) |
+| **23-J** | **fechamento.** Verificação ao vivo, `ESCOPO.md` (nome do pilar, a linha de privacidade), guia antigo marcado `⛔ consumido`, pasta e apontadores | todos |
+
+**O caminho crítico é `A → B → D`.** Depois dele, `E`, `F` e `I` são independentes entre si; `C` pode entrar em qualquer momento depois de `A`, inclusive em paralelo a `D`. Só `G`, `H` e `J` têm duas dependências.
+
+### As verificações abertas são passos, não pendências
+
+Cada uma tem dono, e a maioria cai no 23-A — que por isso começa com uma fase de sonda declarada, antes de escrever cliente nenhum.
+
+| Verificação | Corte | Como se fecha |
+|---|---|---|
+| `libraryName` vs `query` no `/v2/libs/search` | **23-A** | uma chamada com cada parâmetro |
+| `/v2/context` consome o mesmo contador de cota? | **23-A** | ler `Ratelimit-Remaining` antes e depois |
+| a duplicata de `id` acontece no `/v2/context`? | **23-A** | inspecionar uma resposta com trechos repetidos |
+| `fast=true` muda quantidade ou só ordem | **23-A** | mesma pergunta, dois valores |
+| `202` na prática, e o enum de `state` | **23-A** (classificação) · **23-I** (texto) | achar uma biblioteca não finalizada |
+| frequência de `rules`, e em quais bibliotecas | **23-A** (fixture) · **23-F** (aba) | varrer algumas populares |
+| silhueta dos três ícones do cabeçalho a 16px | **23-J** | renderizar os três lado a lado e olhar |
+| o painel inteiro, ao vivo | **23-J** | fluxo de ponta a ponta com API real |
+
+⚠️ **A fase de sonda do 23-A tem orçamento.** A cota anônima é de **200 chamadas por mês** e as sondas de 07/09/2026 já consumiram 43. Seis verificações não custam mais que ~15 chamadas — mas a suíte de testes **nunca** pode bater na API: fixture gravada uma vez, testes offline daí em diante.
+
+---
+
+## Como isto se testa
+
+Pirâmide e limites: skill [`testing`](../../../.claude/skills/testing/SKILL.md).
+
+| Peça | Nível | Forma |
+|---|---|---|
+| cliente REST, seleção de trechos, parse de `codeId` | 1 | `fetch` injetado, fixtures de JSON — sem rede real |
+| handlers dos canais | 3 | funções exportadas, dependências por parâmetro, sem Electron |
+| linha na conversa, painel | 2 | jsdom; a classe é atribuída, a cor e o layout não |
+
+⚠️ **A fixture vem da resposta real, nunca do `openapi.json`.** O schema publicado está atrás da API — `generationDate` voltou na sonda sem estar nele. Uma fixture derivada do schema testaria o schema, não a API.
+
+⚠️ **Antes de mandar qualquer asserção do painel para nível 4, verifique se ela cabe sobre a classe.** O veredito "isso só se prova ao vivo" já saiu errado por metade uma vez neste projeto.
+
+---
+
+---
+
+## Onde está o resto
+
+| Anexo | O que tem | Quando se lê |
+|---|---|---|
+| [`api.md`](api.md) | endpoints, formatos, as 13 sondas, medições, verificações feitas e abertas | corte **23-A** |
+| [`decisoes.md`](decisoes.md) | as 32 decisões, com a base declarada de cada uma | ao duvidar de um "por quê" — `Grep` na sigla |
+| [`painel.md`](painel.md) | o desenho da interface, estado por estado, em plaintext | cortes **23-D** em diante |
