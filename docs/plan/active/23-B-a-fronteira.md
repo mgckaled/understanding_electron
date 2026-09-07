@@ -82,6 +82,18 @@ A situação 1 da tabela dos nove erros (DM-12) diz que a chamada **nunca sai** 
 
 Respostas montadas à mão no próprio arquivo. As fixtures do 23-A ficam onde estão: alcançá-las de `main/` faria o teste do handler falhar quando a normalização mudasse, escondendo qual camada quebrou. O que o nível 3 prova: `Result` embrulhando, estado de tela dentro do `value`, `UpstreamError` virando `upstream`, `TypeError` virando `unavailable`, a chave chegando ao cliente, e o `fetchFn` nunca alcançando `context7.com`.
 
+### D23B.11 — `DocSnippet` carrega uma lista de blocos, não um `code` só
+
+Achado da verificação ao vivo, não da leitura: o 23-A juntava o `codeList[]` num `code` com `join('
+
+')` e guardava só o `codeLanguage` do trecho. A resposta real do `/vercel/next.js` mostrou o que isso produz — o mesmo `export async function GET()` **duas vezes** no primeiro trecho, e `GET(request: Request)` grudado em `GET(request)` no terceiro. A API guarda **variantes do mesmo exemplo** (TypeScript e JavaScript), e o campo de idioma do trecho dizia `'typescript'` justamente onde havia variante JS junto.
+
+Não há conserto pela requisição: o `/v2/context` aceita quatro parâmetros (`libraryId`, `query`, `type`, `fast`) e nenhum deles alcança dentro do trecho — conferido contra o guia de API oficial. E filtrar por `codeLanguage` do nosso lado não veria o caso, além de ser o campo não normalizado que fez DM-16 deixar o filtro por linguagem de fora.
+
+`blocks: { language, code }[]` é a forma fiel: uma lib Python com um bloco só renderiza um bloco só, sem caso especial, e o painel (23-F) decide se mostra abas TS/JS ou deduplica variantes de código idêntico. `tokens` continua sendo o número da API, que cobre a lista inteira.
+
+**Feito agora porque é o momento mais barato:** ninguém consome `DocSnippet` ainda. Depois do 23-C haveria parte persistida na forma antiga.
+
 ### D23B.10 — Memo de sessão no handler, porque quem gasta cota é a fronteira
 
 Pergunta idêntica devolve a resposta anterior sem gastar chamada. O recurso escasso desta feature é a cota — 200/mês no anônimo —, e o `Consultar de novo` do painel mais um painel reaberto gastariam duas chamadas numa pergunta já respondida. O freio mora aqui e não no painel: quem faz a chamada é esta camada, e um limite na interface seria contornado pelo próximo chamador.
@@ -177,3 +189,4 @@ Schema da parte, `docsPartOf`, `partForProvider`, o booleano de ativa/desligada 
 | 07/09/2026 | Passos 1–4: tipos para `shared/`, os dois canais, handlers de nível 3, a chave no cofre e a costura | `fetch` global satisfaz `Context7Fetch` sem adaptador — confirmado no `typecheck`, era hipótese da sondagem. Duas contagens envelheceram com o terceiro portador de credencial e foram remedidas: `secrets.has` passa de 2 para 3 na sonda do Observatório, e a docstring de nove pontos vira dez |
 | 07/09/2026 | D23B.10 acrescentada em execução: memo de sessão no handler | Pedido do dono ao ver o custo de repetir a sonda. O freio ficou na fronteira e não no painel — quem faz a chamada é esta camada. Só `found`/`ready` entram; `indexing` e falha ficam de fora para não matar o `Tentar de novo` |
 | 07/09/2026 | Verificação ao vivo, e a medição que fecha a D23B.1 | Campo em Configurações e linha no Observatório conferidos. **Busca 3.944 ms · `/vercel/next.js` com `fast=false` 2.222 ms** — 7% do teto de 30 s, então o `invoke` sem job se sustenta e o gatilho de reversão não disparou. A busca saiu mais lenta que o contexto por carregar DNS e TLS da primeira requisição do processo; n=1 em cada. As ~125 repetições seguintes voltaram em 1–9 ms e **custaram zero de cota** — o memo ao vivo. Duas chamadas reais gastas no total |
+| 07/09/2026 | D23B.11: `DocSnippet` troca `code`+`language` por `blocks[]` | Defeito que só a resposta real revelaria — o `join` do `codeList[]` renderizava o mesmo exemplo duas vezes. Confirmado contra a doc oficial que **não existe parâmetro de idioma** no `/v2/context`. Vermelho provado cortando a lista no primeiro bloco. Corrigido no 23-B por ser o momento sem consumidor: depois do 23-C haveria parte persistida na forma antiga |

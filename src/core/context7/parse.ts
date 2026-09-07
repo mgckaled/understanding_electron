@@ -80,9 +80,11 @@ function toSnippet(
     key: `${snippet.codeId}#${index}`,
     title: snippet.codeTitle,
     description: snippet.codeDescription,
-    language: snippet.codeLanguage,
     tokens: snippet.codeTokens,
-    code: (snippet.codeList ?? []).map((block) => block.code).join('\n\n'),
+    blocks: (snippet.codeList ?? []).map((block) => ({
+      language: block.language === '' ? snippet.codeLanguage : block.language,
+      code: block.code
+    })),
     pageTitle: pageTitle === PAGE_TITLE_SENTINEL || pageTitle === '' ? null : pageTitle,
     sourceUrl: sourceUrlOf(snippet.codeId)
   }

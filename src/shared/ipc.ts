@@ -796,13 +796,25 @@ export type LibraryCandidate = {
   versions: string[]
 }
 
+/**
+ * One variant of a snippet's example — the API stores the same example more
+ * than once (TypeScript and JavaScript, or a shell line beside the code).
+ */
+export type DocCodeBlock = {
+  language: string
+  code: string
+}
+
 export type DocSnippet = {
   key: string
   title: string
   description: string
-  language: string
   tokens: number
-  code: string
+  // A list, not one joined string (D23B.11): concatenating the variants
+  // rendered the same example twice, and the snippet-level codeLanguage named
+  // only the first — it said 'typescript' for a snippet carrying the js
+  // variant too. `tokens` covers the whole list, as the API counts it.
+  blocks: DocCodeBlock[]
   pageTitle: string | null
   sourceUrl: string | null
 }

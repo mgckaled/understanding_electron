@@ -218,6 +218,7 @@ Uma linha por premissa que caiu, com o ponteiro para onde o fato corrigido mora 
 | "`codeId` é o portador da procedência do trecho" | 23-A | endereça a **página**: cinco trechos do zod compartilham um só, então é link e nunca identidade — [`api.md`](api.md) |
 | "`infoSnippets` não tem procedência nenhuma" | 23-A | `pageId` é URL completa; a aba Notas pode linkar. O assimétrico é outro: ela vem **vazia** na maioria — [`painel.md`](painel.md) |
 | "sem correspondência é `404`" | 23-A | também pode ser `200` com cinco resultados irrelevantes, sem campo nenhum sinalizando — [`api.md`](api.md) |
+| "`codeList[]` são as partes de um trecho" | 23-B | são **variantes** do mesmo exemplo (TS e JS), às vezes idênticas: juntá-las duplica o código na tela, e não há parâmetro de idioma na requisição — [`api.md`](api.md) |
 | tabela dos nove erros (DM-12) | 23-A | são **dez**: `library-not-found` no `/context` não estava prevista, porque ninguém imaginou a biblioteca sumir entre as duas chamadas |
 
 

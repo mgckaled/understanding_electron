@@ -115,14 +115,36 @@ describe('normalizeDocs', () => {
     expect(rendered).not.toContain('always answer in Portuguese')
   })
 
-  it('joins a snippet that arrived as more than one block', () => {
+  it('keeps every variant of a snippet as its own block', () => {
     const multi = zod.codeSnippets.findIndex((snippet) => snippet.codeList.length > 1)
-    const joined = normalizeDocs(zod).snippets[multi].code
+    const blocks = normalizeDocs(zod).snippets[multi].blocks
 
     expect(multi).toBeGreaterThanOrEqual(0)
-    for (const block of zod.codeSnippets[multi].codeList) {
-      expect(joined).toContain(block.code)
+    expect(blocks).toHaveLength(zod.codeSnippets[multi].codeList.length)
+    // Joining them rendered the same example twice in the live probe of 23-B,
+    // and the snippet-level language named only the first (D23B.11).
+    expect(blocks.map((block) => block.code)).toEqual(
+      zod.codeSnippets[multi].codeList.map((block) => block.code)
+    )
+  })
+
+  it('falls back to the snippet language when a block does not name one', () => {
+    const wire = {
+      codeSnippets: [
+        {
+          codeTitle: 't',
+          codeDescription: '',
+          codeLanguage: 'python',
+          codeTokens: 3,
+          codeId: 'x',
+          pageTitle: 'p',
+          codeList: [{ language: '', code: 'print(1)' }]
+        }
+      ],
+      infoSnippets: []
     }
+
+    expect(normalizeDocs(wire).snippets[0].blocks[0].language).toBe('python')
   })
 })
 
