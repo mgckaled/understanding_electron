@@ -221,8 +221,8 @@ Recomendações, não decisões tomadas: só DM-0 e DM-27 estão fechadas. Cada 
 
 Quatro deixaram de ter objeto quando as seis sondas mostraram 4–5 trechos e ≤1.244 tokens, sempre.
 
-- **DM-16 · Critério de seleção → não construir seleção** *(medida)* — ⚠️ **reaberta**, ver § *O painel*. Não há o que selecionar: a resposta cabe folgada na menor faixa de `CONTEXT_BANDS`. E a dimensão que parecia mais barata é a mais cara — `codeLanguage` não é normalizado (`TypeScript`, `typescript`, `tsx`, `jsx` na mesma resposta), então filtrar exigiria normalizar caixa e decidir se `tsx` conta como TypeScript, sem comprar nada.
-- **DM-25 · Painel → leitura apenas** *(medida)*. Consequência da anterior: sem seleção, não há o que interagir. **O corte 23-C não nasce.** ⚠️ **Reaberta pelo esboço do painel (07/09/2026)** — ver § *O painel*.
+- **DM-16 · DECIDIDA (07/09/2026) — seleção completa, caixa por trecho.** Revoga a recomendação anterior *(medida)* de não construir seleção. **O argumento vencedor não é de tamanho, é de premissa:** o crivo existe para gerenciar e controlar o que vai ao modelo, e a medição de 4–5 trechos descreve as bibliotecas sondadas hoje, não um limite da API — nada no `openapi.json` promete que a resposta seja pequena. Continua valendo o achado sobre `codeLanguage` não ser normalizado (`TypeScript`, `typescript`, `tsx` na mesma resposta): **filtrar por linguagem segue fora**, a seleção é trecho a trecho. Não há o que selecionar: a resposta cabe folgada na menor faixa de `CONTEXT_BANDS`. E a dimensão que parecia mais barata é a mais cara — `codeLanguage` não é normalizado (`TypeScript`, `typescript`, `tsx`, `jsx` na mesma resposta), então filtrar exigiria normalizar caixa e decidir se `tsx` conta como TypeScript, sem comprar nada.
+- **DM-25 · DECIDIDA (07/09/2026) — painel interativo, não só de leitura.** Consequência de DM-16: havendo seleção, há o que interagir. **O corte 23-C renasce.**
 - **DM-4 · Faixa mínima → não existe** *(precedente)*. `conversationWindow` decide o tamanho da janela; uma consulta não mexe em `numCtx`, só aumenta `estimated`, que é assunto do `budgetFor`. Nada a impor.
 - **DM-11 · Conversa travada → nenhum caminho especial** *(precedente)*. A trava só morde com `costed && locked && reserved !== undefined`, e decide janela, não conteúdo. É o mesmo trajeto de um documento anexado grande.
 
@@ -505,11 +505,13 @@ O motivo jurídico e o de design apontam para o mesmo lado:
 
 **Procedência fica no texto:** a palavra "Context7" como texto no cabeçalho do painel e no rodapé da consulta. Uso nominativo credita a fonte, herda os tokens e funciona nos dois temas.
 
-### ⚠️ O que este esboço reabre — a primeira decisão da passagem
+### A seleção — resolvida em 07/09/2026
 
 **O rodapé com `4 de 7` e caixas de marcação contradiz DM-16 e DM-25**, que fecharam "não construir seleção" e "painel em leitura apenas" apoiadas na medição de 4–5 trechos e ≤1.244 tokens: sem volume, não há o que selecionar.
 
-O desenho supõe 7 trechos, número que **nenhuma sonda produziu**. Ou a camada de seleção sai (e o rodapé mostra só o total, com o painel em leitura como DM-25 fixou, e o corte 23-C segue não nascendo), ou DM-16/DM-25 são reabertas com base declarada — e aí 23-C volta a existir. **Não fica nas duas.**
+**Decidido pela seleção completa**, com DM-16 e DM-25 revogadas e o corte 23-C de volta. O argumento que venceu é de premissa, não de tamanho: o crivo existe para gerenciar e controlar o que vai ao modelo, e abrir mão disso porque *hoje* a resposta é pequena seria decidir por uma medição que nada garante que se mantenha — o `openapi.json` não promete teto nenhum.
+
+⚠️ **O `7` do desenho continua sendo número inventado.** Nenhuma sonda passou de 5. Ao montar as fixtures do 23-A, capture uma resposta real de biblioteca grande antes de dimensionar a rolagem da lista.
 
 ### O que mais o esboço presume
 
@@ -526,8 +528,10 @@ Arquivos separados, estilo 18-A — não passos num arquivo só.
 | Corte | Entrega |
 |---|---|
 | **23-A** | cliente REST em `core/context7/` + `main/features/context7/`, `fetch` injetado, fixtures de JSON capturadas da API real, canais IPC, chave no cofre. Nada visível |
-| **23-B** | schema da parte, `docsPartOf`, a linha na conversa, `DocsPanel.tsx` em leitura, o terceiro valor de `PanelKind` |
-23-C foi **descartado** por DM-25: sem seleção a construir, não há corte para ele.
+| **23-B** | schema da parte, `docsPartOf`, a linha na conversa, `DocsPanel.tsx`, o terceiro valor de `PanelKind`, o contador no cabeçalho |
+| **23-C** | a camada de seleção: caixas por trecho, total ao vivo no rodapé, `Anexar` desabilitado quando não cabe |
+
+23-C foi descartado por DM-25 e **renasceu em 07/09/2026**, quando DM-16/DM-25 foram decididas pela seleção completa.
 
 ---
 
