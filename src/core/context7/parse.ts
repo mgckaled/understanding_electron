@@ -1,10 +1,4 @@
-import type {
-  DocNote,
-  DocRules,
-  DocSnippet,
-  DocsResult,
-  LibraryCandidate
-} from '@shared/ipc'
+import type { DocNote, DocRules, DocSnippet, DocsResult, LibraryCandidate } from '@shared/ipc'
 import type { ContextResponseWire, SearchResponseWire, SearchResultWire } from './types'
 
 // The wire says -1 for "does not apply", on every website-backed entry.

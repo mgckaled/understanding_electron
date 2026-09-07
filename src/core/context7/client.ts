@@ -16,7 +16,7 @@ import type {
 const CONTEXT7_BASE_URL = 'https://context7.com/api/v2'
 
 // `fast=false` keeps their LLM reranking (DM-18), which costs seconds.
-const CONTEXT7_TIMEOUT_MS = 30_000
+export const CONTEXT7_TIMEOUT_MS = 30_000
 
 export type Context7Deps = {
   fetchFn: Context7Fetch
