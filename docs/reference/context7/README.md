@@ -139,12 +139,32 @@ A régua dos `secrets` já vigente vale sem exceção: `write` devolve `Result` 
 
 ### ⏳ A pergunta aberta: `invoke` simples ou job cancelável?
 
-Nenhuma das 32 decisões tocou nisso, e ela não se resolve por precedente — os dois lados têm um.
+Nenhuma das 32 decisões tocou nisso. **A decisão é do 23-B**; o que segue é a recomendação com que o 23-A fechou, com o material que ele levantou.
 
 - **A favor de job:** o `/context` com `fast=false` leva **segundos** (o reranqueamento por LLM é do lado deles), o painel fica bloqueado nesse intervalo, e o registro de `src/main/jobs.ts` mais o `signal` que o cliente já aceita (D23A.10) deixam tudo pronto dos dois lados.
 - **Contra:** `job:event` existe para carregar **progresso**, e uma chamada REST não tem progresso — é uma requisição e uma resposta. Job aqui compra **só** cancelamento, ao custo de um `JobId`, um `AbortController` no `Map` e o `finish` no `finally`.
 
 ⚠️ **O que fecha a questão é que não existe meio-termo.** Abandonar a promessa no renderer **não cancela nada**: sem um id que enderece o `AbortController` no main, a requisição segue correndo e a cota **já foi gasta**. Ou é job de verdade, ou não há cancelamento — e aí o timeout de 30 s do cliente é a única saída, o que precisa ser dito na tela em vez de descoberto.
+
+#### Recomendação do 23-A — `invoke` simples, com `Result`, sem job
+
+O argumento que mais pesa não estava em nenhum dos dois lados acima: **cancelar não devolve cota.** A requisição já saiu e o Context7 contou no instante em que ela chegou lá, então o botão compra *parar de esperar*, nunca economizar uma das 200 chamadas do mês. O recurso escasso desta feature é a cota, e cancelamento não a protege.
+
+Os três eixos habituais, e o que cada um decide de fato:
+
+| Eixo | Veredito |
+|---|---|
+| **A máquina** | **neutro, e não se deve fabricar relevância.** O escasso aqui é RAM e CPU, e uma chamada REST não consome nem um nem outro — é o caso que D9.1 já julgou ("o main fica ocioso esperando a rede, e a janela continua desenhando"). Um job também não custa RAM: uma entrada num `Map` |
+| **O escopo** | **empurra contra.** No momento da consulta **nada foi ao modelo ainda**; o controle que o crivo promete mora no 23-G (seleção e orçamento). Cancelar uma busca é conveniência de espera, não a premissa do app |
+| **A arquitetura** | **exclui o caso.** `JobEvent` é `progress \| chunk \| log`: job existe para trabalho que **reporta progresso ou transmite em fluxo**. `ai:chat` é job porque streama; `disk:usage`, porque varre. Uma chamada REST é uma requisição e uma resposta — um job cujo único evento é "acabou" usa o mecanismo pelo efeito colateral |
+
+**Três condições fazem parte da recomendação**, e sem elas ela não vale:
+
+1. O teto de 30 s **aparece na tela**, nunca em silêncio — se o serviço travar, o painel diz o que vai acontecer.
+2. **Nenhum botão "cancelar" falso.** Sem id que enderece o `AbortController`, ele pararia de ouvir e deixaria a requisição correndo: mentira cara, porque a cota some do mesmo jeito.
+3. Promover a job depois é **barato de adiar** pelo teste da skill [`architecture`](../../../.claude/skills/architecture/SKILL.md) — *quantos arquivos toco se adiar?* O cliente já aceita `signal` (D23A.10), então é o handler, o `JobId` e o painel: ~6 arquivos, nenhum dado persistido, nenhum contrato que outro corte já consuma.
+
+⚠️ **O gatilho que reverte isto, e ele é medido, não impressão.** O 23-A sondou cinco bibliotecas e **não cronometrou chamada por chamada** — sabe que nenhuma chegou perto do teto, não sabe a distribuição. Se no 23-F ou no 23-J uma biblioteca grande com `fast=false` levar dezenas de segundos, o job deixa de ser conveniência e vira necessidade. **Cronometrar a primeira chamada real de biblioteca grande é o que fecha esta questão de vez.**
 
 ---
 
@@ -159,7 +179,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 | Corte | Entrega | Depende de |
 |---|---|---|
 | ~~**23-A**~~ | ✅ **entregue (07/09/2026)** — o cliente, em `core/context7/`. Tipos, `fetch` injetado, parse das duas respostas, classificação de status (400 · 404 · 202 · 429 · 401/403 · 5xx), descarte de `rules`, `codeId` → URL com falha tratada, filtro de `__branch__*`, ordenação estável. Fixtures gravadas da API real. Sonda de 12 chamadas, seis fixtures verbatim, 35 testes, cobertura de linha 98,6%. Plano: [`plan/implemented/23-A`](../../plan/implemented/23-A-cliente-context7.md) | — |
-| **23-B** | **a fronteira.** Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa. **Decide a pergunta aberta da § *A fronteira*:** `invoke` simples ou job cancelável | A |
+| **23-B** | **a fronteira.** Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa. **Decide a pergunta aberta da § *A fronteira*** — `invoke` simples ou job cancelável; o 23-A recomenda `invoke`, com três condições e um gatilho de reversão | A |
 | **23-C** | **a parte e a persistência.** Schema da variante, `docsPartOf`, o `case` em `partForProvider`, o booleano de ativa/desligada. Nível 1 e 3, ainda sem interface | A |
 | **23-D** | **o painel nasce.** Terceiro valor de `PanelKind`, `DocsPanel.tsx` sobre `SidePanel`, cabeçalho, o gatilho no `AttachButton`, o formulário do Estado 1 com o aviso de privacidade. Primeira coisa visível | B |
 | **23-E** | **desambiguação.** Estado 2: lista sempre visível, ordenada pelo app, versões filtradas, seletor de versão | D |
