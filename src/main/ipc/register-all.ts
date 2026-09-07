@@ -54,6 +54,7 @@ import {
   unload as aiUnload
 } from '../features/ai/handlers'
 import { propose as aiPropose } from '../features/ai/propose'
+import { createDocsCache } from '../features/context7/cache'
 import { fetchDocs, searchDocs } from '../features/context7/handlers'
 import {
   ollamaChat,
@@ -292,9 +293,12 @@ export async function registerAll(): Promise<() => void> {
   // The key is read fresh on every call (D23B.7), same shape as glmAdapter's
   // closure above: one saved in Configurações works on the next lookup, with
   // no restart. The client owns its own 30 s timeout, so no signal here.
+  // The memo lives as long as the app does (D23B.10): the quota is monthly and
+  // a repeated question must not spend a second call.
   const docsDeps = {
     fetchFn: fetch,
-    getApiKey: () => readSecretForUse('context7', db, decryptSecret)
+    getApiKey: () => readSecretForUse('context7', db, decryptSecret),
+    cache: createDocsCache()
   }
   handle('docs:search', (args) => searchDocs(args, docsDeps))
   handle('docs:fetch', (args) => fetchDocs(args, docsDeps))

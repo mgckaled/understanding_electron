@@ -82,6 +82,14 @@ A situação 1 da tabela dos nove erros (DM-12) diz que a chamada **nunca sai** 
 
 Respostas montadas à mão no próprio arquivo. As fixtures do 23-A ficam onde estão: alcançá-las de `main/` faria o teste do handler falhar quando a normalização mudasse, escondendo qual camada quebrou. O que o nível 3 prova: `Result` embrulhando, estado de tela dentro do `value`, `UpstreamError` virando `upstream`, `TypeError` virando `unavailable`, a chave chegando ao cliente, e o `fetchFn` nunca alcançando `context7.com`.
 
+### D23B.10 — Memo de sessão no handler, porque quem gasta cota é a fronteira
+
+Pergunta idêntica devolve a resposta anterior sem gastar chamada. O recurso escasso desta feature é a cota — 200/mês no anônimo —, e o `Consultar de novo` do painel mais um painel reaberto gastariam duas chamadas numa pergunta já respondida. O freio mora aqui e não no painel: quem faz a chamada é esta camada, e um limite na interface seria contornado pelo próximo chamador.
+
+**Só o que é resposta completa entra no memo** (`found` na busca, `ready` no contexto). `indexing` fica de fora porque tentar de novo é justamente o conserto que a situação 4 oferece; `empty`/`no-libraries` levam o usuário a reformular de qualquer forma; e falha nunca entra, senão o botão `Tentar de novo` nasceria morto.
+
+Em memória, limitado a 20 entradas, vivo enquanto o app estiver aberto — documentação não vale persistir, e reiniciar é o jeito barato de forçar uma consulta nova.
+
 ### D23B.9 — O teto do preload estoura, com prazo
 
 O corte termina com `src/preload/index.ts` em ~104 linhas. Dívida **nomeada**, com gatilho no [`ROADMAP § 3`](../../ROADMAP.md): dividir **antes do 23-C**. Nada importa esse arquivo, então a divisão não propaga e adiá-la não acumula juros — o que ela evita é misturar dois assuntos num corte só.

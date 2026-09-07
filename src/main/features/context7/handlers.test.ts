@@ -1,5 +1,6 @@
 import { UpstreamError } from '@core/ai/types'
 import type { Context7Fetch, HttpResponse } from '@core/context7/types'
+import { createDocsCache } from './cache'
 import { fetchDocs, searchDocs } from './handlers'
 
 // Hand-built, never the 23-A fixtures: what this level proves is the wrapping,
@@ -32,6 +33,7 @@ type Stub = {
   sent: { url: string; headers: Record<string, string> }[]
   fetchFn: Context7Fetch
   getApiKey: () => string | null
+  cache: ReturnType<typeof createDocsCache>
 }
 
 function deps(response: HttpResponse | (() => never), apiKey: string | null = null): Stub {
@@ -44,7 +46,7 @@ function deps(response: HttpResponse | (() => never), apiKey: string | null = nu
     if (typeof response === 'function') return response()
     return response
   }
-  return { sent, fetchFn, getApiKey: () => apiKey }
+  return { sent, fetchFn, getApiKey: () => apiKey, cache: createDocsCache() }
 }
 
 describe('searchDocs', () => {
@@ -156,5 +158,71 @@ describe('o que vira AppError', () => {
     })
 
     await expect(searchDocs({ query: 'x' }, d)).resolves.toMatchObject({ ok: false })
+  })
+})
+
+describe('a cota, que é o recurso escasso', () => {
+  const args = { libraryId: '/tanstack/query', query: 'invalidar cache' }
+  const READY = JSON.stringify({
+    codeSnippets: [
+      {
+        codeTitle: 'invalidateQueries',
+        codeDescription: '',
+        codeLanguage: 'ts',
+        codeTokens: 12,
+        codeId: 'https://github.com/tanstack/query/blob/main/docs/x',
+        pageTitle: 'Guide',
+        codeList: [{ language: 'ts', code: 'queryClient.invalidateQueries()' }]
+      }
+    ],
+    infoSnippets: []
+  })
+
+  it('answers a repeated question without spending a second call', async () => {
+    const d = deps(reply(READY))
+
+    const first = await fetchDocs(args, d)
+    const second = await fetchDocs(args, d)
+
+    expect(d.sent).toHaveLength(1)
+    expect(second).toEqual(first)
+  })
+
+  it('still pays for a different question, and for a different version', async () => {
+    const d = deps(reply(READY))
+
+    await fetchDocs(args, d)
+    await fetchDocs({ ...args, query: 'outra pergunta' }, d)
+    await fetchDocs({ ...args, version: 'v5.90.3' }, d)
+
+    expect(d.sent).toHaveLength(3)
+  })
+
+  it('never memoizes a library still indexing — trying again is the whole point', async () => {
+    const d = deps(reply('{"state":"parsing"}', 202))
+
+    await fetchDocs(args, d)
+    await fetchDocs(args, d)
+
+    expect(d.sent).toHaveLength(2)
+  })
+
+  it('never memoizes a failure, so the retry button is not dead', async () => {
+    const d = deps(reply('{"error":"rate_limited"}', 429))
+
+    await searchDocs({ query: 'x' }, d)
+    await searchDocs({ query: 'x' }, d)
+
+    expect(d.sent).toHaveLength(2)
+  })
+
+  it('drops the oldest entry once the cache is full', () => {
+    const cache = createDocsCache(2)
+    cache.set('a', 1)
+    cache.set('b', 2)
+    cache.set('c', 3)
+
+    expect(cache.get('a')).toBeUndefined()
+    expect(cache.get('c')).toBe(3)
   })
 })

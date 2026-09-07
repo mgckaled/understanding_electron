@@ -1,5 +1,6 @@
 import type { Args, AppError, ContextOutcome, Result, SearchOutcome } from '@shared/ipc'
 import type { Context7Fetch } from '@core/context7/types'
+import type { DocsCache } from './cache'
 import { UpstreamError } from '@core/ai/types'
 import { CONTEXT7_TIMEOUT_MS, fetchLibraryContext, searchLibraries } from '@core/context7/client'
 import { ok, err } from '@core/result'
@@ -8,6 +9,7 @@ import { ok, err } from '@core/result'
 export type DocsDeps = {
   fetchFn: Context7Fetch
   getApiKey: () => string | null
+  cache: DocsCache
 }
 
 const UNAVAILABLE_HINT = 'Verifique sua conexão — o Context7 é um serviço online.'
@@ -23,8 +25,14 @@ export async function searchDocs(
   args: Args<'docs:search'>,
   deps: DocsDeps
 ): Promise<Result<SearchOutcome>> {
+  const key = `search|${args.query}`
+  const cached = deps.cache.get(key) as SearchOutcome | undefined
+  if (cached !== undefined) return ok(cached)
+
   try {
-    return ok(await searchLibraries(args.query, clientDeps(deps)))
+    const outcome = await searchLibraries(args.query, clientDeps(deps))
+    if (outcome.status === 'found') deps.cache.set(key, outcome)
+    return ok(outcome)
   } catch (error) {
     return err(mapDocsError(error))
   }
@@ -40,13 +48,22 @@ export async function fetchDocs(
   args: Args<'docs:fetch'>,
   deps: DocsDeps
 ): Promise<Result<ContextOutcome>> {
+  const key = `fetch|${args.libraryId}|${args.version ?? ''}|${args.query}`
+  const cached = deps.cache.get(key) as ContextOutcome | undefined
+  if (cached !== undefined) return ok(cached)
+
   try {
-    return ok(await fetchLibraryContext(args, clientDeps(deps)))
+    const outcome = await fetchLibraryContext(args, clientDeps(deps))
+    if (outcome.status === 'ready') deps.cache.set(key, outcome)
+    return ok(outcome)
   } catch (error) {
     return err(mapDocsError(error))
   }
 }
 
+// Only a complete answer is memoized. `indexing` is the state whose whole
+// point is trying again in a few minutes; `empty`/`no-libraries` leave the
+// user reformulating anyway; a failure must never stick to a retry button.
 function clientDeps(deps: DocsDeps): { fetchFn: Context7Fetch; apiKey: string | null } {
   return { fetchFn: deps.fetchFn, apiKey: deps.getApiKey() }
 }
