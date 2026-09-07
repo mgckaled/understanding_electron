@@ -12,6 +12,11 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### 21-A — O raciocínio atravessa: Ollama, GLM e Gemini até a tela (set/2026)
+Origem: item 29 do `ROADMAP.md`, arco 21, dependente do N-1, com uma colisão de nome: o spinner "pensando" do F-1 já ocupava o vocabulário. Entrega: `onThinking` como sinal opcional em `ChatFn` nos três provedores, a quinta variante `reasoning` de `MessagePart` (`parts` já é JSON, zero migração), o toggle destravado por `hasCapability` e exibição mínima — o polimento é do 21-B.
+
+Decisões: raciocínio **nunca** é reenviado ao provedor (`partForProvider` devolve `''`, como `image`), porque a resposta final já captura o que importa; descartado um booleano paralelo para pedir raciocínio, já que a presença de `onThinking` é o sinal. **Gemini não devolveu raciocínio nesta conta, e a investigação corrigiu a si mesma antes de fechar:** a primeira leitura ("o endpoint nunca entregaria isso") ia além da fonte — a frase do Google fala de assinaturas opacas em function calling, e o HTTP 400 medido no N-1-C já provava que `thinkingConfig` é validado. Ficou como confirmado 2/2 nesta conta, causa a esclarecer. [`plan/implemented/21-A-o-raciocinio-atravessa.md`](plan/implemented/21-A-o-raciocinio-atravessa.md)
+
 ### O-8 — Livro-razão de privacidade: o que saiu da máquina em toda chamada de nuvem (set/2026)
 Origem: oitavo corte da trilha O, o par que o O-6 já reservava. Entrega: tabela `privacy_events` em `observatory.db` (schema `v4`), contagem pura de anexos por tipo, `chat()` e `propose()` instrumentados no **envio** e não na resolução — a contagem já é conhecida antes da chamada, e um timeout não desfaz o que a rede transmitiu —, canal `privacy:list` e o painel Privacidade.
 

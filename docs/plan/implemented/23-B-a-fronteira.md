@@ -1,6 +1,6 @@
 # 23-B — A fronteira do Context7
 
-> Segundo dos dez cortes do **arco 23** (documentação por REST). Material de entrada: [`reference/context7/`](../../reference/context7/README.md), em especial a § *A fronteira*, que é o anexo deste corte. **Nenhum subcorte:** se este plano crescer demais, ele vira dois irmãos no mesmo nível, nunca um `23-B-1`.
+> ✅ **Entregue em 07/09/2026.** Segundo dos dez cortes do **arco 23** (documentação por REST). Material de entrada: [`reference/context7/`](../../reference/context7/README.md), em especial a § *A fronteira*, que é o anexo deste corte. **Nenhum subcorte:** se este plano crescer demais, ele vira dois irmãos no mesmo nível, nunca um `23-B-1`.
 
 ## Contexto
 

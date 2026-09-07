@@ -137,9 +137,9 @@ A régua dos `secrets` já vigente vale sem exceção: `write` devolve `Result` 
 
 `searchLibraries` e `fetchLibraryContext` são funções puras com dependências por parâmetro: o handler do 23-B injeta o `fetch` real, a chave e a URL, e não escreve classificação de erro nenhuma — o cliente lança `UpstreamError`, e `mapProviderError` (`main/features/ai/handlers.ts`) já o converte em `AppError.upstream`, com o `TypeError` do `fetch` caindo em `unavailable`. Estado de tela (`no-libraries`, `empty`, `indexing`, `library-not-found`) **volta como valor** e nunca vira `AppError`.
 
-### ⏳ A pergunta aberta: `invoke` simples ou job cancelável?
+### ✅ A pergunta, respondida no 23-B: `invoke` simples
 
-Nenhuma das 32 decisões tocou nisso. **A decisão é do 23-B**; o que segue é a recomendação com que o 23-A fechou, com o material que ele levantou.
+Nenhuma das 32 decisões tocou nisso. O 23-A recomendou, o **23-B decidiu e mediu** (D23B.1): busca 3.944 ms, `/vercel/next.js` com `fast=false` **2.222 ms** — 7% do teto de 30 s, então o gatilho de reversão abaixo **não disparou**. O material que sustentou a recomendação fica registrado.
 
 - **A favor de job:** o `/context` com `fast=false` leva **segundos** (o reranqueamento por LLM é do lado deles), o painel fica bloqueado nesse intervalo, e o registro de `src/main/jobs.ts` mais o `signal` que o cliente já aceita (D23A.10) deixam tudo pronto dos dois lados.
 - **Contra:** `job:event` existe para carregar **progresso**, e uma chamada REST não tem progresso — é uma requisição e uma resposta. Job aqui compra **só** cancelamento, ao custo de um `JobId`, um `AbortController` no `Map` e o `finish` no `finally`.
@@ -179,7 +179,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 | Corte | Entrega | Depende de |
 |---|---|---|
 | ~~**23-A**~~ | ✅ **entregue (07/09/2026)** — o cliente, em `core/context7/`. Tipos, `fetch` injetado, parse das duas respostas, classificação de status (400 · 404 · 202 · 429 · 401/403 · 5xx), descarte de `rules`, `codeId` → URL com falha tratada, filtro de `__branch__*`, ordenação estável. Fixtures gravadas da API real. Sonda de 12 chamadas, seis fixtures verbatim, 35 testes, cobertura de linha 98,6%. Plano: [`plan/implemented/23-A`](../../plan/implemented/23-A-cliente-context7.md) | — |
-| **23-B** | **a fronteira.** Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa. **Decide a pergunta aberta da § *A fronteira*** — `invoke` simples ou job cancelável; o 23-A recomenda `invoke`, com três condições e um gatilho de reversão | A |
+| ~~**23-B**~~ | ✅ **entregue (07/09/2026)** — a fronteira. Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa. Decidiu a pergunta aberta: **`invoke` simples**, com o gatilho de reversão medido e não disparado. Plano: [`plan/implemented/23-B`](../../plan/implemented/23-B-a-fronteira.md) | A |
 | **23-C** | **a parte e a persistência.** Schema da variante, `docsPartOf`, o `case` em `partForProvider`, o booleano de ativa/desligada. Nível 1 e 3, ainda sem interface | A |
 | **23-D** | **o painel nasce.** Terceiro valor de `PanelKind`, `DocsPanel.tsx` sobre `SidePanel`, cabeçalho, o gatilho no `AttachButton`, o formulário do Estado 1 com o aviso de privacidade. Primeira coisa visível | B |
 | **23-E** | **desambiguação.** Estado 2: lista sempre visível, ordenada pelo app, versões filtradas, seletor de versão | D |

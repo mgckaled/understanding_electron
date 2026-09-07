@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**50 canais em `IpcContract`**, conferidos contra o código em 06/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — o quinquagésimo é `privacy:list`, O-8.
+**52 canais em `IpcContract`**, recontados contra o código em 07/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — os dois últimos são `docs:search` e `docs:fetch`, 23-B.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -116,6 +116,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `image` | `pick`, `attach`, `bytes` | sim |
 | `job` | `cancel`, `list` | não |
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` — lógica do lado do provedor: skill [`ai`](../ai/SKILL.md) | sim |
+| `docs` | `search`, `fetch` — consulta ao Context7 (arco 23) | sim — 429, 401/403, 5xx e `fetch` recusado são falha de serviço; estado de tela (`no-libraries`, `empty`, `indexing`, `library-not-found`) viaja **dentro do `value`** (D23B.2). `invoke` simples, nunca job: cancelar não devolve cota (D23B.1) |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings` | não |
 | `draft` | `list`, `create`, `update`, `remove` | não |
 | `export` | `save` | **sim** — arquivo em uso, permissão e disco cheio são estados que a interface desenha |
@@ -127,6 +128,8 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `events` | `list` | não — leitura de `observatory.db` já aberto (O-6) |
 | `performance` | `list` | não — mesma leitura de `observatory.db`, já agregada no main antes de sair (O-7, DO7.5) |
 | `privacy` | `list` | não — mesma leitura de `observatory.db`; a escrita acontece no wrap de `chat()`, condicionada a `isCloudService` (O-8) |
+
+⚠️ **`secrets` é tipado por `CloudProvider`, que desde o 23-B não significa "provedor de IA":** `'context7'` entrou lá por ter credencial, e nunca será um `AiService` — é a separação de DN1A.5 sendo usada pela primeira vez em cheio (D23B.4). Quatro `Record<CloudProvider, …>` exaustivos cobram entrada nova no `typecheck`.
 
 `secrets:read` **não existe** — nem por omissão, por desenho (DN1A.3): a regra de mão única do [`CLAUDE.md`](../../../CLAUDE.md#segurança) proíbe o renderer de reler um segredo já gravado, só perguntar se ele existe.
 

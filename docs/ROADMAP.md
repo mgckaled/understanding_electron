@@ -134,6 +134,7 @@ Uma linha por medição — a forma é regra, ver [`README § Número que se rem
 | 06/09/2026 | portões por momento | 148 / 1379 | **~35s** no turno | `check:turn` (typecheck 14,7s + lint 3,8s + docs 0,3s) — a suíte é 87% do portão e migrou para o `PreToolUse` de `git commit`. Impacto na máquina medido por trabalho concorrente (baseline 1930ms): 8 workers **4894ms** · `/low` **4665ms** · 4 workers **~4300ms** · afinidade em 4 CPUs **2862ms** |
 | 06/09/2026 | R-7 (`stop_gate`) | 148 / 1379 | **132,4s** | mesma config, máquina mais carregada — a variação entre corridas do mesmo commit segue maior que o efeito de uma mudança |
 | 07/09/2026 | 23-A | 150 / 1414 | **128,8s** | dois arquivos e 35 testes a mais que a linha acima, é **3,6s a menos** — o módulo novo é nível 1 puro (sem `environment`), e a diferença segue dentro do ruído que a série mede desde ago/2026 |
+| 07/09/2026 | 23-B | 151 / 1430 | **124,0s** | um arquivo e 16 testes a mais que a linha acima, e **4,8s a menos** — pelo terceiro corte seguido a diferença fica dentro do ruído, o que continua dizendo que a suíte mede ambiente tanto quanto código |
 | 28/08/2026 | E-2-A/B | 116 / 1130 | **~80s** | portão inteiro. **Bundle do renderer: 3.025,32 → 3.287,07 kB (+261,75 kB)** pelas ~27 gramáticas de código — 2,2× o que a sonda do E-2-B previu, e ~112 kB do salto ficaram **não atribuídos** |
 
 **O que a série provou, e uma medição isolada não provaria:** de 24 para 93 arquivos e de 172 para 832 testes, o total **não** cresceu proporcionalmente. Um pico isolado (os ~88s do 18-D) é suspeito de ambiente, não de regressão — e foi remedir a frio que decidiu.
@@ -197,6 +198,16 @@ O motor hoje só lê `utf-8`/`utf-16`/`latin-1` nativamente (medido: nem `latin-
 | `useRespondingLoop.ts` | **126** | 120 | estourado por 6 linhas — não tocado nesta sessão, cresceu em sessão anterior sem remedição; registrado agora só porque a tabela estava sendo remedida de qualquer forma |
 
 A régua diz **divide-se ao tocar** — nenhum destes é varredura a fazer agora; o gatilho é a próxima extensão de cada um. Registrados aqui porque violação não registrada vira teto que ninguém acredita. O `main/index.ts` está em **exatamente 100**, no teto sem exceção.
+
+### `src/preload/index.ts` estourou o teto de 100 linhas — dividir antes do 23-C
+
+Fechou o 23-B em **104 linhas**, com o bloco `docs` (D23B.9). O teto é dos dois que o [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) marca "sem exceção", e foi estourado por decisão do dono, não por descuido: o 23-B ficaria com dois assuntos.
+
+O que torna adiar barato, e é fato conferido: **nada no repositório importa esse arquivo.** A única referência é o caminho de build em `src/main/index.ts` (`../preload/index.js`); o renderer fala com `window.api`, tipado por `Api` em `shared/ipc.ts` através de `src/preload/index.d.ts`. Dividir não propaga para nenhum import.
+
+Dividir em vários arquivos **é suportado, e só por causa do bundler** — a doc do Electron diz que "a bundler is required if you need to split preload code into multiple files", porque o `require` do preload sandboxed é um polyfill sem capacidade de carregar código próprio. O electron-vite cumpre esse papel.
+
+Duas formas na mesa, e a escolha é de gosto porque não há ripple: `index.ts` fino (bridge + `invoke`) com o mapa em `api.ts`, ou um arquivo por domínio. **Gatilho: antes de começar o 23-C.**
 
 ### `ConversationView.tsx` fechou em 392 linhas, perto do teto de 400 (plano N-1-B)
 A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resolução do provedor selecionado, `isReady` por serviço) entrou no mesmo arquivo que já compunha o cabeçalho, o histórico da conversa e o composer — ainda dentro do teto do [`CLAUDE.md`](../CLAUDE.md), não dividido nesta sessão porque "divide-se ao tocar" não distingue tocar-e-crescer-dentro-do-teto de estourá-lo. Candidato natural a extrair, se a próxima extensão empurrar para além de 400: a resolução de `service`/`allModels` (hoje ~15 linhas de lógica pura misturadas a JSX) para uma função em `conversations.ts`, ao lado de `resolveModel`/`selectableModels`, testável sem montar o componente inteiro. Gatilho de revisão: o próximo plano que tocar este arquivo.

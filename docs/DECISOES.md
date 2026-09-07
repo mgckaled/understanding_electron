@@ -544,6 +544,18 @@ chamada de modelo no main (`D9.1`).
 | 23-A | [D23A.10](plan/implemented/23-A-cliente-context7.md) | Timeout próprio composto com o signal do chamador via `AbortSignal.any` |
 | 23-A | [D23A.11](plan/implemented/23-A-cliente-context7.md) | O texto do 429 sai do cliente, com data local do `Ratelimit-Reset` e ciente da chave |
 
+| 23-B | [D23B.1](plan/implemented/23-B-a-fronteira.md) | `invoke` simples com `Result`, sem job — cancelar não devolve cota, e a medição ao vivo (2,2 s) manteve o veredito |
+| 23-B | [D23B.2](plan/implemented/23-B-a-fronteira.md) | Domínio `docs` no canal, serviço `context7` no cofre — o canal nomeia a operação, o segredo nomeia o portador |
+| 23-B | [D23B.3](plan/implemented/23-B-a-fronteira.md) | Tipos normalizados sobem para `shared/ipc.ts`; os de fio e o seam ficam em `core/` |
+| 23-B | [D23B.4](plan/implemented/23-B-a-fronteira.md) | `'context7'` entra em `CLOUD_PROVIDERS` — quatro `Record` exaustivos, e duas seções deixam de dizer "nuvem" |
+| 23-B | [D23B.5](plan/implemented/23-B-a-fronteira.md) | Mapeamento de erro próprio, não `mapProviderError`, que é keyed por `AiService` |
+| 23-B | [D23B.6](plan/implemented/23-B-a-fronteira.md) | `query` com `min(1)`: campo vazio é bug, não estado de tela |
+| 23-B | [D23B.7](plan/implemented/23-B-a-fronteira.md) | A chave é lida fresca a cada chamada, molde do `makeGlmChat` |
+| 23-B | [D23B.8](plan/implemented/23-B-a-fronteira.md) | O teste de nível 3 prova o embrulho, nunca o parse |
+| 23-B | [D23B.9](plan/implemented/23-B-a-fronteira.md) | O teto do preload estoura conscientemente, com gatilho antes do 23-C |
+| 23-B | [D23B.10](plan/implemented/23-B-a-fronteira.md) | Memo de sessão no handler — só `found`/`ready` entram; `indexing` e falha nunca |
+| 23-B | [D23B.11](plan/implemented/23-B-a-fronteira.md) | `DocSnippet` carrega `blocks[]`, não um `code` grudado — o `codeList` são variantes do mesmo exemplo |
+
 ---
 
 ## Trilha R — reconciliação de documentação
