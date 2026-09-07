@@ -221,8 +221,8 @@ Recomendações, não decisões tomadas: só DM-0 e DM-27 estão fechadas. Cada 
 
 Quatro deixaram de ter objeto quando as seis sondas mostraram 4–5 trechos e ≤1.244 tokens, sempre.
 
-- **DM-16 · Critério de seleção → não construir seleção** *(medida)*. Não há o que selecionar: a resposta cabe folgada na menor faixa de `CONTEXT_BANDS`. E a dimensão que parecia mais barata é a mais cara — `codeLanguage` não é normalizado (`TypeScript`, `typescript`, `tsx`, `jsx` na mesma resposta), então filtrar exigiria normalizar caixa e decidir se `tsx` conta como TypeScript, sem comprar nada.
-- **DM-25 · Painel → leitura apenas** *(medida)*. Consequência da anterior: sem seleção, não há o que interagir. **O corte 23-C não nasce.**
+- **DM-16 · Critério de seleção → não construir seleção** *(medida)* — ⚠️ **reaberta**, ver § *O painel*. Não há o que selecionar: a resposta cabe folgada na menor faixa de `CONTEXT_BANDS`. E a dimensão que parecia mais barata é a mais cara — `codeLanguage` não é normalizado (`TypeScript`, `typescript`, `tsx`, `jsx` na mesma resposta), então filtrar exigiria normalizar caixa e decidir se `tsx` conta como TypeScript, sem comprar nada.
+- **DM-25 · Painel → leitura apenas** *(medida)*. Consequência da anterior: sem seleção, não há o que interagir. **O corte 23-C não nasce.** ⚠️ **Reaberta pelo esboço do painel (07/09/2026)** — ver § *O painel*.
 - **DM-4 · Faixa mínima → não existe** *(precedente)*. `conversationWindow` decide o tamanho da janela; uma consulta não mexe em `numCtx`, só aumenta `estimated`, que é assunto do `budgetFor`. Nada a impor.
 - **DM-11 · Conversa travada → nenhum caminho especial** *(precedente)*. A trava só morde com `costed && locked && reserved !== undefined`, e decide janela, não conteúdo. É o mesmo trajeto de um documento anexado grande.
 
@@ -248,12 +248,13 @@ Quatro deixaram de ter objeto quando as seis sondas mostraram 4–5 trechos e �
 
 ### Interface
 
-- **DM-29 · O gatilho não tem peça** *(precedente contrário)*. O `AttachButton` tem `mcp` como `<Switch>` desabilitado no grupo Ferramentas — e um interruptor não serve a uma ação (DM-15). Vira botão no mesmo grupo? Abre um campo? Um modal? Sem isto o arco não tem porta de entrada.
-- **DM-30 · Onde o usuário digita a biblioteca, e quem desfaz a ambiguidade** *(juízo)*. Automático por `trustScore`/`benchmarkScore`, ou lista para o usuário escolher. Muda o número de telas de 23-B.
-- **DM-31 · Consulta repetida** *(medida)*. Duas perguntas sobre a mesma biblioteca geram duas partes, ambas reenviadas todo turno — o custo fixo dobra. Deduplicar por `libraryId`, substituir a anterior, ou deixar acumular e confiar no `budgetFor`.
+- **DM-29 · O gatilho não tem peça** *(precedente contrário)*. O `AttachButton` tem `mcp` como `<Switch>` desabilitado no grupo Ferramentas — e um interruptor não serve a uma ação (DM-15). Vira botão no mesmo grupo? Abre um campo? Um modal? Sem isto o arco não tem porta de entrada. → **posição no § *O painel*:** sai de Ferramentas, vira item da lista de anexos.
+- **DM-30 · Onde o usuário digita a biblioteca, e quem desfaz a ambiguidade** *(juízo)*. Automático por `trustScore`/`benchmarkScore`, ou lista para o usuário escolher. Muda o número de telas de 23-B. → **posição no § *O painel*:** o usuário escolhe, sempre.
+- **DM-31 · Consulta repetida** *(medida)*. Duas perguntas sobre a mesma biblioteca geram duas partes, ambas reenviadas todo turno — o custo fixo dobra. Deduplicar por `libraryId`, substituir a anterior, ou deixar acumular e confiar no `budgetFor`. → **posição no § *O painel*:** acumula, e o `histórico` é onde se vê e se corta.
 
 - **DM-21 · `DocsPanel.tsx`, ao lado de `ArtifactPanel` e `DraftPanel`** *(precedente)*. Os dois são hoje os únicos consumidores de `SidePanel`. Mostra biblioteca, versão, a pergunta e os trechos com `codeTokens`, com link quando `codeId` parseia como URL. Sem seção de "descartado" — nada é descartado.
 - **DM-28 · Metadados em chrome, trecho em leitura** *(precedente)*. Não é régua a aplicar, é o vizinho a copiar: `ArtifactBody.tsx` usa `text-reading` no corpo enquanto `ArtifactSteps`/`ArtifactDataset`/`ArtifactPicker` usam `text-xs`/`text-sm`/`text-2xs` — o painel de artefato já é misto.
+- **DM-32 · DECIDIDA — ícone de livros empilhados, nunca o logotipo da Upstash** (07/09/2026). Motivo jurídico e de design system no § *O painel*.
 - **DM-15 · Não é interruptor, é uma ação** *(precedente)*. `wantsReasoning` é `useState` no `Composer` passado no `onSend` porque é **modo** do envio. Consultar documentação é ato pontual cujo resultado persiste na transcrição.
 
 ### Encerradas por DM-0
@@ -287,6 +288,234 @@ Onze etapas, do gatilho ao orçamento. A coluna que importa é a última.
 O único volante *antes* da resposta é a **pergunta**, e é isso que dá peso a DM-22: `query` é o que ordena o resultado. O que salva o arranjo é o corte deles ser generoso o bastante (≤1.244 tokens medidos); com 30k, a ausência de `limit` seria bloqueante.
 
 Na etapa 5 o app não controla: quantos trechos · quais · em que ordem · o tamanho · se vem `infoSnippets` · se vem `rules` · o formato de `codeId`.
+
+---
+
+## O painel — o terceiro inquilino (esboço acordado, 07/09/2026)
+
+> **Status.** Esboço desenhado e aceito em conversa, ainda **sem código e sem sonda de interface**. Ele fecha uma decisão (DM-32), dá posição a três (DM-29, DM-30, DM-31) e **reabre duas** (DM-16, DM-25) — a tensão está marcada no fim desta seção. Nada aqui vira lei antes da passagem decisão a decisão.
+
+### O que o separa dos dois inquilinos atuais
+
+`artifact` e `draft` **abrem algo que já existe**: o painel é uma janela sobre o que a conversa produziu. Este é o primeiro que **compõe uma ação antes de existir objeto** — escolher biblioteca, desfazer ambiguidade, fixar versão, formular a pergunta — e só então há resultado.
+
+É a razão de fundo de DM-29 nunca ter achado peça de interface: um `Switch` não compõe nada.
+
+| | `artifact` | `draft` | `docs` |
+|---|---|---|---|
+| Origem do conteúdo | o usuário anexou | a conversa gerou | **veio de fora, sob demanda** |
+| Existe antes do painel abrir | sim | sim | **não** |
+| Tem fase de formulário | não | não | **sim** |
+
+### As duas vidas de uma consulta
+
+| Vida | O que é | O que se pode fazer |
+|---|---|---|
+| **Compondo** | ainda não foi para a conversa | tudo — trocar biblioteca, refazer, ajustar |
+| **Anexada** | virou parte persistida e já foi ao modelo | só ler |
+
+O congelamento na anexação copia a trava de janela de contexto (D15.13): travar no primeiro envio existe porque mudar depois, em silêncio, é exatamente o que não pode acontecer. Aqui o risco é o mesmo — alterar a seleção depois faria a tela divergir do que o modelo viu.
+
+### O gatilho — sai de Ferramentas, entra em anexos (DM-29)
+
+A linha `mcp` com `<Switch>` desabilitado **deixa de existir**. Capacidade é o que o *modelo* tem (`vision`, `tools`, `thinking`); consultar documentação é ação do usuário que produz um anexo — irmão estrutural de `DocumentPart`: texto de fora entrando como contexto.
+
+```
+  [ + ]  ┌──────────────────────────┐
+         │  Dados      CSV/XLSX/JSON│
+         │  Documento  PDF/MD/DOCX  │
+         │  Imagem     PNG/JPG      │
+         │  Documentação  Context7  │ ←  novo, abre o painel
+         ├──────────────────────────┤
+         │  Raciocínio        [ ●─] │
+         │  Busca web         [─○ ] │
+         │  MCP               [─○ ] │ ←  esta linha some
+         └──────────────────────────┘
+```
+
+Nenhum provedor precisa declarar `tools` — é DM-0 sendo coerente até a ponta da interface.
+
+### O contador no cabeçalho da conversa — o terceiro, nunca somado
+
+O comentário do `DraftCount` já decide isto: *"an attachment came from the user and a draft came from the conversation, and one number for both would answer neither question."* A consulta é a terceira procedência — **veio de fora da conversa**. Três origens, três perguntas, três números.
+
+```
+  ┌────────────────────────────────────────────────────────────┐
+  │  Análise de vendas 2026                    📎 3   ✎ 1   ▤ 2│
+  └────────────────────────────────────────────────────────────┘
+       título da conversa                    anexos rascunhos docs
+```
+
+Herda o molde inteiro: ausente quando é zero (não desabilitado, DF3B.2), `aria-pressed` por ser alternância, um clique abre a **mais recente** e o `histórico` do painel serve quem tem várias.
+
+⚠️ **O contador conta o que foi anexado; composição em andamento não conta.** Amarrá-lo ao clique no composer criaria uma peça que conta zero.
+
+| Momento | Item do composer | Contador |
+|---|---|---|
+| Nunca consultou | abre o painel vazio | ausente |
+| Compondo, painel fechado | **retoma** a composição, texto preservado | ainda ausente |
+| Depois do primeiro `Anexar` | inicia uma nova | `▤ 1`, e vira a via principal |
+
+O "retoma" é o que faz isso não incomodar: o provider segura a composição, então fechar o painel no meio não perde nada.
+
+⚠️ **Ícone: verificar ao vivo.** `NotebookPen` (rascunho) e `BookMarked` têm silhueta parecida a 16px. A proposta é `Library` — três livros empilhados, massa visual distinta de `Paperclip` e `NotebookPen`. Renderizar os três lado a lado no tamanho real antes de fixar; jsdom não pega confusão de silhueta.
+
+### O cabeçalho fixo do painel, e o `+`
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ ▤ /tanstack/query · v5   [ histórico ▾ ]    [+] [⧉] [×]  │
+└──────────────────────────────────────────────────────────┘
+```
+
+O `+` inicia uma consulta sem voltar ao composer — é o que transforma o painel de formulário de uma vez só em bancada de trabalho. Com duas restrições:
+
+- **Não abre um segundo painel.** Um inquilino por vez é invariante de construção (DE1B.1): o `+` troca o conteúdo para o estado *compondo*, e o `histórico ▾` é o caminho de volta. Composições paralelas exigiriam um segundo eixo de navegação dentro do painel, e aí o `histórico` deixa de responder sozinho *"onde estou"*.
+- **Só existe enquanto o painel mostra uma consulta anexada.** Compondo, você já está numa nova — um `+` ali ou não faz nada, ou descarta em silêncio o que está digitado. Ausente, não desabilitado (DF3B.2).
+
+O `[⧉]` e o `[×]` são os mesmos de `ArtifactPanel`, no grupo `ml-auto`.
+
+### Três abas, porque a API devolve três formas diferentes
+
+Não é organização estética — misturá-las apagaria distinções que importam.
+
+| Aba | Origem | Por que separada |
+|---|---|---|
+| **Trechos** | `codeSnippets[]` | tem `codeId` → link para o GitHub. Único com procedência verificável |
+| **Notas** | `infoSnippets[]` | **não traz URL nenhuma**. Prosa sem origem rastreável — a colocação é o que avisa |
+| **Regras** | `rules[]` | superfície de injeção (achado 3). Sai da sombra por desenho, com `⚠`, e só aparece quando existe |
+
+`Tabs` aqui **não** usa `keepMounted`: são listas, sobrevivem a desmontar. O caso do `keepMounted` é o CodeMirror do rascunho, cuja história de desfazer morre com a `EditorView`.
+
+### O rodapé é a peça principal
+
+É onde o princípio do fluxo — *não se modula o que vem, modula-se o que se faz com o que veio* — vira coisa visível. A etapa 5 não aceita `limit` nem `tokens`; o controle inteiro está entre o que chegou e o que é enviado.
+
+E `~588 tok` **não é estimativa por caractere**: a API devolve contagem por trecho. É o único lugar do app onde o orçamento é exato antes de enviar — em todo o resto, `charsPerToken` é chute calibrado depois. Exibir com essa confiança é honesto.
+
+O veredito de caber vem do mesmo `budgetFor` do composer, e `Anexar` desabilita quando `fits` é falso, pelo motivo de sempre: o Ollama descarta o começo do prompt em silêncio, então recusar antes é a única defesa.
+
+### Os estados
+
+O corpo **não é um `ViewState` só — são dois em série**, e dizer isso agora evita descobrir na implementação:
+
+```
+   idle ──[Consultar]──► loading(busca) ──► candidatos ──[◉]──►
+        loading(contexto) ──► ready(trechos) ──[Anexar]──► anexada
+                    │
+                    └──► empty | error(upstream 429 / unavailable)
+```
+
+`empty` tem **dois textos diferentes**, porque o conserto do usuário é oposto: *"nenhuma biblioteca com esse nome"* (busca) e *"a biblioteca existe, mas nada respondeu à pergunta"* (contexto).
+
+`error` já tem tudo pronto: `describeUpstreamError` trata 401/403/429 com dica específica, e 429 é literalmente o modo de falha da cota gratuita.
+
+### Estado 1 — compondo, nada consultado
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ ▤ Documentação            [ histórico ▾ ]        [⧉] [×] │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  Biblioteca                                              │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │ tanstack query                                  🔍 │  │
+│  └────────────────────────────────────────────────────┘  │
+│                                                          │
+│  Pergunta                                                │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │ como invalidar o cache depois de uma mutação       │  │
+│  │                                                    │  │
+│  └────────────────────────────────────────────────────┘  │
+│  Acompanha a próxima mensagem — não substitui ela.       │
+│                                                          │
+│                                                          │
+├──────────────────────────────────────────────────────────┤
+│ nada consultado                        [   Consultar   ] │
+└──────────────────────────────────────────────────────────┘
+```
+
+⚠️ **A busca não dispara ao digitar.** Cada tecla seria uma chamada paga contra uma cota de 1.000/mês — o botão é o compromisso explícito.
+
+### Estado 2 — desambiguação (DM-30)
+
+```
+├──────────────────────────────────────────────────────────┤
+│  Três bibliotecas batem com "tanstack query".            │
+│                                                          │
+│  ◉  /tanstack/query                        1.842 trechos │
+│     TanStack Query · finalized             confiança 9,8 │
+│                                                          │
+│  ○  /tanstack/query-v4                       412 trechos │
+│     TanStack Query v4 (legado) · finalized confiança 7,1 │
+│                                                          │
+│  ○  /rails/query                              88 trechos │
+│     query.rb · finalized                   confiança 2,0 │
+│                                                          │
+│  Versão   [ mais recente  ▾ ]                            │
+├──────────────────────────────────────────────────────────┤
+│ nada consultado      [ Voltar ]        [   Consultar   ] │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Quem desfaz a ambiguidade é o usuário, sempre**, mesmo com um candidato claramente à frente. Escolher sozinho pelo maior `trustScore` é o tipo de acerto que falha calado no dia em que erra — e `/v2/libs/search` já devolve as três colunas de que a decisão precisa.
+
+### Estado 3 — resultado
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ ▤ /tanstack/query · v5    [ histórico ▾ ]   [+] [⧉] [×]  │
+├──────────────────────────────────────────────────────────┤
+│  ┌ Trechos (7) ┬ Notas (2) ┬ Regras (1) ⚠ ┐              │
+│  └─────────────┴───────────┴──────────────┘              │
+│                                                          │
+│  [✓] invalidateQueries após mutação           182 tok  ↗ │
+│      queryClient.invalidateQueries({ queryKey: [...] })  │
+│      …                                                   │
+│                                                          │
+│  [✓] onSuccess vs onSettled                    96 tok  ↗ │
+│  [ ] setQueryData para atualização otimista   241 tok  ↗ │
+│  [✓] useMutation — assinatura completa        310 tok  ↗ │
+│  [ ] Migrando da v4: mudanças em invalidate   198 tok  ↗ │
+│  [ ] staleTime e a interação com refetch      145 tok  ↗ │
+│  [ ] Exemplo end-to-end com Suspense          402 tok  ↗ │
+│                                                          │
+├──────────────────────────────────────────────────────────┤
+│ 4 de 7 · ~588 tok · cabe (janela 32k, 71% livre)         │
+│                    [ Consultar de novo ]     [  Anexar ] │
+└──────────────────────────────────────────────────────────┘
+```
+
+### A linha na conversa
+
+```
+   ▤  Consultei /tanstack/query — 4 trechos, ~588 tok      ›
+```
+
+Mesmo molde do `StepProposalLine`: um `<button>`, `toggle('docs', event.currentTarget, messageId)`, borda de acento enquanto aberto — e a degradação já resolvida lá: se a consulta saiu da conversa, a linha **deixa de ser controle** em vez de abrir painel vazio.
+
+### DM-32 — DECIDIDA: ícone de livros empilhados, nunca o logotipo
+
+**O logotipo da Upstash está descartado** (07/09/2026). O mesmo ícone serve os três lugares: o botão no popover do composer, o contador do cabeçalho e o cabeçalho do painel.
+
+O motivo jurídico e o de design apontam para o mesmo lado:
+
+- O Context7 é da **Upstash**. Há Termos de Serviço e um *Context7 Addendum* próprio, mas **nenhuma página de _brand guidelines_ ou _press kit_ publicada** — nada autoriza, nada proíbe, e em marca o padrão é "precisa de autorização", não o contrário. O repositório é **MIT**, e licença de código nunca concedeu direito sobre nome ou logotipo (Apache 2.0 § 6 chega a dizê-lo explicitamente). O crivo é distribuído por instalador, não uso privado.
+- **E o argumento de design system seria decisivo mesmo com licença liberada:** o logotipo é um _lockup_ de fundo preto sólido com raio próprio. Não tem tema claro, não responde a `prefers-color-scheme`, seria a única cor do app fora de `tokens.css` — e o `guard` **não a veria**, por ser arquivo e não `#hex` em CSS ou `className`. Seria o único ponto imune às duas verificações de cor, bem no cabeçalho.
+
+**Procedência fica no texto:** a palavra "Context7" como texto no cabeçalho do painel e no rodapé da consulta. Uso nominativo credita a fonte, herda os tokens e funciona nos dois temas.
+
+### ⚠️ O que este esboço reabre — a primeira decisão da passagem
+
+**O rodapé com `4 de 7` e caixas de marcação contradiz DM-16 e DM-25**, que fecharam "não construir seleção" e "painel em leitura apenas" apoiadas na medição de 4–5 trechos e ≤1.244 tokens: sem volume, não há o que selecionar.
+
+O desenho supõe 7 trechos, número que **nenhuma sonda produziu**. Ou a camada de seleção sai (e o rodapé mostra só o total, com o painel em leitura como DM-25 fixou, e o corte 23-C segue não nascendo), ou DM-16/DM-25 são reabertas com base declarada — e aí 23-C volta a existir. **Não fica nas duas.**
+
+### O que mais o esboço presume
+
+- **DM-30** → o usuário digita e o usuário desambigua; `trustScore` informa e não decide.
+- **DM-31** → o `histórico ▾` é onde o custo acumulado aparece e se corta.
+- **Forma do dado** → a parte persiste o que foi **anexado**, não a resposta bruta. Guardar tudo e filtrar na leitura permitiria remarcar depois — mas contradiz o congelamento, e um dia divergiria do que o modelo viu.
 
 ---
 
