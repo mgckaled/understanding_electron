@@ -107,7 +107,9 @@ O mesmo trecho, nos dois `type`:
 
 ⚠️ **`sourceFile` não é o caminho.** O `openapi.json` o prevê como opcional em `CodeSnippet`; na segunda sonda veio **ausente nos 3 trechos de código**. Não construir nada sobre ele.
 
-⚠️ **`infoSnippets` não tem procedência nenhuma.** Só `pageId` (nome do arquivo), `breadcrumb`, `content` e `contentTokens` — sem URL, em formato nenhum. Se o painel mostrar link, ele existe para trecho de código e não para trecho de prosa; a interface tem de aguentar a assimetria.
+⚠️ **`infoSnippets` TEM procedência — corrigido na sonda do 23-A.** O que se supunha nome de arquivo é URL completa: `pageId` veio como `https://github.com/tanstack/query/blob/main/docs/reference/QueryClient` em todas as notas das duas respostas que trouxeram nota. A assimetria que se temia **não existe**, e a aba Notas (23-F) pode linkar como a de Trechos — com a mesma tentativa de `new URL()`, porque nada garante o formato. O que sobra de assimétrico é outro: `infoSnippets` veio **vazio em 3 de 4** respostas `fast=false`, então a aba precisa de estado vazio próprio.
+
+⚠️ **`pageTitle` tem sentinela.** Veio literalmente `"Unknown"` em todos os trechos de duas das três respostas gravadas. Exibir cru mostraria "Unknown" como se fosse título.
 
 A sonda também trouxe `generationDate` em `codeSnippets[]`, campo que não está no `openapi.json` nem no exemplo oficial — sinal de que o schema publicado está atrás da API real.
 

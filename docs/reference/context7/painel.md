@@ -140,7 +140,7 @@ Não é organização estética — misturá-las apagaria distinções que impor
 | Aba | Origem | Por que separada |
 |---|---|---|
 | **Trechos** | `codeSnippets[]` | tem `codeId` → link para o GitHub. Único com procedência verificável |
-| **Notas** | `infoSnippets[]` | **não traz URL nenhuma**. Prosa sem origem rastreável — a colocação é o que avisa |
+| **Notas** | `infoSnippets[]` | ⚠️ **a premissa caiu na sonda do 23-A:** `pageId` é URL completa, então nota também linka. A aba continua separada porque a forma é outra — prosa, não código — e porque vem **vazia na maioria** das respostas, precisando de estado vazio próprio |
 | **Regras** | `rules[]` | superfície de injeção (achado 3). Sai da sombra por desenho, com `⚠`, e só aparece quando existe |
 
 `Tabs` aqui **não** usa `keepMounted`: são listas, sobrevivem a desmontar. O caso do `keepMounted` é o CodeMirror do rascunho, cuja história de desfazer morre com a `EditorView`.
