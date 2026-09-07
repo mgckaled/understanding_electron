@@ -122,6 +122,10 @@ export type ContextOutcome =
   | { status: 'ready'; docs: DocsResult }
   | { status: 'empty' }
   | { status: 'indexing'; state: string | null }
+  // Not one of the nine error situations DM-12 listed: the user picks from a
+  // list, so a library that stops existing between the two calls was never
+  // foreseen. The panel sends them back to the search (text is 23-I's).
+  | { status: 'library-not-found' }
 
 /** The narrow slice of `Response` this client reads; the global fetch satisfies it. */
 export type HttpResponse = {
