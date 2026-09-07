@@ -1,13 +1,11 @@
 import type {
-  ContextResponseWire,
   DocNote,
   DocRules,
   DocSnippet,
   DocsResult,
-  LibraryCandidate,
-  SearchResponseWire,
-  SearchResultWire
-} from './types'
+  LibraryCandidate
+} from '@shared/ipc'
+import type { ContextResponseWire, SearchResponseWire, SearchResultWire } from './types'
 
 // The wire says -1 for "does not apply", on every website-backed entry.
 const STARS_NOT_APPLICABLE = -1

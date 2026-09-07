@@ -1,13 +1,12 @@
 import { UpstreamError } from '@core/ai/types'
 import { describeUpstreamError } from '@core/ai/upstreamError'
 import { normalizeCandidates, normalizeDocs } from './parse'
+import type { ContextOutcome, SearchOutcome } from '@shared/ipc'
 import type {
   Context7Fetch,
-  ContextOutcome,
   ContextResponseWire,
   ErrorBodyWire,
   HttpResponse,
-  SearchOutcome,
   SearchResponseWire
 } from './types'
 
