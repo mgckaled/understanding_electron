@@ -10,7 +10,7 @@ Este diretório (`active/`) é o backlog do [ciclo de vida de plano](../../READM
 
 O 18 (camada de dados) virou sub-planos 18-A a 18-F, ≤7 passos cada (ver [`ROADMAP § 1`](../../ROADMAP.md)). Todos os seis concluíram — [`implemented/18-A`](../implemented/18-A-motor-e-worker.md), [`implemented/18-B`](../implemented/18-B-canal-e-consulta.md), [`implemented/18-C`](../implemented/18-C-pre-visualizacao.md), [`implemented/18-D`](../implemented/18-D-perfil-e-cartao-aninhado.md), [`implemented/18-E`](../implemented/18-E-json-ndjson.md), [`implemented/18-F`](../implemented/18-F-excel.md) — o arco 18 fecha aqui, e o **19** (propor: consulta e passos) é o próximo do arco.
 
-O **arco 23** (documentação por Context7) abriu e fechou o primeiro dos dez cortes irmãos: [`implemented/23-A`](../implemented/23-A-cliente-context7.md) entregou o cliente REST em `core/`. O próximo é o **23-B** (a fronteira: canais, handlers e a chave no cofre), que só depende dele. O material de entrada, com as 32 decisões fechadas, é [`reference/context7/`](../../reference/context7/README.md).
+O **arco 23** (documentação por Context7) abriu e fechou o primeiro dos dez cortes irmãos: [`implemented/23-A`](../implemented/23-A-cliente-context7.md) entregou o cliente REST em `core/`. O **23-B** está em execução — [`23-B-a-fronteira.md`](23-B-a-fronteira.md): canais `docs:*`, handlers e a chave no cofre. O material de entrada, com as 32 decisões fechadas, é [`reference/context7/`](../../reference/context7/README.md).
 
 ---
 
