@@ -43,6 +43,10 @@ RE6.4 já registra que nenhum caminho de acionamento é canônico, e o precedent
 
 **O loop de *tool calling* não se constrói aqui.** Se for necessário depois — pilar de código, arco 22 por *tool calling* —, nasce lá, num plano que o justifique.
 
+### Especulação sem compromisso — REST no local, MCP na nuvem (07/09/2026)
+
+⚠️ **Levantada em conversa, sem sonda nenhuma, e nada foi firmado — DM-0 segue valendo inteiro.** A ideia é usar REST para Ollama e MCP para os provedores opt-in, apostando que os 2.060 tokens de definição são ruído numa janela de nuvem e caros num `num_ctx` reservado em RAM. O que a torna inviável hoje não é o custo: são **três** caminhos, não dois — Gemini teria MCP *server-side* (`{type: 'mcp_server', url}`, só na Interactions API, que o adaptador atual não usa), GLM não tem esse recurso e pagaria o custo inteiro que DM-0 rejeitou sem nenhum ganho, e Ollama seguiria REST. Pior, a entrega do arco não é a consulta, é o painel: ele vive de resposta estruturada (`codeSnippets[]` com contagem por trecho), e MCP devolve prosa — no Gemini *server-side* o app sequer vê a chamada acontecer, o que apaga as onze etapas da tabela de fluxo e a coluna de controle junto. O desejo legítimo por trás disso é **agência** (o modelo decidir consultar), e ela não exige MCP: uma ferramenta local única, `consultar_documentacao(biblioteca, pergunta)`, cujo corpo faz a mesma chamada REST, custa ~200 tokens de definição em vez de 2.060, devolve o mesmo objeto que o painel já saberá renderizar e serve qualquer provedor com `tools` — corte futuro sobre a REST, não alternativa a ela. Procedência: o MCP *server-side* do Gemini vem de pesquisa, nunca de sonda; é a primeira coisa a medir se isto voltar à mesa.
+
 ### Consequências a executar junto do plano
 
 1. O pilar muda de nome no `ESCOPO`: "Documentação (MCP)" → "Documentação (Context7)".
