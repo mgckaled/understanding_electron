@@ -52,6 +52,10 @@ const api: Api = {
     chat: (request, jobId) => invoke('ai:chat', { ...request, jobId }),
     propose: (request, jobId) => invoke('ai:propose', { ...request, jobId })
   },
+  docs: {
+    search: (query) => invoke('docs:search', { query }),
+    fetch: (args) => invoke('docs:fetch', args)
+  },
   conversation: {
     list: () => invoke('conversation:list'),
     messages: (conversationId) => invoke('conversation:messages', { conversationId }),

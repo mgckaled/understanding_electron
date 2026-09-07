@@ -912,6 +912,22 @@ export const argsSchema = {
     numCtx: z.number().int().positive().optional(),
     jobId: z.string()
   }),
+  // Documentation lookup over the Context7 REST API (arco 23, DM-0). Not an
+  // ai:* channel and never one: the model does not decide to consult, the
+  // user does, so no provider needs `tools` (D23B.2).
+  //
+  // min(1) on every text field is not defensive — an empty query is the one
+  // situation that must never reach the network (DM-12, situação 1): the
+  // disabled button is the fix, so a blank payload arriving here is a bug,
+  // and zod throwing is the right answer (D23B.6).
+  'docs:search': z.object({ query: z.string().min(1) }),
+  'docs:fetch': z.object({
+    libraryId: z.string().min(1),
+    query: z.string().min(1),
+    // Absent means the library's own default: "most recent" is not computable
+    // from versions[] (D23A.6).
+    version: z.string().min(1).optional()
+  }),
   // Conversation storage (plano 14). The renderer mints `id` and stamps
   // `createdAt` (D14.5) — identity generated on the side that acts, like JobId,
   // so no handler here generates identity or time; it inserts what it receives.
@@ -1100,6 +1116,19 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['ai:propose']>
     result: Result<StepProposal>
   }
+  // Both carry a screen state INSIDE the value (no-libraries, empty, indexing,
+  // library-not-found) and reserve Result for what is really a service
+  // failure — 429, 401/403, 5xx, and a fetch that never landed (D23B.2).
+  // A plain invoke, never a job: cancelling would not give the quota back,
+  // and a REST call has no progress to report (D23B.1).
+  'docs:search': {
+    args: z.infer<(typeof argsSchema)['docs:search']>
+    result: Result<SearchOutcome>
+  }
+  'docs:fetch': {
+    args: z.infer<(typeof argsSchema)['docs:fetch']>
+    result: Result<ContextOutcome>
+  }
   // No conversation channel returns Result, by decision: Result is for failures
   // the UI must REACT to (file missing, service down, cancelled). An indexed
   // insert into a local SQLite file has none — what is left is programming
@@ -1250,6 +1279,16 @@ export type Api = {
     chat(request: ChatRequest, jobId: JobId): Promise<Result<ChatReply>>
     /** Turns a Portuguese request over an attached dataset into a typed StepProposal (D9.4/D19.5) — no streaming, its own model call. */
     propose(request: ProposalRequest, jobId: JobId): Promise<Result<StepProposal>>
+  }
+  docs: {
+    /** Libraries matching what the user typed, in the app's own order (D23A.4). */
+    search(query: string): Promise<Result<SearchOutcome>>
+    /** One library's documentation for one question — the second, paid call. */
+    fetch(args: {
+      libraryId: string
+      query: string
+      version?: string
+    }): Promise<Result<ContextOutcome>>
   }
   conversation: {
     /** Newest first — `ORDER BY updated_at DESC`, the sidebar's own order. */

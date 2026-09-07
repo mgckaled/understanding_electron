@@ -109,6 +109,12 @@ export function createApiMock(): Api {
     // `.ok` off it would throw in every test that merely mounts the footer.
     export: { save: vi.fn().mockResolvedValue({ ok: true, value: null }) },
     ...createStoreApi(),
+    // Resolved, not bare: a component that consults on mount would otherwise
+    // read `undefined` as if it were a Result (arco 23).
+    docs: {
+      search: vi.fn().mockResolvedValue({ ok: true, value: { status: 'found', candidates: [] } }),
+      fetch: vi.fn().mockResolvedValue({ ok: true, value: { status: 'empty' } })
+    },
     secrets: {
       write: vi.fn(),
       // false, not a bare vi.fn(): undefined is neither of the field's two
