@@ -13,7 +13,8 @@ import { useCloudSecret } from './useCloudSecret'
 // Gemini model the account can reach.
 const PROVIDER_LABEL: Record<CloudProvider, string> = {
   gemini: 'Google (Gemini)',
-  glm: 'Z.ai (GLM)'
+  glm: 'Z.ai (GLM)',
+  context7: 'Context7 (documentação)'
 }
 
 /**
@@ -179,9 +180,10 @@ function CloudSecretField({ provider }: { provider: CloudProvider }): React.JSX.
 function CloudSecrets(): React.JSX.Element {
   return (
     <section className="mt-7 border-t border-border pt-6">
-      <h3 className="mb-3 text-sm text-text">Chaves de nuvem</h3>
+      <h3 className="mb-3 text-sm text-text">Chaves de serviços externos</h3>
       <p className="mb-6 text-xs text-text-muted">
-        Opcional. Sem chave, o app só usa modelos locais via Ollama.
+        Opcionais. Sem chave de modelo, o app só usa o Ollama local; sem chave do Context7, a
+        consulta a documentação usa a cota gratuita anônima.
       </p>
       <div className="flex flex-col gap-6">
         {CLOUD_PROVIDERS.map((provider) => (

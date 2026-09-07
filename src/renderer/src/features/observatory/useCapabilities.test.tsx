@@ -27,7 +27,7 @@ describe('useCapabilities', () => {
     expect(api.secrets.has).not.toHaveBeenCalled()
   })
 
-  it('calls all nine points after refetch, and one dead service does not hide the other two', async () => {
+  it('calls all ten points after refetch, and one dead service does not hide the other two', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockImplementation(async (service) => {
       if (service === 'glm') throw new Error('daemon down')
@@ -44,7 +44,9 @@ describe('useCapabilities', () => {
     expect(api.ai.isAvailable).toHaveBeenCalledTimes(3)
     expect(api.ai.models).toHaveBeenCalledTimes(3)
     expect(api.ai.loaded).toHaveBeenCalledTimes(1)
-    expect(api.secrets.has).toHaveBeenCalledTimes(2)
+    // Three, not two: Context7 holds a credential without being an AI
+    // service (D23B.4).
+    expect(api.secrets.has).toHaveBeenCalledTimes(3)
 
     expect(result.current.data?.services.ollama.availability.status).toBe('ready')
     expect(result.current.data?.services.gemini.availability.status).toBe('ready')

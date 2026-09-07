@@ -766,7 +766,9 @@ export const DEFAULT_APP_SETTINGS: AppSettings = { numThread: 4, theme: 'system'
  * above, which names who `ai:*` talks to today ('ollama' only) — joining
  * that enum is N-1-B's job, not this array's.
  */
-export const CLOUD_PROVIDERS = ['gemini', 'glm'] as const
+// 'context7' joined in 23-B and is the proof the distinction was worth
+// keeping: it holds a credential and will NEVER be an AI service (D23B.4).
+export const CLOUD_PROVIDERS = ['gemini', 'glm', 'context7'] as const
 export type CloudProvider = (typeof CLOUD_PROVIDERS)[number]
 export const cloudProviderSchema = z.enum(CLOUD_PROVIDERS)
 

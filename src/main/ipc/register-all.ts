@@ -54,6 +54,7 @@ import {
   unload as aiUnload
 } from '../features/ai/handlers'
 import { propose as aiPropose } from '../features/ai/propose'
+import { fetchDocs, searchDocs } from '../features/context7/handlers'
 import {
   ollamaChat,
   ollamaDisplayHost,
@@ -287,6 +288,16 @@ export async function registerAll(): Promise<() => void> {
       recordPrivacyEvent(observatoryDb, event)
     )
   )
+
+  // The key is read fresh on every call (D23B.7), same shape as glmAdapter's
+  // closure above: one saved in Configurações works on the next lookup, with
+  // no restart. The client owns its own 30 s timeout, so no signal here.
+  const docsDeps = {
+    fetchFn: fetch,
+    getApiKey: () => readSecretForUse('context7', db, decryptSecret)
+  }
+  handle('docs:search', (args) => searchDocs(args, docsDeps))
+  handle('docs:fetch', (args) => fetchDocs(args, docsDeps))
 
   handle('conversation:list', (args) => listConversations(args, db))
   handle('conversation:messages', (args) => readMessages(args, db))

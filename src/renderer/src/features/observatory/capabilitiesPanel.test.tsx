@@ -63,7 +63,7 @@ describe('CapabilitiesPanel', () => {
     expect(api.ai.isAvailable).toHaveBeenCalledTimes(3)
     expect(api.ai.models).toHaveBeenCalledTimes(3)
     expect(api.ai.loaded).toHaveBeenCalledTimes(1)
-    expect(api.secrets.has).toHaveBeenCalledTimes(2)
+    expect(api.secrets.has).toHaveBeenCalledTimes(3)
   })
 
   it('disables the initial button while the first sondagem is in flight', async () => {

@@ -12,7 +12,8 @@ import { AI_SERVICES, useCapabilities, type ServiceCapability } from './useCapab
 
 const CLOUD_LABEL: Record<CloudProvider, string> = {
   gemini: 'Gemini',
-  glm: 'GLM'
+  glm: 'GLM',
+  context7: 'Context7'
 }
 
 const CELL = 'px-3 py-2 text-xs'
@@ -121,7 +122,7 @@ function CloudKeysSection({
 }): React.JSX.Element {
   return (
     <section>
-      <h4 className="mb-2 text-xs text-text-muted uppercase">Chaves de nuvem</h4>
+      <h4 className="mb-2 text-xs text-text-muted uppercase">Chaves de serviços</h4>
       <dl className="flex flex-col">
         {CLOUD_PROVIDERS.map((provider) => (
           <div

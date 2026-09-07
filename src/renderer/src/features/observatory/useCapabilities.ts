@@ -88,7 +88,7 @@ async function fetchCapabilities(): Promise<CapabilitiesData> {
 }
 
 /**
- * The trilha O's first `Caro` sondagem (§ 4.3, DO4.2/DO4.3): one query, nine
+ * The trilha O's first `Caro` sondagem (§ 4.3, DO4.2/DO4.3): one query, ten
  * calls settled independently — a service down never hides the other two,
  * and the whole thing only runs when `refetch` is called.
  */
