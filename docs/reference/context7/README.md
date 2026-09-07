@@ -1,6 +1,6 @@
 # Context7 — guia de implementação (arco 23)
 
-> **As 32 decisões estão fechadas** (06–07/09/2026). Este é o material de entrada do arco 23: o que foi medido, o que foi decidido e com que base, e o desenho do painel. Ele para de ser atualizado quando o plano nascer em `plan/active/` — daí em diante o dono da narrativa é o plano, e este guia vira consulta por `Grep`.
+> **As 32 decisões estão fechadas** (06–07/09/2026). Este é o material de entrada do arco 23: o que foi medido, o que foi decidido e com que base, e o desenho do painel. A **narrativa** congelou aqui: o dono do que se decide durante a execução é o plano de cada corte. O guia, porém, **continua vivo como referência e como errata** — ele é o que se lê ao começar o corte seguinte, então cada fechamento de corte devolve para cá o que a execução contrariou (§ *[O que a execução já contrariou](#o-que-a-execução-já-contrariou)*). Fora isso, consulta por `Grep`.
 >
 > Siglas `DM-n` são provisórias. A definitiva (`D23.n`) nasce com o plano.
 >
@@ -116,6 +116,38 @@ Na etapa 5 o app não controla: quantos trechos · quais · em que ordem · o ta
 
 ---
 
+## A fronteira — o que já está resolvido, e a única pergunta que não está
+
+Levantado lendo o código em 07/09/2026, no fechamento do 23-A. **Nada aqui é decisão** — decisão de contrato é do plano do 23-B. É o que se sabe antes de começá-lo.
+
+### A chave custa uma palavra, e o motivo é uma separação já feita
+
+`secrets:write`/`has`/`remove` são tipados por **`CloudProvider`**, não por `AiService`, e o docstring de `src/shared/ipc.ts` registra que a distinção é deliberada (DN1A.5): *"Distinct from AiService/aiServiceSchema above, which names who `ai:*` talks to today."*
+
+| Enum | Nomeia | O Context7 entra? |
+|---|---|---|
+| `CLOUD_PROVIDERS` | quem **tem credencial** guardada | **sim** — uma palavra |
+| `AiService` | com quem o `ai:*` **conversa** | **não**, nunca |
+
+A consequência é o que se queria saber: entrar no primeiro **não** toca `isCloudService`, nem o livro-razão de privacidade do O-8, nem o catálogo de modelos. O Context7 será o primeiro portador de credencial que jamais será provedor de IA — o que valida a separação da trilha N em vez de atritar com ela.
+
+A régua dos `secrets` já vigente vale sem exceção: `write` devolve `Result` (o backend fraco viaja como **sucesso**, não como erro), `has`/`remove` não devolvem, e **`secrets:read` não existe por desenho** (DN1A.3) — o renderer grava e pergunta se existe, nunca lê de volta.
+
+### O que o cliente do 23-A já entrega pronto para a fronteira
+
+`searchLibraries` e `fetchLibraryContext` são funções puras com dependências por parâmetro: o handler do 23-B injeta o `fetch` real, a chave e a URL, e não escreve classificação de erro nenhuma — o cliente lança `UpstreamError`, e `mapProviderError` (`main/features/ai/handlers.ts`) já o converte em `AppError.upstream`, com o `TypeError` do `fetch` caindo em `unavailable`. Estado de tela (`no-libraries`, `empty`, `indexing`, `library-not-found`) **volta como valor** e nunca vira `AppError`.
+
+### ⏳ A pergunta aberta: `invoke` simples ou job cancelável?
+
+Nenhuma das 32 decisões tocou nisso, e ela não se resolve por precedente — os dois lados têm um.
+
+- **A favor de job:** o `/context` com `fast=false` leva **segundos** (o reranqueamento por LLM é do lado deles), o painel fica bloqueado nesse intervalo, e o registro de `src/main/jobs.ts` mais o `signal` que o cliente já aceita (D23A.10) deixam tudo pronto dos dois lados.
+- **Contra:** `job:event` existe para carregar **progresso**, e uma chamada REST não tem progresso — é uma requisição e uma resposta. Job aqui compra **só** cancelamento, ao custo de um `JobId`, um `AbortController` no `Map` e o `finish` no `finally`.
+
+⚠️ **O que fecha a questão é que não existe meio-termo.** Abandonar a promessa no renderer **não cancela nada**: sem um id que enderece o `AbortController` no main, a requisição segue correndo e a cota **já foi gasta**. Ou é job de verdade, ou não há cancelamento — e aí o timeout de 30 s do cliente é a única saída, o que precisa ser dito na tela em vez de descoberto.
+
+---
+
 ## Os cortes
 
 Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **nunca subcorte**.
@@ -127,7 +159,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 | Corte | Entrega | Depende de |
 |---|---|---|
 | ~~**23-A**~~ | ✅ **entregue (07/09/2026)** — o cliente, em `core/context7/`. Tipos, `fetch` injetado, parse das duas respostas, classificação de status (400 · 404 · 202 · 429 · 401/403 · 5xx), descarte de `rules`, `codeId` → URL com falha tratada, filtro de `__branch__*`, ordenação estável. Fixtures gravadas da API real. Sonda de 12 chamadas, seis fixtures verbatim, 35 testes, cobertura de linha 98,6%. Plano: [`plan/implemented/23-A`](../../plan/implemented/23-A-cliente-context7.md) | — |
-| **23-B** | **a fronteira.** Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa | A |
+| **23-B** | **a fronteira.** Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa. **Decide a pergunta aberta da § *A fronteira*:** `invoke` simples ou job cancelável | A |
 | **23-C** | **a parte e a persistência.** Schema da variante, `docsPartOf`, o `case` em `partForProvider`, o booleano de ativa/desligada. Nível 1 e 3, ainda sem interface | A |
 | **23-D** | **o painel nasce.** Terceiro valor de `PanelKind`, `DocsPanel.tsx` sobre `SidePanel`, cabeçalho, o gatilho no `AttachButton`, o formulário do Estado 1 com o aviso de privacidade. Primeira coisa visível | B |
 | **23-E** | **desambiguação.** Estado 2: lista sempre visível, ordenada pelo app, versões filtradas, seletor de versão | D |
@@ -155,6 +187,19 @@ Cada uma tem dono. **Cinco foram fechadas na sonda do 23-A** (07/09/2026, 12 cha
 | o painel inteiro, ao vivo | 23-J | ⏳ aberta |
 
 ⚠️ **A cota é uma só, e sondar gasta o que usar gastaria.** 200 chamadas/mês no anônimo; as sondas de 06–07/09 levaram `Ratelimit-Remaining` de 200 a **146** em dois dias — 27% do mês. A suíte de testes **nunca** bate na API: as fixtures de `src/core/context7/__fixtures__/` foram gravadas uma vez, e os testes rodam contra elas.
+
+### O que a execução já contrariou
+
+Uma linha por premissa que caiu, com o ponteiro para onde o fato corrigido mora — nunca a conclusão repetida aqui, que envelheceria calada. **Cada fechamento de corte acrescenta as suas.**
+
+| Premissa original | Caiu em | O que vale agora |
+|---|---|---|
+| "sempre 4 ou 5 trechos, qualquer que seja a amplitude" | 23-A | era fato de `fast=false`, não da API: `fast=true` devolveu 25 trechos e 3.497 tokens — [`api.md § A sonda do 23-A`](api.md) |
+| "`codeId` é o portador da procedência do trecho" | 23-A | endereça a **página**: cinco trechos do zod compartilham um só, então é link e nunca identidade — [`api.md`](api.md) |
+| "`infoSnippets` não tem procedência nenhuma" | 23-A | `pageId` é URL completa; a aba Notas pode linkar. O assimétrico é outro: ela vem **vazia** na maioria — [`painel.md`](painel.md) |
+| "sem correspondência é `404`" | 23-A | também pode ser `200` com cinco resultados irrelevantes, sem campo nenhum sinalizando — [`api.md`](api.md) |
+| tabela dos nove erros (DM-12) | 23-A | são **dez**: `library-not-found` no `/context` não estava prevista, porque ninguém imaginou a biblioteca sumir entre as duas chamadas |
+
 
 ## Como isto se testa
 
