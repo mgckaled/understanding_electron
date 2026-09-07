@@ -141,22 +141,20 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 
 ### As verificações abertas são passos, não pendências
 
-Cada uma tem dono, e a maioria cai no 23-A — que por isso começa com uma fase de sonda declarada, antes de escrever cliente nenhum.
+Cada uma tem dono. **Cinco foram fechadas na sonda do 23-A** (07/09/2026, 11 chamadas) — o detalhe de cada veredito está em [`api.md`](api.md) § *A sonda do 23-A*.
 
-| Verificação | Corte | Como se fecha |
+| Verificação | Corte | Estado |
 |---|---|---|
-| `libraryName` vs `query` no `/v2/libs/search` | **23-A** | uma chamada com cada parâmetro |
-| `/v2/context` consome o mesmo contador de cota? | **23-A** | ler `Ratelimit-Remaining` antes e depois |
-| a duplicata de `id` acontece no `/v2/context`? | **23-A** | inspecionar uma resposta com trechos repetidos |
-| `fast=true` muda quantidade ou só ordem | **23-A** | mesma pergunta, dois valores |
-| `202` na prática, e o enum de `state` | **23-A** (classificação) · **23-I** (texto) | achar uma biblioteca não finalizada |
-| frequência de `rules`, e em quais bibliotecas | **23-A** (fixture) · **23-F** (aba) | varrer algumas populares |
-| silhueta dos três ícones do cabeçalho a 16px | **23-J** | renderizar os três lado a lado e olhar |
-| o painel inteiro, ao vivo | **23-J** | fluxo de ponta a ponta com API real |
+| `/v2/context` consome o mesmo contador de cota? | 23-A | ✅ **sim**, contador único para as duas rotas |
+| `fast=true` muda quantidade ou só ordem | 23-A | ✅ **muda o tamanho**: 25 trechos contra 3, na mesma pergunta |
+| a duplicata de `id` acontece no `/v2/context`? | 23-A | ✅ **sim**, e por outro motivo — `codeId` endereça a página, não o trecho |
+| frequência de `rules`, e em quais bibliotecas | 23-A · 23-F | ✅ **ausente em 11 de 11** — sem fixture real, o caminho é exercitado à mão |
+| `libraryName` vs `query` no `/v2/libs/search` | 23-A | ✅ os dois respondem; duas chamadas **não** distinguem parâmetro de instabilidade. Fica `query` |
+| `202` na prática, e o enum de `state` | **23-I** | ⏳ aberta — 11 buscas deram `finalized` em 100%; caçar custaria cota sem garantia, e a classificação do cliente não depende de ver ao vivo |
+| silhueta dos três ícones do cabeçalho a 16px | 23-J | ⏳ aberta |
+| o painel inteiro, ao vivo | 23-J | ⏳ aberta |
 
-⚠️ **A fase de sonda do 23-A tem orçamento.** A cota anônima é de **200 chamadas por mês** e as sondas de 07/09/2026 já consumiram 43. Seis verificações não custam mais que ~15 chamadas — mas a suíte de testes **nunca** pode bater na API: fixture gravada uma vez, testes offline daí em diante.
-
----
+⚠️ **A cota é uma só, e sondar gasta o que usar gastaria.** 200 chamadas/mês no anônimo; as sondas de 07/09 levaram `Ratelimit-Remaining` de 200 a **147** em dois dias — 26,5% do mês. A suíte de testes **nunca** bate na API: as fixtures de `src/core/context7/__fixtures__/` foram gravadas uma vez, e os testes rodam contra elas.
 
 ## Como isto se testa
 

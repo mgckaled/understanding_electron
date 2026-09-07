@@ -125,3 +125,4 @@ Canais e handlers (23-B) · chave no cofre e campo em Configurações (23-B) · 
 | Data | O que mudou | Observações |
 |---|---|---|
 | 07/09/2026 | Plano escrito a partir do guia do arco 23; D23A.1–D23A.11 fixadas | Duas decisões saíram de forquilha explícita: a URL base (DM-26 × DM-20) e a forma das fixtures (o precedente de `models.test.ts` não se aplica) |
+| 07/09/2026 | Passo 1: sonda de 11 chamadas, seis fixtures gravadas, `api.md` corrigido | Cinco das seis verificações fechadas; o `202` foi para o 23-I. **Três achados mudam decisão:** `fast=true` devolve 25 trechos contra 3 (não é só ordem), `codeId` endereça a página e não o trecho (a seleção precisa de chave própria — D23A.5 confirmada por medição), e termo sem sentido pode devolver `200` com cinco resultados irrelevantes em vez de `404` |
