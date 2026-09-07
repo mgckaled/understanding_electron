@@ -68,9 +68,9 @@ Mais três, menores mas de código:
 
 `Ratelimit-Limit: 200` confirmado no header de toda resposta anônima, com `Ratelimit-Remaining` caindo de 1 em 1 por chamada.
 
-#### A sonda do 23-A — 07/09/2026, 11 chamadas, cinco verificações fechadas
+#### A sonda do 23-A — 07/09/2026, 12 chamadas, cinco verificações fechadas
 
-Segunda rodada, já dentro do corte. `Ratelimit-Remaining` foi de 157 a **147**.
+Segunda rodada, já dentro do corte. `Ratelimit-Remaining` foi de 157 a **146**.
 
 | Verificação | Veredito |
 |---|---|
@@ -219,7 +219,7 @@ Pela via MCP elas chegam embutidas na prosa do `content[]`, indistinguíveis do 
 
 ## O que ainda não foi verificado
 
-Cinco das seis verificações abertas foram fechadas na sonda do corte 23-A (07/09/2026, 11 chamadas) — ver § *A sonda do 23-A* acima. Resta **uma**:
+Cinco das seis verificações abertas foram fechadas na sonda do corte 23-A (07/09/2026, 12 chamadas) — ver § *A sonda do 23-A* acima. Resta **uma**:
 
-- **Comportamento do `202` na prática, e quais `state` existem além de `finalized`.** Onze buscas devolveram `finalized` em 100% dos resultados; não se achou biblioteca em indexação sem sair caçando, e caçar custaria cota sem garantia. **Movida para o 23-I**, que é o corte dos nove textos de erro; a classificação do status no cliente (23-A) não depende de vê-lo ao vivo — é um ramo por código HTTP, exercitado por resposta montada à mão.
+- **Comportamento do `202` na prática, e quais `state` existem além de `finalized`.** Seis buscas devolveram `finalized` em 100% dos ~28 resultados; não se achou biblioteca em indexação sem sair caçando, e caçar custaria cota sem garantia. **Movida para o 23-I**, que é o corte dos nove textos de erro; a classificação do status no cliente (23-A) não depende de vê-lo ao vivo — é um ramo por código HTTP, exercitado por resposta montada à mão.
 - **Nada do painel foi verificado ao vivo** — o desenho de [`painel.md`](painel.md) é alvo, e a comparação de silhueta dos três ícones do cabeçalho é a primeira coisa a olhar renderizada (23-J).

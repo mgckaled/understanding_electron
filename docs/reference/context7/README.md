@@ -126,7 +126,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 
 | Corte | Entrega | Depende de |
 |---|---|---|
-| **23-A** | **o cliente, em `core/context7/`.** Tipos, `fetch` injetado, parse das duas respostas, classificação de status (400 · 404 · 202 · 429 · 401/403 · 5xx), descarte de `rules`, `codeId` → URL com falha tratada, filtro de `__branch__*`, ordenação estável. Fixtures gravadas da API real. **Inclui a fase de sonda** (abaixo). Nível 1, nada visível | — |
+| ~~**23-A**~~ | ✅ **entregue (07/09/2026)** — o cliente, em `core/context7/`. Tipos, `fetch` injetado, parse das duas respostas, classificação de status (400 · 404 · 202 · 429 · 401/403 · 5xx), descarte de `rules`, `codeId` → URL com falha tratada, filtro de `__branch__*`, ordenação estável. Fixtures gravadas da API real. Sonda de 12 chamadas, seis fixtures verbatim, 35 testes, cobertura de linha 98,6%. Plano: [`plan/implemented/23-A`](../../plan/implemented/23-A-cliente-context7.md) | — |
 | **23-B** | **a fronteira.** Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa | A |
 | **23-C** | **a parte e a persistência.** Schema da variante, `docsPartOf`, o `case` em `partForProvider`, o booleano de ativa/desligada. Nível 1 e 3, ainda sem interface | A |
 | **23-D** | **o painel nasce.** Terceiro valor de `PanelKind`, `DocsPanel.tsx` sobre `SidePanel`, cabeçalho, o gatilho no `AttachButton`, o formulário do Estado 1 com o aviso de privacidade. Primeira coisa visível | B |
@@ -141,7 +141,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 
 ### As verificações abertas são passos, não pendências
 
-Cada uma tem dono. **Cinco foram fechadas na sonda do 23-A** (07/09/2026, 11 chamadas) — o detalhe de cada veredito está em [`api.md`](api.md) § *A sonda do 23-A*.
+Cada uma tem dono. **Cinco foram fechadas na sonda do 23-A** (07/09/2026, 12 chamadas) — o detalhe de cada veredito está em [`api.md`](api.md) § *A sonda do 23-A*.
 
 | Verificação | Corte | Estado |
 |---|---|---|
@@ -150,11 +150,11 @@ Cada uma tem dono. **Cinco foram fechadas na sonda do 23-A** (07/09/2026, 11 cha
 | a duplicata de `id` acontece no `/v2/context`? | 23-A | ✅ **sim**, e por outro motivo — `codeId` endereça a página, não o trecho |
 | frequência de `rules`, e em quais bibliotecas | 23-A · 23-F | ✅ **ausente em 11 de 11** — sem fixture real, o caminho é exercitado à mão |
 | `libraryName` vs `query` no `/v2/libs/search` | 23-A | ✅ os dois respondem; duas chamadas **não** distinguem parâmetro de instabilidade. Fica `query` |
-| `202` na prática, e o enum de `state` | **23-I** | ⏳ aberta — 11 buscas deram `finalized` em 100%; caçar custaria cota sem garantia, e a classificação do cliente não depende de ver ao vivo |
+| `202` na prática, e o enum de `state` | **23-I** | ⏳ aberta — 6 buscas deram `finalized` em 100% dos ~28 resultados; caçar custaria cota sem garantia, e a classificação do cliente não depende de ver ao vivo |
 | silhueta dos três ícones do cabeçalho a 16px | 23-J | ⏳ aberta |
 | o painel inteiro, ao vivo | 23-J | ⏳ aberta |
 
-⚠️ **A cota é uma só, e sondar gasta o que usar gastaria.** 200 chamadas/mês no anônimo; as sondas de 07/09 levaram `Ratelimit-Remaining` de 200 a **147** em dois dias — 26,5% do mês. A suíte de testes **nunca** bate na API: as fixtures de `src/core/context7/__fixtures__/` foram gravadas uma vez, e os testes rodam contra elas.
+⚠️ **A cota é uma só, e sondar gasta o que usar gastaria.** 200 chamadas/mês no anônimo; as sondas de 06–07/09 levaram `Ratelimit-Remaining` de 200 a **146** em dois dias — 27% do mês. A suíte de testes **nunca** bate na API: as fixtures de `src/core/context7/__fixtures__/` foram gravadas uma vez, e os testes rodam contra elas.
 
 ## Como isto se testa
 

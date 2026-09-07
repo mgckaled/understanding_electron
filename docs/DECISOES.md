@@ -528,6 +528,24 @@ chamada de modelo no main (`D9.1`).
 
 ---
 
+## Arco 23 — documentação por Context7
+
+| corte | sigla | descrição |
+|---|---|---|
+| 23-A | [D23A.1](plan/implemented/23-A-cliente-context7.md) | O cliente mora em `core/`, com o `fetch` injetado — não em `main/`, nem pelo SDK oficial |
+| 23-A | [D23A.2](plan/implemented/23-A-cliente-context7.md) | `CONTEXT7_BASE_URL` é constante em `core/` como default sobrescrevível — exceção nomeada a DM-20 |
+| 23-A | [D23A.3](plan/implemented/23-A-cliente-context7.md) | Estado de tela volta como união; falha de serviço lança `UpstreamError` — 400/404 nunca viram `AppError` |
+| 23-A | [D23A.4](plan/implemented/23-A-cliente-context7.md) | Ordenação total com quatro chaves: o desempate por `id` não basta, porque `id` se repete |
+| 23-A | [D23A.5](plan/implemented/23-A-cliente-context7.md) | Identidade sintética por resultado — `id` não serve de chave de React nem de seleção |
+| 23-A | [D23A.6](plan/implemented/23-A-cliente-context7.md) | `stars: -1` vira `null`; `versions[]` filtra `__branch__*` e mantém a ordem crua |
+| 23-A | [D23A.7](plan/implemented/23-A-cliente-context7.md) | `codeId` → URL por tentativa (`new URL` em `try`/`catch`), nunca por formato presumido |
+| 23-A | [D23A.8](plan/implemented/23-A-cliente-context7.md) | `rules` é parseado e devolvido em campo próprio — o descarte é do 23-C, não do cliente |
+| 23-A | [D23A.9](plan/implemented/23-A-cliente-context7.md) | Fixtures `.json` verbatim coladas ao módulo — a suíte nunca chama a API |
+| 23-A | [D23A.10](plan/implemented/23-A-cliente-context7.md) | Timeout próprio composto com o signal do chamador via `AbortSignal.any` |
+| 23-A | [D23A.11](plan/implemented/23-A-cliente-context7.md) | O texto do 429 sai do cliente, com data local do `Ratelimit-Reset` e ciente da chave |
+
+---
+
 ## Trilha R — reconciliação de documentação
 
 | trilha | sigla | descrição |

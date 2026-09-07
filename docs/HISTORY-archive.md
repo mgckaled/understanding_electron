@@ -12,6 +12,11 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### O-8 — Livro-razão de privacidade: o que saiu da máquina em toda chamada de nuvem (set/2026)
+Origem: oitavo corte da trilha O, o par que o O-6 já reservava. Entrega: tabela `privacy_events` em `observatory.db` (schema `v4`), contagem pura de anexos por tipo, `chat()` e `propose()` instrumentados no **envio** e não na resolução — a contagem já é conhecida antes da chamada, e um timeout não desfaz o que a rede transmitiu —, canal `privacy:list` e o painel Privacidade.
+
+Decisões: só chamada de nuvem grava (`isCloudService`); contagem por tipo, **nunca o hash do anexo** — um livro-razão de privacidade não retém ponteiro para o dado que audita; toda chamada grava, mesmo sem anexo, porque contagem zero é dado completo; `privacy:list` devolve linhas cruas, não resumo agregado como `performance:list`, porque a pergunta é auditoria por chamada. Duas rodadas de revisão acharam falhas reais: `LIMIT 200` sozinho esconderia as exposições que o painel existe para mostrar (saída: contadores por SQL sobre a retenção inteira), e `ai:propose` também é chamada de nuvem e não gravava nada. Lacuna nomeada e não corrigida: nível 1 e nível 2 contam como um só `datasetCount`, à espera do seletor de nível por anexo. [`plan/implemented/O-8-livro-razao-de-privacidade.md`](plan/implemented/O-8-livro-razao-de-privacidade.md)
+
 ### O-5 — Uso de disco e cache do Chromium: o `userData/` se revela (set/2026)
 Origem: quinto corte da trilha O (§ 6) — as duas fontes que restavam sem `observatory.db`: o cache HTTP do Chromium e a varredura de `userData/`. Entrega: dois canais (`session:cacheSize`/`clearCache`, `disk:usage`), `core/observatory/disk.ts` puro, e dois painéis no grupo Armazenamento — Cache do Chromium (Acessível) e Uso de disco (Caro, job cancelável, tabela crivo vs. runtime).
 
