@@ -155,6 +155,24 @@ describe('o formulário da consulta', () => {
     expect(await screen.findByText(/\/tanstack\/query/)).toBeInTheDocument()
   })
 
+  // The search is not stamped with a conversation the way the composition is
+  // (D23D.2), so replacing one has to take its candidate list along — without
+  // this the new composition opens on the previous one's list.
+  it('drops the candidates when the conversation changes', async () => {
+    await compose()
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: { status: 'found', candidates: [CANDIDATE] }
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+    await screen.findByText(/\/tanstack\/query/)
+
+    await userEvent.click(screen.getByRole('button', { name: 'ir para Segunda' }))
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+    expect(screen.queryByText(/\/tanstack\/query/)).not.toBeInTheDocument()
+  })
+
   // D23A.3: a miss is a screen state travelling inside the value, so it never
   // reaches StateView's error branch.
   it('draws a miss as text, not as a failure', async () => {

@@ -13,8 +13,9 @@ import type { ViewState } from '../../shared/ui/state'
 export function useDocsSearch(): {
   state: ViewState<SearchOutcome>
   search: (query: string) => Promise<void>
+  reset: () => void
 } {
-  const { state, run } = useAsyncAction<SearchOutcome>()
+  const { state, run, reset } = useAsyncAction<SearchOutcome>()
 
   const search = useCallback(
     async (query: string): Promise<void> => {
@@ -23,5 +24,5 @@ export function useDocsSearch(): {
     [run]
   )
 
-  return { state, search }
+  return { state, search, reset }
 }

@@ -7,14 +7,12 @@ import { usePanel } from '../panel/panelContext'
 import DocsCompose from './DocsCompose'
 import { useDocs } from './docsContext'
 import { DocsIcon } from './icon'
-import { useDocsSearch } from './useDocsSearch'
 
 // No `histórico` and no `+` in the header: both presuppose an attached
 // consultation, which exists only from 23-G on (D23D.9, DF3B.2).
 function DocsPanel(): React.JSX.Element | null {
-  const { current, close } = useDocs()
+  const { current, close, searchState: state, search } = useDocs()
   const { closing, width, setWidth } = usePanel()
-  const { state, search } = useDocsSearch()
 
   if (current === null) return null
 
@@ -46,7 +44,7 @@ function DocsPanel(): React.JSX.Element | null {
       }
     >
       <DocsCompose
-        onSearch={() => void search(current.library)}
+        onSearch={() => void search()}
         result={
           // Provisional: 23-E turns this into the desambiguação screen, with
           // the version selector and the radio group. The ordering is already
