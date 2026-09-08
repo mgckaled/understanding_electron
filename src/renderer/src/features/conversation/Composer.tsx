@@ -7,6 +7,7 @@ import { partForProvider } from '@core/ai/messages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import AttachButton from '../attachment/AttachButton'
+import { useDocs } from '../docs/docsContext'
 
 // Fixed at the bottom of the conversation, never inside the scrolling list. The
 // draft is local client state (D13.2) and stays that way; what plano 14 may add
@@ -71,6 +72,7 @@ function Composer({
   // Sticky across turns, unlike attachment/draft (arco 21, D21A.9) — a mode
   // the user opts into for the conversation, not a one-shot payload.
   const [wantsReasoning, setWantsReasoning] = useState(false)
+  const { toggle: toggleDocs } = useDocs()
 
   // A PENDING attachment is about to be sent just as much as the draft text is
   // — counted here with the same materializer toChatMessages uses (D16.5), so
@@ -177,6 +179,7 @@ function Composer({
               model={model}
               wantsReasoning={wantsReasoning}
               onWantsReasoningChange={setWantsReasoning}
+              onConsultDocs={() => toggleDocs(null)}
             />
             {modelSelector(budget)}
           </div>

@@ -84,12 +84,16 @@ const NO_VISION: AiModel = { ...TEST_MODEL, capabilities: ['completion'] }
 
 function ControlledAttachButton({
   model = null,
-  initialWantsReasoning = false
+  initialWantsReasoning = false,
+  initialAttachment = null,
+  onConsultDocs
 }: {
   model?: AiModel | null
   initialWantsReasoning?: boolean
+  initialAttachment?: AttachmentPart | null
+  onConsultDocs?: () => void
 }): React.JSX.Element {
-  const [attachment, setAttachment] = useState<AttachmentPart | null>(null)
+  const [attachment, setAttachment] = useState<AttachmentPart | null>(initialAttachment)
   const [wantsReasoning, setWantsReasoning] = useState(initialWantsReasoning)
   return (
     <AttachButton
@@ -99,6 +103,7 @@ function ControlledAttachButton({
       model={model}
       wantsReasoning={wantsReasoning}
       onWantsReasoningChange={setWantsReasoning}
+      onConsultDocs={onConsultDocs}
     />
   )
 }
@@ -382,18 +387,64 @@ describe('AttachButton', () => {
       expect(screen.getByRole('button', { name: 'Código', hidden: true })).toBeDisabled()
     })
 
-    it('renders Busca web and Documentação (MCP) off and disabled regardless of the model', async () => {
+    it('renders Busca web off and disabled regardless of the model', async () => {
       const user = userEvent.setup()
       installApiMock()
 
       render(<ControlledAttachButton model={{ ...TEST_MODEL, capabilities: ['thinking'] }} />)
       await open(user)
 
-      for (const label of ['Busca web', 'Documentação (MCP)']) {
-        const toggle = screen.getByRole('switch', { name: label, hidden: true })
-        expect(toggle).toBeDisabled()
-        expect(toggle).toHaveAttribute('aria-checked', 'false')
+      const toggle = screen.getByRole('switch', { name: 'Busca web', hidden: true })
+      expect(toggle).toBeDisabled()
+      expect(toggle).toHaveAttribute('aria-checked', 'false')
+    })
+
+    // DM-29: the row was a Switch that could never be flipped. Consulting
+    // documentation is an action of the user's, so it left the group.
+    it('no longer offers Documentação as a tool switch', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton model={TEST_MODEL} />)
+      await open(user)
+
+      expect(
+        screen.queryByRole('switch', { name: /Documenta/, hidden: true })
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  // D23D.3: a consultation is not an attachment and does not compete for the
+  // composer's one pending slot, so a chosen file locks the three file
+  // categories and leaves this one alone.
+  describe('o item Documentação', () => {
+    it('stays reachable while a file is already pending, with the file items locked', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+
+      render(<ControlledAttachButton model={TEST_MODEL} initialAttachment={SUMMARY} />)
+      await open(user)
+
+      for (const label of ['Dados tabulares', 'Documentos', 'Imagens']) {
+        expect(screen.getByRole('button', { name: label, hidden: true })).toBeDisabled()
       }
+      expect(screen.getByRole('button', { name: /Documentação/, hidden: true })).toBeEnabled()
+    })
+
+    it('asks the caller to open the panel, and closes the popover', async () => {
+      const user = userEvent.setup()
+      installApiMock()
+      const onConsultDocs = vi.fn()
+
+      render(<ControlledAttachButton model={TEST_MODEL} onConsultDocs={onConsultDocs} />)
+      await open(user)
+      await user.click(screen.getByRole('button', { name: /Documentação/, hidden: true }))
+
+      expect(onConsultDocs).toHaveBeenCalledTimes(1)
+      expect(screen.getByRole('button', { name: 'Adicionar anexo' })).toHaveAttribute(
+        'aria-expanded',
+        'false'
+      )
     })
   })
 
