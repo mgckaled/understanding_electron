@@ -111,6 +111,18 @@ describe('attachmentPartOf', () => {
     expect(attachmentPartOf(message('user', 'oi'))).toBeNull()
   })
 
+  it('does not adopt a Context7 consultation, which is not an attachment (DM-23)', () => {
+    // This filter is the only one in the app written by negation, so a new
+    // variant falls inside it by omission — and the `part is AttachmentPart`
+    // predicate is the author's assertion, so the typecheck sees nothing. The
+    // symptom would be an attachment card drawn over a consultation.
+    const withDocs: Message = {
+      ...message('user', 'texto'),
+      parts: [docsPart(true), { kind: 'text', text: 'texto' }]
+    }
+    expect(attachmentPartOf(withDocs)).toBeNull()
+  })
+
   it('finds a dataset part', () => {
     const withAttachment: Message = {
       ...message('user', 'texto'),

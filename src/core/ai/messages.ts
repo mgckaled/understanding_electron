@@ -38,12 +38,23 @@ export function messageText(message: Message): string {
     .join('')
 }
 
-/** The attachment on a message, if any — the card the conversation draws (D16.4 Passo 4, generalized D17.4). */
+/**
+ * The attachment on a message, if any — the card the conversation draws (D16.4
+ * Passo 4, generalized D17.4).
+ *
+ * ⚠️ The predicate is written by exclusion, so every part kind that is NOT an
+ * attachment has to be named here; a new variant joins AttachmentPart by
+ * omission, and `part is AttachmentPart` being the author's assertion means the
+ * typecheck stays silent about it (D23C.1).
+ */
 export function attachmentPartOf(message: Message): AttachmentPart | null {
   return (
     message.parts.find(
       (part): part is AttachmentPart =>
-        part.kind !== 'text' && part.kind !== 'stepProposal' && part.kind !== 'reasoning'
+        part.kind !== 'text' &&
+        part.kind !== 'stepProposal' &&
+        part.kind !== 'reasoning' &&
+        part.kind !== 'docs'
     ) ?? null
   )
 }
