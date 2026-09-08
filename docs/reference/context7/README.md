@@ -180,16 +180,19 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 |---|---|---|
 | ~~**23-A**~~ | ✅ **entregue (07/09/2026)** — o cliente, em `core/context7/`. Tipos, `fetch` injetado, parse das duas respostas, classificação de status (400 · 404 · 202 · 429 · 401/403 · 5xx), descarte de `rules`, `codeId` → URL com falha tratada, filtro de `__branch__*`, ordenação estável. Fixtures gravadas da API real. Sonda de 12 chamadas, seis fixtures verbatim, 35 testes, cobertura de linha 98,6%. Plano: [`plan/implemented/23-A`](../../plan/implemented/23-A-cliente-context7.md) | — |
 | ~~**23-B**~~ | ✅ **entregue (07/09/2026)** — a fronteira. Handlers em `main/features/context7/`, os canais em `src/shared/ipc.ts`, a chave no cofre e o campo em Configurações ao lado de Gemini e GLM. Nível 3, nada na conversa. Decidiu a pergunta aberta: **`invoke` simples**, com o gatilho de reversão medido e não disparado. Plano: [`plan/implemented/23-B`](../../plan/implemented/23-B-a-fronteira.md) | A |
-| **23-C** | **a parte e a persistência.** Schema da variante, `docsPartOf`, o `case` em `partForProvider`, o booleano de ativa/desligada. Nível 1 e 3, ainda sem interface | A |
+| ~~**23-C**~~ | ✅ **entregue (08/09/2026)** — a parte e a persistência. `DocsPart` como sétima variante, `docsPartOf`, o `case` em `partForProvider`, e o desligar por `conversation:setDocsEnabled` com `json_set`. Nível 1 e 3, sem interface. Plano: [`plan/implemented/23-C`](../../plan/implemented/23-C-a-parte-e-a-persistencia.md) | A |
 | **23-D** | **o painel nasce.** Terceiro valor de `PanelKind`, `DocsPanel.tsx` sobre `SidePanel`, cabeçalho, o gatilho no `AttachButton`, o formulário do Estado 1 com o aviso de privacidade. Primeira coisa visível | B |
 | **23-E** | **desambiguação.** Estado 2: lista sempre visível, ordenada pelo app, versões filtradas, seletor de versão | D |
 | **23-F** | **o resultado.** Estado 3 e as três abas — Trechos, Notas, Regras (esta só quando `rules` vier) | D |
 | **23-G** | **seleção e orçamento.** Caixas por trecho, total ao vivo no rodapé, `Anexar` desabilitado quando não cabe | F · C |
 | **23-H** | **a conversa.** A linha retrátil, o contador no cabeçalho, o `histórico` com o desligar, o rótulo `fora do contexto` | C · F |
 | **23-I** | **os nove erros.** Cada situação com o seu texto e a sua ação, incluindo os dois textos opostos do 429 | D (encaixa em qualquer ponto depois) |
+| **23-K** | **o livro-razão e as minúcias.** O Observatório não conta a consulta reenviada ao modelo e **não vê a pergunta enviada ao Context7**, que sai da máquina mesmo em conversa 100% local (DM-22) — são a mesma pergunta, e meia resposta não serve. Recolhe também o que se acumulou nos dez cortes. ⚠️ Roda **antes** do J, apesar da letra | C · H |
 | **23-J** | **fechamento.** Verificação ao vivo, `ESCOPO.md` (nome do pilar, a linha de privacidade), guia antigo marcado `⛔ consumido`, pasta e apontadores | todos |
 
-**O caminho crítico é `A → B → D`.** Depois dele, `E`, `F` e `I` são independentes entre si; `C` pode entrar em qualquer momento depois de `A`, inclusive em paralelo a `D`. Só `G`, `H` e `J` têm duas dependências.
+**O caminho crítico é `A → B → D`.** Depois dele, `E`, `F` e `I` são independentes entre si; `C` pode entrar em qualquer momento depois de `A`, inclusive em paralelo a `D`. Só `G`, `H`, `K` e `J` têm duas dependências.
+
+⚠️ **A letra `K` estava reservada acima para um eventual irmão do 23-D.** Ela foi usada pelo corte novo em 08/09/2026; se aquela divisão acontecer, o irmão vira `23-L`. A letra é etiqueta, não hierarquia — e `K` executa **antes** de `J`, porque o J é o fechamento que depende de todos e um apanhado de pendências depois dele reabriria o que ele fechou.
 
 ### As verificações abertas são passos, não pendências
 
@@ -220,6 +223,9 @@ Uma linha por premissa que caiu, com o ponteiro para onde o fato corrigido mora 
 | "sem correspondência é `404`" | 23-A | também pode ser `200` com cinco resultados irrelevantes, sem campo nenhum sinalizando — [`api.md`](api.md) |
 | "`codeList[]` são as partes de um trecho" | 23-B | são **variantes** do mesmo exemplo (TS e JS), às vezes idênticas: juntá-las duplica o código na tela, e não há parâmetro de idioma na requisição — [`api.md`](api.md) |
 | tabela dos nove erros (DM-12) | 23-A | são **dez**: `library-not-found` no `/context` não estava prevista, porque ninguém imaginou a biblioteca sumir entre as duas chamadas |
+| "a parte persiste o que foi anexado, não a resposta bruta" × "trecho não enviado aparece riscado" | 23-C | as duas afirmações deste guia se contradiziam. A parte guarda o enviado inteiro e o recusado **só como título e custo** — [`painel.md`](painel.md) § *A linha na conversa* já dizia que a linha lista títulos e custo, nunca o código, e é isso que torna o congelamento estrutural (D23C.3) |
+| `rules` só existe enquanto a aba está aberta | 23-C | **persiste na parte** e nunca se materializa: sem isso o registro do que o serviço tentou injetar sumiria no próximo início do app, esvaziando DM-17 (D23C.4) |
+| "um booleano na parte persistida, um filtro e o interruptor" (DM-31) | 23-C | falta uma quarta peça que o guia não previa — **não havia como alterar uma parte já gravada**. `conversation:*` só tinha `append` e `removeMessage`, então o desligar exigiu canal novo (D23C.6) |
 
 
 ## Como isto se testa

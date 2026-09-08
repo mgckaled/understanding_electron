@@ -555,6 +555,15 @@ chamada de modelo no main (`D9.1`).
 | 23-B | [D23B.9](plan/implemented/23-B-a-fronteira.md) | O teto do preload estoura conscientemente, com gatilho antes do 23-C |
 | 23-B | [D23B.10](plan/implemented/23-B-a-fronteira.md) | Memo de sessão no handler — só `found`/`ready` entram; `indexing` e falha nunca |
 | 23-B | [D23B.11](plan/implemented/23-B-a-fronteira.md) | `DocSnippet` carrega `blocks[]`, não um `code` grudado — o `codeList` são variantes do mesmo exemplo |
+| 23-C | [D23C.1](plan/implemented/23-C-a-parte-e-a-persistencia.md) | `DocsPart` é a sétima variante, fora de `AttachmentPart` — e o filtro por negação de `attachmentPartOf` a adotava calado |
+| 23-C | [D23C.2](plan/implemented/23-C-a-parte-e-a-persistencia.md) | A parte carrega `id` cunhado no renderer; o desligar endereça por ele, nunca por índice de array |
+| 23-C | [D23C.3](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O recusado persiste só como título e custo — o congelamento vira estrutura, e resolve a contradição do `painel.md` |
+| 23-C | [D23C.4](plan/implemented/23-C-a-parte-e-a-persistencia.md) | `rules` persiste e nunca se materializa; sem persistir, o registro da injeção sumiria ao reabrir o app |
+| 23-C | [D23C.5](plan/implemented/23-C-a-parte-e-a-persistencia.md) | Os quatro tipos do fio viram schema zod, porque agora atravessam `conversation:append` |
+| 23-C | [D23C.6](plan/implemented/23-C-a-parte-e-a-persistencia.md) | `conversation:setDocsEnabled`, não `docs:toggle` — a operação é editar a transcrição |
+| 23-C | [D23C.7](plan/implemented/23-C-a-parte-e-a-persistencia.md) | `json_set` numa statement; a guarda `EXISTS` foi escrita e **removida** por não mudar nada observável |
+| 23-C | [D23C.8](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O preload se divide por papel (mecânica · tabela · composição), não por domínio |
+| 23-C | [D23C.9](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O livro-razão de privacidade não conta a consulta neste corte — vai para o 23-K, junto da pergunta enviada ao Context7 |
 
 ---
 

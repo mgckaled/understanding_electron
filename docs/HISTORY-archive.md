@@ -12,6 +12,13 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### 21-B — O raciocínio aparece bem: bloco recolhível, prosa achatada, indicador aceso (set/2026)
+Origem: continuação direta do 21-A, que deixou dois pontos de exibição propositalmente feios ("minimal on purpose, 21-B substitui"). Entrega: `ReasoningDisclosure` — card recolhível (mesmo estilo visual do `StepProposalLine`/`DatasetCard`), abre sozinho enquanto o raciocínio chega, recolhe sozinho quando a resposta começa, clique manual sempre vence dali em diante; `RespondingMark` com três fases ("Preparando…"/"Pensando…"/"Respondendo…") e monograma reduzido pela metade; `SERVICE_LABEL` consolidado numa fonte única, substituindo dois mapas divergentes.
+
+Decisões: raciocínio achatado para prosa corrida sem `strip-markdown` nem `remark-stringify` — a mesma lição que o DE1E.9 (E-1-E) já tinha ensinado, reaplicada num domínio novo: um percorredor de árvore próprio sobre a mdast, nunca re-serializa, nunca descarta código/tabela (o defeito que fez o `strip-markdown` ser removido do projeto uma vez); `calc-size(auto, size)` para animar a altura sem o opt-in global de `interpolate-size` — primeiro uso da técnica no projeto, escolhido sobre o global justamente para não ligar interpolação de palavra-chave em todo elemento do app; o ícone de lâmpada (`--color-warn-text`, nunca hex) fica **sempre montado** — pulsa enquanto pensa, apaga depois — para não perder o sinal de "isto teve raciocínio" quando o card fecha.
+
+**Um bug real, de uma armadilha já documentada, achado só no teste ao vivo do usuário.** `h-0` não gera CSS nenhum neste projeto (`--spacing-*: initial`, só 1-9 definidos) — o mesmo defeito que `ARMADILHAS.md` já registrava desde o `Sidebar.tsx` (DS-2), não grepado antes de escrever `'h-0'` de novo nesta sessão. Corrigido para `h-[0px]`, confirmado no CSS construído. A lição, reforçada: nem um `pnpm check:fast` verde prova que uma classe Tailwind existe — só o `grep` no CSS gerado prova. [`plan/implemented/21-B-o-raciocinio-aparece-bem.md`](plan/implemented/21-B-o-raciocinio-aparece-bem.md)
+
 ### 21-A — O raciocínio atravessa: Ollama, GLM e Gemini até a tela (set/2026)
 Origem: item 29 do `ROADMAP.md`, arco 21, dependente do N-1, com uma colisão de nome: o spinner "pensando" do F-1 já ocupava o vocabulário. Entrega: `onThinking` como sinal opcional em `ChatFn` nos três provedores, a quinta variante `reasoning` de `MessagePart` (`parts` já é JSON, zero migração), o toggle destravado por `hasCapability` e exibição mínima — o polimento é do 21-B.
 

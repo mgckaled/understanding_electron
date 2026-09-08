@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**52 canais em `IpcContract`**, recontados contra o código em 07/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — os dois últimos são `docs:search` e `docs:fetch`, 23-B.
+**53 canais em `IpcContract`**, recontados contra o código em 08/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — o último é `conversation:setDocsEnabled`, 23-C.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -117,7 +117,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `job` | `cancel`, `list` | não |
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` — lógica do lado do provedor: skill [`ai`](../ai/SKILL.md) | sim |
 | `docs` | `search`, `fetch` — consulta ao Context7 (arco 23) | sim — 429, 401/403, 5xx e `fetch` recusado são falha de serviço; estado de tela (`no-libraries`, `empty`, `indexing`, `library-not-found`) viaja **dentro do `value`** (D23B.2). `invoke` simples, nunca job: cancelar não devolve cota (D23B.1) |
-| `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings` | não |
+| `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings`, `setDocsEnabled` | não |
 | `draft` | `list`, `create`, `update`, `remove` | não |
 | `export` | `save` | **sim** — arquivo em uso, permissão e disco cheio são estados que a interface desenha |
 | `settings` | `read`, `write` | não |
