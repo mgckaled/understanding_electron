@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
-import type { DocNote, DocRules, DocSnippet, DocsResult as DocsAnswer } from '@shared/ipc'
+import type { DocNote, DocRules, DocsResult as DocsAnswer } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Tabs, { type TabDefinition } from '../../shared/ui/Tabs/Tabs'
+import DocsSnippetList from './DocsSnippetList'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 
 const decimal = new Intl.NumberFormat('pt-BR')
@@ -27,25 +28,6 @@ const RULE_GROUPS = [
     origin: 'escritas no painel do Context7, valem para toda consulta'
   }
 ] as const
-
-function SnippetList({ snippets }: { snippets: DocSnippet[] }): React.JSX.Element {
-  if (snippets.length === 0) {
-    return <p className={EMPTY}>Nenhum trecho de código para esta pergunta.</p>
-  }
-
-  return (
-    <div className={LIST}>
-      {snippets.map((snippet) => (
-        <div key={snippet.key} className="flex items-baseline justify-between gap-3">
-          <span className="truncate font-ui text-sm text-text">{snippet.title}</span>
-          <span className="flex-none text-xs text-text-faint">
-            {decimal.format(snippet.tokens)} tok
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 function NoteList({ notes }: { notes: DocNote[] }): React.JSX.Element {
   // The common case, not the edge: infoSnippets came back empty in 3 of 4
@@ -122,7 +104,7 @@ function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }):
     {
       id: 'trechos',
       label: `Trechos (${docs.snippets.length})`,
-      render: () => <SnippetList snippets={docs.snippets} />
+      render: () => <DocsSnippetList snippets={docs.snippets} />
     },
     {
       id: 'notas',

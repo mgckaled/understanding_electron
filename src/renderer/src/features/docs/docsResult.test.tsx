@@ -1,6 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { Api, DocNote, DocRules, DocSnippet, DocsResult, LibraryCandidate } from '@shared/ipc'
+import type {
+  Api,
+  DocCodeBlock,
+  DocNote,
+  DocRules,
+  DocSnippet,
+  DocsResult,
+  LibraryCandidate
+} from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
 import { useConversations } from '../conversation/conversationsContext'
@@ -154,6 +162,73 @@ describe('a aba Regras', () => {
       screen.getByText('escritas no painel do Context7, valem para toda consulta')
     ).toBeInTheDocument()
     expect(screen.queryByText('Do seu time')).not.toBeInTheDocument()
+  })
+})
+
+describe('o trecho retrátil', () => {
+  function withBlocks(blocks: DocCodeBlock[], sourceUrl: string | null = null): DocsResult {
+    return { ...ANSWER, snippets: [{ ...snippet('a#0', 'primeiro', 182), blocks, sourceUrl }] }
+  }
+
+  // Both states asserted: a disclosure that opened every snippet would pass a
+  // test that only looked at the first.
+  it('opens the first and leaves the second closed', async () => {
+    await showAnswer(ANSWER)
+
+    expect(screen.getByRole('button', { name: /onSuccess/ })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+    expect(screen.getByRole('button', { name: /invalidateQueries/ })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    )
+  })
+
+  it('draws one block when the two variants are the same code', async () => {
+    await showAnswer(
+      withBlocks([
+        { language: 'typescript', code: 'const a = 1' },
+        { language: 'javascript', code: 'const a = 1' }
+      ])
+    )
+
+    expect(document.querySelectorAll('pre')).toHaveLength(1)
+  })
+
+  it('draws both blocks when the variants differ', async () => {
+    await showAnswer(
+      withBlocks([
+        { language: 'typescript', code: 'const a: number = 1' },
+        { language: 'javascript', code: 'const a = 1' }
+      ])
+    )
+
+    expect(document.querySelectorAll('pre')).toHaveLength(2)
+  })
+
+  // The class is assigned under jsdom even though the colour is not — the
+  // verdict "only live" has been half wrong here once before.
+  it('colours the code with the draft highlighter', async () => {
+    await showAnswer(withBlocks([{ language: 'TypeScript', code: 'const a = 1' }]))
+
+    expect(document.querySelector('.tok-keyword')).not.toBeNull()
+  })
+
+  it('has no source button when the codeId was not a URL', async () => {
+    await showAnswer(withBlocks([]))
+
+    expect(screen.queryByRole('button', { name: /Abrir a fonte/ })).not.toBeInTheDocument()
+  })
+
+  it('opens the source outside the app', async () => {
+    await showAnswer(withBlocks([], 'https://github.com/tanstack/query/blob/main/docs/x.md'))
+
+    await userEvent.click(screen.getByRole('button', { name: /Abrir a fonte/ }))
+
+    expect(api.shell.openExternal).toHaveBeenCalledWith(
+      'https://github.com/tanstack/query/blob/main/docs/x.md'
+    )
   })
 })
 
