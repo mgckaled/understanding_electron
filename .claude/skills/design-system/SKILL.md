@@ -130,4 +130,22 @@ A regra ganhou seu primeiro caso **a favor** no F-3-D: `Tabs` (padrão Tabs da W
 
 ⚠️ **jsdom não implementa nem `<dialog>` nem a Popover API** — há shim mínimo em `test/setup-renderer.ts` que só permite montar. Camada superior, foco preso e `Esc` só se verificam ao vivo. E o `Popover` tem uma armadilha além da ausência: a folha default do próprio jsdom já traz `[popover]:not(:popover-open) { display:none }`, que o shim não alcança, então **todo** conteúdo de `Popover` computa `display:none` sob jsdom — consultas de nível 2 com `getByRole` precisam de `{ hidden: true }`. Também: `eslint-plugin-react` ainda não conhece `closedby` (liberado em `eslint.config.mjs`).
 
-`Field` clona o `children` (`cloneElement`) para injetar `id`/`aria-describedby` no controle real, o que o deixa agnóstico ao tipo de input. `Button` esconde o rótulo com `visibility: hidden` durante `loading` (não `color: transparent`) para o spinner herdar `currentColor` — a cor certa do `variant`, sem cor extra por variante.
+## Controle de formulário nativo: a régua é a riqueza da linha, não o gosto (D23E.7)
+
+O mesmo *plataforma em vez de biblioteca* de `Dialog`/`Popover` vale para `<select>` e `<input type="radio">` — e o repositório tem os **dois lados**, o que engana quem vê só um:
+
+| | Quem |
+|---|---|
+| **Construído à mão** | `ModelPicker` (DS-4 passo 7) trocou um `<select>` por pílula + `Popover` + `role="listbox"`. Motivo: a linha é **rica** — chips de capacidade, grupos "Locais/Nuvem", linha travada com dica própria. Nada disso cabe num `<option>` |
+| **Nativo** | O seletor de versão do painel de documentação (23-E). A opção é **uma string**, e podem ser 16 (`/vercel/next.js`). Um listbox à mão aqui seria reimplementar teclado e rolagem por coerência visual de um controle que aparece uma vez |
+
+**A pergunta que decide:** o item da lista precisa de mais que texto? Se sim, construa. Se não, use o nativo.
+
+Duas coisas que o nativo entrega de graça e é fácil esquecer que se perderiam:
+
+- **`base.css` declara `color-scheme: dark`/`light`**, então o popup que o Chromium desenha para um `<select>` **já sai no tema do app** — verificado ao vivo no 23-E, não suposto. Sem isso o argumento cairia.
+- **`<input type="radio">` já implementa o padrão *Radio Group* do WAI-ARIA APG por inteiro**: `Tab` entra no marcado (não no primeiro), setas movem **e** marcam, com volta do último ao primeiro. Um `role="radiogroup"` com `tabindex` rotativo reescreve isso à mão — o oposto do caso de `Tabs`, que precisou ser escrito porque a plataforma não tem aba.
+
+⚠️ **Seleção de linha rica: componha a classe por estado, não por `has-checked:`.** Nenhuma variante `has-*` foi construída neste projeto ainda, e a régua do `@utility` vale igual — só o CSS construído prova que a classe existe. O conteúdo rico vai **dentro do `<label>`**, que assim vira o alvo de clique inteiro.
+
+`Field` clona o `children` (`cloneElement`) para injetar `id`/`aria-describedby` no controle real, o que o deixa agnóstico ao tipo de input — e é o que faz um `<select>` nativo receber rótulo e descrição sem nada especial. `Button` esconde o rótulo com `visibility: hidden` durante `loading` (não `color: transparent`) para o spinner herdar `currentColor` — a cor certa do `variant`, sem cor extra por variante.
