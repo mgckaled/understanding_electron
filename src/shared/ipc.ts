@@ -796,42 +796,52 @@ export type LibraryCandidate = {
   versions: string[]
 }
 
+// The next four are schemas, not hand-written types like LibraryCandidate
+// above (D23C.5). A channel result is never validated — zod on the way in,
+// never out — and as long as these only came back from `docs:fetch` a type
+// was enough. DocsPart carries them through conversation:append, which IS
+// validated, so the shape gets one source and the types are inferred.
+
 /**
  * One variant of a snippet's example — the API stores the same example more
  * than once (TypeScript and JavaScript, or a shell line beside the code).
  */
-export type DocCodeBlock = {
-  language: string
-  code: string
-}
+export const docCodeBlockSchema = z.object({
+  language: z.string(),
+  code: z.string()
+})
+export type DocCodeBlock = z.infer<typeof docCodeBlockSchema>
 
-export type DocSnippet = {
-  key: string
-  title: string
-  description: string
-  tokens: number
+export const docSnippetSchema = z.object({
+  key: z.string().min(1),
+  title: z.string(),
+  description: z.string(),
+  tokens: z.number().int().nonnegative(),
   // A list, not one joined string (D23B.11): concatenating the variants
   // rendered the same example twice, and the snippet-level codeLanguage named
   // only the first — it said 'typescript' for a snippet carrying the js
   // variant too. `tokens` covers the whole list, as the API counts it.
-  blocks: DocCodeBlock[]
-  pageTitle: string | null
-  sourceUrl: string | null
-}
+  blocks: z.array(docCodeBlockSchema),
+  pageTitle: z.string().nullable(),
+  sourceUrl: z.string().nullable()
+})
+export type DocSnippet = z.infer<typeof docSnippetSchema>
 
-export type DocNote = {
-  key: string
-  breadcrumb: string | null
-  content: string
-  tokens: number
-  sourceUrl: string | null
-}
+export const docNoteSchema = z.object({
+  key: z.string().min(1),
+  breadcrumb: z.string().nullable(),
+  content: z.string(),
+  tokens: z.number().int().nonnegative(),
+  sourceUrl: z.string().nullable()
+})
+export type DocNote = z.infer<typeof docNoteSchema>
 
-export type DocRules = {
-  global: string[]
-  libraryOwn: string[]
-  libraryTeam: string[]
-}
+export const docRulesSchema = z.object({
+  global: z.array(z.string()),
+  libraryOwn: z.array(z.string()),
+  libraryTeam: z.array(z.string())
+})
+export type DocRules = z.infer<typeof docRulesSchema>
 
 export type DocsResult = {
   snippets: DocSnippet[]
