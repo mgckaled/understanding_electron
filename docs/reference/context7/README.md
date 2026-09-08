@@ -188,7 +188,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 | **23-F** | **o resultado.** Estado 3 e as três abas — Trechos, Notas, Regras (esta só quando `rules` vier) | D |
 | **23-G** | **seleção e orçamento.** Caixas por trecho, total ao vivo no rodapé, `Anexar` desabilitado quando não cabe | F · C |
 | **23-H** | **a conversa.** A linha retrátil, o contador no cabeçalho, o `histórico` com o desligar, o rótulo `fora do contexto` | C · F |
-| **23-I** | **os nove erros.** Cada situação com o seu texto e a sua ação, incluindo os dois textos opostos do 429 | D (encaixa em qualquer ponto depois) |
+| **23-I** | **os dez erros** (eram nove até o 23-A achar `library-not-found`). Cada situação com o seu texto e a sua ação, incluindo os dois textos opostos do 429 — **e a exigência de chave**, decidida em 08/09/2026 e revogando a metade "opcional" de `DM-19` ([`ROADMAP § 3`](../../ROADMAP.md)) | D (encaixa em qualquer ponto depois) |
 | **23-K** | **o livro-razão e as minúcias.** O Observatório não conta a consulta reenviada ao modelo e **não vê a pergunta enviada ao Context7**, que sai da máquina mesmo em conversa 100% local (DM-22) — são a mesma pergunta, e meia resposta não serve. Recolhe também o que se acumulou nos dez cortes. ⚠️ Roda **antes** do J, apesar da letra | C · H |
 | **23-J** | **fechamento.** Verificação ao vivo, `ESCOPO.md` (nome do pilar, a linha de privacidade), guia antigo marcado `⛔ consumido`, pasta e apontadores | todos |
 
