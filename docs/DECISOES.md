@@ -564,16 +564,16 @@ chamada de modelo no main (`D9.1`).
 | 23-C | [D23C.7](plan/implemented/23-C-a-parte-e-a-persistencia.md) | `json_set` numa statement; a guarda `EXISTS` foi escrita e **removida** por não mudar nada observável |
 | 23-C | [D23C.8](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O preload se divide por papel (mecânica · tabela · composição), não por domínio |
 | 23-C | [D23C.9](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O livro-razão de privacidade não conta a consulta neste corte — vai para o 23-K, junto da pergunta enviada ao Context7 |
-| 23-D | [D23D.1](plan/active/23-D-o-painel-nasce.md) | `PanelKind` ganha `'docs'`, sem tecla de atalho — `b` e `d` já estão tomadas e o desenho não pede uma terceira |
-| 23-D | [D23D.2](plan/active/23-D-o-painel-nasce.md) | A composição mora no provider, carimbada com a conversa: fechar preserva o texto, navegar descarta |
-| 23-D | [D23D.3](plan/active/23-D-o-painel-nasce.md) | `Documentação` nunca trava por anexo pendente; os três de arquivo travam — consulta não disputa o slot do composer |
-| 23-D | [D23D.4](plan/active/23-D-o-painel-nasce.md) | O corpo do popover vira `AttachMenu.tsx` — coesão, não teto |
-| 23-D | [D23D.5](plan/active/23-D-o-painel-nasce.md) | A linha `mcp` com `Switch` desabilitado deixa de existir (DM-29) |
-| 23-D | [D23D.6](plan/active/23-D-o-painel-nasce.md) | `Consultar` nasce ligado, com render provisório que o 23-E substitui |
-| 23-D | [D23D.7](plan/active/23-D-o-painel-nasce.md) | O estado da busca é `useAsyncAction<SearchOutcome>`, não TanStack Query |
-| 23-D | [D23D.8](plan/active/23-D-o-painel-nasce.md) | Um ícone para o assunto inteiro (`Library`), em módulo próprio |
-| 23-D | [D23D.9](plan/active/23-D-o-painel-nasce.md) | O cabeçalho não tem `histórico` nem `+` — os dois pressupõem consulta anexada (23-G) |
-| 23-D | [D23D.10](plan/active/23-D-o-painel-nasce.md) | O aviso de privacidade é permanente sob o campo, nunca consentimento de uma vez |
+| 23-D | [D23D.1](plan/implemented/23-D-o-painel-nasce.md) | `PanelKind` ganha `'docs'`, sem tecla de atalho — `b` e `d` já estão tomadas e o desenho não pede uma terceira |
+| 23-D | [D23D.2](plan/implemented/23-D-o-painel-nasce.md) | A composição mora no provider, carimbada com a conversa: fechar preserva o texto, navegar descarta |
+| 23-D | [D23D.3](plan/implemented/23-D-o-painel-nasce.md) | `Documentação` nunca trava por anexo pendente; os três de arquivo travam — consulta não disputa o slot do composer |
+| 23-D | [D23D.4](plan/implemented/23-D-o-painel-nasce.md) | O corpo do popover vira `AttachMenu.tsx` — coesão, não teto |
+| 23-D | [D23D.5](plan/implemented/23-D-o-painel-nasce.md) | A linha `mcp` com `Switch` desabilitado deixa de existir (DM-29) |
+| 23-D | [D23D.6](plan/implemented/23-D-o-painel-nasce.md) | `Consultar` nasce ligado, com render provisório que o 23-E substitui |
+| 23-D | [D23D.7](plan/implemented/23-D-o-painel-nasce.md) | O estado da busca é `useAsyncAction<SearchOutcome>`, não TanStack Query |
+| 23-D | [D23D.8](plan/implemented/23-D-o-painel-nasce.md) | Um ícone para o assunto inteiro (`Library`), em módulo próprio |
+| 23-D | [D23D.9](plan/implemented/23-D-o-painel-nasce.md) | O cabeçalho não tem `histórico` nem `+` — os dois pressupõem consulta anexada (23-G) |
+| 23-D | [D23D.10](plan/implemented/23-D-o-painel-nasce.md) | O aviso de privacidade é permanente sob o campo, nunca consentimento de uma vez |
 
 ---
 
