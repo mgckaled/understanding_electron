@@ -215,6 +215,16 @@ describe('o trecho retrátil', () => {
     expect(document.querySelector('.tok-keyword')).not.toBeNull()
   })
 
+  // The API writes inline code with backticks, and rendering the string raw
+  // showed them as literal characters. The element is the assertion: the text
+  // reads the same either way, so asserting the sentence would be vacuous.
+  it('renders the markdown the API wrote into the description', async () => {
+    const described = { ...snippet('a#0', 'primeiro', 182), description: 'Use `clear()` agora' }
+    await showAnswer({ ...ANSWER, snippets: [described] })
+
+    expect(document.querySelector('code')?.textContent).toBe('clear()')
+  })
+
   it('has no source button when the codeId was not a URL', async () => {
     await showAnswer(withBlocks([]))
 

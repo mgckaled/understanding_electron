@@ -3,6 +3,7 @@ import { ChevronDown, ExternalLink } from 'lucide-react'
 import { resolveLanguage } from '@core/draft/languages'
 import type { DocCodeBlock, DocSnippet } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
+import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { cx } from '../../shared/ui/cx'
 import { tokenize } from '../draft/codeHighlight'
@@ -10,7 +11,7 @@ import { tokenize } from '../draft/codeHighlight'
 const decimal = new Intl.NumberFormat('pt-BR')
 
 const PRE =
-  'overflow-x-auto rounded-md bg-surface-sunken p-4 font-mono text-sm whitespace-pre selectable'
+  'overflow-x-auto rounded-md bg-surface-sunken p-4 font-mono text-md whitespace-pre selectable'
 
 /**
  * One example, coloured by the same highlighter the draft editor uses (D23F.12).
@@ -110,11 +111,12 @@ function Snippet({
         className={cx('overflow-hidden', open ? '[height:calc-size(auto,size)]' : 'h-[0px]')}
       >
         <div className="flex flex-col gap-3 pb-2">
-          {snippet.description !== '' && (
-            <p className="text-reading leading-normal text-text-muted select-text">
-              {snippet.description}
-            </p>
-          )}
+          {/* Through the app's markdown owner, not raw: the API writes inline
+              code with backticks, and they showed as literal characters. The
+              deciding argument is not the backticks though — the description is
+              third-party text, the same threat model D11.2 answered, so it gets
+              the renderer that already refuses raw HTML and vets every link. */}
+          {snippet.description !== '' && <MarkdownMessage text={snippet.description} />}
           {blocks.map((block) => (
             <CodeBlock key={block.code} block={block} />
           ))}

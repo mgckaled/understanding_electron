@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import type { DocNote, DocRules, DocsResult as DocsAnswer } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
+import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import Tabs, { type TabDefinition } from '../../shared/ui/Tabs/Tabs'
 import DocsSnippetList from './DocsSnippetList'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -44,7 +45,9 @@ function NoteList({ notes }: { notes: DocNote[] }): React.JSX.Element {
             <span className="truncate text-text-muted">{note.breadcrumb ?? 'sem trilha'}</span>
             <span className="flex-none text-text-faint">{decimal.format(note.tokens)} tok</span>
           </span>
-          <p className="text-reading leading-normal text-text select-text">{note.content}</p>
+          {/* Same owner as the snippet description, and the same reason: a note
+              is documentation prose from outside, markup and all. */}
+          <MarkdownMessage text={note.content} />
         </div>
       ))}
     </div>
