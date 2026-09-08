@@ -113,3 +113,20 @@ Três detalhes que a sondagem tornou possíveis, e que seriam invenção sem ela
 ⚠️ `DM-1` sai **deste arco**, não do projeto: a Interactions API do Gemini continua pendente por causa do raciocínio (D21A.10), e ela aceita `{ type: 'mcp_server', name, url }` server-side — o Google conectando ao servidor a partir da infraestrutura dele. Se for adotada algum dia, reabre a questão de privacidade que DM-2 fechou aqui.
 
 ---
+
+## O que a execução fez com estas 32
+
+**Toda decisão aqui foi fechada antes de existir código.** Esta seção é o antídoto para a surpresa que isso produz: quem consulta uma sigla precisa saber, na mesma leitura, se ela ainda vale inteira. Uma linha por decisão que **mudou de forma ou envelheceu**, com o corte que a tocou e o motivo — nunca a conclusão nova repetida aqui, que envelheceria calada em segundo lugar.
+
+⚠️ **Alimentada por todo fechamento de corte, a partir do 23-E.** Premissa que caiu é assunto do [`README.md`](README.md) § *O que a execução já contrariou*; o que muda aqui é o estado de uma **decisão**.
+
+| Sigla | Corte | O que aconteceu com ela |
+|---|---|---|
+| **DM-16 · DM-25** | 23-D · 23-E | **Adiadas na prática, não revogadas.** A seleção trecho a trecho e o painel interativo seguem decididos, e o 23-G continua sendo o dono — mas os cortes visíveis chegaram até o resultado sem nenhuma caixa de marcação, e o rodapé ainda diz `nada consultado`. Nada aqui foi contrariado; o que envelheceu é a impressão de que estariam de pé desde o primeiro pixel |
+| **DM-30** | 23-E | **Reforçada pelo pior caso, e ele é real.** *"o usuário digita e o usuário desambigua"* deixou de ser preferência de produto e virou necessidade medida: na primeira consulta real fora da sonda (`pandas`), a ordenação do app pôs `/rsheftel/pandas_market_calendars` na frente e o `/pandas-dev/pandas` em **terceiro**. Nenhum campo da resposta escolhe certo sozinho — `benchmarkScore` não, `totalSnippets` não, `stars` não —, que é exatamente o motivo de a decisão existir |
+| **DM-32** | 23-D · 23-E | **Cumprida e sem pendência de licença.** O ícone `Library` serve o popover, o cabeçalho do painel e o painel inteiro; a palavra "Context7" é o crédito, em texto. A silhueta a 16px contra `NotebookPen`/`Paperclip` continua sendo verificação do 23-J, e só é possível lá, quando o contador do 23-H existir |
+| **DM-18** | 23-E | **Confirmada com pergunta real, não com sonda.** `fast=false` custou **2 a 3 s** numa consulta de verdade (`pandas`, versão fixada), contra os 2,2 s que o 23-B mediu sem pergunta formulada. O gatilho que promoveria o `invoke` a job segue sem disparar |
+| **DM-29** | 23-D | **Cumprida com um conserto que a decisão não previa.** O gatilho virou item de anexos, mas o popover trocava a lista inteira pelo detalhe do anexo — o item nasceria inalcançável. Detalhe em D23D.3 |
+| **DM-31** | 23-C | **Cumprida com uma quarta peça a mais.** As três que a decisão previa (booleano, filtro, interruptor) não bastavam: não havia como alterar uma parte já gravada, e o desligar exigiu canal novo (D23C.6) |
+| **DM-12** | 23-A | **Nove viraram dez.** `library-not-found` no `/context` não estava prevista — ninguém imaginou a biblioteca sumir entre as duas chamadas |
+| **DM-23** | 23-C | **Cumprida, e a contradição interna do desenho resolvida junto.** O que a parte persiste ficou fixado em D23C.3 |

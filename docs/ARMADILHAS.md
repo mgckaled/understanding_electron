@@ -12,6 +12,15 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### Componente que retorna `null` não desmonta, e o teste de preservação nasce vacuoso (set/2026)
+`DocsPanel` é renderizado sempre pela árvore e devolve `null` quando não há composição. **Isso não é desmontagem:** o fiber continua vivo, e todo `useState`/`useAsyncAction` chamado antes do `return null` guarda o valor através de fechar e reabrir o painel.
+
+A consequência morde no teste, não na tela. Um spec escrito para provar *"o estado precisa morar no provider, senão fechar o painel o perde"* **passa com o estado de volta no painel** — foi exatamente o que aconteceu no 23-E, e só a sabotagem revelou. A asserção não distinguia os dois desenhos porque nenhum dos dois perde nada.
+
+⚠️ **Duas causas se somam e é fácil culpar a errada.** A primeira é esta. A segunda é o fade: `Fechar painel` só marca `data-closing`, então clicar em reabrir logo em seguida nem chega a exercitar a saída — é preciso `await waitFor(() => expect(queryByRole('complementary')).not.toBeInTheDocument())` entre os dois cliques. Corrigir só a segunda **não** salva o teste, porque a primeira sozinha já o esvazia.
+
+**O que fazer:** antes de escrever qualquer asserção de "o estado sobrevive a X", pergunte se o componente que o guarda realmente desmonta em X. Se ele devolve `null` em vez de sair da árvore, a preservação não é propriedade do desenho que se quer provar — e a decisão precisa se sustentar em outro argumento, como aconteceu com D23E.3.
+
 ### Afinidade de CPU no Windows: as duas formas óbvias falham em direções opostas (set/2026)
 Ao tentar limitar o portão a metade das CPUs, os dois caminhos naturais foram medidos e **os dois são armadilhas**:
 

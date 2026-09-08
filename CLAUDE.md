@@ -52,7 +52,7 @@ Aplica o funil arquivo → linha → bloco do princípio acima; a tabela é a pa
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| **`plan/implemented/`** (79 arq.) | **~401k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
+| **`plan/implemented/`** (80 arq.) | **~401k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
 | `reference/` (26 arq.) | ~99k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
 | `HISTORY-archive.md` | ~55k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
 | `study/` (12 arq.) | ~39k | `Grep` no conceito; `Read` com `offset` na seção achada |
@@ -316,7 +316,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo — **109 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **110 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|

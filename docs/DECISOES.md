@@ -574,6 +574,17 @@ chamada de modelo no main (`D9.1`).
 | 23-D | [D23D.8](plan/implemented/23-D-o-painel-nasce.md) | Um ícone para o assunto inteiro (`Library`), em módulo próprio |
 | 23-D | [D23D.9](plan/implemented/23-D-o-painel-nasce.md) | O cabeçalho não tem `histórico` nem `+` — os dois pressupõem consulta anexada (23-G) |
 | 23-D | [D23D.10](plan/implemented/23-D-o-painel-nasce.md) | O aviso de privacidade é permanente sob o campo, nunca consentimento de uma vez |
+| 23-E | [D23E.1](plan/implemented/23-E-a-desambiguacao.md) | Corte 100% renderer — `docs:fetch` já aceitava `version?` desde o 23-B |
+| 23-E | [D23E.2](plan/implemented/23-E-a-desambiguacao.md) | Qual tela aparece é derivado do resultado da busca, nunca um terceiro valor a sincronizar |
+| 23-E | [D23E.3](plan/implemented/23-E-a-desambiguacao.md) | A busca sobe para o provider — mas não pela razão escrita no plano: `DocsPanel` retorna `null` e nunca desmonta |
+| 23-E | [D23E.4](plan/implemented/23-E-a-desambiguacao.md) | A seleção endereça `key`, jamais `id`, que se repete dentro de uma resposta |
+| 23-E | [D23E.5](plan/implemented/23-E-a-desambiguacao.md) | Rádios nativos: o Chromium já implementa o padrão Radio Group do APG inteiro |
+| 23-E | [D23E.6](plan/implemented/23-E-a-desambiguacao.md) | O primeiro nasce marcado — conveniência de teclado, e **não** o melhor palpite (contrariado em `pandas`) |
+| 23-E | [D23E.7](plan/implemented/23-E-a-desambiguacao.md) | `<select>` nativo para versão, divergindo de DS-4 passo 7: `color-scheme` já dá o tema, e a opção é uma string |
+| 23-E | [D23E.8](plan/implemented/23-E-a-desambiguacao.md) | Trocar de candidato zera versão e resultado — ambos pertencem à biblioteca sob a qual foram escolhidos |
+| 23-E | [D23E.9](plan/implemented/23-E-a-desambiguacao.md) | Sem versão indexada o seletor fica ausente, não desabilitado — é o caso comum, não a borda |
+| 23-E | [D23E.10](plan/implemented/23-E-a-desambiguacao.md) | O `Consultar` da tela 2 nasce ligado, com render provisório — molde de D23D.6 |
+| 23-E | [D23E.11](plan/implemented/23-E-a-desambiguacao.md) | O cabeçalho não muda: `/lib · versão` pressupõe consulta resolvida (23-F) |
 
 ---
 
