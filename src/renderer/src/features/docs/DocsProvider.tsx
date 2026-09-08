@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { useConversations } from '../conversation/conversationsContext'
 import { usePanel } from '../panel/panelContext'
 import { DocsContext, type DocsComposition } from './docsContext'
+import { useDocsFetch } from './useDocsFetch'
 import { useDocsSearch } from './useDocsSearch'
 
 function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element {
@@ -9,11 +10,22 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
   const { showing, raise, toggle: toggleRegion, close, release } = usePanel()
   const [composition, setComposition] = useState<DocsComposition | null>(null)
   const { state: searchState, search: runSearch, reset: resetSearch } = useDocsSearch()
+  const { state: fetchState, fetch: runFetch, reset: resetFetch } = useDocsFetch()
 
   // Stamped rather than cleared on navigation: one that belongs to another
   // transcript stops resolving, and closing the panel keeps the text (D23D.2).
   const current = composition?.conversationId === activeId ? composition : null
   const open = showing === 'docs'
+
+  // Derived here and not in the screen, because the call needs the same
+  // candidate the radio shows — two fallbacks would be free to diverge. The
+  // first stands in for a key left over from an earlier list (D23A.4).
+  const candidates =
+    searchState.status === 'ready' && searchState.data.status === 'found'
+      ? searchState.data.candidates
+      : []
+  const selected =
+    candidates.find((one) => one.key === current?.candidateKey) ?? candidates[0] ?? null
 
   const toggle = useCallback(
     (trigger: HTMLElement | null) => {
@@ -23,6 +35,7 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
         // search is not stamped with a conversation, so without this the new
         // composition would open on the previous one's candidates.
         resetSearch()
+        resetFetch()
         return {
           conversationId: activeId,
           library: '',
@@ -34,7 +47,7 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       if (open) toggleRegion('docs', trigger)
       else raise('docs', trigger)
     },
-    [activeId, open, raise, resetSearch, toggleRegion]
+    [activeId, open, raise, resetFetch, resetSearch, toggleRegion]
   )
 
   // Both cleared, not just the key: a version belongs to the library it was
@@ -45,15 +58,20 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     setComposition((previous) =>
       previous === null ? previous : { ...previous, candidateKey: null, version: null }
     )
+    resetFetch()
     await runSearch(query)
-  }, [composition?.library, runSearch])
+  }, [composition?.library, resetFetch, runSearch])
 
+  // The result belongs to the library it was fetched for: keeping it across a
+  // change of candidate would show one library's snippets under another's name.
   const selectCandidate = useCallback(
-    (key: string) =>
+    (key: string) => {
       setComposition((previous) =>
         previous === null ? previous : { ...previous, candidateKey: key, version: null }
-      ),
-    []
+      )
+      resetFetch()
+    },
+    [resetFetch]
   )
 
   const setVersion = useCallback(
@@ -61,6 +79,17 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       setComposition((previous) => (previous === null ? previous : { ...previous, version })),
     []
   )
+
+  // `version` is left out of the payload when absent rather than sent empty:
+  // the schema is `min(1)`, so a blank string would be a bug, not a default.
+  const fetchDocs = useCallback(async (): Promise<void> => {
+    if (selected === null || current === null) return
+    await runFetch({
+      libraryId: selected.id,
+      query: current.question,
+      ...(current.version === null ? {} : { version: current.version })
+    })
+  }, [current, runFetch, selected])
 
   const setLibrary = useCallback(
     (library: string) =>
@@ -79,6 +108,13 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     if (open && current === null) release()
   }, [open, current, release])
 
+  // Going back to the form drops both: the list is what the form produced, and
+  // the result is what the list produced.
+  const backToCompose = useCallback(() => {
+    resetSearch()
+    resetFetch()
+  }, [resetFetch, resetSearch])
+
   const value = useMemo(
     () => ({
       current: open ? current : null,
@@ -88,7 +124,10 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       setVersion,
       searchState,
       search,
-      resetSearch,
+      resetSearch: backToCompose,
+      fetchState,
+      fetchDocs,
+      selected,
       toggle,
       close
     }),
@@ -101,7 +140,10 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       setVersion,
       searchState,
       search,
-      resetSearch,
+      backToCompose,
+      fetchState,
+      fetchDocs,
+      selected,
       toggle,
       close
     ]

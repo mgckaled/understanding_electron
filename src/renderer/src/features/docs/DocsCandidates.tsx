@@ -2,6 +2,7 @@ import { useId } from 'react'
 import type { LibraryCandidate } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Field from '../../shared/ui/Field/Field'
+import StateView from '../../shared/ui/StateView'
 import { useDocs } from './docsContext'
 
 const decimal = new Intl.NumberFormat('pt-BR')
@@ -10,8 +11,7 @@ const score = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximum
 // Selection is the three-part composition the design system fixes: reserved
 // 2px left border, the hover step on the surface, and weight. Driven by state
 // and not by a `has-checked:` variant — no `has-` has been built here yet.
-const ROW =
-  'flex cursor-pointer gap-3 rounded-md border-l-2 px-4 py-3 hover:bg-surface-raised'
+const ROW = 'flex cursor-pointer gap-3 rounded-md border-l-2 px-4 py-3 hover:bg-surface-raised'
 const ROW_ON = 'border-l-accent-text bg-surface-raised'
 const ROW_OFF = 'border-l-transparent'
 
@@ -29,14 +29,16 @@ type DocsCandidatesProps = {
  * The disambiguation screen: the app's own order made visible, one library
  * picked, and the version pinned among the ones it indexes.
  */
-function DocsCandidates({ candidates, query, onBack }: DocsCandidatesProps): React.JSX.Element {
-  const { current, selectCandidate, setVersion } = useDocs()
+function DocsCandidates({
+  candidates,
+  query,
+  onBack
+}: DocsCandidatesProps): React.JSX.Element | null {
+  const { current, selected, selectCandidate, setVersion, fetchState, fetchDocs } = useDocs()
   const group = useId()
 
-  // Falls back to the first rather than storing a default on render: the order
-  // is already the app's (D23A.4), so the first is the best guess, and a key
-  // left over from an earlier list resolves to it instead of selecting nothing.
-  const selected = candidates.find((one) => one.key === current?.candidateKey) ?? candidates[0]
+  if (selected === null) return null
+  const loading = fetchState.status === 'loading'
 
   return (
     <>
@@ -75,7 +77,10 @@ function DocsCandidates({ candidates, query, onBack }: DocsCandidatesProps): Rea
                   {/* -1 on the wire means "does not apply", not zero (D23A.6) —
                       every /websites/* entry carries it. */}
                   {candidate.stars !== null && (
-                    <span className="flex-none">{decimal.format(candidate.stars)} ★</span>
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="flex-none">{decimal.format(candidate.stars)} ★</span>
+                    </>
                   )}
                   <span className="ml-auto flex-none text-text-faint">
                     benchmark {score.format(candidate.benchmarkScore)}
@@ -112,13 +117,37 @@ function DocsCandidates({ candidates, query, onBack }: DocsCandidatesProps): Rea
             </span>
           </div>
         )}
+
+        {/* Provisional: the three tabs are 23-F's. A count is the least that
+            still proves the paid call landed. */}
+        <StateView
+          state={fetchState}
+          render={(outcome) => (
+            <p className="text-xs text-text-muted">
+              {outcome.status === 'ready'
+                ? `${outcome.docs.snippets.length} trechos · ${outcome.docs.notes.length} notas · ${outcome.docs.rules === null ? 'sem regras' : 'com regras'}`
+                : outcome.status}
+            </p>
+          )}
+        />
       </div>
 
       <div className="flex flex-none items-center justify-between gap-3 border-t border-border px-5 py-4">
         <span className="text-xs text-text-faint">nada consultado</span>
-        <Button variant="ghost" size="sm" type="button" onClick={onBack}>
-          Voltar
-        </Button>
+        <span className="flex flex-none items-center gap-3">
+          <Button variant="ghost" size="sm" type="button" onClick={onBack} disabled={loading}>
+            Voltar
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            type="button"
+            loading={loading}
+            onClick={() => void fetchDocs()}
+          >
+            Consultar
+          </Button>
+        </span>
       </div>
     </>
   )

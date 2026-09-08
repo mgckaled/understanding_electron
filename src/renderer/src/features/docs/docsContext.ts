@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { SearchOutcome } from '@shared/ipc'
+import type { ContextOutcome, LibraryCandidate, SearchOutcome } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
 
 /** A consultation being composed, stamped with the conversation it follows (D23D.2). */
@@ -27,6 +27,11 @@ export type DocsApi = {
   searchState: ViewState<SearchOutcome>
   search: () => Promise<void>
   resetSearch: () => void
+  /** The second paid call, held beside the search for the same reason (D23E.3). */
+  fetchState: ViewState<ContextOutcome>
+  fetchDocs: () => Promise<void>
+  /** The picked candidate, or `null` while the search has no list to pick from. */
+  selected: LibraryCandidate | null
   /**
    * Shows the panel, or closes it when it is already the one open.
    *

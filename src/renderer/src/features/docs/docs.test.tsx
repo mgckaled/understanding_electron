@@ -295,3 +295,92 @@ describe('a desambiguação', () => {
     expect(screen.getByLabelText('Pergunta')).toHaveValue('invalidar cache')
   })
 })
+
+describe('a segunda chamada', () => {
+  async function pick(versions: string[]): Promise<void> {
+    await mount()
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+    await userEvent.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
+    await userEvent.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: { status: 'found', candidates: [{ ...CANDIDATE, versions }] }
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+    await screen.findByRole('radio', { checked: true })
+  }
+
+  it('sends the library and the question, with no version by default', async () => {
+    await pick(['v5.90.3'])
+    vi.mocked(api.docs.fetch).mockResolvedValue({ ok: true, value: { status: 'empty' } })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+
+    // The key is absent, not empty: `min(1)` on the schema makes a blank
+    // string a bug rather than a default (D23A.6).
+    expect(api.docs.fetch).toHaveBeenCalledWith({
+      libraryId: '/tanstack/query',
+      query: 'invalidar cache'
+    })
+  })
+
+  it('pins the version that was chosen', async () => {
+    await pick(['v5.90.3'])
+    vi.mocked(api.docs.fetch).mockResolvedValue({ ok: true, value: { status: 'empty' } })
+    await userEvent.selectOptions(screen.getByLabelText('Versão'), 'v5.90.3')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+
+    expect(api.docs.fetch).toHaveBeenCalledWith({
+      libraryId: '/tanstack/query',
+      query: 'invalidar cache',
+      version: 'v5.90.3'
+    })
+  })
+
+  // Provisional body (23-F replaces it): the count is what proves the paid
+  // call landed and was read.
+  it('counts what came back', async () => {
+    await pick([])
+    vi.mocked(api.docs.fetch).mockResolvedValue({
+      ok: true,
+      value: {
+        status: 'ready',
+        docs: {
+          snippets: [
+            { key: 'a#0', title: 'a', description: '', tokens: 10, blocks: [], pageTitle: null, sourceUrl: null },
+            { key: 'b#1', title: 'b', description: '', tokens: 20, blocks: [], pageTitle: null, sourceUrl: null }
+          ],
+          notes: [{ key: 'n#0', breadcrumb: null, content: 'nota', tokens: 5, sourceUrl: null }],
+          rules: null
+        }
+      }
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+
+    expect(await screen.findByText('2 trechos · 1 notas · sem regras')).toBeInTheDocument()
+  })
+
+  // The result was fetched for one library; showing it under another's name is
+  // the silent divergence this drops.
+  it('drops the result when the candidate changes', async () => {
+    await mount()
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+    await userEvent.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
+    await userEvent.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: { status: 'found', candidates: [CANDIDATE, TWIN] }
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+    await screen.findByRole('radio', { checked: true })
+    vi.mocked(api.docs.fetch).mockResolvedValue({ ok: true, value: { status: 'empty' } })
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+    expect(await screen.findByText('empty')).toBeInTheDocument()
+
+    await userEvent.click(screen.getAllByRole('radio')[1])
+
+    expect(screen.queryByText('empty')).not.toBeInTheDocument()
+  })
+})
