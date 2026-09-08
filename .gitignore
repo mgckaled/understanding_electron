@@ -1,57 +1,49 @@
 # dependências
 node_modules
 
-# saída do electron-vite (dev/build) e do electron-builder (empacotamento) —
-# são pastas diferentes de propósito, ver docs/plan/implemented/07-e2e-e-empacotamento.md § D7.5
-out
-dist
+# build - vite
+/out/
+/dist/
 
 # logs
-*.log*
+*.log
+*.log.*
 
-# TypeScript — cache incremental (composite: true em tsconfig.node.json e tsconfig.web.json)
+# TypeScript — cache
 *.tsbuildinfo
 
 # ESLint
 .eslintcache
 
-# segredos e configuração local. Nunca no repositório — ver CLAUDE.md § Segurança
-# e docs/plan/implemented/03-sandbox-e-seguranca.md. O electron-builder.yml já
-# exclui estes do pacote — mas ele empacota direto do disco, não do git, e a
-# lista de exclusão precisa ser mantida à mão em paralelo: ver a armadilha do
-# .claude/settings.local.json em docs/HISTORY.md (fase 07).
+# Secrets and environment variables
 .env
 .env.*
-# The seed template (plano N-1-A, DN1A.1) — confirmed with `git check-ignore
-# -v` that .env.* above would swallow it too without this negation. No real
-# value inside, so it is the one .env* file meant to be committed.
 !.env.example
 
-# Vitest — docs/plan/implemented/04-testes-rapidos.md
-coverage
+# Vitest
+/coverage/
 
-# Playwright — docs/plan/implemented/07-e2e-e-empacotamento.md
-playwright-report
-test-results
+# Playwright
+/playwright-report/
+/test-results/
+/playwright/.cache/
 
-# banco local do DuckDB, caso alguém crie um durante desenvolvimento. O uso real
-# fica em app.getPath('userData'), fora do repositório — docs/study/05-proximos-passos.md
+# Database
 *.duckdb
 *.duckdb.wal
+*.duckdb.tmp/
 
 # Windows / macOS
 Thumbs.db
 desktop.ini
 .DS_Store
 
-# settings.json é acordo do projeto e vai versionado; settings.local.json é
-# preferência de máquina — e, desde a config do MCP Context7, também guarda a
-# API key pessoal em "env" — e nunca viaja — docs/plan/implemented/08-automacao-e-registro.md
+# settings.json
 .claude/settings.local.json
 .claude/images/
 
 # others
-descarte/
+/descarte/
 
 # personal notes, drafts, and other non-shared content. Never in the repository.
-notes/
+/notes/

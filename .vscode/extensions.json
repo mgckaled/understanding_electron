@@ -2,7 +2,17 @@
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
-    "editorconfig.editorconfig"
+    "editorconfig.editorconfig",
+    "davidanson.vscode-markdownlint",
+    "bradlc.vscode-tailwindcss",
+    "ms-playwright.playwright",
+    "vitest.explorer"
   ],
-  "unwantedRecommendations": ["ms-python.python", "ms-python.vscode-pylance"]
+  "unwantedRecommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-vscode.vscode-typescript-next",
+    "hookyqr.beautify",
+    "rvest.vs-code-prettier-eslint"
+  ]
 }

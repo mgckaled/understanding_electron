@@ -5,28 +5,54 @@
   "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
 
+  // O watcher é o custo dominante: node_modules sozinho tem ~4,8k diretórios e
+  // ~32k arquivos, e .git inteiro (não só objects/) é reescrito a cada comando
+  // git — inclusive pelos hooks, que rodam a cada turno.
   "files.watcherExclude": {
-    "**/.git/objects/**": true,
+    "**/.git/**": true,
     "**/node_modules/**": true,
     "**/out/**": true,
     "**/dist/**": true,
-    "**/.eslintcache": true
+    "**/coverage/**": true,
+    "**/test-results/**": true,
+    "**/playwright-report/**": true,
+    "**/descarte/**": true,
+    "**/notes/**": true,
+    "**/.eslintcache": true,
+    "**/*.tsbuildinfo": true
   },
+  // Redundante com o .gitignore enquanto search.useIgnoreFiles for true (padrão);
+  // mantido para o caso de a flag ser desligada, e para o que o git versiona.
   "search.exclude": {
     "**/node_modules": true,
     "**/out": true,
     "**/dist": true,
-    "**/pnpm-lock.yaml": true
+    "**/coverage": true,
+    "**/pnpm-lock.yaml": true,
+    "**/*.tsbuildinfo": true
   },
   "search.followSymlinks": false,
   "files.exclude": {
     "**/.eslintcache": true,
     "**/out": true,
-    "**/dist": true
+    "**/dist": true,
+    "**/*.tsbuildinfo": true
   },
 
-  "python.analysis.exclude": ["**/node_modules/**", "**/__pycache__", "**/.*"],
-  "python.analysis.diagnosticMode": "openFilesOnly",
+  // O tsserver tem watcher próprio, que não lê files.watcherExclude.
+  "typescript.tsserver.watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "excludeDirectories": [
+      "**/node_modules",
+      "**/out",
+      "**/dist",
+      "**/coverage",
+      "**/docs",
+      "**/descarte",
+      "**/notes"
+    ]
+  },
 
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
