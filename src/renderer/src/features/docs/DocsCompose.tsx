@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import Button from '../../shared/ui/Button/Button'
 import Field from '../../shared/ui/Field/Field'
@@ -9,9 +10,11 @@ const INPUT =
 
 type DocsComposeProps = {
   onSearch: () => void
+  /** What the search came back with, drawn under the fields until 23-E gives it its own screen. */
+  result?: ReactNode
 }
 
-function DocsCompose({ onSearch }: DocsComposeProps): React.JSX.Element | null {
+function DocsCompose({ onSearch, result }: DocsComposeProps): React.JSX.Element | null {
   const { current, setLibrary, setQuestion } = useDocs()
 
   if (current === null) return null
@@ -53,6 +56,8 @@ function DocsCompose({ onSearch }: DocsComposeProps): React.JSX.Element | null {
           />
           A pergunta é enviada ao Context7, mesmo em conversa local.
         </p>
+
+        {result}
       </div>
 
       <div className="flex flex-none items-center justify-between gap-3 border-t border-border px-5 py-4">

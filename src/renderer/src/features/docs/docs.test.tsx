@@ -1,12 +1,28 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { Api } from '@shared/ipc'
+import type { Api, LibraryCandidate } from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
 import { useConversations } from '../conversation/conversationsContext'
 import { useDocs } from './docsContext'
 
 const PANEL = { name: 'Consulta de documentação' }
+
+const CANDIDATE: LibraryCandidate = {
+  key: '/tanstack/query#89.5',
+  id: '/tanstack/query',
+  title: 'TanStack Query',
+  description: 'Hooks for fetching, caching and updating asynchronous data',
+  branch: 'main',
+  state: 'finalized',
+  lastUpdateDate: '2026-09-01',
+  totalTokens: 824953,
+  totalSnippets: 2526,
+  stars: 45043,
+  trustScore: 8,
+  benchmarkScore: 89.5,
+  versions: ['v5.90.3']
+}
 
 let api: Api
 
@@ -123,5 +139,34 @@ describe('o formulário da consulta', () => {
     await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
 
     expect(screen.getByLabelText('Biblioteca')).toHaveValue('')
+  })
+
+  it('searches for the library that was typed', async () => {
+    // After compose(), never before: mount() installs a fresh mock.
+    await compose()
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: { status: 'found', candidates: [CANDIDATE] }
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+
+    expect(api.docs.search).toHaveBeenCalledWith('tanstack query')
+    expect(await screen.findByText(/\/tanstack\/query/)).toBeInTheDocument()
+  })
+
+  // D23A.3: a miss is a screen state travelling inside the value, so it never
+  // reaches StateView's error branch.
+  it('draws a miss as text, not as a failure', async () => {
+    await compose()
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: { status: 'no-libraries', message: 'Nenhuma biblioteca com esse nome.' }
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+
+    expect(await screen.findByText('Nenhuma biblioteca com esse nome.')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
