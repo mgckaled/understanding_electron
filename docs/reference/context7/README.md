@@ -66,9 +66,11 @@ RE6.4 já registra que nenhum caminho de acionamento é canônico, e o precedent
 
 ## Estado atual do código (confirmado lendo, 06/09/2026)
 
+⚠️ **Retrato de antes do arco começar — quatro linhas já foram consumidas pela execução.** `partForProvider` ganhou o `case` e `AttachmentPart` ficou de fora (23-C); `PanelKind` tem três inquilinos e `SidePanel` três consumidores (23-D). O que ainda vale como material de entrada são as linhas de `SidePanel`, `Tabs`, `ViewState`, `messages.ts`, `describeUpstreamError` e `StepProposalLine`, que seguem sem consumidor no arco.
+
 | Peça | Como está | Onde isto encaixa |
 |---|---|---|
-| `PanelKind` (`features/panel/panelContext.ts`) | `'artifact' \| 'draft'` | ganha um terceiro inquilino; `raise`/`toggle`/`close`/`release`, `width` por inquilino e `onShortcut` já existem |
+| ~~`PanelKind`~~ (`features/panel/panelContext.ts`) | ✅ **`'artifact' \| 'draft' \| 'docs'`** desde o 23-D | o terceiro inquilino existe, com largura própria e sem tecla de atalho (D23D.1) |
 | `StepProposalLine.tsx` | linha-botão na transcrição que chama `toggle(target, event.currentTarget, messageId)` | molde exato da linha na conversa (DF3F.1/DF3F.2) |
 | `DocumentPart` (`shared/ipc.ts`) | `{ kind, hash, fileName, format, text }` — texto **inline** | molde da forma do dado |
 | `partForProvider` (`core/ai/messages.ts`) | `switch` por `kind`; `document → formatDocumentCard` | um `case` novo |

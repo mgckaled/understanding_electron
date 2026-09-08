@@ -1,6 +1,8 @@
 # Context7 — o desenho do painel
 
 > Anexo de [`README.md`](README.md). O terceiro inquilino da região da direita, desenhado na passagem de 07/09/2026. **É o material dos cortes 23-D em diante.** Nada aqui foi verificado ao vivo — é alvo, não medição.
+>
+> ⚠️ **O que o 23-D construiu, e onde os desenhos já divergem da tela (08/09/2026).** Existem hoje: o painel sobre `SidePanel`, o cabeçalho, o gatilho no popover do composer, os dois campos do Estado 1, o aviso de privacidade e a chamada de busca. **Três divergências deliberadas, não pendências esquecidas:** (1) o cabeçalho **não** tem `histórico ▾` nem `[+]` — os dois pressupõem consulta anexada, que só existe do 23-G em diante (D23D.9); (2) o resultado da busca sai como lista crua de `id` e título **dentro** do formulário, e é isso que o Estado 2 substitui — sem o `[ Voltar ]` do desenho, uma segunda tela deixaria o painel sem saída; (3) o gatilho no popover **não** é só um item a mais na lista: o popover troca a lista inteira pelo detalhe do anexo quando há arquivo pendente, então os três itens de arquivo travam e `Documentação` nunca trava (D23D.3).
 
 ---
 

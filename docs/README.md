@@ -91,7 +91,7 @@ A regra de conservação continua valendo por cima: **remedir é o ato de conser
 
 A régua de tamanho do [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) mede código porque arquivo grande é sintoma. Documento tem o mesmo problema com uma vítima diferente: **quem paga não é quem escreve, é quem lê** — e num projeto operado por conversa, ler custa tokens de contexto, que é o recurso mais escasso da sessão.
 
-`docs/` inteiro passa de **1,9 MB / ~520k tokens** em quase cem arquivos, e `plan/implemented/` responde sozinho por mais da metade. Duas leituras integrais estouram o orçamento de uma sessão e disparam autocompactação — que apaga justamente o trabalho em curso. **O status de cada teto, com a série medida, tem dono no [`ROADMAP § 2`](ROADMAP.md); aqui fica só a régua.**
+`docs/` inteiro passa de **2,5 MB / ~693k tokens** em 126 arquivos (remedido 08/09/2026), e `plan/implemented/` responde sozinho por quase 60%. Duas leituras integrais estouram o orçamento de uma sessão e disparam autocompactação — que apaga justamente o trabalho em curso. **O status de cada teto, com a série medida, tem dono no [`ROADMAP § 2`](ROADMAP.md); aqui fica só a régua.**
 
 | Arquivo | Teto | Quando estoura |
 |---|---|---|

@@ -192,14 +192,14 @@ Pela via MCP elas chegam embutidas na prosa do `content[]`, indistinguíveis do 
 - O `openapi.json` oficial **não** tem paginação.
 - `ContextResponse` traz `codeTokens` e `contentTokens` por trecho.
 - Capacidades e teto treinado dos sete modelos da frota, por `/api/show`.
-- `PanelKind` tem dois inquilinos; `onShortcut` e `width` por inquilino já existem.
+- `PanelKind` tem **três** inquilinos desde o 23-D (`artifact`, `draft`, `docs`); `onShortcut` e `width` por inquilino já existem, e `docs` não registra atalho (D23D.1).
 - `SidePanel`, `Tabs`, `StateView`/`ViewState` e o `Record<ErrorKind, string>` de `messages.ts` já são primitivos — nada de casca a construir.
 - `MessageList` despacha por helpers `*PartOf(message)`, não por `switch` de `kind`.
 - `status: 'empty'` é usado em dez lugares para "resultado válido e vazio", com texto por caso.
 - `conversationWindow` só trava com `costed && locked && reserved !== undefined`, e decide janela, não conteúdo.
 - O painel de artefato **já mistura densidades**: `ArtifactBody` em `text-reading`, `ArtifactSteps`/`ArtifactDataset`/`ArtifactPicker` em `text-xs`/`text-sm`/`text-2xs`.
 - URL de serviço externo mora como constante *module-level* no adaptador (`GLM_ENDPOINT`, `OLLAMA_HOST`, `GEMINI_INTERACTIONS_URL`), não em `core/`.
-- `ArtifactPanel.tsx` e `DraftPanel.tsx` são os dois únicos consumidores de `SidePanel`.
+- `ArtifactPanel.tsx`, `DraftPanel.tsx` e — desde o 23-D — `DocsPanel.tsx` são os consumidores de `SidePanel`.
 - `checkExternalUrl` é só para `shell.openExternal`, não para `fetch`.
 - Consumo real da conta gratuita: 77/1.000 no mês.
 - Default de `type` é **`txt`** — o `json` do SDK é default do SDK, não da API.
