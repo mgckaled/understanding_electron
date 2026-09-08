@@ -48,19 +48,19 @@ Ciclo de um plano, em uma linha: nasce em `plan/active/` → cada sessão acresc
 
 Aplica o funil arquivo → linha → bloco do princípio acima; a tabela é a particularidade de `docs/` — qual exceção cada arquivo impõe.
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,51 MB / ~693k tokens** em 126 arquivos (remedido 08/09/2026), e `plan/implemented/` sozinho responde por **58%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,57 MB / ~709k tokens** em 128 arquivos (remedido 08/09/2026), e `plan/implemented/` sozinho responde por **58%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| **`plan/implemented/`** (80 arq.) | **~401k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
-| `reference/` (26 arq.) | ~99k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
-| `HISTORY-archive.md` | ~55k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
+| **`plan/implemented/`** (81 arq.) | **~410k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
+| `reference/` (26 arq.) | ~102k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| `HISTORY-archive.md` | ~57k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
 | `study/` (12 arq.) | ~39k | `Grep` no conceito; `Read` com `offset` na seção achada |
-| `ARMADILHAS.md` | ~31k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
-| `DECISOES.md` | ~20k | `Grep` na sigla (`D<n>.<n>`, `DT<n>`) — é tabela, uma linha responde |
-| `ROADMAP.md` | ~15k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
-| `ESCOPO.md` | ~12k | `Grep` no pilar ou na operação |
-| `HISTORY.md` | ~8k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
+| `ARMADILHAS.md` | ~32k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
+| `DECISOES.md` | ~21k | `Grep` na sigla (`D<n>.<n>`, `DT<n>`) — é tabela, uma linha responde |
+| `ROADMAP.md` | ~16k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
+| `ESCOPO.md` | ~13k | `Grep` no pilar ou na operação |
+| `HISTORY.md` | ~9k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
 | `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
 | `README.md` | ~5k | único que cabe inteiro |
 
@@ -316,7 +316,7 @@ Estado da fronteira renderer ↔ main, fixado na [fase 03](docs/plan/implemented
 
 ## Armadilhas — o conserto rápido
 
-O diagnóstico completo — **110 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
+O diagnóstico completo — **111 entradas, da fundação ao arco atual** — é dono de [`docs/ARMADILHAS.md`](docs/ARMADILHAS.md), com as da montagem inicial detalhadas em [`docs/study/04-diario-de-bordo.md`](docs/study/04-diario-de-bordo.md). Aqui fica só o conserto de um toque, para o erro que reaparece ao montar o ambiente:
 
 | Sintoma | Conserto |
 |---|---|

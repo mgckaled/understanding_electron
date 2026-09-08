@@ -51,6 +51,10 @@ A regra vale em todos os cinco níveis, e é mais fácil de violar do que parece
 
 **O procedimento que fecha isso:** veja o teste **vermelho** antes de deixá-lo verde — removendo a correção, sabotando a entrada, ou escrevendo-o antes do conserto. Se você não viu falhar, não sabe o que ele mede.
 
+⚠️ **E vermelho tem uma forma só: `Tests  N failed`, com o NOME do teste esperado na lista de falhas.** Qualquer outra forma de não-verde é a suíte não tendo corrido, e a que mais engana é `Tests  no tests` — sabotagem feita por shell (`sed -i`, `python -c`) que quebre a sintaxe do arquivo produz isso, e "não passou" parece confirmar a sabotagem. Confira a linha tocada antes de crer na corrida; a armadilha completa está em [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md) § *`Tests  no tests` depois de sabotar o fonte*.
+
+**Sabotagem larga demais prova menos do que parece.** Anular a tela inteira num teste com duas asserções (*"as abas aparecem"* **e** *"a lista some"*) derruba a primeira e deixa a segunda sem exercício — no 23-F foram necessárias **duas** sabotagens para o mesmo teste. A régua: cada asserção discriminante quer o defeito que **ela** inverteria, não um defeito qualquer.
+
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
 
 ## Limites de ambiente de teste — seis casos, provados caros

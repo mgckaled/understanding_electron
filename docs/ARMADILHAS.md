@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **106** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **111** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -11,6 +11,13 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 ---
 
 ## Ativas
+
+### `Tests  no tests` depois de sabotar o fonte — a suíte não correu, e isso não é um vermelho (set/2026)
+Provar um vermelho por sabotagem via shell (`python -c`, `sed -i`) tem um modo de falha que **se parece com sucesso**: se o texto injetado quebrar a sintaxe, o Vitest não roda teste nenhum e imprime `Tests  no tests` junto de `Transform failed with 1 error`. Aconteceu no 23-F com `\&\&` — o `&` escapado pelo shell entrou literal no `.tsx`.
+
+**A leitura errada é fatal para o método:** "não passou" parece confirmar a sabotagem, e o teste segue sem nunca ter sido exercitado. O vermelho que vale é `Tests  N failed`, com o **nome** do teste esperado na lista de falhas; qualquer outra forma de não-verde é a suíte não tendo corrido.
+
+⚠️ **Conserto de rota:** para `&&` dentro de string em `python -c` sob Git Bash, use `'...'` simples de Python **sem** escape (`'{false && ('`), ou o `Edit`, que não passa pelo shell. E confira o arquivo (`grep` na linha tocada) antes de crer no resultado da corrida.
 
 ### Componente que retorna `null` não desmonta, e o teste de preservação nasce vacuoso (set/2026)
 `DocsPanel` é renderizado sempre pela árvore e devolve `null` quando não há composição. **Isso não é desmontagem:** o fiber continua vivo, e todo `useState`/`useAsyncAction` chamado antes do `return null` guarda o valor através de fechar e reabrir o painel.
