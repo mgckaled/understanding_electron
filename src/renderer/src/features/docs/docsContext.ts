@@ -30,6 +30,8 @@ export type DocsApi = {
   /** The second paid call, held beside the search for the same reason (D23E.3). */
   fetchState: ViewState<ContextOutcome>
   fetchDocs: () => Promise<void>
+  /** Drops the answer alone, which is the third screen's way back (D23F.3). */
+  resetFetch: () => void
   /** The picked candidate, or `null` while the search has no list to pick from. */
   selected: LibraryCandidate | null
   /**

@@ -118,17 +118,16 @@ function DocsCandidates({
           </div>
         )}
 
-        {/* Provisional: the three tabs are 23-F's. A count is the least that
-            still proves the paid call landed. */}
+        {/* Everything the answer is NOT: `ready` gets its own screen (D23F.2),
+            so only empty, indexing and library-not-found land here. The
+            Portuguese of each is 23-I's — the raw status holds the place. */}
         <StateView
           state={fetchState}
-          render={(outcome) => (
-            <p className="text-xs text-text-muted">
-              {outcome.status === 'ready'
-                ? `${outcome.docs.snippets.length} trechos · ${outcome.docs.notes.length} notas · ${outcome.docs.rules === null ? 'sem regras' : 'com regras'}`
-                : outcome.status}
-            </p>
-          )}
+          render={(outcome) =>
+            outcome.status === 'ready' ? null : (
+              <p className="text-xs text-text-muted">{outcome.status}</p>
+            )
+          }
         />
       </div>
 

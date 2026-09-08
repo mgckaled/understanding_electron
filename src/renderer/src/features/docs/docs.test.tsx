@@ -338,29 +338,8 @@ describe('a segunda chamada', () => {
     })
   })
 
-  // Provisional body (23-F replaces it): the count is what proves the paid
-  // call landed and was read.
-  it('counts what came back', async () => {
-    await pick([])
-    vi.mocked(api.docs.fetch).mockResolvedValue({
-      ok: true,
-      value: {
-        status: 'ready',
-        docs: {
-          snippets: [
-            { key: 'a#0', title: 'a', description: '', tokens: 10, blocks: [], pageTitle: null, sourceUrl: null },
-            { key: 'b#1', title: 'b', description: '', tokens: 20, blocks: [], pageTitle: null, sourceUrl: null }
-          ],
-          notes: [{ key: 'n#0', breadcrumb: null, content: 'nota', tokens: 5, sourceUrl: null }],
-          rules: null
-        }
-      }
-    })
-
-    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
-
-    expect(await screen.findByText('2 trechos · 1 notas · sem regras')).toBeInTheDocument()
-  })
+  // What the answer looks like is docsResult.test.tsx's, from 23-F on. What
+  // stays here is the call itself and what it invalidates.
 
   // The result was fetched for one library; showing it under another's name is
   // the silent divergence this drops.

@@ -127,6 +127,7 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       resetSearch: backToCompose,
       fetchState,
       fetchDocs,
+      resetFetch,
       selected,
       toggle,
       close
@@ -143,6 +144,7 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       backToCompose,
       fetchState,
       fetchDocs,
+      resetFetch,
       selected,
       toggle,
       close
