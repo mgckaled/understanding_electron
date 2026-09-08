@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react'
 
 /** Who can occupy the side region. One at a time, by construction (DE1B.1). */
-export type PanelKind = 'artifact' | 'draft'
+export type PanelKind = 'artifact' | 'draft' | 'docs'
 
 export type PanelApi = {
   /** Which tenant is on screen, or `null` when the region is closed. */

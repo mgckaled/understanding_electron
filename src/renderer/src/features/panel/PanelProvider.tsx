@@ -23,7 +23,8 @@ function PanelProvider({ children, onOpen }: PanelProviderProps): React.JSX.Elem
   const [showing, setShowing] = useState<PanelKind | null>(null)
   const [widths, setWidths] = useState<Record<PanelKind, number>>({
     artifact: DEFAULT_WIDTH,
-    draft: DEFAULT_WIDTH
+    draft: DEFAULT_WIDTH,
+    docs: DEFAULT_WIDTH
   })
   const [closing, setClosing] = useState(false)
 

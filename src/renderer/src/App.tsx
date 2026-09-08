@@ -10,6 +10,8 @@ import ArtifactPanel from './features/artifact/ArtifactPanel'
 import ArtifactProvider from './features/artifact/ArtifactProvider'
 import DraftPanel from './features/draft/DraftPanel'
 import DraftProvider from './features/draft/DraftProvider'
+import DocsPanel from './features/docs/DocsPanel'
+import DocsProvider from './features/docs/DocsProvider'
 import PanelProvider from './features/panel/PanelProvider'
 import ConversationsProvider from './features/conversation/ConversationsProvider'
 import NewConversationButton from './features/conversation/NewConversationButton'
@@ -37,72 +39,75 @@ function App(): React.JSX.Element {
         <PanelProvider onOpen={makeRoom}>
           <ArtifactProvider>
             <DraftProvider>
-              <AppShell
-                sidebarCollapsed={collapsed}
-                sidebar={
-                  <Sidebar
-                    collapsed={collapsed}
-                    onCollapsedChange={setCollapsed}
-                    nav={<NewConversationButton />}
-                    // The "Abrir arquivo" section moved into the composer as the
-                    // clip (DS5, item 7) — the sidebar's content slot is
-                    // ConversationList alone now.
-                    content={<ConversationList />}
-                    footer={
-                      <div className="flex items-center justify-between gap-3">
-                        <OllamaStatus />
-                        <div className="flex items-center">
-                          <Observatory />
-                          <Settings />
+              <DocsProvider>
+                <AppShell
+                  sidebarCollapsed={collapsed}
+                  sidebar={
+                    <Sidebar
+                      collapsed={collapsed}
+                      onCollapsedChange={setCollapsed}
+                      nav={<NewConversationButton />}
+                      // The "Abrir arquivo" section moved into the composer as the
+                      // clip (DS5, item 7) — the sidebar's content slot is
+                      // ConversationList alone now.
+                      content={<ConversationList />}
+                      footer={
+                        <div className="flex items-center justify-between gap-3">
+                          <OllamaStatus />
+                          <div className="flex items-center">
+                            <Observatory />
+                            <Settings />
+                          </div>
                         </div>
-                      </div>
-                    }
-                    // The rail: direct action where one exists ("+" creates now,
-                    // Configurações opens now — a second `Settings` instance, fully
-                    // self-contained, so no state is lifted); Busca/Conversas only
-                    // expand, since 44px has no room to show what they would open
-                    // (F2.4). Configurações sits at the bottom (`mt-auto`), mirroring
-                    // its footer position in the expanded sidebar — the other three
-                    // are top actions, not siblings of a settings gear. The
-                    // observatory sits directly above it, the same pairing the
-                    // footer shows.
-                    collapsedRail={(expand) => (
-                      <>
-                        <NewConversationButton compact />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          shape="square"
-                          onClick={expand}
-                          aria-label="Buscar conversas"
-                        >
-                          <Search size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          shape="square"
-                          onClick={expand}
-                          aria-label="Ver conversas"
-                        >
-                          <MessageSquare size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
-                        </Button>
-                        <div className="mt-auto flex flex-col items-center gap-2">
-                          <Observatory />
-                          <Settings />
-                        </div>
-                      </>
-                    )}
-                  />
-                }
-                main={<ConversationView />}
-                panel={
-                  <>
-                    <ArtifactPanel />
-                    <DraftPanel />
-                  </>
-                }
-              />
+                      }
+                      // The rail: direct action where one exists ("+" creates now,
+                      // Configurações opens now — a second `Settings` instance, fully
+                      // self-contained, so no state is lifted); Busca/Conversas only
+                      // expand, since 44px has no room to show what they would open
+                      // (F2.4). Configurações sits at the bottom (`mt-auto`), mirroring
+                      // its footer position in the expanded sidebar — the other three
+                      // are top actions, not siblings of a settings gear. The
+                      // observatory sits directly above it, the same pairing the
+                      // footer shows.
+                      collapsedRail={(expand) => (
+                        <>
+                          <NewConversationButton compact />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            shape="square"
+                            onClick={expand}
+                            aria-label="Buscar conversas"
+                          >
+                            <Search size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            shape="square"
+                            onClick={expand}
+                            aria-label="Ver conversas"
+                          >
+                            <MessageSquare size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+                          </Button>
+                          <div className="mt-auto flex flex-col items-center gap-2">
+                            <Observatory />
+                            <Settings />
+                          </div>
+                        </>
+                      )}
+                    />
+                  }
+                  main={<ConversationView />}
+                  panel={
+                    <>
+                      <ArtifactPanel />
+                      <DraftPanel />
+                      <DocsPanel />
+                    </>
+                  }
+                />
+              </DocsProvider>
             </DraftProvider>
           </ArtifactProvider>
         </PanelProvider>

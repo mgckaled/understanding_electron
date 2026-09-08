@@ -5,6 +5,8 @@ import ArtifactPanel from '@renderer/features/artifact/ArtifactPanel'
 import ArtifactProvider from '@renderer/features/artifact/ArtifactProvider'
 import DraftPanel from '@renderer/features/draft/DraftPanel'
 import DraftProvider from '@renderer/features/draft/DraftProvider'
+import DocsPanel from '@renderer/features/docs/DocsPanel'
+import DocsProvider from '@renderer/features/docs/DocsProvider'
 import PanelProvider from '@renderer/features/panel/PanelProvider'
 import ConversationsProvider from '@renderer/features/conversation/ConversationsProvider'
 
@@ -30,9 +32,12 @@ export function providers(children: ReactNode): React.JSX.Element {
         <PanelProvider>
           <ArtifactProvider>
             <DraftProvider>
-              {children}
-              <ArtifactPanel />
-              <DraftPanel />
+              <DocsProvider>
+                {children}
+                <ArtifactPanel />
+                <DraftPanel />
+                <DocsPanel />
+              </DocsProvider>
             </DraftProvider>
           </ArtifactProvider>
         </PanelProvider>
