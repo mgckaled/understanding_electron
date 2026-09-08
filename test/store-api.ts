@@ -2,15 +2,18 @@ import { vi } from 'vitest'
 import type { Api } from '@shared/ipc'
 import { openDatabase } from '../src/main/db/open'
 import {
-  appendMessage,
   createConversation,
   listConversations,
-  readMessages,
   removeConversation,
-  removeMessage,
   renameConversation,
   updateConversationSettings
 } from '../src/main/features/conversation/handlers'
+import {
+  appendMessage,
+  readMessages,
+  removeMessage,
+  setDocsEnabled
+} from '../src/main/features/conversation/messages'
 import {
   createDraft,
   listDrafts,
@@ -53,7 +56,11 @@ export function createStoreApi(): Pick<Api, 'conversation' | 'draft' | 'settings
       append: vi.fn(async (conversationId, message, title) =>
         appendMessage({ conversationId, message, ...(title === undefined ? {} : { title }) }, db)
       ),
-      updateSettings: vi.fn(async (id, patch) => updateConversationSettings({ id, patch }, db))
+      updateSettings: vi.fn(async (id, patch) => updateConversationSettings({ id, patch }, db)),
+      setDocsEnabled: vi.fn(
+        async (conversationId: string, messageId: string, docsId: string, enabled: boolean) =>
+          setDocsEnabled({ conversationId, messageId, docsId, enabled }, db)
+      )
     },
     draft: {
       list: vi.fn(async (conversationId: string) => listDrafts({ conversationId }, db)),

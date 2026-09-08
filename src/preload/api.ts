@@ -62,7 +62,9 @@ export const api: Api = {
       invoke('conversation:removeMessage', { conversationId, messageId }),
     append: (conversationId, message, title) =>
       invoke('conversation:append', { conversationId, message, title }),
-    updateSettings: (id, patch) => invoke('conversation:settings', { id, patch })
+    updateSettings: (id, patch) => invoke('conversation:settings', { id, patch }),
+    setDocsEnabled: (conversationId, messageId, docsId, enabled) =>
+      invoke('conversation:setDocsEnabled', { conversationId, messageId, docsId, enabled })
   },
   export: {
     save: (args) => invoke('export:save', args)

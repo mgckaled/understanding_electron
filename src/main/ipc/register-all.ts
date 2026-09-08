@@ -79,15 +79,18 @@ import {
   makeGeminiProbe
 } from '../features/ai/providers/gemini'
 import {
-  appendMessage,
   createConversation,
   listConversations,
-  readMessages,
   removeConversation,
-  removeMessage,
   renameConversation,
   updateConversationSettings
 } from '../features/conversation/handlers'
+import {
+  appendMessage,
+  readMessages,
+  removeMessage,
+  setDocsEnabled
+} from '../features/conversation/messages'
 import { createDraft, listDrafts, removeDraft, updateDraft } from '../features/draft/handlers'
 import { saveExport } from '../features/export/handlers'
 import { printPdf } from '../features/export/printPdf'
@@ -324,6 +327,7 @@ export async function registerAll(): Promise<() => void> {
   })
   handle('conversation:append', (args) => appendMessage(args, db))
   handle('conversation:settings', (args) => updateConversationSettings(args, db))
+  handle('conversation:setDocsEnabled', (args) => setDocsEnabled(args, db))
 
   handle('draft:list', (args) => listDrafts(args, db))
   handle('draft:create', (args) => createDraft(args, db))

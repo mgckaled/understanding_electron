@@ -1,16 +1,14 @@
 import type { DatabaseSync } from 'node:sqlite'
-import type { ConversationSettings, Message } from '@shared/ipc'
+import type { ConversationSettings, DocsPart, Message, MessagePart } from '@shared/ipc'
 import { openDatabase } from '../../db/open'
 import {
-  appendMessage,
   createConversation,
   listConversations,
-  readMessages,
   removeConversation,
-  removeMessage,
   renameConversation,
   updateConversationSettings
 } from './handlers'
+import { appendMessage, readMessages, removeMessage, setDocsEnabled } from './messages'
 
 /*
  * Level 3: every handler is a plain exported function taking the database as a
@@ -305,5 +303,103 @@ describe('removeMessage', () => {
     removeMessage({ conversationId: 'c2', messageId: 'm1' }, db)
 
     expect(readMessages({ conversationId: 'c1' }, db)).toHaveLength(1)
+  })
+})
+
+describe('setDocsEnabled', () => {
+  function docsPart(id: string): DocsPart {
+    return {
+      kind: 'docs',
+      id,
+      libraryId: '/tanstack/query',
+      libraryTitle: 'TanStack Query',
+      version: null,
+      query: 'invalidar cache',
+      enabled: true,
+      snippets: [
+        {
+          key: 's1',
+          title: 'invalidateQueries',
+          description: '',
+          tokens: 182,
+          // Newline, quotes and a backslash on purpose: json_set rewrites the
+          // document, and this is what proves it does not mangle code.
+          blocks: [{ language: 'typescript', code: 'const r = await fetch("x")\n\treturn r\\n' }],
+          pageTitle: null,
+          sourceUrl: null
+        }
+      ],
+      notes: [],
+      omitted: [],
+      rules: null
+    }
+  }
+
+  function partsOf(messageId: string): MessagePart[] {
+    const found = readMessages({ conversationId: 'c1' }, db).find((item) => item.id === messageId)
+    return found === undefined ? [] : found.parts
+  }
+
+  beforeEach(() => {
+    createConversation({ id: 'c1', title: 'Conversa', createdAt: 1000 }, db)
+    appendMessage(
+      {
+        conversationId: 'c1',
+        message: message({
+          id: 'm1',
+          parts: [{ kind: 'text', text: 'oi' }, docsPart('d1'), docsPart('d2')]
+        })
+      },
+      db
+    )
+  })
+
+  it('switches off the addressed consultation and no other', () => {
+    setDocsEnabled({ conversationId: 'c1', messageId: 'm1', docsId: 'd2', enabled: false }, db)
+
+    const parts = partsOf('m1')
+    expect(parts[1]).toMatchObject({ id: 'd1', enabled: true })
+    expect(parts[2]).toMatchObject({ id: 'd2', enabled: false })
+  })
+
+  it('switches it back on', () => {
+    setDocsEnabled({ conversationId: 'c1', messageId: 'm1', docsId: 'd1', enabled: false }, db)
+    setDocsEnabled({ conversationId: 'c1', messageId: 'm1', docsId: 'd1', enabled: true }, db)
+
+    expect(partsOf('m1')[1]).toMatchObject({ id: 'd1', enabled: true })
+  })
+
+  it('leaves every other byte of the blob untouched, code included', () => {
+    const before = partsOf('m1')
+
+    setDocsEnabled({ conversationId: 'c1', messageId: 'm1', docsId: 'd1', enabled: false }, db)
+
+    const after = partsOf('m1')
+    // Not a smoke assertion: the fixture's code carries a newline, a tab, an
+    // escaped quote and a backslash, and json_set re-serializes the document.
+    expect(after[0]).toEqual(before[0])
+    expect(after[2]).toEqual(before[2])
+    expect(after[1]).toEqual({ ...before[1], enabled: false })
+  })
+
+  it('touches nothing when the docs id is not in that message', () => {
+    const before = partsOf('m1')
+
+    setDocsEnabled({ conversationId: 'c1', messageId: 'm1', docsId: 'ghost', enabled: false }, db)
+
+    // Not a guard we wrote: json_set given a NULL path — which is what the
+    // subquery produces for an unknown id — returns the document unchanged
+    // rather than failing. This test pins that behaviour, because the whole
+    // no-op rests on it (D23C.7).
+    expect(partsOf('m1')).toEqual(before)
+  })
+
+  it('leaves the message alone when conversationId does not match it', () => {
+    createConversation({ id: 'c2', title: 'Outra', createdAt: 1000 }, db)
+    const before = partsOf('m1')
+
+    setDocsEnabled({ conversationId: 'c2', messageId: 'm1', docsId: 'd1', enabled: false }, db)
+
+    expect(partsOf('m1')).toEqual(before)
   })
 })

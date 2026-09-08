@@ -1,12 +1,13 @@
 import type { DatabaseSync } from 'node:sqlite'
-import type { Args, Conversation, Message } from '@shared/ipc'
-import { inTransaction } from '../../db/transaction'
-import { toConversation, toMessage } from './rows'
+import type { Args, Conversation } from '@shared/ipc'
+import { toConversation } from './rows'
 
 // Conversations are the app's first data of its own (ESCOPO.md). Every handler
 // takes the database as a parameter (DIP), so all are callable as plain
 // functions against ':memory:' in a level-3 test — no Electron, no mock; only
 // ipc/register-all.ts knows where the file lives.
+//
+// This half addresses the conversation row; the message row is messages.ts.
 
 export function listConversations(_args: void, db: DatabaseSync): Conversation[] {
   // `settings` rides along (D15.6): it is a couple of hundred bytes already in
@@ -19,19 +20,6 @@ export function listConversations(_args: void, db: DatabaseSync): Conversation[]
     )
     .all()
     .map(toConversation)
-}
-
-export function readMessages(
-  { conversationId }: Args<'conversation:messages'>,
-  db: DatabaseSync
-): Message[] {
-  return db
-    .prepare(
-      `SELECT id, role, parts, created_at, model, stopped, prompt_tokens, eval_tokens FROM messages
-       WHERE conversation_id = ? ORDER BY created_at, id`
-    )
-    .all(conversationId)
-    .map(toMessage)
 }
 
 export function createConversation(
@@ -62,18 +50,6 @@ export function removeConversation({ id }: Args<'conversation:remove'>, db: Data
   db.prepare('DELETE FROM conversations WHERE id = ?').run(id)
 }
 
-export function removeMessage(
-  { conversationId, messageId }: Args<'conversation:removeMessage'>,
-  db: DatabaseSync
-): void {
-  // Same "absence is data" reasoning as appendMessage's dropped-race case — a
-  // message already gone (double click, stale card) touches zero rows, not an error.
-  db.prepare('DELETE FROM messages WHERE id = ? AND conversation_id = ?').run(
-    messageId,
-    conversationId
-  )
-}
-
 export function updateConversationSettings(
   { id, patch }: Args<'conversation:settings'>,
   db: DatabaseSync
@@ -87,35 +63,4 @@ export function updateConversationSettings(
     JSON.stringify(patch),
     id
   )
-}
-
-export function appendMessage(
-  { conversationId, message, title }: Args<'conversation:append'>,
-  db: DatabaseSync
-): void {
-  inTransaction(db, () => {
-    const touched = db
-      .prepare('UPDATE conversations SET updated_at = ?, title = COALESCE(?, title) WHERE id = ?')
-      .run(message.createdAt, title ?? null, conversationId)
-
-    // A reply can land after its conversation was deleted (cancel + remove while
-    // the partial is on its way). It is dropped, not a foreign-key error —
-    // nothing here is a defect — detected by the UPDATE's own row count.
-    if (Number(touched.changes) === 0) return
-
-    db.prepare(
-      `INSERT INTO messages (id, conversation_id, role, parts, created_at, model, stopped, prompt_tokens, eval_tokens)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      message.id,
-      conversationId,
-      message.role,
-      JSON.stringify(message.parts),
-      message.createdAt,
-      message.model ?? null,
-      message.stopped ?? null,
-      message.promptTokens ?? null,
-      message.evalTokens ?? null
-    )
-  })
 }

@@ -1034,6 +1034,17 @@ export const argsSchema = {
     id: z.string().min(1),
     patch: conversationSettingsSchema
   }),
+  // The only mutable field of a persisted part (DM-31). It lives in this domain
+  // and not in `docs:*` because the operation is editing the transcript, not
+  // consulting documentation (D23C.6) — which keeps main/features/context7/ as
+  // pure fetch, with no knowledge of the database. `conversationId` scopes the
+  // UPDATE for the same reason removeMessage does.
+  'conversation:setDocsEnabled': z.object({
+    conversationId: z.string().min(1),
+    messageId: z.string().min(1),
+    docsId: z.string().min(1),
+    enabled: z.boolean()
+  }),
   // Drafts (trilha E-1). Identity is minted in the renderer like every
   // conversation channel above (D14.5), and `title` is derived there too, by
   // core/draft/title.ts (DE1A.4).
@@ -1237,6 +1248,10 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['conversation:settings']>
     result: void
   }
+  'conversation:setDocsEnabled': {
+    args: z.infer<(typeof argsSchema)['conversation:setDocsEnabled']>
+    result: void
+  }
   // No Result, by the conversation block's rule: an indexed INSERT into a local
   // SQLite has no failure the UI distinguishes, and absence is data (DE1A.5).
   'draft:list': { args: z.infer<(typeof argsSchema)['draft:list']>; result: Draft[] }
@@ -1376,6 +1391,13 @@ export type Api = {
     append(conversationId: string, message: Message, title?: string): Promise<void>
     /** Merge-patches this conversation's settings; absent keys are untouched. */
     updateSettings(id: string, patch: ConversationSettings): Promise<void>
+    /** Takes one Context7 consultation out of the resend, or puts it back — it stays in the transcript either way (DM-31). */
+    setDocsEnabled(
+      conversationId: string,
+      messageId: string,
+      docsId: string,
+      enabled: boolean
+    ): Promise<void>
   }
   draft: {
     /** Oldest first, scoped to one conversation — drafts die with it (`ON DELETE CASCADE`). */

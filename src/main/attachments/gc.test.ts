@@ -4,11 +4,8 @@ import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import type { MessagePart } from '@shared/ipc'
 import { openDatabase } from '../db/open'
-import {
-  appendMessage,
-  createConversation,
-  removeConversation
-} from '../features/conversation/handlers'
+import { createConversation, removeConversation } from '../features/conversation/handlers'
+import { appendMessage } from '../features/conversation/messages'
 import { collectOrphanedAttachments, referencedHashes } from './gc'
 
 // Keyed by db, not a module-level Set: each test opens its OWN ':memory:'
