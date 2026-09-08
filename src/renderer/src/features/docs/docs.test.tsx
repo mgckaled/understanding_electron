@@ -70,3 +70,58 @@ describe('painel de documentação', () => {
     expect(screen.getByRole('complementary', PANEL)).not.toHaveAttribute('data-closing')
   })
 })
+
+describe('o formulário da consulta', () => {
+  async function compose(): Promise<void> {
+    await mount()
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+    await userEvent.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
+    await userEvent.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
+  }
+
+  // DM-22: the warning is permanent, never a first-time consent — it has to be
+  // on screen in the turn the question leaves the machine.
+  it('warns that the question leaves the machine', async () => {
+    await mount()
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+    expect(
+      screen.getByText('A pergunta é enviada ao Context7, mesmo em conversa local.')
+    ).toBeInTheDocument()
+  })
+
+  // DM-12, situação 1: a blank field is a 400 the app must never spend. Each
+  // field is left empty in its own turn — filling them in one fixed order
+  // passes against a rule that reads only the second one.
+  it.each([
+    ['Biblioteca', 'Pergunta'],
+    ['Pergunta', 'Biblioteca']
+  ])('holds Consultar with only %s filled', async (filled, empty) => {
+    await mount()
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+    await userEvent.type(screen.getByLabelText(filled), 'alguma coisa')
+
+    expect(screen.getByRole('button', { name: 'Consultar' })).toBeDisabled()
+    await userEvent.type(screen.getByLabelText(empty), 'e outra')
+    expect(screen.getByRole('button', { name: 'Consultar' })).toBeEnabled()
+  })
+
+  it('keeps what was typed when the panel is closed and reopened', async () => {
+    await compose()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fechar painel' }))
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+    expect(screen.getByLabelText('Biblioteca')).toHaveValue('tanstack query')
+  })
+
+  it('drops it when the conversation changes', async () => {
+    await compose()
+
+    await userEvent.click(screen.getByRole('button', { name: 'ir para Segunda' }))
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+    expect(screen.getByLabelText('Biblioteca')).toHaveValue('')
+  })
+})

@@ -3,6 +3,7 @@ import Button from '../../shared/ui/Button/Button'
 import SidePanel from '../../shared/ui/SidePanel/SidePanel'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { usePanel } from '../panel/panelContext'
+import DocsCompose from './DocsCompose'
 import { useDocs } from './docsContext'
 import { DocsIcon } from './icon'
 
@@ -41,7 +42,7 @@ function DocsPanel(): React.JSX.Element | null {
         </>
       }
     >
-      {null}
+      <DocsCompose onSearch={() => {}} />
     </SidePanel>
   )
 }
