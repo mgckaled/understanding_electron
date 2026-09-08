@@ -65,8 +65,15 @@ function Snippet({
   return (
     <div className="flex flex-col gap-2">
       {/* Siblings, never nested: a button inside a button is invalid HTML and
-          React does not warn (painel.md). */}
-      <div className="flex items-center gap-2">
+          React does not warn (painel.md). The hover is on the row and not on
+          the button, so the ↗ sits inside the same band; negative margin lets
+          it bleed into the list's own padding instead of ending at the text. */}
+      <div
+        className={cx(
+          'flex items-center gap-2 -mx-2 rounded-md px-2 py-1',
+          'transition-colors duration-(--duration-fast) ease-initial hover:bg-surface-raised'
+        )}
+      >
         <button
           type="button"
           aria-expanded={open}
