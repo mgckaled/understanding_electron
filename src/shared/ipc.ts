@@ -612,13 +612,103 @@ export const reasoningPartSchema = z.object({
 })
 export type ReasoningPart = z.infer<typeof reasoningPartSchema>
 
+// The Context7 wire shapes (arco 23). Schemas, not hand-written types like
+// LibraryCandidate further down (D23C.5): a channel result is never validated
+// — zod on the way in, never out — and a type sufficed while these only came
+// back from `docs:fetch`. DocsPart carries them through conversation:append,
+// which IS validated, so the shape gets one source and the types are inferred.
+
+/**
+ * One variant of a snippet's example — the API stores the same example more
+ * than once (TypeScript and JavaScript, or a shell line beside the code).
+ */
+export const docCodeBlockSchema = z.object({
+  language: z.string(),
+  code: z.string()
+})
+export type DocCodeBlock = z.infer<typeof docCodeBlockSchema>
+
+export const docSnippetSchema = z.object({
+  key: z.string().min(1),
+  title: z.string(),
+  description: z.string(),
+  tokens: z.number().int().nonnegative(),
+  // A list, not one joined string (D23B.11): concatenating the variants
+  // rendered the same example twice, and the snippet-level codeLanguage named
+  // only the first — it said 'typescript' for a snippet carrying the js
+  // variant too. `tokens` covers the whole list, as the API counts it.
+  blocks: z.array(docCodeBlockSchema),
+  pageTitle: z.string().nullable(),
+  sourceUrl: z.string().nullable()
+})
+export type DocSnippet = z.infer<typeof docSnippetSchema>
+
+export const docNoteSchema = z.object({
+  key: z.string().min(1),
+  breadcrumb: z.string().nullable(),
+  content: z.string(),
+  tokens: z.number().int().nonnegative(),
+  sourceUrl: z.string().nullable()
+})
+export type DocNote = z.infer<typeof docNoteSchema>
+
+export const docRulesSchema = z.object({
+  global: z.array(z.string()),
+  libraryOwn: z.array(z.string()),
+  libraryTeam: z.array(z.string())
+})
+export type DocRules = z.infer<typeof docRulesSchema>
+
+/**
+ * A snippet or note the user left out, kept as title and cost alone (D23C.3) —
+ * the transcript lists what was NOT sent, and dropping the record would erase
+ * the choice. Without the code here, re-marking an attached consultation is
+ * unexpressable rather than merely forbidden.
+ */
+export const docsOmittedSchema = z.object({
+  key: z.string().min(1),
+  kind: z.enum(['snippet', 'note']),
+  title: z.string(),
+  tokens: z.number().int().nonnegative()
+})
+export type DocsOmitted = z.infer<typeof docsOmittedSchema>
+
+/**
+ * One Context7 consultation, frozen when attached (painel.md § As duas vidas).
+ * Its own kind, never inside AttachmentPart (DM-23): joining that union would
+ * draw it as an attachment card, which is what this is not.
+ */
+export const docsPartSchema = z.object({
+  kind: z.literal('docs'),
+  // Minted in the renderer like every id here (D14.5), and the address the
+  // toggle uses — never the array index, which shifts when a message gains
+  // another part.
+  id: z.string().min(1),
+  libraryId: z.string().min(1),
+  libraryTitle: z.string(),
+  /** `null` when the library's own default was kept — "latest" is not computable (D23A.6). */
+  version: z.string().nullable(),
+  query: z.string().min(1),
+  /** The only mutable field (DM-31), through conversation:setDocsEnabled. */
+  enabled: z.boolean(),
+  snippets: z.array(docSnippetSchema),
+  notes: z.array(docNoteSchema),
+  omitted: z.array(docsOmittedSchema),
+  // Persisted and never materialized (DM-17, D23C.4): the panel shows what the
+  // service tried to inject, and dropping it here would end that record at the
+  // next app start. partForProvider simply never reads it.
+  rules: docRulesSchema.nullable()
+})
+export type DocsPart = z.infer<typeof docsPartSchema>
+
 export const messagePartSchema = z.discriminatedUnion('kind', [
   textPartSchema,
   datasetPartSchema,
   documentPartSchema,
   imagePartSchema,
   stepProposalPartSchema,
-  reasoningPartSchema
+  reasoningPartSchema,
+  docsPartSchema
 ])
 export type MessagePart = z.infer<typeof messagePartSchema>
 
@@ -796,52 +886,9 @@ export type LibraryCandidate = {
   versions: string[]
 }
 
-// The next four are schemas, not hand-written types like LibraryCandidate
-// above (D23C.5). A channel result is never validated — zod on the way in,
-// never out — and as long as these only came back from `docs:fetch` a type
-// was enough. DocsPart carries them through conversation:append, which IS
-// validated, so the shape gets one source and the types are inferred.
-
-/**
- * One variant of a snippet's example — the API stores the same example more
- * than once (TypeScript and JavaScript, or a shell line beside the code).
- */
-export const docCodeBlockSchema = z.object({
-  language: z.string(),
-  code: z.string()
-})
-export type DocCodeBlock = z.infer<typeof docCodeBlockSchema>
-
-export const docSnippetSchema = z.object({
-  key: z.string().min(1),
-  title: z.string(),
-  description: z.string(),
-  tokens: z.number().int().nonnegative(),
-  // A list, not one joined string (D23B.11): concatenating the variants
-  // rendered the same example twice, and the snippet-level codeLanguage named
-  // only the first — it said 'typescript' for a snippet carrying the js
-  // variant too. `tokens` covers the whole list, as the API counts it.
-  blocks: z.array(docCodeBlockSchema),
-  pageTitle: z.string().nullable(),
-  sourceUrl: z.string().nullable()
-})
-export type DocSnippet = z.infer<typeof docSnippetSchema>
-
-export const docNoteSchema = z.object({
-  key: z.string().min(1),
-  breadcrumb: z.string().nullable(),
-  content: z.string(),
-  tokens: z.number().int().nonnegative(),
-  sourceUrl: z.string().nullable()
-})
-export type DocNote = z.infer<typeof docNoteSchema>
-
-export const docRulesSchema = z.object({
-  global: z.array(z.string()),
-  libraryOwn: z.array(z.string()),
-  libraryTeam: z.array(z.string())
-})
-export type DocRules = z.infer<typeof docRulesSchema>
+// The four schemas this section used to hold moved up next to the message
+// parts, where DocsPart consumes them: a const referenced before its own
+// declaration is a runtime error, not a style question.
 
 export type DocsResult = {
   snippets: DocSnippet[]

@@ -1,7 +1,15 @@
-import type { DatasetPart, DocumentPart, ImagePart, Message, StepProposalPart } from '@shared/ipc'
+import type {
+  DatasetPart,
+  DocsPart,
+  DocumentPart,
+  ImagePart,
+  Message,
+  StepProposalPart
+} from '@shared/ipc'
 import {
   anchorFromHistory,
   attachmentPartOf,
+  docsPartOf,
   historyCharsOf,
   imageCountOf,
   isCloudService,
@@ -37,6 +45,32 @@ const documentPart: DocumentPart = {
   fileName: 'especificacao.md',
   format: 'md',
   text: 'a coluna id é a chave primária'
+}
+
+function docsPart(enabled: boolean): DocsPart {
+  return {
+    kind: 'docs',
+    id: 'docs-1',
+    libraryId: '/tanstack/query',
+    libraryTitle: 'TanStack Query',
+    version: null,
+    query: 'invalidar cache depois de mutação',
+    enabled,
+    snippets: [
+      {
+        key: 's1',
+        title: 'invalidateQueries após mutação',
+        description: '',
+        tokens: 182,
+        blocks: [{ language: 'typescript', code: 'queryClient.invalidateQueries()' }],
+        pageTitle: null,
+        sourceUrl: null
+      }
+    ],
+    notes: [],
+    omitted: [{ key: 's2', kind: 'snippet', title: 'setQueryData', tokens: 241 }],
+    rules: { global: ['sempre use a v5'], libraryOwn: [], libraryTeam: [] }
+  }
 }
 
 const imagePart: ImagePart = {
@@ -490,5 +524,64 @@ describe('isCloudService', () => {
   it('treats every non-ollama value as cloud', () => {
     expect(isCloudService('ollama')).toBe(false)
     expect(isCloudService('glm')).toBe(true)
+  })
+})
+
+describe('docsPartOf', () => {
+  it('finds the consultation on a message', () => {
+    const withDocs: Message = {
+      id: 'm1',
+      role: 'user',
+      parts: [{ kind: 'text', text: 'como faço isso' }, docsPart(true)],
+      createdAt: 0
+    }
+
+    expect(docsPartOf(withDocs)?.libraryId).toBe('/tanstack/query')
+  })
+
+  it('returns null when the message carries none', () => {
+    expect(docsPartOf(message('user', 'sem consulta'))).toBeNull()
+  })
+})
+
+describe('a consultation that is switched off', () => {
+  function conversationWith(enabled: boolean): Message[] {
+    return [
+      {
+        id: 'm1',
+        role: 'user',
+        parts: [{ kind: 'text', text: 'como invalido o cache' }, docsPart(enabled)],
+        createdAt: 0
+      }
+    ]
+  }
+
+  it('reaches the provider when on, and leaves the prompt entirely when off', () => {
+    const on = toChatMessages(conversationWith(true))[0].content
+    const off = toChatMessages(conversationWith(false))[0].content
+
+    expect(on).toContain('invalidateQueries')
+    expect(on).toContain('/tanstack/query')
+    // Not merely shorter: the consultation contributes nothing at all, so what
+    // is left is the user's own text and no separator around an empty part.
+    expect(off).toBe('como invalido o cache')
+  })
+
+  it('drops out of the budget through the same function, with no second count', () => {
+    const on = historyCharsOf(conversationWith(true))
+    const off = historyCharsOf(conversationWith(false))
+
+    expect(off).toBe('como invalido o cache'.length)
+    expect(on).toBeGreaterThan(off)
+  })
+
+  it('never sends `rules` or the omitted snippet, on or off', () => {
+    const on = toChatMessages(conversationWith(true))[0].content
+
+    // DM-17: a third party's instruction aimed at the model is shown on screen
+    // and never forwarded. D23C.3: the omitted snippet is a record of the
+    // user's choice, not context.
+    expect(on).not.toContain('sempre use a v5')
+    expect(on).not.toContain('setQueryData')
   })
 })

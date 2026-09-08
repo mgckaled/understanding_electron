@@ -2,6 +2,7 @@ import type {
   AiService,
   AttachmentPart,
   ChatMessage,
+  DocsPart,
   ImagePart,
   Message,
   MessagePart,
@@ -10,6 +11,7 @@ import type {
 } from '@shared/ipc'
 import { describeSteps } from '../pipeline/describe'
 import { formatDataCard } from './dataCard'
+import { formatDocsCard } from './docsCard'
 import { formatDocumentCard } from './documentCard'
 
 // Message is a list of typed parts; a provider wants flat `{ role, content }`.
@@ -72,6 +74,11 @@ export function reasoningResendChars(messages: Message[]): number {
  */
 export function attachmentPartsOf(messages: Message[]): AttachmentPart[] {
   return messages.map(attachmentPartOf).filter((part): part is AttachmentPart => part !== null)
+}
+
+/** The Context7 consultation on a message, if any (DM-23) — its own disclosure line, never an attachment card. */
+export function docsPartOf(message: Message): DocsPart | null {
+  return message.parts.find((part): part is DocsPart => part.kind === 'docs') ?? null
 }
 
 /** The step proposal on an assistant message, if any (plano 19) — the card ConversationView swaps in for the plain text bubble. */
@@ -143,6 +150,12 @@ export function partForProvider(part: MessagePart): string {
       // already captures what matters, and resending would only inflate
       // historyChars for no benefit.
       return ''
+    case 'docs':
+      // Turned off leaves the resend but stays in the transcript (DM-31). The
+      // empty string is what makes the panel's total and the composer's meter
+      // agree: historyCharsOf measures this same output, so there is no second
+      // count to drift.
+      return part.enabled ? formatDocsCard(part) : ''
   }
 }
 
