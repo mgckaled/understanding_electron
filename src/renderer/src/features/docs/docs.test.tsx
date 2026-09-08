@@ -24,6 +24,26 @@ const CANDIDATE: LibraryCandidate = {
   versions: ['v5.90.3']
 }
 
+// Same `id` as CANDIDATE, as the real response returns it — the pair only
+// differs by score and snippet count (D23A.5).
+const TWIN: LibraryCandidate = {
+  ...CANDIDATE,
+  key: '/tanstack/query#87.7',
+  totalSnippets: 3241,
+  benchmarkScore: 87.66
+}
+
+// The /websites/* shape: -1 on the wire, and nothing left after __branch__*.
+const WEBSITE: LibraryCandidate = {
+  ...CANDIDATE,
+  key: '/websites/tanstack_query#78.8',
+  id: '/websites/tanstack_query',
+  totalSnippets: 2246,
+  benchmarkScore: 78.8,
+  stars: null,
+  versions: []
+}
+
 let api: Api
 
 function Probe(): React.JSX.Element {
@@ -186,5 +206,92 @@ describe('o formulário da consulta', () => {
 
     expect(await screen.findByText('Nenhuma biblioteca com esse nome.')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})
+
+describe('a desambiguação', () => {
+  async function searchWith(candidates: LibraryCandidate[]): Promise<void> {
+    await mount()
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+    await userEvent.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
+    await userEvent.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
+    // After the typing, never before: mount() installs a fresh mock.
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: { status: 'found', candidates }
+    })
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+    await screen.findByRole('radio', { checked: true })
+  }
+
+  // The first is the app's own best guess, since the order is already ours
+  // (D23A.4) — and it is where Tab lands, by the platform's radio pattern.
+  it('checks the first candidate', async () => {
+    await searchWith([CANDIDATE, TWIN, WEBSITE])
+
+    const radios = screen.getAllByRole('radio')
+    expect(radios).toHaveLength(3)
+    expect(radios[0]).toBeChecked()
+  })
+
+  // Two rows carrying the same `id` is the real response, not a contrivance:
+  // addressing the selection by `id` would check both (D23E.4).
+  it('tells two candidates of the same id apart', async () => {
+    await searchWith([CANDIDATE, TWIN])
+
+    await userEvent.click(screen.getAllByRole('radio')[1])
+
+    expect(screen.getAllByRole('radio')[1]).toBeChecked()
+    expect(screen.getAllByRole('radio')[0]).not.toBeChecked()
+  })
+
+  // -1 means "does not apply", never zero (D23A.6).
+  it('leaves the star off a candidate without one', async () => {
+    await searchWith([WEBSITE, CANDIDATE])
+
+    expect(screen.getByText('45.043 ★')).toBeInTheDocument()
+    expect(screen.queryByText(/-1 ★/)).not.toBeInTheDocument()
+    expect(screen.getAllByText(/★/)).toHaveLength(1)
+  })
+
+  it('offers the library default plus every indexed version', async () => {
+    await searchWith([{ ...CANDIDATE, versions: ['v5.90.3', 'v5_84_1'] }])
+
+    expect(screen.getByLabelText('Versão')).toHaveValue('')
+    expect(screen.getAllByRole('option').map((one) => one.textContent)).toEqual([
+      'padrão da biblioteca',
+      'v5.90.3',
+      'v5_84_1'
+    ])
+    expect(screen.getByText('2 indexadas')).toBeInTheDocument()
+  })
+
+  // Absent, not disabled (DF3B.2) — the common case, not an edge one.
+  it('hides the selector when nothing is indexed', async () => {
+    await searchWith([WEBSITE])
+
+    expect(screen.queryByLabelText('Versão')).not.toBeInTheDocument()
+  })
+
+  // Asserted on the select's FINAL value, not on the absence of a call: a
+  // version belongs to the library it was picked under (D23E.8).
+  it('clears the version when the candidate changes', async () => {
+    await searchWith([{ ...CANDIDATE, versions: ['v5.90.3'] }, TWIN])
+    await userEvent.selectOptions(screen.getByLabelText('Versão'), 'v5.90.3')
+    expect(screen.getByLabelText('Versão')).toHaveValue('v5.90.3')
+
+    await userEvent.click(screen.getAllByRole('radio')[1])
+    await userEvent.click(screen.getAllByRole('radio')[0])
+
+    expect(screen.getByLabelText('Versão')).toHaveValue('')
+  })
+
+  it('goes back to the form with what was typed still there', async () => {
+    await searchWith([CANDIDATE])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Voltar' }))
+
+    expect(screen.getByLabelText('Biblioteca')).toHaveValue('tanstack query')
+    expect(screen.getByLabelText('Pergunta')).toHaveValue('invalidar cache')
   })
 })
