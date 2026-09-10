@@ -172,3 +172,102 @@ describe('context budget', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument()
   })
 })
+
+/**
+ * The one assertion D23G.1 exists for: the panel's footer and the composer's
+ * meter are two numbers on screen at once, and they come from a single
+ * `budgetFor`. A second one in the panel would be free to disagree, and nothing
+ * else in the suite would notice.
+ */
+describe('uma consulta de documentação no orçamento', () => {
+  const SNIPPET = {
+    key: 'a#0',
+    title: 'invalidateQueries após mutação',
+    description: '',
+    tokens: 182,
+    blocks: [],
+    pageTitle: null,
+    sourceUrl: null
+  }
+
+  async function consult(api: Api, user: ReturnType<typeof userEvent.setup>): Promise<void> {
+    await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+    // `hidden: true` because jsdom's own default sheet carries
+    // `[popover]:not(:popover-open) { display:none }`, which the shim in
+    // setup-renderer does not reach — every Popover child computes hidden here.
+    await user.click(screen.getByRole('button', { name: /Documentação/, hidden: true }))
+    await user.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
+    await user.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
+
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: {
+        status: 'found',
+        candidates: [
+          {
+            key: '/tanstack/query#89.5',
+            id: '/tanstack/query',
+            title: 'TanStack Query',
+            description: '',
+            branch: 'main',
+            state: 'finalized',
+            lastUpdateDate: '2026-09-01',
+            totalTokens: 824953,
+            totalSnippets: 2526,
+            stars: 45043,
+            trustScore: 8,
+            benchmarkScore: 89.5,
+            versions: []
+          }
+        ]
+      }
+    })
+    await user.click(screen.getByRole('button', { name: 'Consultar' }))
+    await screen.findByRole('radio', { checked: true })
+
+    vi.mocked(api.docs.fetch).mockResolvedValue({
+      ok: true,
+      value: { status: 'ready', docs: { snippets: [SNIPPET], notes: [], rules: null } }
+    })
+    await user.click(screen.getByRole('button', { name: 'Consultar' }))
+    await screen.findByRole('tablist')
+  }
+
+  it('adds the exact token count to the meter, and says so in the footer', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByText(/de 32.768 tokens/)
+
+    await consult(api, user)
+
+    // 182 exactly, never a per-character estimate of the snippet (D23G.2).
+    expect(screen.getByText('~182 de 32.768 tokens')).toBeInTheDocument()
+    expect(screen.getByText(/1 de 1 · ~182 tok · cabe \(janela 32\.768/)).toBeInTheDocument()
+  })
+
+  it('drops back out of the meter when the snippet is unchecked', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByText(/de 32.768 tokens/)
+
+    await consult(api, user)
+    await user.click(screen.getByRole('checkbox', { name: SNIPPET.title }))
+
+    expect(screen.getByText('~0 de 32.768 tokens')).toBeInTheDocument()
+  })
+
+  // The footer refuses with the window named, and the meter agrees — the same
+  // defence as budgetFor.fits (D15.5), since Ollama drops the prompt's head in
+  // silence rather than failing.
+  it('refuses to fit when the window is too small for the selection', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByText(/de 32.768 tokens/)
+    await narrowWindow()
+
+    await consult(api, user)
+    await paste(user, 'x'.repeat(3500))
+
+    expect(screen.getByText('1 de 1 · ~182 tok · não cabe na janela de 1.024')).toBeInTheDocument()
+  })
+})

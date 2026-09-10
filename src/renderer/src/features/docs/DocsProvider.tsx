@@ -1,9 +1,25 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { Budget } from '@core/ai/budget'
 import { useConversations } from '../conversation/conversationsContext'
 import { usePanel } from '../panel/panelContext'
 import { DocsContext, type DocsComposition } from './docsContext'
 import { useDocsFetch } from './useDocsFetch'
 import { useDocsSearch } from './useDocsSearch'
+
+/**
+ * Whether two budgets say the same thing. `budgetFor` builds a fresh object on
+ * every render, so storing it unguarded would set state on every pass and never
+ * settle — the loop D23G.1 warns about.
+ */
+function sameBudget(a: Budget | null, b: Budget | null): boolean {
+  if (a === null || b === null) return a === b
+  return (
+    a.estimated === b.estimated &&
+    a.limit === b.limit &&
+    a.fits === b.fits &&
+    a.messageAloneOverflows === b.messageAloneOverflows
+  )
+}
 
 function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const { activeId } = useConversations()
@@ -11,6 +27,12 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
   const [composition, setComposition] = useState<DocsComposition | null>(null)
   const { state: searchState, search: runSearch, reset: resetSearch } = useDocsSearch()
   const { state: fetchState, fetch: runFetch, reset: resetFetch } = useDocsFetch()
+  const [selectedTokens, setSelectedTokens] = useState(0)
+  const [budget, setBudget] = useState<Budget | null>(null)
+
+  const reportBudget = useCallback((next: Budget | null) => {
+    setBudget((previous) => (sameBudget(previous, next) ? previous : next))
+  }, [])
 
   // Stamped rather than cleared on navigation: one that belongs to another
   // transcript stops resolving, and closing the panel keeps the text (D23D.2).
@@ -129,6 +151,10 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       fetchDocs,
       resetFetch,
       selected,
+      selectedTokens,
+      setSelectedTokens,
+      budget,
+      reportBudget,
       toggle,
       close
     }),
@@ -146,6 +172,9 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       fetchDocs,
       resetFetch,
       selected,
+      selectedTokens,
+      budget,
+      reportBudget,
       toggle,
       close
     ]

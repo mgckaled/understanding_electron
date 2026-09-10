@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type SyntheticEvent } from 'react'
+import { useEffect, useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowUp, Pause } from 'lucide-react'
 import type { AiModel, AttachmentPart } from '@shared/ipc'
 import { budgetFor, IMAGE_TOKEN_ESTIMATE, type Budget } from '@core/ai/budget'
@@ -72,7 +72,7 @@ function Composer({
   // Sticky across turns, unlike attachment/draft (arco 21, D21A.9) — a mode
   // the user opts into for the conversation, not a one-shot payload.
   const [wantsReasoning, setWantsReasoning] = useState(false)
-  const { toggle: toggleDocs } = useDocs()
+  const { toggle: toggleDocs, selectedTokens: docsTokens, reportBudget } = useDocs()
 
   // A PENDING attachment is about to be sent just as much as the draft text is
   // — counted here with the same materializer toChatMessages uses (D16.5), so
@@ -98,11 +98,21 @@ function Composer({
           draftChars: draft.length + attachmentChars,
           limit,
           charsPerToken,
-          flatTokens: newImageCount * IMAGE_TOKEN_ESTIMATE,
+          // A consultation being composed costs exact tokens, not estimated
+          // chars (D23G.2): the Context7 response counts every snippet itself,
+          // so it joins the flat term instead of going through the ratio.
+          flatTokens: newImageCount * IMAGE_TOKEN_ESTIMATE + docsTokens,
           costed,
           reasoningActive,
           anchor
         })
+
+  // Handed back to the docs panel, which draws the same verdict in its own
+  // footer (D23G.1). The provider drops a report that says nothing new, so this
+  // does not loop on `budgetFor`'s fresh object.
+  useEffect(() => {
+    reportBudget(budget)
+  }, [budget, reportBudget])
 
   // The gate (D15.5): nothing is truncated in silence — when the next turn will
   // not fit, the send is refused with the reason on screen, instead of the

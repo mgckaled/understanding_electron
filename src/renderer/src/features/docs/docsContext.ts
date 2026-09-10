@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { Budget } from '@core/ai/budget'
 import type { ContextOutcome, LibraryCandidate, SearchOutcome } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
 
@@ -34,6 +35,20 @@ export type DocsApi = {
   resetFetch: () => void
   /** The picked candidate, or `null` while the search has no list to pick from. */
   selected: LibraryCandidate | null
+  /**
+   * What the checked snippets and notes cost, exactly — the API counts each one
+   * itself, so this never goes through `charsPerToken` (D23G.2). Published by
+   * the panel, read by the Composer, which folds it into `flatTokens`.
+   */
+  selectedTokens: number
+  setSelectedTokens: (value: number) => void
+  /**
+   * The app's single budget, computed by the Composer and handed back here
+   * (D23G.1) — the panel's footer and the composer's meter are two numbers on
+   * screen at once, and a second `budgetFor` would be free to disagree.
+   */
+  budget: Budget | null
+  reportBudget: (value: Budget | null) => void
   /**
    * Shows the panel, or closes it when it is already the one open.
    *

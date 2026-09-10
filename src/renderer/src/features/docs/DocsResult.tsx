@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import type { DocNote, DocRules, DocsResult as DocsAnswer } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import Tabs, { type TabDefinition } from '../../shared/ui/Tabs/Tabs'
 import DocsSnippetList from './DocsSnippetList'
+import { useDocs } from './docsContext'
 import { useDocsSelection } from './useDocsSelection'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 
@@ -117,6 +118,7 @@ function RuleList({ rules }: { rules: DocRules }): React.JSX.Element {
 function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }): React.JSX.Element {
   const [active, setActive] = useState('trechos')
   const { isOn, toggle } = useDocsSelection()
+  const { setSelectedTokens, budget } = useDocs()
 
   // Read into a const so the narrowing survives into the tab's closure.
   const rules = docs.rules
@@ -128,6 +130,27 @@ function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }):
   const picked = [...docs.snippets, ...docs.notes].filter((one) => isOn(one.key))
   const tokens = picked.reduce((sum, one) => sum + one.tokens, 0)
   const total = docs.snippets.length + docs.notes.length
+
+  useEffect(() => {
+    setSelectedTokens(tokens)
+  }, [tokens, setSelectedTokens])
+
+  // Separate from the effect above so it runs on unmount alone: an answer the
+  // panel no longer shows must stop charging the composer's meter.
+  useEffect(() => {
+    return () => setSelectedTokens(0)
+  }, [setSelectedTokens])
+
+  // Absent, not "cabe", while the window is unknown — no model resolved yet is
+  // not a verdict, and the app writes windows out in full everywhere else
+  // (ContextControl, ModelSelector), never abbreviated.
+  const windowLabel = budget === null ? '' : budget.limit.toLocaleString('pt-BR')
+  const verdict =
+    budget === null
+      ? ''
+      : budget.fits
+        ? ` · cabe (janela ${windowLabel}, ${Math.max(0, Math.round((1 - budget.used) * 100))}% livre)`
+        : ` · não cabe na janela de ${windowLabel}`
 
   const tabs: TabDefinition[] = [
     {
@@ -164,7 +187,7 @@ function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }):
             the budget is known before sending rather than calibrated after. */}
         <span className="text-xs text-text-faint">
           {picked.length} de {total}
-          {picked.length === 0 ? ' · nada a anexar' : ` · ~${decimal.format(tokens)} tok`}
+          {picked.length === 0 ? ' · nada a anexar' : ` · ~${decimal.format(tokens)} tok${verdict}`}
         </span>
         <Button variant="ghost" size="sm" type="button" onClick={onBack}>
           Voltar
