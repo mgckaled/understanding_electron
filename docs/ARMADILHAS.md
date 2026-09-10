@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **111** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **112** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -18,6 +18,15 @@ Provar um vermelho por sabotagem via shell (`python -c`, `sed -i`) tem um modo d
 **A leitura errada é fatal para o método:** "não passou" parece confirmar a sabotagem, e o teste segue sem nunca ter sido exercitado. O vermelho que vale é `Tests  N failed`, com o **nome** do teste esperado na lista de falhas; qualquer outra forma de não-verde é a suíte não tendo corrido.
 
 ⚠️ **Conserto de rota:** para `&&` dentro de string em `python -c` sob Git Bash, use `'...'` simples de Python **sem** escape (`'{false && ('`), ou o `Edit`, que não passa pelo shell. E confira o arquivo (`grep` na linha tocada) antes de crer no resultado da corrida.
+
+### `Worker exited unexpectedly` com `Tests  (N)` sem contagem — o laço de render matou o corredor (set/2026)
+Um `useEffect` que escreve estado derivado de um objeto reconstruído a cada render (`budgetFor` devolve objeto novo sempre) realimenta o próprio render. O Vitest **não** reporta isso como teste vermelho: o worker morre e a saída traz `Error: [vitest-pool]: Worker forks emitted error` com `Test Files  (1)` e `Tests  (10)` — números sem `passed`/`failed` ao lado.
+
+É a mesma silhueta de `Tests  no tests` (acima) por causa oposta: lá a suíte não correu porque o fonte não compilava; aqui ela correu, montou e **foi derrubada pelo defeito**. Provado no 23-G removendo a comparação rasa de `reportBudget`.
+
+⚠️ **Consequência para o método:** um defeito de laço não tem teste que fique vermelho — nenhuma asserção chega a ser avaliada. A guarda (`set` só quando algum campo mudou) é o conserto, e a prova dela é a morte do worker, não uma falha nomeada.
+
+⚠️ **E a primeira sabotagem tentada não valeu:** trocar o corpo por `setBudget(next)` deixou a função de comparação sem uso, e o `typecheck` reprovou (`TS6133`) antes de o Vitest rodar. **Sabotagem que muda a superfície de tipo prova o compilador, não o teste** — mantenha o símbolo em uso (ex.: `sameBudget(a, b) && false`).
 
 ### Componente que retorna `null` não desmonta, e o teste de preservação nasce vacuoso (set/2026)
 `DocsPanel` é renderizado sempre pela árvore e devolve `null` quando não há composição. **Isso não é desmontagem:** o fiber continua vivo, e todo `useState`/`useAsyncAction` chamado antes do `return null` guarda o valor através de fechar e reabrir o painel.
