@@ -128,7 +128,54 @@ describe('a terceira tela', () => {
   it('adds snippets and notes into the exact total', async () => {
     await showAnswer(ANSWER)
 
-    expect(screen.getByText('2 trechos · 1 notas · 300 tok')).toBeInTheDocument()
+    expect(screen.getByText('3 de 3 · ~300 tok')).toBeInTheDocument()
+  })
+})
+
+describe('a seleção', () => {
+  it('starts with everything checked', async () => {
+    await showAnswer(ANSWER)
+
+    for (const box of screen.getAllByRole('checkbox')) expect(box).toBeChecked()
+  })
+
+  // The count AND the sum, because a footer that only recounted would pass
+  // against a total that ignored the selection entirely.
+  it('drops the unchecked snippet from the count and the sum', async () => {
+    await showAnswer(ANSWER)
+
+    await userEvent.click(screen.getByRole('checkbox', { name: 'onSuccess' }))
+
+    expect(screen.getByText('2 de 3 · ~204 tok')).toBeInTheDocument()
+  })
+
+  // A note has no title of its own, so it is addressed by its trail (D23G.4) —
+  // and it lands in the same sum as the snippets, not a second one.
+  it('counts a note in the same sum', async () => {
+    await showAnswer(ANSWER)
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Notas (1)' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'sem trilha' }))
+
+    expect(screen.getByText('2 de 3 · ~278 tok')).toBeInTheDocument()
+  })
+
+  it('says there is nothing to attach once everything is unchecked', async () => {
+    await showAnswer(ANSWER)
+
+    for (const box of screen.getAllByRole('checkbox')) await userEvent.click(box)
+    await userEvent.click(screen.getByRole('tab', { name: 'Notas (1)' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'sem trilha' }))
+
+    expect(screen.getByText('0 de 3 · nada a anexar')).toBeInTheDocument()
+  })
+
+  // Rules are shown and never sent (DM-17), so counting them would inflate the
+  // one number in the app that is exact — the defect is invisible without this.
+  it('leaves rules out of the total', async () => {
+    await showAnswer({ ...ANSWER, rules: { ...NO_RULES, libraryOwn: ['Use o hook oficial.'] } })
+
+    expect(screen.getByText('3 de 3 · ~300 tok')).toBeInTheDocument()
   })
 })
 

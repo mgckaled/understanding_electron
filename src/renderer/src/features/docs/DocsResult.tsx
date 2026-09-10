@@ -5,6 +5,7 @@ import Button from '../../shared/ui/Button/Button'
 import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import Tabs, { type TabDefinition } from '../../shared/ui/Tabs/Tabs'
 import DocsSnippetList from './DocsSnippetList'
+import { useDocsSelection } from './useDocsSelection'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 
 const decimal = new Intl.NumberFormat('pt-BR')
@@ -30,7 +31,20 @@ const RULE_GROUPS = [
   }
 ] as const
 
-function NoteList({ notes }: { notes: DocNote[] }): React.JSX.Element {
+/** The trail a note is addressed by — it has no title of its own (D23G.4). */
+function noteTitle(note: DocNote): string {
+  return note.breadcrumb ?? 'sem trilha'
+}
+
+function NoteList({
+  notes,
+  isOn,
+  onToggle
+}: {
+  notes: DocNote[]
+  isOn: (key: string) => boolean
+  onToggle: (key: string) => void
+}): React.JSX.Element {
   // The common case, not the edge: infoSnippets came back empty in 3 of 4
   // `fast=false` responses (api.md).
   if (notes.length === 0) {
@@ -38,18 +52,30 @@ function NoteList({ notes }: { notes: DocNote[] }): React.JSX.Element {
   }
 
   return (
-    <div className={LIST}>
-      {notes.map((note) => (
-        <div key={note.key} className="flex flex-col gap-1">
-          <span className="flex items-baseline justify-between gap-3 text-xs">
-            <span className="truncate text-text-muted">{note.breadcrumb ?? 'sem trilha'}</span>
-            <span className="flex-none text-text-faint">{decimal.format(note.tokens)} tok</span>
-          </span>
-          {/* Same owner as the snippet description, and the same reason: a note
-              is documentation prose from outside, markup and all. */}
-          <MarkdownMessage text={note.content} />
-        </div>
-      ))}
+    <div role="group" aria-label="Notas a enviar" className={LIST}>
+      {notes.map((note) => {
+        const on = isOn(note.key)
+        return (
+          <div key={note.key} className="flex flex-col gap-1">
+            <span className="flex items-baseline gap-3 text-xs">
+              <input
+                type="checkbox"
+                checked={on}
+                onChange={() => onToggle(note.key)}
+                aria-label={noteTitle(note)}
+                className="size-6 flex-none self-center accent-accent"
+              />
+              <span className="truncate text-text-muted">{noteTitle(note)}</span>
+              <span className={`ml-auto flex-none text-text-faint${on ? '' : ' line-through'}`}>
+                {decimal.format(note.tokens)} tok
+              </span>
+            </span>
+            {/* Same owner as the snippet description, and the same reason: a note
+                is documentation prose from outside, markup and all. */}
+            <MarkdownMessage text={note.content} />
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -90,6 +116,7 @@ function RuleList({ rules }: { rules: DocRules }): React.JSX.Element {
  */
 function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }): React.JSX.Element {
   const [active, setActive] = useState('trechos')
+  const { isOn, toggle } = useDocsSelection()
 
   // Read into a const so the narrowing survives into the tab's closure.
   const rules = docs.rules
@@ -98,21 +125,20 @@ function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }):
 
   // Rules are excluded on purpose: they are never sent, so counting them would
   // inflate the one number in the app that is exact rather than estimated.
-  const tokens = [
-    ...docs.snippets.map((one) => one.tokens),
-    ...docs.notes.map((one) => one.tokens)
-  ].reduce((sum, one) => sum + one, 0)
+  const picked = [...docs.snippets, ...docs.notes].filter((one) => isOn(one.key))
+  const tokens = picked.reduce((sum, one) => sum + one.tokens, 0)
+  const total = docs.snippets.length + docs.notes.length
 
   const tabs: TabDefinition[] = [
     {
       id: 'trechos',
       label: `Trechos (${docs.snippets.length})`,
-      render: () => <DocsSnippetList snippets={docs.snippets} />
+      render: () => <DocsSnippetList snippets={docs.snippets} isOn={isOn} onToggle={toggle} />
     },
     {
       id: 'notas',
       label: `Notas (${docs.notes.length})`,
-      render: () => <NoteList notes={docs.notes} />
+      render: () => <NoteList notes={docs.notes} isOn={isOn} onToggle={toggle} />
     },
     // Absent when there is no rule, not a `Regras (0)` (D23F.7): an object with
     // three empty lists says the same absence as a missing field.
@@ -133,8 +159,12 @@ function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }):
       <Tabs tabs={tabs} active={active} onChange={setActive} label="Partes da resposta" />
 
       <div className="flex flex-none items-center justify-between gap-3 border-t border-border px-5 py-4">
+        {/* The exact cost, not a per-character guess: the API counts each
+            snippet and note itself, and this is the only place in the app where
+            the budget is known before sending rather than calibrated after. */}
         <span className="text-xs text-text-faint">
-          {docs.snippets.length} trechos · {docs.notes.length} notas · {decimal.format(tokens)} tok
+          {picked.length} de {total}
+          {picked.length === 0 ? ' · nada a anexar' : ` · ~${decimal.format(tokens)} tok`}
         </span>
         <Button variant="ghost" size="sm" type="button" onClick={onBack}>
           Voltar

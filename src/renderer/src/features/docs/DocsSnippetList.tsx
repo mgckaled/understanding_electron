@@ -45,13 +45,18 @@ function CodeBlock({ block }: { block: DocCodeBlock }): React.JSX.Element {
 
 function Snippet({
   snippet,
-  open: initial
+  open: initial,
+  on,
+  onToggle
 }: {
   snippet: DocSnippet
   open: boolean
+  on: boolean
+  onToggle: () => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(initial)
   const bodyId = useId()
+  const boxId = useId()
   const source = snippet.sourceUrl
 
   // The variants of one example, deduplicated: an example without types comes
@@ -74,6 +79,18 @@ function Snippet({
           'transition-colors duration-(--duration-fast) ease-initial hover:bg-surface-raised'
         )}
       >
+        {/* A third sibling, for the same reason the ↗ is one: it carries its own
+            click target, and nesting it inside the disclosure would swallow it.
+            Labelled by the title span rather than repeating the title in an
+            aria-label, so the two can never drift. */}
+        <input
+          type="checkbox"
+          id={boxId}
+          checked={on}
+          onChange={onToggle}
+          aria-labelledby={`${boxId}-title`}
+          className="size-6 flex-none accent-accent"
+        />
         <button
           type="button"
           aria-expanded={open}
@@ -90,8 +107,18 @@ function Snippet({
               !open && '-rotate-90'
             )}
           />
-          <span className="truncate font-ui text-sm text-text">{snippet.title}</span>
-          <span className="ml-auto flex-none text-xs text-text-faint">
+          <span
+            id={`${boxId}-title`}
+            className={cx('truncate font-ui text-sm', on ? 'text-text' : 'text-text-faint')}
+          >
+            {snippet.title}
+          </span>
+          <span
+            className={cx(
+              'ml-auto flex-none text-xs',
+              on ? 'text-text-faint' : 'text-text-faint line-through'
+            )}
+          >
             {decimal.format(snippet.tokens)} tok
           </span>
         </button>
@@ -133,8 +160,19 @@ function Snippet({
   )
 }
 
-/** The Trechos tab: one disclosure per snippet, the first already open (D23F.9). */
-function DocsSnippetList({ snippets }: { snippets: DocSnippet[] }): React.JSX.Element {
+/**
+ * The Trechos tab: one disclosure per snippet, the first already open (D23F.9),
+ * each with the checkbox that decides whether it reaches the model (D23G.3).
+ */
+function DocsSnippetList({
+  snippets,
+  isOn,
+  onToggle
+}: {
+  snippets: DocSnippet[]
+  isOn: (key: string) => boolean
+  onToggle: (key: string) => void
+}): React.JSX.Element {
   if (snippets.length === 0) {
     return (
       <p className="p-5 text-xs text-text-muted">Nenhum trecho de código para esta pergunta.</p>
@@ -142,9 +180,21 @@ function DocsSnippetList({ snippets }: { snippets: DocSnippet[] }): React.JSX.El
   }
 
   return (
-    <div className="flex min-h-[0px] flex-1 flex-col gap-4 overflow-y-auto p-5">
+    // A group of checkboxes, not switches: the APG reserves the switch for a
+    // binary action, and these are items in a list of options (DF3F.8).
+    <div
+      role="group"
+      aria-label="Trechos a enviar"
+      className="flex min-h-[0px] flex-1 flex-col gap-4 overflow-y-auto p-5"
+    >
       {snippets.map((snippet, at) => (
-        <Snippet key={snippet.key} snippet={snippet} open={at === 0} />
+        <Snippet
+          key={snippet.key}
+          snippet={snippet}
+          open={at === 0}
+          on={isOn(snippet.key)}
+          onToggle={() => onToggle(snippet.key)}
+        />
       ))}
     </div>
   )
