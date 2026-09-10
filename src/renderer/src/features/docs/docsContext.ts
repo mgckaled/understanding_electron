@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { Budget } from '@core/ai/budget'
-import type { ContextOutcome, LibraryCandidate, SearchOutcome } from '@shared/ipc'
+import type { ContextOutcome, DocsPart, LibraryCandidate, SearchOutcome } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
 
 /** A consultation being composed, stamped with the conversation it follows (D23D.2). */
@@ -36,12 +36,22 @@ export type DocsApi = {
   /** The picked candidate, or `null` while the search has no list to pick from. */
   selected: LibraryCandidate | null
   /**
-   * What the checked snippets and notes cost, exactly — the API counts each one
-   * itself, so this never goes through `charsPerToken` (D23G.2). Published by
-   * the panel, read by the Composer, which folds it into `flatTokens`.
+   * What a consultation costs the next send, exactly — the API counts each
+   * snippet itself, so this never goes through `charsPerToken` (D23G.2). It is
+   * the live selection while composing and the frozen part once attached, so
+   * closing the panel does not stop an attached consultation from counting.
    */
-  selectedTokens: number
+  docsTokens: number
+  /** The panel publishing its live selection; the Composer never reads this directly. */
   setSelectedTokens: (value: number) => void
+  /**
+   * The consultation frozen by `Anexar` and waiting for the next message
+   * (D23G.7) — one at a time, because `docsPartOf` finds one per turn.
+   */
+  pending: DocsPart | null
+  attach: (part: DocsPart) => void
+  /** Called after the send: the consultation lives in the transcript now (D23G.8). */
+  clearPending: () => void
   /**
    * The app's single budget, computed by the Composer and handed back here
    * (D23G.1) — the panel's footer and the composer's meter are two numbers on

@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import type {
   AiService,
   AttachmentPart,
+  DocsPart,
   ChatReply,
   ConversationSettings,
   JobId,
@@ -62,6 +63,7 @@ export function useConversationChat(
   send: (
     prompt: string,
     attachment: AttachmentPart | null,
+    docs: DocsPart | null,
     wantsReasoning?: boolean
   ) => Promise<void>
   cancel: () => void
@@ -142,6 +144,7 @@ export function useConversationChat(
     async (
       prompt: string,
       attachment: AttachmentPart | null,
+      docs: DocsPart | null,
       wantsReasoning = false
     ): Promise<void> => {
       const text = prompt.trim()
@@ -169,8 +172,14 @@ export function useConversationChat(
       // yet, and its history is empty by definition — comparing the ids is what
       // keeps the previous conversation's turns out of a brand new one.
       const previous = conversationId === active?.id ? active.messages : []
-      const parts: MessagePart[] =
-        attachment === null ? [{ kind: 'text', text }] : [attachment, { kind: 'text', text }]
+      // The consultation rides beside the attachment, never inside it (DM-23),
+      // and there is at most one of each: `docsPartOf` finds a single one per
+      // turn, which is what makes one pending consultation the invariant.
+      const parts: MessagePart[] = [
+        ...(attachment === null ? [] : [attachment]),
+        ...(docs === null ? [] : [docs]),
+        { kind: 'text', text }
+      ]
       // id/createdAt are placeholders toChatMessages never reads.
       const draftMessage: Message = { id: 'draft', role: 'user', parts, createdAt: 0 }
       // ai:chat now carries Message[] (D17.5) — main materializes it, since a

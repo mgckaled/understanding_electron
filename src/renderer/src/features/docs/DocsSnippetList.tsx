@@ -47,12 +47,14 @@ function Snippet({
   snippet,
   open: initial,
   on,
-  onToggle
+  onToggle,
+  frozen
 }: {
   snippet: DocSnippet
   open: boolean
   on: boolean
   onToggle: () => void
+  frozen: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(initial)
   const bodyId = useId()
@@ -87,6 +89,7 @@ function Snippet({
           type="checkbox"
           id={boxId}
           checked={on}
+          disabled={frozen}
           onChange={onToggle}
           aria-labelledby={`${boxId}-title`}
           className="size-6 flex-none accent-accent"
@@ -163,15 +166,21 @@ function Snippet({
 /**
  * The Trechos tab: one disclosure per snippet, the first already open (D23F.9),
  * each with the checkbox that decides whether it reaches the model (D23G.3).
+ *
+ * @param frozen - True once the consultation is attached (D23G.7): the boxes go
+ *   inert, because changing the choice afterwards would leave the screen saying
+ *   something different from what the model was sent.
  */
 function DocsSnippetList({
   snippets,
   isOn,
-  onToggle
+  onToggle,
+  frozen
 }: {
   snippets: DocSnippet[]
   isOn: (key: string) => boolean
   onToggle: (key: string) => void
+  frozen: boolean
 }): React.JSX.Element {
   if (snippets.length === 0) {
     return (
@@ -194,6 +203,7 @@ function DocsSnippetList({
           open={at === 0}
           on={isOn(snippet.key)}
           onToggle={() => onToggle(snippet.key)}
+          frozen={frozen}
         />
       ))}
     </div>

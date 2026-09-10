@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowUp, Pause } from 'lucide-react'
-import type { AiModel, AttachmentPart } from '@shared/ipc'
+import type { AiModel, AttachmentPart, DocsPart } from '@shared/ipc'
 import { budgetFor, IMAGE_TOKEN_ESTIMATE, type Budget } from '@core/ai/budget'
 import { exposesReasoning, hasCapability } from '@core/ai/models'
 import { partForProvider } from '@core/ai/messages'
@@ -23,8 +23,18 @@ type ComposerProps = {
    * honour is the same defect as none.
    */
   locked: boolean
-  /** `attachment` is the pending attachment, cleared together with the draft right after (D16.6, generalized D17.4). */
-  onSend: (text: string, attachment: AttachmentPart | null, wantsReasoning: boolean) => void
+  /**
+   * `attachment` is the pending attachment and `docs` the frozen consultation,
+   * both cleared together with the draft right after (D16.6, generalized D17.4,
+   * D23G.8). Separate parameters because a consultation is not an attachment
+   * and does not compete for the composer's one slot (DM-23).
+   */
+  onSend: (
+    text: string,
+    attachment: AttachmentPart | null,
+    docs: DocsPart | null,
+    wantsReasoning: boolean
+  ) => void
   onCancel: () => void
   /**
    * Everything already in the transcript, in characters. The budget is computed
@@ -72,7 +82,7 @@ function Composer({
   // Sticky across turns, unlike attachment/draft (arco 21, D21A.9) — a mode
   // the user opts into for the conversation, not a one-shot payload.
   const [wantsReasoning, setWantsReasoning] = useState(false)
-  const { toggle: toggleDocs, selectedTokens: docsTokens, reportBudget } = useDocs()
+  const { toggle: toggleDocs, docsTokens, pending: docs, clearPending, reportBudget } = useDocs()
 
   // A PENDING attachment is about to be sent just as much as the draft text is
   // — counted here with the same materializer toChatMessages uses (D16.5), so
@@ -136,9 +146,10 @@ function Composer({
   const submit = (event: SyntheticEvent): void => {
     event.preventDefault()
     if (!canSend) return
-    onSend(draft, attachment, wantsReasoning && hasThinking)
+    onSend(draft, attachment, docs, wantsReasoning && hasThinking)
     setDraft('')
     setAttachment(null)
+    clearPending()
   }
 
   // Enter sends, Shift+Enter breaks the line. Beyond the letter of the plan,

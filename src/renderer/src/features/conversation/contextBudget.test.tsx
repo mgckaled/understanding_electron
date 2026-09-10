@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { installApiMock, TEST_MODEL } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
 import type { Api } from '@shared/ipc'
 import ConversationView from './ConversationView'
+import { useConversations } from './conversationsContext'
 
 /*
  * Level 2 for the meter (D15.4) and the gate (D15.5) — the point of the plan.
@@ -17,13 +19,39 @@ import ConversationView from './ConversationView'
 const ready = { ok: true, value: { service: 'ollama', version: '0.5.1' } } as const
 const PROMPT = 'Pergunte algo ao modelo…'
 
-function mount(): Api {
+/**
+ * @param extra - Rendered beside the view. Only the conversation-switch test
+ *   needs it: `ConversationView` does not carry the list, and the sidebar is
+ *   not what is under test here.
+ */
+function mount(extra?: ReactNode): Api {
   const api = installApiMock()
   vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
   vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [TEST_MODEL] })
   vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'pronto' } })
-  render(providers(<ConversationView />))
+  render(
+    providers(
+      <>
+        {extra}
+        <ConversationView />
+      </>
+    )
+  )
   return api
+}
+
+/**
+ * Moves to another conversation, for the stamping test alone. Through the
+ * provider's own `create`, which selects what it creates — writing straight to
+ * `api.conversation.create` would leave the list query holding the old rows.
+ */
+function Switcher(): React.JSX.Element {
+  const { create } = useConversations()
+  return (
+    <button type="button" onClick={() => create()}>
+      outra conversa
+    </button>
+  )
 }
 
 /**
@@ -269,5 +297,64 @@ describe('uma consulta de documentação no orçamento', () => {
     await paste(user, 'x'.repeat(3500))
 
     expect(screen.getByText('1 de 1 · ~182 tok · não cabe na janela de 1.024')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Anexar' })).toBeDisabled()
+  })
+
+  it('refuses to attach when nothing is checked', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByText(/de 32.768 tokens/)
+
+    await consult(api, user)
+    await user.click(screen.getByRole('checkbox', { name: SNIPPET.title }))
+
+    expect(screen.getByRole('button', { name: 'Anexar' })).toBeDisabled()
+  })
+
+  // The whole point of the cut reaching the wire: `partForProvider` has handled
+  // `docs` since 23-C, so attaching is what finally makes the model see it.
+  it('sends the frozen consultation with the next message', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByText(/de 32.768 tokens/)
+
+    await consult(api, user)
+    await user.click(screen.getByRole('button', { name: 'Anexar' }))
+    await user.type(screen.getByPlaceholderText(PROMPT), 'como invalido?')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    await waitFor(() => expect(api.ai.chat).toHaveBeenCalled())
+    const sent = vi.mocked(api.ai.chat).mock.calls[0][0].messages.at(-1)
+    expect(sent?.parts).toContainEqual(expect.objectContaining({ kind: 'docs', enabled: true }))
+  })
+
+  // Frozen means frozen (D23G.7): re-marking afterwards would leave the panel
+  // describing something other than what the model was sent.
+  it('freezes the selection once attached', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    await screen.findByText(/de 32.768 tokens/)
+
+    await consult(api, user)
+    await user.click(screen.getByRole('button', { name: 'Anexar' }))
+
+    expect(screen.getByRole('checkbox', { name: SNIPPET.title })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Anexar' })).not.toBeInTheDocument()
+  })
+
+  // Stamped like the composition (D23D.2): the meter of another transcript must
+  // not carry a consultation composed for this one.
+  it('does not follow the user into another conversation', async () => {
+    const user = userEvent.setup()
+    const api = mount(<Switcher />)
+    await screen.findByText(/de 32.768 tokens/)
+
+    await consult(api, user)
+    await user.click(screen.getByRole('button', { name: 'Anexar' }))
+    expect(screen.getByText('~182 de 32.768 tokens')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'outra conversa' }))
+
+    await waitFor(() => expect(screen.getByText('~0 de 32.768 tokens')).toBeInTheDocument())
   })
 })

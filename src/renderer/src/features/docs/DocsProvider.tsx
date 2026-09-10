@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Budget } from '@core/ai/budget'
+import type { DocsPart } from '@shared/ipc'
 import { useConversations } from '../conversation/conversationsContext'
 import { usePanel } from '../panel/panelContext'
 import { DocsContext, type DocsComposition } from './docsContext'
@@ -29,6 +30,12 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
   const { state: fetchState, fetch: runFetch, reset: resetFetch } = useDocsFetch()
   const [selectedTokens, setSelectedTokens] = useState(0)
   const [budget, setBudget] = useState<Budget | null>(null)
+  // Stamped like the composition (D23D.2): switching conversations must not
+  // carry a consultation composed for another transcript into this one.
+  const [attached, setAttached] = useState<{
+    conversationId: string | null
+    part: DocsPart
+  } | null>(null)
 
   const reportBudget = useCallback((next: Budget | null) => {
     setBudget((previous) => (sameBudget(previous, next) ? previous : next))
@@ -130,6 +137,34 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     if (open && current === null) release()
   }, [open, current, release])
 
+  const pending = attached?.conversationId === activeId ? attached.part : null
+
+  // The frozen part once attached, the live selection while composing — never
+  // both, because attaching freezes the selection (D23G.7). Without this the
+  // meter would drop an attached consultation the moment the panel closed.
+  const docsTokens =
+    pending === null
+      ? selectedTokens
+      : [...pending.snippets, ...pending.notes].reduce((sum, one) => sum + one.tokens, 0)
+
+  const attach = useCallback(
+    (part: DocsPart) => setAttached({ conversationId: activeId, part }),
+    [activeId]
+  )
+
+  // The consultation is in the transcript now, so the panel goes back to an
+  // empty form (D23G.8) — the way back to a sent one is the 23-H history.
+  const clearPending = useCallback(() => {
+    setAttached(null)
+    resetSearch()
+    resetFetch()
+    setComposition((previous) =>
+      previous === null
+        ? previous
+        : { ...previous, library: '', question: '', candidateKey: null, version: null }
+    )
+  }, [resetFetch, resetSearch])
+
   // Going back to the form drops both: the list is what the form produced, and
   // the result is what the list produced.
   const backToCompose = useCallback(() => {
@@ -151,8 +186,11 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       fetchDocs,
       resetFetch,
       selected,
-      selectedTokens,
+      docsTokens,
       setSelectedTokens,
+      pending,
+      attach,
+      clearPending,
       budget,
       reportBudget,
       toggle,
@@ -172,7 +210,10 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       fetchDocs,
       resetFetch,
       selected,
-      selectedTokens,
+      docsTokens,
+      pending,
+      attach,
+      clearPending,
       budget,
       reportBudget,
       toggle,
