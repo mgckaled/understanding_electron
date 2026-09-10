@@ -226,6 +226,14 @@ A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resoluçã
 
 **Por que no 23-I e não no 23-F:** o 23-F é o Estado 3 (as três abas), superfície que não encosta na tela 1. O 23-I é definido como *"cada situação com o seu texto e a sua ação"*, e "sem chave" é literalmente mais uma — além de ser **meio-irmã do que já está lá**: a mensagem de cota esgotada já muda de texto conforme haja chave ou não. O 23-I não depende do 23-F, então isto não atrasa o arco.
 
+### O título do trecho do Context7 é markdown e sai cru — falta uma variante inline do `MarkdownMessage` (a implementar no 23-K)
+
+**Achado na verificação ao vivo do 23-G, 10/09/2026, na primeira linha da primeira consulta real.** O `codeTitle` da API traz código inline em acento grave (``Optimistic Cache Update with Rollback using `onMutate` ``) e a linha do trecho o renderiza como string crua, mostrando os acentos. É a mesma classe que o 23-F consertou para a **descrição** e para a **nota**; o título passou batido porque nenhuma consulta daquele corte trouxe código no campo, e não é caso raro — apareceu de primeira.
+
+**O conserto óbvio é o que a skill [`design-system`](../.claude/skills/design-system/SKILL.md) manda recusar,** e o alternativo não cabe: um partidor de acento grave criaria um segundo dono do markdown, e mandar o título pelo `MarkdownMessage` como ele está hoje põe um `<p>` de bloco dentro do `<button>` do retrátil, em 18px fixos, numa linha que precisa truncar.
+
+**O que resolve é uma variante inline do próprio primitivo** — `span` em vez de `p`, herdando o tamanho de quem chama —, mantendo a fonte única e servindo qualquer legenda futura. Isso é trabalho de design system, e pela régua do envelope ele não nasce dentro de um corte de feature: fica para o **23-K**, que é o das minúcias. Decidido com o dono em 10/09/2026.
+
 ### Parquet não está no seletor de arquivo
 
 O motor lê e escreve Parquet nativamente, e o [`ESCOPO.md`](ESCOPO.md#formatos) o lista como formato do produto — mas `src/main/features/dataset/pick.ts` não oferece `.parquet` nas extensões do diálogo, então nenhum arquivo desses chega ao app. É a marca ⌛ do escopo: admitido, sem caminho na interface. O conserto é abrir o filtro do diálogo; o que **não** é trivial é decidir se Parquet ganha pré-visualização e perfil pelos mesmos caminhos do CSV (provavelmente sim, o motor não distingue) e se a exportação passa a oferecê-lo como saída padrão, que é a promessa mais forte do escopo — *"a saída natural do app"*.

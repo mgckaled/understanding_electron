@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **112** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **113** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -18,6 +18,13 @@ Provar um vermelho por sabotagem via shell (`python -c`, `sed -i`) tem um modo d
 **A leitura errada é fatal para o método:** "não passou" parece confirmar a sabotagem, e o teste segue sem nunca ter sido exercitado. O vermelho que vale é `Tests  N failed`, com o **nome** do teste esperado na lista de falhas; qualquer outra forma de não-verde é a suíte não tendo corrido.
 
 ⚠️ **Conserto de rota:** para `&&` dentro de string em `python -c` sob Git Bash, use `'...'` simples de Python **sem** escape (`'{false && ('`), ou o `Edit`, que não passa pelo shell. E confira o arquivo (`grep` na linha tocada) antes de crer no resultado da corrida.
+
+### `prompt_eval_count` menor que o prompt — é cache de prefixo, não estimativa errada (set/2026)
+Comparar uma contagem de tokens com o `prompt_eval_count` do Ollama parece a verificação definitiva, e **não é**: o campo conta o que o modelo precisou **avaliar**, não o tamanho do prompt. Prefixo já avaliado numa requisição anterior não reaparece na conta.
+
+Medido no 23-G: o painel dizia `293 tok` para três trechos do Context7 e o turno voltou com `prompt_eval_count: 160` para o prompt **inteiro** — o que sugeria que o `codeTokens` do Context7 inflava por ~2×. O turno seguinte, com a história acumulada, desmentiu: previsto ~1.168 tokens, medido **1.200**, 3% de diferença. A contagem do Context7 estava certa; o `160` é que era baixo, por reúso de prefixo das consultas de teste anteriores.
+
+⚠️ **Conserto de rota:** para comparar estimativa com medição, **modelo recém-carregado e conversa nova**, uma requisição só — e ainda assim n=1 não é uma razão. Um segundo turno com história acumulada é o que dá o sinal, porque o volume novo domina o cache.
 
 ### `Worker exited unexpectedly` com `Tests  (N)` sem contagem — o laço de render matou o corredor (set/2026)
 Um `useEffect` que escreve estado derivado de um objeto reconstruído a cada render (`budgetFor` devolve objeto novo sempre) realimenta o próprio render. O Vitest **não** reporta isso como teste vermelho: o worker morre e a saída traz `Error: [vitest-pool]: Worker forks emitted error` com `Test Files  (1)` e `Tests  (10)` — números sem `passed`/`failed` ao lado.

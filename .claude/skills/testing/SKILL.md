@@ -53,6 +53,10 @@ A regra vale em todos os cinco níveis, e é mais fácil de violar do que parece
 
 ⚠️ **E vermelho tem uma forma só: `Tests  N failed`, com o NOME do teste esperado na lista de falhas.** Qualquer outra forma de não-verde é a suíte não tendo corrido, e a que mais engana é `Tests  no tests` — sabotagem feita por shell (`sed -i`, `python -c`) que quebre a sintaxe do arquivo produz isso, e "não passou" parece confirmar a sabotagem. Confira a linha tocada antes de crer na corrida; a armadilha completa está em [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md), grepável pelo próprio sintoma.
 
+⚠️ **Nem todo defeito consegue ficar vermelho.** Um laço de render (efeito que escreve estado derivado de objeto reconstruído a cada render) **mata o worker** — a saída traz `Worker exited unexpectedly` e `Tests  (N)` sem `passed`/`failed` ao lado, porque nenhuma asserção chega a ser avaliada. É a mesma silhueta de `Tests  no tests` por causa oposta: lá a suíte não correu, aqui ela correu e foi derrubada. A morte do worker **é** a prova; não fique procurando um nome de teste na lista de falhas ([`ARMADILHAS.md`](../../../docs/ARMADILHAS.md)).
+
+⚠️ **Sabotagem que muda a superfície de tipo prova o compilador, não o teste.** Remover a chamada de uma função de guarda deixa a função sem uso, e o `typecheck` reprova (`TS6133`) **antes** de o Vitest rodar — o vermelho que aparece é do portão errado. Mantenha o símbolo em uso ao sabotar (`sameBudget(a, b) && false`).
+
 **Sabotagem larga demais prova menos do que parece.** Anular a tela inteira num teste com duas asserções (*"as abas aparecem"* **e** *"a lista some"*) derruba a primeira e deixa a segunda sem exercício — no 23-F foram necessárias **duas** sabotagens para o mesmo teste. A régua: cada asserção discriminante quer o defeito que **ela** inverteria, não um defeito qualquer.
 
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
