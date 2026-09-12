@@ -195,16 +195,19 @@ describe('o formulário da consulta', () => {
 
   // D23A.3: a miss is a screen state travelling inside the value, so it never
   // reaches StateView's error branch.
-  it('draws a miss as text, not as a failure', async () => {
+  // The service answers in English, and 23-I stopped echoing it: the app's own
+  // sentence says what to do about it (D23I.1).
+  it('draws a miss in the words of the app, not of the service, and not as a failure', async () => {
     await compose()
     vi.mocked(api.docs.search).mockResolvedValue({
       ok: true,
-      value: { status: 'no-libraries', message: 'Nenhuma biblioteca com esse nome.' }
+      value: { status: 'no-libraries', message: 'No libraries found for "tanstack query".' }
     })
 
     await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
 
-    expect(await screen.findByText('Nenhuma biblioteca com esse nome.')).toBeInTheDocument()
+    expect(await screen.findByText(/Nenhuma biblioteca com esse nome/)).toBeInTheDocument()
+    expect(screen.queryByText(/No libraries found/)).not.toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
@@ -356,10 +359,10 @@ describe('a segunda chamada', () => {
     await screen.findByRole('radio', { checked: true })
     vi.mocked(api.docs.fetch).mockResolvedValue({ ok: true, value: { status: 'empty' } })
     await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
-    expect(await screen.findByText('empty')).toBeInTheDocument()
+    expect(await screen.findByText(/nada respondeu a essa pergunta/)).toBeInTheDocument()
 
     await userEvent.click(screen.getAllByRole('radio')[1])
 
-    expect(screen.queryByText('empty')).not.toBeInTheDocument()
+    expect(screen.queryByText(/nada respondeu a essa pergunta/)).not.toBeInTheDocument()
   })
 })

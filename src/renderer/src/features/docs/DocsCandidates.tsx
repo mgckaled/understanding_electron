@@ -2,8 +2,9 @@ import { useId } from 'react'
 import type { LibraryCandidate } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Field from '../../shared/ui/Field/Field'
-import StateView from '../../shared/ui/StateView'
+import DocsNotice from './DocsNotice'
 import { useDocs } from './docsContext'
+import { docsFailureOf } from './docsFailure'
 
 const decimal = new Intl.NumberFormat('pt-BR')
 const score = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -39,6 +40,11 @@ function DocsCandidates({
 
   if (selected === null) return null
   const loading = fetchState.status === 'loading'
+  const failure = docsFailureOf(fetchState)
+  // The footer is the action row, so the failure decides it instead of adding
+  // a second button beside `Voltar`: a library that stopped existing has
+  // nothing left to consult, and a retry says so on the button (D23I.1).
+  const retryLabel = failure?.action === 'retry' ? 'Tentar de novo' : 'Consultar'
 
   return (
     <>
@@ -119,16 +125,9 @@ function DocsCandidates({
         )}
 
         {/* Everything the answer is NOT: `ready` gets its own screen (D23F.2),
-            so only empty, indexing and library-not-found land here. The
-            Portuguese of each is 23-I's — the raw status holds the place. */}
-        <StateView
-          state={fetchState}
-          render={(outcome) =>
-            outcome.status === 'ready' ? null : (
-              <p className="text-xs text-text-muted">{outcome.status}</p>
-            )
-          }
-        />
+            so only empty, indexing and library-not-found land here — each with
+            its own text and its own action in the footer below (D23I.1). */}
+        <DocsNotice failure={failure} />
       </div>
 
       <div className="flex flex-none items-center justify-between gap-3 border-t border-border px-5 py-4">
@@ -137,15 +136,17 @@ function DocsCandidates({
           <Button variant="ghost" size="sm" type="button" onClick={onBack} disabled={loading}>
             Voltar
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            type="button"
-            loading={loading}
-            onClick={() => void fetchDocs()}
-          >
-            Consultar
-          </Button>
+          {failure?.action !== 'back' && (
+            <Button
+              variant="primary"
+              size="sm"
+              type="button"
+              loading={loading}
+              onClick={() => void fetchDocs()}
+            >
+              {retryLabel}
+            </Button>
+          )}
         </span>
       </div>
     </>

@@ -7,9 +7,11 @@ import { usePanel } from '../panel/panelContext'
 import DocsAttached from './DocsAttached'
 import DocsCandidates from './DocsCandidates'
 import DocsCompose from './DocsCompose'
+import DocsNotice from './DocsNotice'
 import DocsHistory from './DocsHistory'
 import DocsResult from './DocsResult'
 import { useDocs } from './docsContext'
+import { docsFailureOf } from './docsFailure'
 import { DocsIcon } from './icon'
 
 // Four screens, and the reopened one wins: an attached consultation is what
@@ -89,15 +91,13 @@ function DocsPanel(): React.JSX.Element | null {
           onSearch={() => void search()}
           // Only what is NOT a list: a hit gets its own screen below, and
           // `no-libraries` travels inside `ready`, so it lands here (D23A.3).
+          // The service's own `message` is dropped on purpose — it arrives in
+          // English, and the text of situação 2 answers better (D23I.1).
           result={
-            <StateView
-              state={state}
-              render={(outcome) =>
-                outcome.status === 'no-libraries' ? (
-                  <p className="text-xs text-text-muted">{outcome.message}</p>
-                ) : null
-              }
-            />
+            <>
+              {state.status === 'loading' && <StateView state={state} render={() => null} />}
+              <DocsNotice failure={docsFailureOf(state)} />
+            </>
           }
         />
       ) : (
