@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **113** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **114** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -360,6 +360,17 @@ O bundle do `main` é **CJS com dependências externalizadas** — rollup emite 
 **Conserto que resolve os dois de uma vez: não serializar.** Mapeia-se o mdast para uma estrutura própria e renderiza-se dela — no crivo, o mesmo `Block[]` que o `.docx` desenha, o que ainda torna os dois formatos consistentes por construção. `strip-markdown` saiu do projeto.
 
 ⚠️ **Duas lições sobre a forma da conferência, ambas cobradas em dinheiro:** (1) a prova ao vivo do E-1-D checava o que **sai** (`#`, `**`, `-`) e nunca o que **sobrevive**; (2) o teste que escrevi para o sumiço checava `toContain('const a = 1')`, que passa com o texto escapado ao redor. Verificação de transformação precisa de asserção de **igualdade**, não de presença. [`src/core/export/toPlainText.ts`](../src/core/export/toPlainText.ts)
+
+---
+
+### Dois painéis desenhados de uma vez, um deles sobre a barra lateral (set/2026)
+O `PanelProvider` (`features/panel/`) torna **inexpressável** que dois inquilinos *ocupem* a região da direita — mas isso não é o mesmo que impedir dois painéis de **se desenharem**. Cada painel decide por conta própria se renderiza, e o portão é ler `showing` (via o `open` do próprio provider de feature) antes de devolver JSX.
+
+Sintoma: o painel de documentação aberto, o de rascunho aberto em seguida, e o layout inteiro em pedaços — o `<aside>` de docs vai parar **sobre a barra lateral**, porque o grid da casca só reservou uma faixa. Não há erro, nem aviso, nem teste de camada que pegue.
+
+Causa no 23-H: o `DocsProvider` expunha `current: open ? current : null` e, ao ganhar a releitura de uma consulta anexada, expôs `viewing` **cru**. O `DocsPanel` devolve `null` só quando os dois são nulos, então bastou o segundo escapar do portão.
+
+**Conserto e regra:** todo estado que faz um painel renderizar sai do provider atrás do mesmo `open ? valor : null`. Ao dar a um painel uma **fonte de conteúdo nova**, a garantia de DE1B.1 não vem de graça — ela é por-valor, não por-componente. Teste que reprova: outro inquilino chama `raise` e o painel some (`docsLine.test.tsx` § *sai da região quando outro inquilino a toma*).
 
 ---
 
