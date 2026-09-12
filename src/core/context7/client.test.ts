@@ -239,3 +239,44 @@ describe('o que falha de verdade', () => {
     ).rejects.toThrow()
   })
 })
+
+// D23I.9: the header is the only report of the quota there is — no endpoint
+// answers it without spending a call — so the client hands it over for EVERY
+// answer, not only the ones that produce an outcome.
+describe('a cota no header', () => {
+  const HEADERS = {
+    'ratelimit-limit': '1000',
+    'ratelimit-remaining': '146',
+    'ratelimit-reset': '1790000000'
+  }
+
+  it('hands over what a good answer reported', async () => {
+    const seen: unknown[] = []
+    const d = { ...deps(reply(fixtureText('search-tanstack-query'), { headers: HEADERS })) }
+
+    await searchLibraries('tanstack query', { ...d, onQuota: (q) => seen.push(q) })
+
+    expect(seen).toEqual([{ limit: 1000, remaining: 146, resetAt: 1790000000 }])
+  })
+
+  it('hands over the 429 too, which is where the number matters most', async () => {
+    const seen: unknown[] = []
+    const d = deps(reply('{}', { status: 429, headers: { ...HEADERS, 'ratelimit-remaining': '0' } }))
+
+    await searchLibraries('tanstack query', { ...d, onQuota: (q) => seen.push(q) }).catch(
+      (error: unknown) => error
+    )
+
+    expect(seen).toHaveLength(1)
+    expect((seen[0] as { remaining: number }).remaining).toBe(0)
+  })
+
+  it('reports nulls rather than zeros when the header is absent', async () => {
+    const seen: { limit: number | null }[] = []
+    const d = deps(reply(fixtureText('search-tanstack-query')))
+
+    await searchLibraries('tanstack query', { ...d, onQuota: (q) => seen.push(q) })
+
+    expect(seen[0]).toEqual({ limit: null, remaining: null, resetAt: null })
+  })
+})

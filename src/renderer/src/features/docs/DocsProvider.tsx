@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Budget } from '@core/ai/budget'
 import type { DocsPart } from '@shared/ipc'
 import { useConversations } from '../conversation/conversationsContext'
 import { usePanel } from '../panel/panelContext'
 import { DocsContext, type DocsComposition } from './docsContext'
 import { useDocsFetch } from './useDocsFetch'
+import { DOCS_QUOTA_KEY } from './useDocsQuota'
 import { useDocsSearch } from './useDocsSearch'
 
 /**
@@ -23,6 +25,7 @@ function sameBudget(a: Budget | null, b: Budget | null): boolean {
 }
 
 function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element {
+  const queryClient = useQueryClient()
   const { activeId } = useConversations()
   const { showing, raise, toggle: toggleRegion, close, release } = usePanel()
   const [composition, setComposition] = useState<DocsComposition | null>(null)
@@ -99,7 +102,10 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     )
     resetFetch()
     await runSearch(query)
-  }, [composition?.library, resetFetch, runSearch])
+    // Every answer carries the header, so the number on the first screen is
+    // stale the moment a call returns — including a failed one (D23I.9).
+    await queryClient.invalidateQueries({ queryKey: DOCS_QUOTA_KEY })
+  }, [composition?.library, queryClient, resetFetch, runSearch])
 
   // The result belongs to the library it was fetched for: keeping it across a
   // change of candidate would show one library's snippets under another's name.
@@ -128,7 +134,8 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       query: current.question,
       ...(current.version === null ? {} : { version: current.version })
     })
-  }, [current, runFetch, selected])
+    await queryClient.invalidateQueries({ queryKey: DOCS_QUOTA_KEY })
+  }, [current, queryClient, runFetch, selected])
 
   const setLibrary = useCallback(
     (library: string) =>

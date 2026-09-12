@@ -1,7 +1,7 @@
 import { UpstreamError } from '@core/ai/types'
 import { describeUpstreamError } from '@core/ai/upstreamError'
 import { normalizeCandidates, normalizeDocs } from './parse'
-import type { ContextOutcome, SearchOutcome } from '@shared/ipc'
+import type { ContextOutcome, DocsQuota, SearchOutcome } from '@shared/ipc'
 import type {
   Context7Fetch,
   ContextResponseWire,
@@ -23,6 +23,11 @@ export type Context7Deps = {
   apiKey?: string | null
   baseUrl?: string
   signal?: AbortSignal
+  /**
+   * Told what the header said, for every answer — including the 429, which is
+   * where the number matters most and where no outcome is returned (D23I.9).
+   */
+  onQuota?: (quota: DocsQuota) => void
 }
 
 /**
@@ -97,7 +102,27 @@ async function request(
 
   const timeout = AbortSignal.timeout(CONTEXT7_TIMEOUT_MS)
   const signal = deps.signal === undefined ? timeout : AbortSignal.any([deps.signal, timeout])
-  return deps.fetchFn(url.href, { headers, signal })
+  const response = await deps.fetchFn(url.href, { headers, signal })
+  // Before any status check: the quota is what a 429 is about, and that path
+  // throws a few lines later without ever returning an outcome (D23I.9).
+  deps.onQuota?.(readQuota(response))
+  return response
+}
+
+// The only report of the quota there is: no endpoint answers it without
+// spending a call (checked against the API guide), so the header is it.
+function readQuota(response: HttpResponse): DocsQuota {
+  return {
+    limit: readCount(response.headers.get('ratelimit-limit')),
+    remaining: readCount(response.headers.get('ratelimit-remaining')),
+    resetAt: readCount(response.headers.get('ratelimit-reset'))
+  }
+}
+
+function readCount(header: string | null): number | null {
+  if (header === null) return null
+  const value = Number(header)
+  return Number.isFinite(value) ? value : null
 }
 
 // 400 and 404 never get here: they are screen state, and handing them to

@@ -1,6 +1,7 @@
-import type { Args, AppError, ContextOutcome, Result, SearchOutcome } from '@shared/ipc'
+import type { Args, AppError, ContextOutcome, DocsQuota, Result, SearchOutcome } from '@shared/ipc'
 import type { Context7Fetch } from '@core/context7/types'
 import type { DocsCache } from './cache'
+import type { QuotaMemo } from './quota'
 import { UpstreamError } from '@core/ai/types'
 import { CONTEXT7_TIMEOUT_MS, fetchLibraryContext, searchLibraries } from '@core/context7/client'
 import { ok, err } from '@core/result'
@@ -10,6 +11,7 @@ export type DocsDeps = {
   fetchFn: Context7Fetch
   getApiKey: () => string | null
   cache: DocsCache
+  quota: QuotaMemo
 }
 
 const UNAVAILABLE_HINT = 'Verifique sua conexão — o Context7 é um serviço online.'
@@ -64,8 +66,26 @@ export async function fetchDocs(
 // Only a complete answer is memoized. `indexing` is the state whose whole
 // point is trying again in a few minutes; `empty`/`no-libraries` leave the
 // user reformulating anyway; a failure must never stick to a retry button.
-function clientDeps(deps: DocsDeps): { fetchFn: Context7Fetch; apiKey: string | null } {
-  return { fetchFn: deps.fetchFn, apiKey: deps.getApiKey() }
+function clientDeps(deps: DocsDeps): {
+  fetchFn: Context7Fetch
+  apiKey: string | null
+  onQuota: (quota: DocsQuota) => void
+} {
+  return {
+    fetchFn: deps.fetchFn,
+    apiKey: deps.getApiKey(),
+    onQuota: (quota) => deps.quota.record(quota)
+  }
+}
+
+/**
+ * What the service last said was left of the quota.
+ *
+ * @returns `null` until the first answer of the session — the header is the
+ *   only report there is, so before one arrives the panel says so (D23I.7).
+ */
+export function readDocsQuota(_args: Args<'docs:quota'>, deps: DocsDeps): DocsQuota | null {
+  return deps.quota.read()
 }
 
 // Not mapProviderError (D23B.5): that one is keyed by AiService and hands out

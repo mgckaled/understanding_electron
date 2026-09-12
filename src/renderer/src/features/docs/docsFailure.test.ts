@@ -50,7 +50,8 @@ describe('docsFailureOf', () => {
   })
 
   it('keeps the 429 text the client composed, with its reset date', () => {
-    const message = 'As 200 consultas mensais gratuitas do Context7 acabaram. A cota volta em 30 de setembro de 2026, 21:00. Uma chave do Context7 aumenta o limite.'
+    const message =
+      'As 200 consultas mensais gratuitas do Context7 acabaram. A cota volta em 30 de setembro de 2026, 21:00. Uma chave do Context7 aumenta o limite.'
     const failure = docsFailureOf(
       failed({ kind: 'upstream', service: 'context7', status: 429, message })
     )

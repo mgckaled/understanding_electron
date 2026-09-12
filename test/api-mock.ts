@@ -113,7 +113,10 @@ export function createApiMock(): Api {
     // read `undefined` as if it were a Result (arco 23).
     docs: {
       search: vi.fn().mockResolvedValue({ ok: true, value: { status: 'found', candidates: [] } }),
-      fetch: vi.fn().mockResolvedValue({ ok: true, value: { status: 'empty' } })
+      fetch: vi.fn().mockResolvedValue({ ok: true, value: { status: 'empty' } }),
+      // null, not a bare vi.fn(): "nothing asked yet this session" is the real
+      // state before the first answer carries the header (D23I.7).
+      quota: vi.fn().mockResolvedValue(null)
     },
     secrets: {
       write: vi.fn(),

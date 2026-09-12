@@ -145,6 +145,32 @@ describe('o formulário da consulta', () => {
     })
   })
 
+  // D23I.6: the first screen is the only place a consultation is administered,
+  // and the number is always what the service last said (D23I.8).
+  describe('a cota', () => {
+    it('says nothing was asked yet instead of showing a zero', async () => {
+      await mount()
+
+      await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+      expect(await screen.findByText(/sem consulta nesta sessão/)).toBeInTheDocument()
+      expect(screen.queryByText(/consultas restantes/)).not.toBeInTheDocument()
+    })
+
+    it('shows what the header of the last answer reported', async () => {
+      await mount()
+      vi.mocked(api.docs.quota).mockResolvedValue({
+        limit: 1000,
+        remaining: 146,
+        resetAt: 1790000000
+      })
+
+      await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+      expect(await screen.findByText(/146 de 1\.000 consultas restantes/)).toBeInTheDocument()
+    })
+  })
+
   // DM-22: the warning is permanent, never a first-time consent — it has to be
   // on screen in the turn the question leaves the machine.
   it('warns that the question leaves the machine', async () => {

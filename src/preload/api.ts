@@ -50,7 +50,8 @@ export const api: Api = {
   },
   docs: {
     search: (query) => invoke('docs:search', { query }),
-    fetch: (args) => invoke('docs:fetch', args)
+    fetch: (args) => invoke('docs:fetch', args),
+    quota: () => invoke('docs:quota')
   },
   conversation: {
     list: () => invoke('conversation:list'),

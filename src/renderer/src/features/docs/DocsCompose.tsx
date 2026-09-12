@@ -4,6 +4,7 @@ import Button from '../../shared/ui/Button/Button'
 import Field from '../../shared/ui/Field/Field'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useCloudSecret } from '../settings/useCloudSecret'
+import DocsAdmin from './DocsAdmin'
 import { useDocs } from './docsContext'
 
 const INPUT =
@@ -27,8 +28,7 @@ function DocsCompose({ onSearch, result }: DocsComposeProps): React.JSX.Element 
   // (DM-12, situação 1): the button is the fix, not a 400 spent from the quota.
   // The key joins that rule rather than replacing it (D23I.5); `loaded` guards
   // the flicker of a button that enables and then disables again.
-  const ready =
-    loaded && hasKey && current.library.trim() !== '' && current.question.trim() !== ''
+  const ready = loaded && hasKey && current.library.trim() !== '' && current.question.trim() !== ''
 
   return (
     <>
@@ -65,16 +65,10 @@ function DocsCompose({ onSearch, result }: DocsComposeProps): React.JSX.Element 
         </p>
 
         {/* The first screen is the only place the consultation is administered
-            (D23I.6), and this line is where requiring a key explains itself
-            instead of only blocking. Nothing opens Configurações — it names it
-            (D23I.4), the same way useCloudCatalog does for Gemini and GLM. */}
-        {loaded && (
-          <p className={hasKey ? 'text-xs text-text-faint' : 'text-xs text-warn-text'}>
-            {hasKey
-              ? 'Chave do Context7 configurada.'
-              : 'Sem chave do Context7 — configure em Configurações para consultar.'}
-          </p>
-        )}
+            (D23I.6), and it is where requiring a key explains itself instead of
+            only blocking. Nothing opens Configurações — it names it (D23I.4),
+            the same way useCloudCatalog does for Gemini and GLM. */}
+        <DocsAdmin />
 
         {result}
       </div>

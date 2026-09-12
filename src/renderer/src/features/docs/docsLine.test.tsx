@@ -325,9 +325,7 @@ describe('o histórico', () => {
     await user.click(screen.getByRole('switch', { name: /Tirar a consulta/, hidden: true }))
 
     await waitFor(async () => expect(await storedEnabled()).toBe(false))
-    await waitFor(() =>
-      expect(screen.getByText('0 tok ativos')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('0 tok ativos')).toBeInTheDocument())
   })
 
   it('uma linha leva à consulta', async () => {

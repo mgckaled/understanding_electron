@@ -1,13 +1,14 @@
 import { UpstreamError } from '@core/ai/types'
 import type { Context7Fetch, HttpResponse } from '@core/context7/types'
 import { createDocsCache } from './cache'
-import { fetchDocs, searchDocs } from './handlers'
+import { fetchDocs, readDocsQuota, searchDocs } from './handlers'
+import { createQuotaMemo } from './quota'
 
 // Hand-built, never the 23-A fixtures: what this level proves is the wrapping,
 // and reaching across to core/'s recordings would make a parse change fail
 // here too, hiding which layer broke (D23B.8).
-function reply(body: string, status = 200): HttpResponse {
-  return { status, headers: { get: () => null }, text: async () => body }
+function reply(body: string, status = 200, headers: Record<string, string> = {}): HttpResponse {
+  return { status, headers: { get: (name) => headers[name] ?? null }, text: async () => body }
 }
 
 const FOUND = JSON.stringify({
@@ -34,6 +35,7 @@ type Stub = {
   fetchFn: Context7Fetch
   getApiKey: () => string | null
   cache: ReturnType<typeof createDocsCache>
+  quota: ReturnType<typeof createQuotaMemo>
 }
 
 function deps(response: HttpResponse | (() => never), apiKey: string | null = null): Stub {
@@ -46,7 +48,13 @@ function deps(response: HttpResponse | (() => never), apiKey: string | null = nu
     if (typeof response === 'function') return response()
     return response
   }
-  return { sent, fetchFn, getApiKey: () => apiKey, cache: createDocsCache() }
+  return {
+    sent,
+    fetchFn,
+    getApiKey: () => apiKey,
+    cache: createDocsCache(),
+    quota: createQuotaMemo()
+  }
 }
 
 describe('searchDocs', () => {
@@ -224,5 +232,59 @@ describe('a cota, que é o recurso escasso', () => {
 
     expect(cache.get('a')).toBeUndefined()
     expect(cache.get('c')).toBe(3)
+  })
+})
+
+const QUOTA_HEADERS = {
+  'ratelimit-limit': '1000',
+  'ratelimit-remaining': '146',
+  'ratelimit-reset': '1790000000'
+}
+
+describe('readDocsQuota', () => {
+  it('knows nothing before the first answer of the session', () => {
+    expect(readDocsQuota(undefined, deps(reply(FOUND)))).toBeNull()
+  })
+
+  it('keeps what the header of the last answer said', async () => {
+    const d = deps(reply(FOUND, 200, QUOTA_HEADERS))
+
+    await searchDocs({ query: 'tanstack query' }, d)
+
+    expect(readDocsQuota(undefined, d)).toEqual({
+      limit: 1000,
+      remaining: 146,
+      resetAt: 1790000000
+    })
+  })
+
+  // The case the seam exists for: a 429 throws before any outcome is built,
+  // and it is exactly when the number is worth having (D23I.9).
+  it('keeps the number a 429 carried, though the call failed', async () => {
+    const d = deps(reply('{}', 429, { ...QUOTA_HEADERS, 'ratelimit-remaining': '0' }))
+
+    const result = await searchDocs({ query: 'tanstack query' }, d)
+
+    expect(result.ok).toBe(false)
+    expect(readDocsQuota(undefined, d)?.remaining).toBe(0)
+  })
+
+  // A header the service did not send leaves the last real number standing:
+  // it is still the most recent thing it said.
+  it('does not erase a known number with an answer that carried none', async () => {
+    const withHeaders = reply(FOUND, 200, QUOTA_HEADERS)
+    const without = reply(FOUND)
+    let call = 0
+    const d = deps(withHeaders)
+    const original = d.fetchFn
+    d.fetchFn = async (url, init) => {
+      call += 1
+      return call === 1 ? original(url, init) : without
+    }
+
+    await searchDocs({ query: 'tanstack query' }, d)
+    await searchDocs({ query: 'outra coisa' }, d)
+
+    expect(readDocsQuota(undefined, d)?.remaining).toBe(146)
   })
 })

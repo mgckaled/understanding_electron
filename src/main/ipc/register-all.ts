@@ -55,7 +55,8 @@ import {
 } from '../features/ai/handlers'
 import { propose as aiPropose } from '../features/ai/propose'
 import { createDocsCache } from '../features/context7/cache'
-import { fetchDocs, searchDocs } from '../features/context7/handlers'
+import { fetchDocs, readDocsQuota, searchDocs } from '../features/context7/handlers'
+import { createQuotaMemo } from '../features/context7/quota'
 import {
   ollamaChat,
   ollamaDisplayHost,
@@ -301,10 +302,12 @@ export async function registerAll(): Promise<() => void> {
   const docsDeps = {
     fetchFn: fetch,
     getApiKey: () => readSecretForUse('context7', db, decryptSecret),
-    cache: createDocsCache()
+    cache: createDocsCache(),
+    quota: createQuotaMemo()
   }
   handle('docs:search', (args) => searchDocs(args, docsDeps))
   handle('docs:fetch', (args) => fetchDocs(args, docsDeps))
+  handle('docs:quota', (args) => readDocsQuota(args, docsDeps))
 
   handle('conversation:list', (args) => listConversations(args, db))
   handle('conversation:messages', (args) => readMessages(args, db))

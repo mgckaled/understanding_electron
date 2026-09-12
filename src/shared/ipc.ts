@@ -904,6 +904,20 @@ export type DocsResult = {
 export type SearchOutcome =
   { status: 'found'; candidates: LibraryCandidate[] } | { status: 'no-libraries'; message: string }
 
+/**
+ * What the service said about the quota in the header of its last answer.
+ *
+ * Every field is nullable because the header may be absent or unreadable, and
+ * there is no endpoint that reports the quota without spending a call — so a
+ * missing number is "nothing asked yet this session", never zero (D23I.7).
+ */
+export type DocsQuota = {
+  limit: number | null
+  remaining: number | null
+  /** Epoch seconds, as `Ratelimit-Reset` sends it. */
+  resetAt: number | null
+}
+
 export type ContextOutcome =
   | { status: 'ready'; docs: DocsResult }
   | { status: 'empty' }
@@ -999,6 +1013,7 @@ export const argsSchema = {
     // from versions[] (D23A.6).
     version: z.string().min(1).optional()
   }),
+  'docs:quota': z.void(),
   // Conversation storage (plano 14). The renderer mints `id` and stamps
   // `createdAt` (D14.5) — identity generated on the side that acts, like JobId,
   // so no handler here generates identity or time; it inserts what it receives.
@@ -1211,6 +1226,13 @@ export type IpcContract = {
     args: z.infer<(typeof argsSchema)['docs:fetch']>
     result: Result<ContextOutcome>
   }
+  // No Result: this reads a memo the main process filled from the header of an
+  // answer it already had, with no failure mode the UI tells apart — the same
+  // rule as dataset:queueDepth and database:info (D23I.10).
+  'docs:quota': {
+    args: z.infer<(typeof argsSchema)['docs:quota']>
+    result: DocsQuota | null
+  }
   // No conversation channel returns Result, by decision: Result is for failures
   // the UI must REACT to (file missing, service down, cancelled). An indexed
   // insert into a local SQLite file has none — what is left is programming
@@ -1375,6 +1397,8 @@ export type Api = {
       query: string
       version?: string
     }): Promise<Result<ContextOutcome>>
+    /** What the last answer of this session said was left; `null` before the first (D23I.7). */
+    quota(): Promise<DocsQuota | null>
   }
   conversation: {
     /** Newest first — `ORDER BY updated_at DESC`, the sidebar's own order. */
