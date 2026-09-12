@@ -8,6 +8,7 @@ import Switch from '../../shared/ui/Switch/Switch'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { useActiveConversation, useConversations } from '../conversation/conversationsContext'
 import { useDocs } from './docsContext'
+import { costOf, countsOf } from './summary'
 
 const decimal = new Intl.NumberFormat('pt-BR')
 
@@ -16,10 +17,6 @@ const TRIGGER =
   'flex h-(--control-height-md) max-w-[15rem] min-w-[0px] cursor-pointer items-center gap-2 ' +
   'rounded-md border border-border bg-surface-sunken px-5 font-ui text-sm text-text ' +
   'transition-colors duration-(--duration-fast) ease-initial hover:border-border-strong'
-
-function costOf(part: DocsPart): number {
-  return [...part.snippets, ...part.notes].reduce((sum, one) => sum + one.tokens, 0)
-}
 
 /**
  * Every consultation of this conversation: where to go, and what each one still
@@ -97,7 +94,7 @@ function DocsHistory(): React.JSX.Element | null {
               <span className="flex items-baseline gap-3 text-sm text-text">
                 <span className="truncate">{part.libraryId}</span>
                 <span className="ml-auto flex-none text-xs text-text-faint">
-                  {part.snippets.length + part.notes.length} · {decimal.format(costOf(part))} tok
+                  {countsOf(part)} · {decimal.format(costOf(part))} tok
                 </span>
               </span>
               {/* Two consultations of the same library only differ by this. */}

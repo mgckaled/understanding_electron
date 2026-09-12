@@ -9,12 +9,9 @@ import { cx } from '../../shared/ui/cx'
 import { useConversations } from '../conversation/conversationsContext'
 import { useDocs } from './docsContext'
 import { DocsIcon } from './icon'
+import { costOf, countsOf } from './summary'
 
 const decimal = new Intl.NumberFormat('pt-BR')
-
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`
-}
 
 /**
  * One Context7 consultation, as a disclosure line in the transcript (DM-23).
@@ -34,12 +31,8 @@ function DocsLine({ part, messageId }: { part: DocsPart; messageId: string }): R
   const { activeId, setDocsEnabled } = useConversations()
   const { view } = useDocs()
 
-  const sent = [...part.snippets, ...part.notes]
-  const tokens = sent.reduce((sum, one) => sum + one.tokens, 0)
-  const counts = [
-    plural(part.snippets.length, 'trecho', 'trechos'),
-    ...(part.notes.length === 0 ? [] : [plural(part.notes.length, 'nota', 'notas')])
-  ].join(' · ')
+  const tokens = costOf(part)
+  const counts = countsOf(part)
 
   return (
     <div className="mb-1 max-w-[80%] rounded-lg border border-border bg-surface-raised px-5 py-4">

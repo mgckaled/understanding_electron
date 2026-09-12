@@ -284,6 +284,14 @@ describe('o histórico', () => {
     expect(screen.getByText('paginação com keepPreviousData')).toBeInTheDocument()
   })
 
+  // `5 · 1.637 tok` read as "five what?" on screen, a palm away from the
+  // transcript line saying `5 trechos` — one owner now writes both.
+  it('conta com as mesmas palavras da linha da transcrição', async () => {
+    await openHistory()
+
+    expect(screen.getAllByText(/1 trecho · 1 nota/)).toHaveLength(2)
+  })
+
   it('soma só as ativas, porque é o custo real por turno', async () => {
     await openHistory([{ ...PART, id: 'd2', enabled: false }])
 
