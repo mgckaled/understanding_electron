@@ -38,6 +38,17 @@ export type ConversationsApi = {
   remove: (id: string) => void
   /** Deletes one message permanently — the step-proposal card's own "excluir" action (plano 19). */
   removeMessage: (conversationId: string, messageId: string) => void
+  /**
+   * Takes one Context7 consultation out of the resend, or puts it back (DM-31).
+   * It stays in the transcript either way, so this is the only field of a
+   * persisted part anything may change.
+   */
+  setDocsEnabled: (
+    conversationId: string,
+    messageId: string,
+    docsId: string,
+    enabled: boolean
+  ) => void
   append: (id: string, message: NewMessage) => void
   /** Merge-patches one conversation's settings — model, num_ctx (D15.2). */
   updateSettings: (id: string, patch: ConversationSettings) => void
@@ -89,6 +100,25 @@ export function useConversations(): ConversationsApi {
       window.api.conversation.removeMessage(args.conversationId, args.messageId),
     onSuccess: invalidate
   })
+  // Plain invalidation, no optimistic write (D23H.7): the round trip is a
+  // json_set on a local SQLite file, and `invalidate` already covers the
+  // transcript query by prefix.
+  const setDocsEnabled = useMutation({
+    scope,
+    mutationFn: (args: {
+      conversationId: string
+      messageId: string
+      docsId: string
+      enabled: boolean
+    }) =>
+      window.api.conversation.setDocsEnabled(
+        args.conversationId,
+        args.messageId,
+        args.docsId,
+        args.enabled
+      ),
+    onSuccess: invalidate
+  })
   const append = useMutation({
     scope,
     mutationFn: (args: { id: string; message: Message; title?: string }) =>
@@ -135,6 +165,14 @@ export function useConversations(): ConversationsApi {
       removeMessage: (conversationId: string, messageId: string) => {
         removeMessage.mutate({ conversationId, messageId })
       },
+      setDocsEnabled: (
+        conversationId: string,
+        messageId: string,
+        docsId: string,
+        enabled: boolean
+      ) => {
+        setDocsEnabled.mutate({ conversationId, messageId, docsId, enabled })
+      },
       append: (id: string, message: NewMessage) => {
         const full: Message = { ...message, id: crypto.randomUUID(), createdAt: Date.now() }
         // A conversation not in the list yet was just created, so it still
@@ -161,6 +199,7 @@ export function useConversations(): ConversationsApi {
       rename,
       remove,
       removeMessage,
+      setDocsEnabled,
       append,
       updateSettings
     ]

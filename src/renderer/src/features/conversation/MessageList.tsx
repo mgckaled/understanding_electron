@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { AiService, Message, MessageStopped } from '@shared/ipc'
 import {
   attachmentPartOf,
+  docsPartOf,
   messageText,
   reasoningPartOf,
   stepProposalPartOf
@@ -9,6 +10,7 @@ import {
 import MarkdownMessage, { type CodeActions } from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import AttachmentCard from '../attachment/AttachmentCard'
 import StepProposalLine from '../attachment/StepProposalLine'
+import DocsLine from '../docs/DocsLine'
 import { useDraft } from '../draft/draftContext'
 import ReasoningDisclosure from './ReasoningDisclosure'
 import TurnActions from './TurnActions'
@@ -63,6 +65,9 @@ function MessageList({
       {messages.map((message) => {
         const attachment = attachmentPartOf(message)
         const reasoning = message.role === 'user' ? null : reasoningPartOf(message)
+        // Rides on the user's turn, beside the attachment and never inside it
+        // (DM-23) — a disclosure line, not an attachment card.
+        const docs = message.role === 'user' ? docsPartOf(message) : null
         return message.role === 'user' ? (
           // User turn: a bubble on the right. Alignment and fill carry the
           // authorship, so the "Você" label the target drops is gone. Reading
@@ -71,6 +76,7 @@ function MessageList({
           // present, is its own element above the bubble — never inlined into
           // the text the model reads.
           <li key={message.id} className="flex flex-col items-end gap-2">
+            {docs !== null && <DocsLine part={docs} messageId={message.id} />}
             {attachment !== null && <AttachmentCard part={attachment} />}
             <p className="max-w-[80%] rounded-lg bg-surface-raised px-5 py-4 text-reading leading-normal whitespace-pre-wrap text-text select-text">
               {messageText(message)}
