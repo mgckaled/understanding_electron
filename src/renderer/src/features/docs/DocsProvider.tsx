@@ -218,7 +218,10 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       pending,
       attach,
       clearPending,
-      viewing,
+      // Gated by `open` exactly as `current` is: one tenant holds the region at
+      // a time (DE1B.1), and a raw `viewing` kept this panel rendering after
+      // the draft had taken the region — two <aside>s, the layout in pieces.
+      viewing: open ? viewing : null,
       view,
       stopViewing,
       budget,

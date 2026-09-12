@@ -4,6 +4,7 @@ import type { Api, DocsPart, Message } from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
 import { useConversations } from '../conversation/conversationsContext'
+import { usePanel } from '../panel/panelContext'
 import { useDocs } from './docsContext'
 import MessageList from '../conversation/MessageList'
 import DocsCount from './DocsCount'
@@ -55,10 +56,14 @@ const PANEL = { name: 'Consulta de documentação' }
 function Switcher(): React.JSX.Element {
   const { conversations, select } = useConversations()
   const { toggle } = useDocs()
+  const { raise } = usePanel()
   return (
     <>
       <button type="button" onClick={(event) => toggle(event.currentTarget)}>
         consultar documentação
+      </button>
+      <button type="button" onClick={() => raise('draft', null)}>
+        tomar a região
       </button>
       {conversations.map((conversation) => (
         <button key={conversation.id} type="button" onClick={() => select(conversation.id)}>
@@ -206,6 +211,19 @@ describe('a releitura no painel', () => {
     await reopen()
 
     await user.click(screen.getByRole('button', { name: 'ir para Segunda' }))
+
+    await waitFor(() => expect(screen.queryByRole('complementary', PANEL)).not.toBeInTheDocument())
+  })
+
+  // One tenant holds the side region at a time (DE1B.1). Shipped broken for a
+  // moment: `viewing` left the provider ungated while `current` was gated, so
+  // opening the draft panel over a reopened consultation drew BOTH — the docs
+  // panel landed on the sidebar and the layout came apart.
+  it('sai da região quando outro inquilino a toma', async () => {
+    const user = userEvent.setup()
+    await reopen()
+
+    await user.click(screen.getByRole('button', { name: 'tomar a região' }))
 
     await waitFor(() => expect(screen.queryByRole('complementary', PANEL)).not.toBeInTheDocument())
   })
