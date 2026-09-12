@@ -1,8 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Api, DocsPart, Message } from '@shared/ipc'
 import { installApiMock } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
+import { useConversations } from '../conversation/conversationsContext'
+import { useDocs } from './docsContext'
 import MessageList from '../conversation/MessageList'
 
 const PART: DocsPart = {
@@ -46,6 +48,26 @@ const MESSAGE: Message = {
 
 let api: Api
 
+const PANEL = { name: 'Consulta de documentação' }
+
+/** A way to leave the conversation the message belongs to, and to come back. */
+function Switcher(): React.JSX.Element {
+  const { conversations, select } = useConversations()
+  const { toggle } = useDocs()
+  return (
+    <>
+      <button type="button" onClick={(event) => toggle(event.currentTarget)}>
+        consultar documentação
+      </button>
+      {conversations.map((conversation) => (
+        <button key={conversation.id} type="button" onClick={() => select(conversation.id)}>
+          ir para {conversation.title}
+        </button>
+      ))}
+    </>
+  )
+}
+
 /**
  * The transcript alone, over a conversation that really holds the message —
  * `setDocsEnabled` runs against the real handler on `:memory:` (store-api), so
@@ -54,9 +76,21 @@ let api: Api
 async function mount(part: DocsPart = PART): Promise<void> {
   api = installApiMock()
   await api.conversation.create({ id: 'c1', title: 'Primeira', createdAt: 1000 })
+  await api.conversation.create({ id: 'c2', title: 'Segunda', createdAt: 2000 })
   const message: Message = { ...MESSAGE, parts: [part, { kind: 'text', text: 'como invalido?' }] }
   await api.conversation.append('c1', message)
-  render(providers(<MessageList messages={[message]} service="ollama" />))
+  render(
+    providers(
+      <>
+        <Switcher />
+        <MessageList messages={[message]} service="ollama" />
+      </>
+    )
+  )
+  await screen.findByRole('button', { name: 'ir para Primeira' })
+  // The list comes back ORDER BY updated_at DESC, so the newest is active by
+  // default — the message below belongs to the other one.
+  await userEvent.click(screen.getByRole('button', { name: 'ir para Primeira' }))
   await waitFor(() => expect(screen.getByText(/Context7/)).toBeInTheDocument())
 }
 
@@ -121,5 +155,51 @@ describe('DocsLine', () => {
     await mount()
 
     expect(screen.queryByText('fora do contexto')).not.toBeInTheDocument()
+  })
+})
+
+describe('a releitura no painel', () => {
+  async function reopen(): Promise<void> {
+    const user = userEvent.setup()
+    await mount()
+    await user.click(screen.getByRole('button', { name: /Abrir a consulta/ }))
+    await waitFor(() => expect(screen.getByRole('complementary', PANEL)).toBeInTheDocument())
+  }
+
+  it('abre a consulta anexada sem nenhuma composição existir', async () => {
+    await reopen()
+
+    const panel = within(screen.getByRole('complementary', PANEL))
+    expect(panel.getByText('/tanstack/query · v5.90.3')).toBeInTheDocument()
+    expect(panel.getByRole('tab', { name: 'Trechos (1)' })).toBeInTheDocument()
+  })
+
+  it('separa o que ficou de fora do que foi enviado', async () => {
+    await reopen()
+
+    const panel = within(screen.getByRole('complementary', PANEL))
+    // The omitted never join the sent list: the part kept their title and cost
+    // and threw the code away (D23C.3).
+    expect(
+      within(panel.getByRole('group', { name: 'Trechos a enviar' })).queryByText(
+        'setQueryData otimista'
+      )
+    ).not.toBeInTheDocument()
+    expect(panel.getByRole('tab', { name: 'Não enviados (1)' })).toBeInTheDocument()
+  })
+
+  // Asserted by REOPENING, never by absence: the panel gives the region up on
+  // navigation either way (DE1B.1), so a test that only checks it vanished
+  // passes against an unstamped `viewing` too.
+  it('não leva a consulta de uma conversa para outra', async () => {
+    const user = userEvent.setup()
+    await reopen()
+
+    await user.click(screen.getByRole('button', { name: 'ir para Segunda' }))
+    await user.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+    const panel = within(await screen.findByRole('complementary', PANEL))
+    expect(panel.getByLabelText('Biblioteca')).toHaveValue('')
+    expect(panel.queryByRole('tab', { name: 'Trechos (1)' })).not.toBeInTheDocument()
   })
 })

@@ -4,14 +4,15 @@ import SidePanel from '../../shared/ui/SidePanel/SidePanel'
 import StateView from '../../shared/ui/StateView'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { usePanel } from '../panel/panelContext'
+import DocsAttached from './DocsAttached'
 import DocsCandidates from './DocsCandidates'
 import DocsCompose from './DocsCompose'
 import DocsResult from './DocsResult'
 import { useDocs } from './docsContext'
 import { DocsIcon } from './icon'
 
-// No `histórico` and no `+` in the header: both presuppose an attached
-// consultation, which exists only from 23-G on (D23D.9, DF3B.2).
+// Four screens, and the reopened one wins: an attached consultation is what
+// the transcript's line and the header counter address (D23H.5).
 function DocsPanel(): React.JSX.Element | null {
   const {
     current,
@@ -21,7 +22,8 @@ function DocsPanel(): React.JSX.Element | null {
     resetSearch,
     fetchState,
     resetFetch,
-    selected
+    selected,
+    viewing
   } = useDocs()
   const { closing, width, setWidth } = usePanel()
 
@@ -36,19 +38,23 @@ function DocsPanel(): React.JSX.Element | null {
       ? fetchState.data.docs
       : null
 
-  if (current === null) return null
+  // A consultation opened for reading holds the panel on its own: the counter
+  // and the transcript's `⧉` reach it without any composition existing.
+  if (current === null && viewing === null) return null
 
-  // Named only once there is an answer under the name (D23F.4). `histórico` and
-  // `+` stay out: both presuppose an attached consultation (D23D.9).
+  // Named only once there is an answer under the name (D23F.4) — a reopened
+  // consultation always has one. `histórico` and `+` stay out (D23D.9).
+  const version = viewing === null ? current?.version : viewing.version
+  const named = viewing === null ? (answer === null ? null : selected?.id) : viewing.libraryId
   const title =
-    answer === null || selected === null
+    named === undefined || named === null
       ? 'Documentação'
-      : `${selected.id}${current.version === null ? '' : ` · ${current.version}`}`
+      : `${named}${version === null || version === undefined ? '' : ` · ${version}`}`
 
   return (
     <SidePanel
       label="Consulta de documentação"
-      contentKey={current.conversationId ?? 'sem-conversa'}
+      contentKey={current?.conversationId ?? 'sem-conversa'}
       closing={closing}
       width={width}
       setWidth={setWidth}
@@ -72,7 +78,9 @@ function DocsPanel(): React.JSX.Element | null {
         </>
       }
     >
-      {answer !== null ? (
+      {viewing !== null ? (
+        <DocsAttached part={viewing} />
+      ) : answer !== null ? (
         <DocsResult docs={answer} onBack={resetFetch} />
       ) : found === null ? (
         <DocsCompose
@@ -91,7 +99,7 @@ function DocsPanel(): React.JSX.Element | null {
           }
         />
       ) : (
-        <DocsCandidates candidates={found} query={current.library} onBack={resetSearch} />
+        <DocsCandidates candidates={found} query={current?.library ?? ''} onBack={resetSearch} />
       )}
     </SidePanel>
   )

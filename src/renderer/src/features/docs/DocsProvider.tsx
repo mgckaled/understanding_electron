@@ -36,6 +36,13 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     conversationId: string | null
     part: DocsPart
   } | null>(null)
+  // Stamped for the same reason as the two above: a consultation belongs to the
+  // transcript it was attached to, and navigating away must not leave another
+  // conversation's answer on screen.
+  const [viewed, setViewed] = useState<{
+    conversationId: string | null
+    part: DocsPart
+  } | null>(null)
 
   const reportBudget = useCallback((next: Budget | null) => {
     setBudget((previous) => (sameBudget(previous, next) ? previous : next))
@@ -132,10 +139,27 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     []
   )
 
-  // Released, not closed: navigation is not a close (DE1B.1).
+  const viewing = viewed?.conversationId === activeId ? viewed.part : null
+
+  // Raises the region as well as choosing the content: the two entry points
+  // (the transcript line and the header counter) both live outside the panel,
+  // so neither can assume it is already open.
+  const view = useCallback(
+    (part: DocsPart, trigger: HTMLElement | null) => {
+      setViewed({ conversationId: activeId, part })
+      if (!open) raise('docs', trigger)
+    },
+    [activeId, open, raise]
+  )
+
+  const stopViewing = useCallback(() => setViewed(null), [])
+
+  // Released, not closed: navigation is not a close (DE1B.1). A consultation
+  // opened for reading holds the region on its own — the counter reaches it
+  // without any composition existing.
   useEffect(() => {
-    if (open && current === null) release()
-  }, [open, current, release])
+    if (open && current === null && viewing === null) release()
+  }, [open, current, viewing, release])
 
   const pending = attached?.conversationId === activeId ? attached.part : null
 
@@ -191,6 +215,9 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       pending,
       attach,
       clearPending,
+      viewing,
+      view,
+      stopViewing,
       budget,
       reportBudget,
       toggle,
@@ -214,6 +241,9 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       pending,
       attach,
       clearPending,
+      viewing,
+      view,
+      stopViewing,
       budget,
       reportBudget,
       toggle,

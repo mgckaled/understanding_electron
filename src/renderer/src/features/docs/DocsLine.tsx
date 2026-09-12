@@ -1,11 +1,13 @@
 import { useId, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, PanelRight } from 'lucide-react'
 import { noteTitle } from '@core/context7/part'
 import type { DocsPart } from '@shared/ipc'
+import Button from '../../shared/ui/Button/Button'
 import Switch from '../../shared/ui/Switch/Switch'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
 import { cx } from '../../shared/ui/cx'
 import { useConversations } from '../conversation/conversationsContext'
+import { useDocs } from './docsContext'
 import { DocsIcon } from './icon'
 
 const decimal = new Intl.NumberFormat('pt-BR')
@@ -30,6 +32,7 @@ function DocsLine({ part, messageId }: { part: DocsPart; messageId: string }): R
   const bodyId = useId()
   const [open, setOpen] = useState(false)
   const { activeId, setDocsEnabled } = useConversations()
+  const { view } = useDocs()
 
   const sent = [...part.snippets, ...part.notes]
   const tokens = sent.reduce((sum, one) => sum + one.tokens, 0)
@@ -71,6 +74,16 @@ function DocsLine({ part, messageId }: { part: DocsPart; messageId: string }): R
           aria-label={`${part.enabled ? 'Tirar' : 'Devolver'} esta consulta do contexto`}
           className="flex-none"
         />
+        <Button
+          variant="ghost"
+          size="sm"
+          shape="square"
+          className="flex-none"
+          onClick={(event) => view(part, event.currentTarget)}
+          aria-label={`Abrir a consulta a ${part.libraryId} no painel`}
+        >
+          <PanelRight size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
+        </Button>
       </div>
 
       {/* Without this the switch is invisible where it matters most (DM-31). */}

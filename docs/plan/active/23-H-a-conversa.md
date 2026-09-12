@@ -51,6 +51,8 @@ Levantado lendo o código, não suposto.
 
 **D23H.6 — o omitido aparece como título e custo, nunca como código.** É D23C.3 sendo estrutural e não estilo: a parte **não guarda** o código do que ficou de fora.
 
+**D23H.9 — acrescentada em execução: na releitura, o omitido ganha aba própria.** O plano não dizia onde ele ia. Misturá-lo à aba Trechos mentiria sobre o que foi enviado, e um rodapé com N títulos fica ilegível. A aba `Não enviados (N)` aparece **só quando há omitido**, que é a mesma regra de Regras (D23F.7) — e o rodapé fica com uma linha só, `N de M · ~X tok`, mais o único fato que ele acrescenta ao rodapé de composição: se a consulta ainda está no contexto.
+
 **D23H.7 — invalidação simples, sem atualização otimista.** O `invalidate` de `['conversations']` já cobre `['conversations', id, 'messages']` por prefixo, e a escrita é um `json_set` num SQLite local. O padrão `onMutate` + snapshot + rollback em `onError` (confirmado na documentação do TanStack Query 5) fica **registrado como o conserto** se o piscar aparecer na verificação ao vivo — uma variável por vez.
 
 **D23H.8 — os dois totais na tela medem coisas diferentes de propósito.** O do `histórico` é em **tokens exatos** (a API conta cada trecho); o do composer é em **chars estimados** pelo `charsPerToken`. O desenho avisava que eles "precisam concordar" — concordam no que importa, que é o **conjunto**: os dois derivam de `enabled`, um pelo `partForProvider` e o outro somando os mesmos itens. Não há segunda contagem escrita à mão.

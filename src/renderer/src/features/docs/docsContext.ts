@@ -53,6 +53,20 @@ export type DocsApi = {
   /** Called after the send: the consultation lives in the transcript now (D23G.8). */
   clearPending: () => void
   /**
+   * A consultation already in the transcript, reopened for reading (D23H.5) —
+   * it wins over composing, which is what makes the transcript's `⧉` and the
+   * header counter reach content rather than an empty form.
+   */
+  viewing: DocsPart | null
+  /**
+   * Shows one attached consultation in the panel.
+   *
+   * @param trigger - Where focus returns on close (DF3A.8); `null` for nothing.
+   */
+  view: (part: DocsPart, trigger: HTMLElement | null) => void
+  /** Back to composing, without closing the panel. */
+  stopViewing: () => void
+  /**
    * The app's single budget, computed by the Composer and handed back here
    * (D23G.1) — the panel's footer and the composer's meter are two numbers on
    * screen at once, and a second `budgetFor` would be free to disagree.
