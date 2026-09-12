@@ -105,9 +105,22 @@ Chamador e chamado na mesma leva — a lição medida no 23-G passo 1.
 
 ### Passo 5 — verificação ao vivo e fechamento
 
-Fase, não opcional. Roteiro numerado entregue ao dono, escrito contra o que existe neste corte.
+Fase, não opcional. Roteiro numerado, conferido pelo dono na tela.
 
-Pontos mínimos: a linha aparece depois de `Anexar` e enviar · abre e fecha · lista títulos e nunca código · o omitido aparece riscado · o `Switch` apaga a consulta do reenvio, e o turno seguinte o prova pelo `prompt_eval_count` · o rótulo `fora do contexto` · o `⧉` abre a releitura · o contador aparece e some · **os três ícones do cabeçalho lado a lado a 16px** (é aqui que a comparação de DM-32 finalmente é possível; o veredito formal segue sendo do 23-J) · o `histórico` lista, soma e controla.
+| # | O que fazer | O que tem de acontecer |
+|---|---|---|
+| 1 | Consultar uma biblioteca, `Anexar`, mandar a mensagem | A linha aparece **acima** da bolha do usuário |
+| 2 | Ler a linha fechada | `Context7 · /owner/repo` à esquerda, `N trechos · ~M tok` à direita |
+| 3 | Clicar no cabeçalho da linha | Abre com a pergunta entre aspas, os títulos com custo, e **nenhum código** |
+| 4 | Olhar o fim da lista aberta | O que ficou de fora aparece riscado, com `— não enviado` |
+| 5 | Clicar no `⧉` da linha | O painel abre a consulta em leitura: abas, caixas marcadas e inertes, sem `Anexar` nem `Voltar`, e a aba `Não enviados` quando houver |
+| 6 | Olhar o cabeçalho da conversa | O terceiro contador ao lado do clipe e do caderno. ⚠️ **Comparar as três silhuetas a 16px** — é a verificação de DM-32, possível pela primeira vez |
+| 7 | Clicar no contador, e clicar de novo | Abre a mais recente; o segundo clique fecha |
+| 8 | Abrir o `histórico` no cabeçalho do painel | Lista com a pergunta como subtítulo, e `N tok ativos` no topo |
+| 9 | Desligar pelo interruptor da **linha** | Aparece `fora do contexto`, e o total do histórico cai na mesma hora |
+| 10 | Desligar pelo interruptor do **histórico** | A linha da transcrição acompanha — é a prova de que a fonte é uma só |
+| 11 | **Com a consulta desligada, mandar outra mensagem** | O `Prompt: N tokens` do rodapé cai perto do custo da consulta em relação ao turno anterior. ⚠️ Cuidado com o cache de prefixo do Ollama, que enganou o 23-G |
+| 12 | Fechar e reabrir o app | A escolha de desligado sobreviveu |
 
 Fechamento: `check:fast` remedido · errata devolvida aos três documentos do guia · conferência das sete skills · a régua das quatro derivas do [`CLAUDE.md`](../../../CLAUDE.md).
 
@@ -149,4 +162,5 @@ O `+` do cabeçalho do painel · os dez textos de erro e a exigência de chave (
 | 12/09/2026 | Passo 1: a linha na conversa, e o desligar | Chamador e chamado na mesma leva, como o 23-G ensinou. Vermelho provado duas vezes (interruptor gravando invertido; retrátil listando código). O `⧉` **não** foi renderizado aqui, ao contrário do que o plano sugeria: sem destino ele seria o botão falso que o próprio arco recusou no 23-A |
 | 12/09/2026 | Passo 2: a releitura, e a extração que a régua dos dois chamadores cobrou | `DocsResult` caiu de **249 para 151** linhas ao perder `NoteList`/`RuleList`. D23H.9 acrescentada em execução: o omitido ganha aba própria. ⚠️ **O hook `test_related` pegou um erro que o `typecheck` não pegaria:** `viewing` referenciado no efeito acima da própria declaração — `ReferenceError` em runtime, mesma classe do achado do 23-C com os schemas de `shared/ipc.ts`. ⚠️ **E um teste meu nasceu vacuoso:** afirmar que o painel some ao trocar de conversa não distinguia carimbado de não carimbado, porque o painel some de qualquer jeito quando só há composição |
 | 12/09/2026 | Passo 3: o contador, e a asserção vacuosa que deixou de ser | `toggle` passou a limpar a releitura (pedir consulta nova é pedir o formulário), e **isso mudou o que a ausência do painel prova**: `viewing` agora segura a região sozinho, então sem o carimbo o painel ficaria aberto sobre a outra conversa. A asserção por ausência voltou, e foi reprovada sob sabotagem antes de eu confiar nela. Dois vermelhos no contador. Achado de harness que o 23-G já tinha registrado e eu repeti: escrever pelo `api` direto **não invalida** a query, então o segundo turno precisou ser semeado antes do render |
+| 12/09/2026 | Conferência do nível 1, e nada a escrever | O filtro do reenvio **já tinha teste** desde o 23-C (`messages.test.ts` § *a consultation that is switched off*), e mais completo do que o plano previa: além de o card sumir do prompt, ele afirma que `historyCharsOf` cai junto — que é exatamente D23H.8, escrita três cortes antes de eu a nomear. `check:fast` remedido: **156 arquivos / 1524 testes** (era 155/1506 no fecho do 23-G) |
 | 12/09/2026 | Passo 4: o `histórico ▾` | Dois vermelhos: o total somando as desligadas, e o interruptor endereçando outra consulta (prova que os dois interruptores leem a mesma fonte — D23H.1). ⚠️ **Duas asserções minhas eram inertes e o `typecheck` as pegou, não o teste:** `getByText` não aceita `hidden`, e um `toBeVisible` ficou sem os parênteses. Os testes passavam com as duas — `getByText` nunca filtrou por visibilidade, e matcher sem chamar não afirma nada. Só `getByRole` precisa de `hidden: true` dentro do `Popover` |
