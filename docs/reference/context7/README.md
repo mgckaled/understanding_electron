@@ -4,6 +4,8 @@
 >
 > Siglas `DM-n` são provisórias. A definitiva (`D23.n`) nasce com o plano.
 >
+> ⚠️ **Ao começar um corte novo, leia § *[O que falta DECIDIR nos quatro cortes restantes](#o-que-falta-decidir-nos-quatro-cortes-restantes-levantado-em-12092026)*** — doze forquilhas levantadas no fechamento do 23-H, cada uma com o corte dono e a recomendação onde ela existe.
+>
 > **Três anexos**, porque cada um é lido num momento diferente do arco: [`api.md`](api.md) (sondagens, formatos, medições — o 23-A vive nele), [`decisoes.md`](decisoes.md) (as 32, com a base de cada uma) e [`painel.md`](painel.md) (o desenho da interface — do 23-D em diante).
 
 ---
@@ -189,12 +191,51 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 | ~~**23-G**~~ | ✅ **entregue (10/09/2026)** — seleção e orçamento. Caixa por trecho e por nota, rodapé com a soma da seleção e o veredito de caber, `Anexar` congelando a consulta, e a parte chegando ao modelo pelo `partForProvider` que o 23-C já tinha. **DM-16 e DM-25 saem de "adiadas".** Uma conta só: o `Composer` segue dono do `budgetFor` e devolve o `Budget` ao painel (D23G.1). Plano: [`plan/implemented/23-G`](../../plan/implemented/23-G-selecao-e-orcamento.md) | F · C |
 | ~~**23-H**~~ | ✅ **entregue (12/09/2026)** — a conversa. A linha retrátil com o interruptor e o `fora do contexto`, a releitura de uma consulta anexada no painel, o terceiro contador e o `histórico` que é navegação **e** controle. **DM-32 verificada ao vivo** — as três silhuetas a 16px são distintas. O `+` do cabeçalho ficou de fora, deliberadamente. Plano: [`plan/implemented/23-H`](../../plan/implemented/23-H-a-conversa.md) | C · F |
 | **23-I** | **os dez erros** (eram nove até o 23-A achar `library-not-found`). Cada situação com o seu texto e a sua ação, incluindo os dois textos opostos do 429 — **e a exigência de chave**, decidida em 08/09/2026 e revogando a metade "opcional" de `DM-19` ([`ROADMAP § 3`](../../ROADMAP.md)) | D (encaixa em qualquer ponto depois) |
-| **23-K** | **o livro-razão e as minúcias.** O Observatório não conta a consulta reenviada ao modelo e **não vê a pergunta enviada ao Context7**, que sai da máquina mesmo em conversa 100% local (DM-22) — são a mesma pergunta, e meia resposta não serve. Recolhe também o que se acumulou nos dez cortes. ⚠️ Roda **antes** do J, apesar da letra | C · H |
+| **23-K** | **o livro-razão.** O Observatório **não vê a pergunta enviada ao Context7**, que sai da máquina mesmo em conversa 100% local (DM-22), e não conta a consulta reenviada ao modelo — são a mesma pergunta, e meia resposta não serve. ⚠️ Roda **antes** do J, apesar da letra | C · H |
+| **23-L** | **as minúcias.** O que se acumulou nos dez cortes: a variante inline do `MarkdownMessage` para o título em markdown, os três `aria-expanded`, o veredito sobre o `+`. Separado do K em 12/09/2026 — o corte único juntava instrumentação, design system e chrome, três naturezas num arquivo só | H |
 | **23-J** | **fechamento.** Verificação ao vivo, `ESCOPO.md` (nome do pilar, a linha de privacidade), guia antigo marcado `⛔ consumido`, pasta e apontadores | todos |
 
 **O caminho crítico é `A → B → D`.** Depois dele, `E`, `F` e `I` são independentes entre si; `C` pode entrar em qualquer momento depois de `A`, inclusive em paralelo a `D`. Só `G`, `H`, `K` e `J` têm duas dependências.
 
-⚠️ **A letra `K` estava reservada acima para um eventual irmão do 23-D.** Ela foi usada pelo corte novo em 08/09/2026; se aquela divisão acontecer, o irmão vira `23-L`. A letra é etiqueta, não hierarquia — e `K` executa **antes** de `J`, porque o J é o fechamento que depende de todos e um apanhado de pendências depois dele reabriria o que ele fechou.
+⚠️ **A letra `K` estava reservada para um eventual irmão do 23-D, e foi usada pelo corte novo em 08/09/2026; `L` foi usada pela divisão do próprio K em 12/09/2026.** Se aquela divisão do D acontecer, o irmão vira `23-M`. A letra é etiqueta, não hierarquia — e `K` executa **antes** de `J`, porque o J é o fechamento que depende de todos e um apanhado de pendências depois dele reabriria o que ele fechou.
+
+### O que falta DECIDIR nos quatro cortes restantes (levantado em 12/09/2026)
+
+Doze forquilhas, levantadas ao fechar o 23-H. **Nenhuma é trabalho a fazer — é escolha a tomar**, e cada uma muda o que o plano do corte vai escrever. A recomendação está declarada onde existe; onde não existe, é porque as duas saídas são defensáveis.
+
+#### 23-I — os erros, a chave e a cota
+
+| # | A decisão | Recomendação |
+|---|---|---|
+| 1 | **Onde a cota aparece.** `Ratelimit-Remaining` chega em toda resposta e o app o descarta. Rodapé do painel sempre · só abaixo de um limiar · Observatório | ⚠️ **Nenhuma, e é a mais importante do corte.** Sem ela, exigir chave **não cumpre o próprio argumento** que a motivou: troca 200 chamadas caladas por 1.000 igualmente caladas. O *onde* é escolha de produto; o *se* já está respondido pela decisão de exigir chave |
+| 2 | **Sem chave, o que trava.** O item `Documentação` do menu `+` continua abrindo o painel, com o portão no `Consultar` | **sim** — é no painel que a explicação cabe, e fechar o menu esconderia o lugar onde se diz o que fazer. Escrever a distinção contra D23D.3, que diz que aquele item *nunca* trava: os motivos são diferentes (lá, disputa de slot; aqui, pré-requisito) e quem ler as duas em sequência vai achar que se contradizem |
+| 3 | **`Consultar de novo` contra o memo de sessão (D23B.10).** Repetir a mesma consulta devolve a resposta guardada, de graça. O botão do desenho é **no-op** hoje: ou ele fura o memo e gasta cota, ou não existe | nenhuma. **Botão que mente ou botão que cobra — não há terceira saída**, e a escolha depende de 1 (com a cota na tela, gastar deixa de ser silencioso) |
+| 4 | **Caçar o `202` ao vivo.** Nunca observado; ~28 resultados deram `finalized` | **não caçar.** Custa cota sem garantia, e a classificação do cliente é um ramo por código HTTP, exercitável por resposta montada à mão |
+
+#### 23-K — o livro-razão
+
+| # | A decisão | Recomendação |
+|---|---|---|
+| 5 | **Como a consulta entra no livro-razão.** `privacy:list` é escrito no wrap de `chat()`, condicionado a `isCloudService` — e o Context7 **não é, nem nunca será, um `AiService`** (DN1A.5). Linha de tipo novo ou coluna nova? | nenhuma. É a separação da trilha N cobrando o preço dela pela primeira vez |
+| 6 | **Quanto da pergunta se grava.** O texto inteiro torna o registro útil **e** faz o próprio registro virar mais um lugar onde a pergunta está escrita; só "houve consulta a tal biblioteca" é discreto e responde menos | nenhuma — é a tensão que DM-22 nomeia, agora dentro de casa |
+| 7 | **Contar uma vez ou por turno.** A consulta é reenviada ao modelo a cada mensagem; com provedor de nuvem, o mesmo conteúdo sai da máquina de novo, sempre | nenhuma. ⚠️ Note que **isto é ortogonal a 5 e 6**: a pergunta sai uma vez (para o Context7), a resposta sai muitas (para o modelo) |
+
+#### 23-L — as minúcias
+
+| # | A decisão | Recomendação |
+|---|---|---|
+| 8 | **O `+` do cabeçalho do painel existe?** Iniciaria uma composição sem voltar ao composer | **não existir.** O item `Documentação` do popover de anexos já faz isso, e o `histórico` já resolve a navegação |
+| 9 | **A variante inline do `MarkdownMessage` nasce aqui ou em plano próprio?** É trabalho de design system dentro de um corte de feature, o que a régua do envelope normalmente recusa | **aqui**, com a exceção escrita: é variante de um primitivo que já existe, não linguagem visual nova, e o único consumidor conhecido é deste arco |
+| 10 | **Trocar `aria-pressed` por `aria-expanded` nos três contadores** toca `artifact` e `draft`, fora do arco 23 | nenhuma. É dívida de precisão semântica, não barreira — um leitor de tela diz "pressionado" onde diria "expandido". Adiável sem custo crescente |
+
+#### 23-J — fechamento
+
+| # | A decisão | Recomendação |
+|---|---|---|
+| 11 | **O peso normativo da linha de privacidade no `ESCOPO.md`.** *"Consultar documentação envia a pergunta a um terceiro, inclusive em conversa local"* — diretriz ou lei do produto? | nenhuma. O `ESCOPO` é o dono e a calibragem é do dono do projeto |
+| 12 | **O destino deste guia.** Ele se declara *"vivo como referência e como errata"* enquanto o arco roda. Terminado o arco: vira `⛔ consumido` como o antigo, ou continua vivo? | nenhuma. Note que as três perguntas de DM-0 § *Consequências* (nome do pilar, nome da pasta, apontadores) **já estão respondidas** — a pasta é `context7/` desde o começo |
+
+⚠️ **O que NÃO virou decisão, e por quê.** A ordenação de candidatos errar feio (`pandas` em terceiro) é o desenho de DM-30, não dívida — quem desambigua é o usuário, e nenhum campo da resposta acerta sozinho. Não há E2E do painel em nenhum dos oito cortes, e acrescentá-los criaria o terceiro spec de nível 4 que apodrece fora do `check:fast`. Uma consulta pendente por mensagem é invariante de `docsPartOf`, e só vale reabrir se incomodar ao usar.
 
 ### As verificações abertas são passos, não pendências
 
@@ -208,7 +249,7 @@ Cada uma tem dono. **Cinco foram fechadas na sonda do 23-A** (07/09/2026, 12 cha
 | frequência de `rules`, e em quais bibliotecas | 23-A · 23-F | ✅ **ausente em 11 de 11** — sem fixture real, o caminho é exercitado à mão |
 | `libraryName` vs `query` no `/v2/libs/search` | 23-A | ✅ os dois respondem; duas chamadas **não** distinguem parâmetro de instabilidade. Fica `query` |
 | `202` na prática, e o enum de `state` | **23-I** | ⏳ aberta — 6 buscas deram `finalized` em 100% dos ~28 resultados; caçar custaria cota sem garantia, e a classificação do cliente não depende de ver ao vivo |
-| silhueta dos três ícones do cabeçalho a 16px | 23-J | ⏳ aberta |
+| silhueta dos três ícones do cabeçalho a 16px | ~~23-J~~ | ✅ **fechada no 23-H** — os três contadores só existem juntos a partir dele, e as silhuetas são distintas |
 | o painel inteiro, ao vivo | 23-J | ⏳ aberta |
 
 ⚠️ **A cota é uma só, e sondar gasta o que usar gastaria.** 200 chamadas/mês no anônimo; as sondas de 06–07/09 levaram `Ratelimit-Remaining` de 200 a **146** em dois dias — 27% do mês. A suíte de testes **nunca** bate na API: as fixtures de `src/core/context7/__fixtures__/` foram gravadas uma vez, e os testes rodam contra elas.
