@@ -12,6 +12,19 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### R-7 — Refatoração documental: o ruído sai, o fato fica (set/2026)
+Origem: pedido do usuário, adiado desde a trilha R-2 — *"ruído exagerado de história, narração e medição onde não deveria ter"*, com cinco tetos estourados. Cinco frentes viraram **quatro cortes**, um commit cada, e **nenhuma linha de `src/`**.
+
+**A régua que o plano fixou é por tipo de documento, e confundi-las destrói o alvo.** No `ESCOPO.md` sai marca temporal, narrativa, medição com proveniência e detalhe de código. Numa **skill** sai só a *proveniência* — `"medido, não suposto: JSON venceu Arrow"` sem o *medido* vira opinião (`R7.17`). O `HISTORY.md` perde decisão arquitetural; o `ROADMAP` para de recontar a entrega e passa a citar por sigla.
+
+Resultado: `HISTORY.md` 50,3 → **30,8 kB** (dez marcos, zero decisão); `CLAUDE.md` 41,0 → **35,1**; `ROADMAP` 69,6 → **53,7**; `docs/README` 18,8 → **17,0**. `ARMADILHAS.md` foi **avaliado e abortado** com o número que justifica: comprimir renderia ~10 kB e o teto de 80 seguiria estourado em 34%, e mover entre suas duas seções não recupera byte nenhum — teto vai a 150, porque o arquivo se busca por sintoma e nunca se lê inteiro (`R7.1`). `ESCOPO` praticamente não encolheu (47,8 → 47,5): trocar detalhe de código por prosa de escopo é ganho de teor, não de bytes.
+
+**O achado que vale mais que os bytes: ponteiro por seção apodrece sem sinal.** Dezenove citações `HISTORY.md § <seção>` apontavam para seções que já não existiam ali — a maioria pela fila normal dos 10 marcos, ao longo de meses, não por este trabalho. Nada pegava: o link aponta para o **arquivo**, que existe, e a seção é prosa. Duas ficaram sem destino nenhum, porque o texto foi comprimido ao arquivar. A regra que sai: **cite a sigla, não o nome da seção** (`R7.14`).
+
+**E o mesmo trabalho cometeu a armadilha que estava lendo.** O corte A moveu cinco documentos para `<slug>/README.md` e consertou as 26 citações que apontavam **para** eles — deixando **56 links internos** rasos. O `guard` não viu: a escrita foi `git mv` + `sed`, e a 11ª invariante é hook de `Edit`/`Write` (`R7.13`). O conserto estrutural virou [`scripts/check-doc-links.mjs`](../scripts/check-doc-links.mjs), que verifica caminho **e** seção; a tentativa de registrá-lo como one-liner dentro do `.md` falhou porque o regex não sobrevive à cópia (`R7.15`). Ele achou os dois defeitos acima na primeira execução, e a auto-conservação do `CLAUDE.md` passou de três para quatro tipos.
+
+Decisões `R7.1`–`R7.17`. [`plan/implemented/R-7-refatoracao-documental.md`](plan/implemented/R-7-refatoracao-documental.md)
+
 ### Revisão de escopo (6ª) — identidade multiuso, instrumentação e o veredito de Projetos (set/2026)
 Origem: o `ESCOPO.md` vinha sendo corrigido por emenda desde a 3ª revisão — cada uma acrescentava um parágrafo ao lado do texto que contradizia, sem reescrevê-lo. A abertura ainda dizia "uma bancada de dados local" e o parágrafo seguinte começava com "Mas não é só isso"; o `CLAUDE.md` descrevia o produto melhor que o dono do assunto. Gatilho: o arco 21 fechou e o **22 (busca web)** é o próximo — ele tocaria justamente a seção mais desatualizada do documento.
 

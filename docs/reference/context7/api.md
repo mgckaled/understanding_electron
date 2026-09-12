@@ -226,6 +226,19 @@ Pela via MCP elas chegam embutidas na prosa do `content[]`, indistinguíveis do 
 Cinco das seis verificações abertas foram fechadas na sonda do corte 23-A (07/09/2026, 12 chamadas) — ver § *A sonda do 23-A* acima. Restam **três**, e a segunda nasceu de uma pergunta do dono:
 
 - ~~**Comportamento do `202` na prática**~~ — ✅ **encerrada sem sonda no 23-I (D23I.12), e isso é o veredito, não uma desistência.** Caçar uma biblioteca em indexação custa cota sem garantia de achar, e o que o app precisa dela é o **texto**, não a vista: a classificação é um ramo por código HTTP, exercitado por resposta montada à mão desde `client.test.ts`. Quais `state` existem além de `finalized` segue desconhecido, e o painel não depende disso — ele mostra o `state` que vier.
-- **⚠️ Anônimo e com-chave são contadores separados, ou o mesmo?** Pergunta do dono em 12/09/2026: *"posso considerar que tenho 200 anônimas + 1.000 da chave?"* O que se sabe é que as **duas rotas** (`/libs/search` e `/v2/context`) compartilham um contador — sondado no 23-A. Sobre os **dois regimes**, nada: os 200 vêm do header de resposta anônima, os 1.000 vêm da documentação, e ninguém conferiu se uma chamada autenticada decrementa o contador anônimo também. **Custa 2 chamadas:** uma com chave e uma sem, lendo `Ratelimit-Limit`/`Ratelimit-Remaining` nos dois headers. Dono: **23-I**. ⚠️ Independente do resultado, aproveitar a soma por queda automática para o anônimo reintroduziria o silêncio que motivou exigir a chave.
+- ~~**Anônimo e com-chave são contadores separados?**~~ ✅ **Sondado no 23-I, 12/09/2026, 2 chamadas — são separados.** Mesma rota (`/libs/search?query=zod`), com segundos de diferença:
+
+  | | `Ratelimit-Limit` | `Ratelimit-Remaining` | consumido | `Ratelimit-Reset` |
+  |---|---|---|---|---|
+  | sem chave | 200 | 145 | **55** | 1790812800 |
+  | com chave | 1.000 | 799 | **201** | 1790812800 |
+
+  **A prova decisiva não é essa tabela — é a repetição.** O dono repetiu as mesmas duas chamadas logo depois, e cada contador caiu **exatamente 1**: anônimo 145 → **144**, chave 799 → **798**. Fosse um contador só, a chamada **com** chave teria derrubado o anônimo junto, levando-o a 143. Cada chamada decrementa apenas o seu regime. (A primeira leitura — 55 consumidos contra 201 no mesmo instante — já apontava para isso, mas por inferência sobre o acumulado, não por observação direta.) O `Reset` é idêntico nos dois — a mesma virada de mês (`2026-10-01T00:00:00Z`) que o 23-A já tinha medido, então os dois regimes são mensais.
+
+  **Custo total da verificação: 4 chamadas** — 2 de cada regime, duas minhas e duas do dono.
+
+  Dois achados de graça: o contador anônimo tinha **146** em 07/09 e marcou **145** agora, ou seja, perdeu exatamente a chamada desta sonda — prova de que o app vinha consultando **com a chave** desde o 23-B, como se supunha mas nunca se conferira. E os 201 gastos da chave são o custo real do arco 23 inteiro até aqui.
+
+  ⚠️ **Isso NÃO autoriza somar 200 + 1.000.** Cair para o anônimo quando a chave esgota reintroduziria o silêncio que motivou exigir a chave (D23I.13); se um dia os 200 forem aproveitados, que seja recuo **anunciado**. A hipótese do *pool global compartilhado* (fonte secundária, acima) **não é sustentada nem derrubada** por esta medição: 145 de 200 parece contagem própria, mas nada distingue "por cliente" de "por IP" com duas chamadas.
 
 - **O painel foi verificado ao vivo do 23-D ao 23-H**, corte a corte, e a comparação de silhueta dos três ícones **fechou no 23-H** (os três contadores só coexistem a partir dele). O que resta para o 23-J é a passada final sobre o conjunto, não a primeira olhada.
