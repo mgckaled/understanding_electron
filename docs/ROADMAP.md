@@ -205,7 +205,7 @@ O motor hoje só lê `utf-8`/`utf-16`/`latin-1` nativamente (medido: nem `latin-
 
 A régua diz **divide-se ao tocar** — nenhum destes é varredura a fazer agora; o gatilho é a próxima extensão de cada um. Registrados aqui porque violação não registrada vira teto que ninguém acredita. O `main/index.ts` está em **exatamente 100**, no teto sem exceção.
 
-### `src/preload/index.ts` estourou o teto de 100 linhas — dividir antes do 23-C
+### ~~`src/preload/index.ts` estourou o teto de 100 linhas~~ ✅ resolvido no 23-C (08/09/2026)
 
 Fechou o 23-B em **104 linhas**, com o bloco `docs` (D23B.9). O teto é dos dois que o [`CLAUDE.md`](../CLAUDE.md#régua-de-tamanho) marca "sem exceção", e foi estourado por decisão do dono, não por descuido: o 23-B ficaria com dois assuntos.
 
@@ -213,9 +213,9 @@ O que torna adiar barato, e é fato conferido: **nada no repositório importa es
 
 Dividir em vários arquivos **é suportado, e só por causa do bundler** — a doc do Electron diz que "a bundler is required if you need to split preload code into multiple files", porque o `require` do preload sandboxed é um polyfill sem capacidade de carregar código próprio. O electron-vite cumpre esse papel.
 
-Duas formas na mesa, e a escolha é de gosto porque não há ripple: `index.ts` fino (bridge + `invoke`) com o mapa em `api.ts`, ou um arquivo por domínio. **Gatilho: antes de começar o 23-C.**
+Dividido por papel no passo 1 do 23-C, na primeira forma: `index.ts` em **12** linhas (só o `contextBridge`), `api.ts` em 96 e `invoke.ts` em 26. Bundle conferido no build e não suposto — 4 módulos transformados, `out/preload/index.js` em 4,07 kB, porque o rollup inlina import local. Remedido em 12/09/2026.
 
-### `ConversationView.tsx` fechou em 392 linhas, perto do teto de 400 (plano N-1-B)
+### `ConversationView.tsx` e o teto de 400 linhas (plano N-1-B) — ⚠️ **353 linhas**, remedido em 12/09/2026
 A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resolução do provedor selecionado, `isReady` por serviço) entrou no mesmo arquivo que já compunha o cabeçalho, o histórico da conversa e o composer — ainda dentro do teto do [`CLAUDE.md`](../CLAUDE.md), não dividido nesta sessão porque "divide-se ao tocar" não distingue tocar-e-crescer-dentro-do-teto de estourá-lo. Candidato natural a extrair, se a próxima extensão empurrar para além de 400: a resolução de `service`/`allModels` (hoje ~15 linhas de lógica pura misturadas a JSX) para uma função em `conversations.ts`, ao lado de `resolveModel`/`selectableModels`, testável sem montar o componente inteiro. Gatilho de revisão: o próximo plano que tocar este arquivo.
 
 **Segundo `Record<AiService, string>` exaustivo, achado só na revisão de fechamento.** `ConversationView.tsx` ganhou `SERVICE_LABEL: Record<AiService, string>` (rótulo do provedor na UI), ao lado do `HINTS: Record<AiService, string>` que já existia em `main/features/ai/handlers.ts` (DN1B.5) — o plano tinha gravado um grep por `Record<AiService` no passo 1, mas esse grep rodou **antes** deste segundo mapa nascer no passo 6. Não é bug: os dois compilam hoje e `pnpm typecheck` reprova os dois quando um `AiService` novo entra, o que já é a garantia que se quer. Só registrado para N-1-C não se surpreender: adicionar `'gemini'` vai apontar o compilador para **dois** arquivos, não um.
