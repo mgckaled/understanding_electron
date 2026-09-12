@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **114** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **115** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -467,3 +467,6 @@ Uma revisão anterior pediu para não persistir a *assinatura* de um `thought` s
 
 ### O `guard` acusa bloco `/* */` por causa de um caminho com asterisco dentro de comentário `//` (set/2026)
 Escrever `// ...on every /websites/* entry.` num `.ts` bloqueia o `Write` com *"Bloco de comentário `/* */` em .ts/.tsx"*. O invariante procura a sequência `/` seguida de `*` no arquivo inteiro, sem saber que ela está dentro de um comentário de linha — qualquer caminho glob citado numa nota (`/websites/*`, `src/**/*`) dispara o mesmo falso positivo. Sintoma que engana: a mensagem descreve corretamente uma regra que o arquivo **não** viola, e a reação instintiva é procurar um `/* */` que não existe. Conserto imediato: reescrever a nota sem o glob (`on every website-backed entry`). O hook **não foi alterado** — mexer nele exige provocação própria, e o custo do falso positivo (reescrever uma frase) é menor que o de afrouxar um invariante que já pegou narrativa em bloco de verdade.
+
+### `Element type is invalid` porque dois arquivos diferem só na caixa do nome (set/2026)
+`DocsFailure.tsx` (o componente) e `docsFailure.ts` (a função pura) na mesma pasta: no Windows o sistema de arquivos é insensível a caixa, então `import DocsFailure from './DocsFailure'` resolveu para o **módulo puro**, que não tem `export default`. Sintoma: *"Element type is invalid: expected a string … but got: undefined"* em **51 testes de uma vez**, incluindo arquivos que não tocam o componente — e a sugestão do React (*"you likely forgot to export your component"*) aponta para o lugar errado, porque o `export default` está lá, no arquivo que ninguém carregou. Nem `typecheck` nem `lint` pegam: o TypeScript resolve pelo nome exato e concorda com o import. Conserto: nomes que diferem por mais do que a caixa (`DocsNotice.tsx` ao lado de `docsFailure.ts`). ⚠️ A convenção do projeto — componente em PascalCase, módulo puro em camelCase — **torna essa colisão fácil de criar sem perceber**: basta o par componente/lógica compartilhar o substantivo.

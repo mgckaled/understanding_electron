@@ -105,7 +105,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 
 ## Canais de hoje
 
-**53 canais em `IpcContract`**, recontados contra o código em 08/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — o último é `conversation:setDocsEnabled`, 23-C.
+**54 canais em `IpcContract`**, recontados contra o código em 12/09/2026 (bloco `IpcContract` lido linha a linha, não o dobro de `argsSchema`) — o último é `docs:quota`, 23-I.
 
 | Domínio | Canais | `Result`? |
 |---|---|---|
@@ -116,7 +116,7 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `image` | `pick`, `attach`, `bytes` | sim |
 | `job` | `cancel`, `list` | não |
 | `ai` | `isAvailable`, `models`, `loaded`, `unload`, `chat`, `propose` — lógica do lado do provedor: skill [`ai`](../ai/SKILL.md) | sim |
-| `docs` | `search`, `fetch` — consulta ao Context7 (arco 23) | sim — 429, 401/403, 5xx e `fetch` recusado são falha de serviço; estado de tela (`no-libraries`, `empty`, `indexing`, `library-not-found`) viaja **dentro do `value`** (D23B.2). `invoke` simples, nunca job: cancelar não devolve cota (D23B.1) |
+| `docs` | `search`, `fetch`, `quota` — consulta ao Context7 (arco 23) | os dois primeiros sim — 429, 401/403, 5xx e `fetch` recusado são falha de serviço; estado de tela (`no-libraries`, `empty`, `indexing`, `library-not-found`) viaja **dentro do `value`** (D23B.2). `invoke` simples, nunca job: cancelar não devolve cota (D23B.1). **`quota` não**: lê um memo em memória preenchido pelo header da última resposta, sem modo de falha que a UI distinga — régua de `dataset:queueDepth` (D23I.10) |
 | `conversation` | `list`, `messages`, `create`, `rename`, `remove`, `removeMessage`, `append`, `settings`, `setDocsEnabled` | não |
 | `draft` | `list`, `create`, `update`, `remove` | não |
 | `export` | `save` | **sim** — arquivo em uso, permissão e disco cheio são estados que a interface desenha |
