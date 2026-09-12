@@ -24,6 +24,7 @@ import Composer from './Composer'
 import RespondingMark from './RespondingMark'
 import ReasoningDisclosure from './ReasoningDisclosure'
 import ArtifactCount from '../artifact/ArtifactCount'
+import DocsCount from '../docs/DocsCount'
 import DraftCount from '../draft/DraftCount'
 import MessageList from './MessageList'
 import { completePartial } from './completePartial'
@@ -178,6 +179,7 @@ function ConversationView(): React.JSX.Element {
             (DF3B.1). `min-w-[0px]` on the <h1> is what makes the truncation win
             over the clip instead of the other way round. */}
         <div className="ml-auto flex flex-none items-center gap-1">
+          <DocsCount />
           <DraftCount />
           <ArtifactCount />
         </div>

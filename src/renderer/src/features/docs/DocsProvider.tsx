@@ -65,6 +65,9 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
 
   const toggle = useCallback(
     (trigger: HTMLElement | null) => {
+      // Asking for a new consultation is asking for the form: a reopened one
+      // wins over composing, so it has to step aside here.
+      setViewed(null)
       setComposition((previous) => {
         if (previous?.conversationId === activeId) return previous
         // A composition replaced is a list that no longer describes it: the

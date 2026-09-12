@@ -6,6 +6,7 @@ import { providers } from '@test/renderer-providers'
 import { useConversations } from '../conversation/conversationsContext'
 import { useDocs } from './docsContext'
 import MessageList from '../conversation/MessageList'
+import DocsCount from './DocsCount'
 
 const PART: DocsPart = {
   kind: 'docs',
@@ -73,16 +74,25 @@ function Switcher(): React.JSX.Element {
  * `setDocsEnabled` runs against the real handler on `:memory:` (store-api), so
  * what the toggle wrote is read back instead of asserted on a spy.
  */
-async function mount(part: DocsPart = PART): Promise<void> {
+async function mount(part: DocsPart = PART, extra: DocsPart[] = []): Promise<void> {
   api = installApiMock()
   await api.conversation.create({ id: 'c1', title: 'Primeira', createdAt: 1000 })
   await api.conversation.create({ id: 'c2', title: 'Segunda', createdAt: 2000 })
   const message: Message = { ...MESSAGE, parts: [part, { kind: 'text', text: 'como invalido?' }] }
   await api.conversation.append('c1', message)
+  for (const [at, one] of extra.entries()) {
+    await api.conversation.append('c1', {
+      id: `m${at + 2}`,
+      role: 'user',
+      parts: [one, { kind: 'text', text: 'e depois?' }],
+      createdAt: 2000 + at
+    })
+  }
   render(
     providers(
       <>
         <Switcher />
+        <DocsCount />
         <MessageList messages={[message]} service="ollama" />
       </>
     )
@@ -188,18 +198,70 @@ describe('a releitura no painel', () => {
     expect(panel.getByRole('tab', { name: 'Não enviados (1)' })).toBeInTheDocument()
   })
 
-  // Asserted by REOPENING, never by absence: the panel gives the region up on
-  // navigation either way (DE1B.1), so a test that only checks it vanished
-  // passes against an unstamped `viewing` too.
+  // Absence IS the discriminating assertion here, unlike for a composition: a
+  // reopened consultation holds the region on its own, so unstamped it would
+  // keep the panel open showing the other conversation's answer.
   it('não leva a consulta de uma conversa para outra', async () => {
     const user = userEvent.setup()
     await reopen()
 
     await user.click(screen.getByRole('button', { name: 'ir para Segunda' }))
+
+    await waitFor(() => expect(screen.queryByRole('complementary', PANEL)).not.toBeInTheDocument())
+  })
+
+  it('sai da frente quando se pede uma consulta nova', async () => {
+    const user = userEvent.setup()
+    await reopen()
+
     await user.click(screen.getByRole('button', { name: 'consultar documentação' }))
 
     const panel = within(await screen.findByRole('complementary', PANEL))
     expect(panel.getByLabelText('Biblioteca')).toHaveValue('')
     expect(panel.queryByRole('tab', { name: 'Trechos (1)' })).not.toBeInTheDocument()
+  })
+})
+
+describe('o contador no cabeçalho', () => {
+  const COUNTER = /consultas de documentação/
+
+  it('aparece com o número de consultas da conversa', async () => {
+    await mount()
+
+    expect(
+      await screen.findByRole('button', { name: 'Abrir consultas de documentação (1)' })
+    ).toBeInTheDocument()
+  })
+
+  // Seeded before the render: writing through `api` directly does not
+  // invalidate the transcript query, so a second turn appended after mounting
+  // would never reach the screen.
+  it('conta também a que está fora do contexto', async () => {
+    await mount(PART, [{ ...PART, id: 'd2', enabled: false }])
+
+    expect(
+      await screen.findByRole('button', { name: 'Abrir consultas de documentação (2)' })
+    ).toBeInTheDocument()
+  })
+
+  it('some quando a conversa não tem consulta nenhuma', async () => {
+    const user = userEvent.setup()
+    await mount()
+    await screen.findByRole('button', { name: COUNTER })
+
+    await user.click(screen.getByRole('button', { name: 'ir para Segunda' }))
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: COUNTER })).toBeNull())
+  })
+
+  it('um clique alcança a consulta, sem passar pelo composer', async () => {
+    const user = userEvent.setup()
+    await mount()
+
+    await user.click(await screen.findByRole('button', { name: COUNTER }))
+
+    const panel = within(await screen.findByRole('complementary', PANEL))
+    expect(panel.getByRole('tab', { name: 'Trechos (1)' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: COUNTER })).toHaveAttribute('aria-pressed', 'true')
   })
 })
