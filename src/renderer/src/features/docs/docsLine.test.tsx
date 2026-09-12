@@ -265,3 +265,56 @@ describe('o contador no cabeçalho', () => {
     expect(screen.getByRole('button', { name: COUNTER })).toHaveAttribute('aria-pressed', 'true')
   })
 })
+
+// jsdom's own stylesheet hides `[popover]:not(:popover-open)`, and the shim
+// does not reach it — every getByRole inside the popover needs `hidden: true`.
+// getByText is unaffected: it never filtered by visibility to begin with.
+describe('o histórico', () => {
+  async function openHistory(extra: DocsPart[] = []): Promise<void> {
+    const user = userEvent.setup()
+    await mount(PART, extra)
+    await user.click(await screen.findByRole('button', { name: /consultas de documentação/ }))
+    await user.click(await screen.findByRole('button', { name: 'histórico' }))
+  }
+
+  it('lista cada consulta com a pergunta que a distingue', async () => {
+    await openHistory([{ ...PART, id: 'd2', query: 'paginação com keepPreviousData' }])
+
+    expect(screen.getByText('invalidar cache depois de mutação')).toBeInTheDocument()
+    expect(screen.getByText('paginação com keepPreviousData')).toBeInTheDocument()
+  })
+
+  it('soma só as ativas, porque é o custo real por turno', async () => {
+    await openHistory([{ ...PART, id: 'd2', enabled: false }])
+
+    // 278 of the two, not 556: the turned off one costs the next turn nothing.
+    expect(screen.getByText('278 tok ativos')).toBeInTheDocument()
+  })
+
+  it('desliga daqui e a soma acompanha, porque a fonte é uma só', async () => {
+    const user = userEvent.setup()
+    await openHistory()
+    expect(screen.getByText('278 tok ativos')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('switch', { name: /Tirar a consulta/, hidden: true }))
+
+    await waitFor(async () => expect(await storedEnabled()).toBe(false))
+    await waitFor(() =>
+      expect(screen.getByText('0 tok ativos')).toBeInTheDocument()
+    )
+  })
+
+  it('uma linha leva à consulta', async () => {
+    const user = userEvent.setup()
+    await openHistory()
+
+    // By the QUESTION, not the library: the transcript line's own button
+    // carries the library id too, and only the history row names the question.
+    await user.click(
+      screen.getByRole('button', { name: /invalidar cache depois de mutação/, hidden: true })
+    )
+
+    const panel = within(await screen.findByRole('complementary', PANEL))
+    expect(panel.getByRole('tab', { name: 'Trechos (1)' })).toBeInTheDocument()
+  })
+})

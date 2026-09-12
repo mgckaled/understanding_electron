@@ -7,6 +7,7 @@ import { usePanel } from '../panel/panelContext'
 import DocsAttached from './DocsAttached'
 import DocsCandidates from './DocsCandidates'
 import DocsCompose from './DocsCompose'
+import DocsHistory from './DocsHistory'
 import DocsResult from './DocsResult'
 import { useDocs } from './docsContext'
 import { DocsIcon } from './icon'
@@ -65,6 +66,7 @@ function DocsPanel(): React.JSX.Element | null {
             <DocsIcon size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} className="flex-none" />
             <span className="truncate">{title}</span>
           </span>
+          <DocsHistory />
           <Button
             variant="ghost"
             size="sm"
