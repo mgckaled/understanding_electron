@@ -26,6 +26,9 @@ const PROMPT = 'Pergunte algo ao modelo…'
  */
 function mount(extra?: ReactNode): Api {
   const api = installApiMock()
+  // The docs tests of this file consult, and consulting requires a key since
+  // 23-I (D23I.5).
+  vi.mocked(api.secrets.has).mockResolvedValue(true)
   vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
   vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [TEST_MODEL] })
   vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'pronto' } })

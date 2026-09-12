@@ -2,6 +2,7 @@ import { useId } from 'react'
 import type { LibraryCandidate } from '@shared/ipc'
 import Button from '../../shared/ui/Button/Button'
 import Field from '../../shared/ui/Field/Field'
+import { useCloudSecret } from '../settings/useCloudSecret'
 import DocsNotice from './DocsNotice'
 import { useDocs } from './docsContext'
 import { docsFailureOf } from './docsFailure'
@@ -36,6 +37,9 @@ function DocsCandidates({
   onBack
 }: DocsCandidatesProps): React.JSX.Element | null {
   const { current, selected, selectCandidate, setVersion, fetchState, fetchDocs } = useDocs()
+  // The second paid call needs the same gate as the first: the key can be
+  // removed from Configurações in the middle of a composition (D23I.5).
+  const { loaded, hasKey } = useCloudSecret('context7')
   const group = useId()
 
   if (selected === null) return null
@@ -142,6 +146,7 @@ function DocsCandidates({
               size="sm"
               type="button"
               loading={loading}
+              disabled={!loaded || !hasKey}
               onClick={() => void fetchDocs()}
             >
               {retryLabel}

@@ -63,8 +63,11 @@ function Probe(): React.JSX.Element {
   )
 }
 
-async function mount(): Promise<void> {
+async function mount({ hasKey = true } = {}): Promise<void> {
   api = installApiMock()
+  // Consulting requires a key since 23-I (D23I.5); the mock stores none by
+  // default, and every test below is about what happens once past that gate.
+  vi.mocked(api.secrets.has).mockResolvedValue(hasKey)
   await api.conversation.create({ id: 'c1', title: 'Primeira', createdAt: 1000 })
   await api.conversation.create({ id: 'c2', title: 'Segunda', createdAt: 2000 })
   render(providers(<Probe />))
@@ -114,6 +117,33 @@ describe('o formulário da consulta', () => {
     await userEvent.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
     await userEvent.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
   }
+
+  // DM-19 lost its "optional" half: the anonymous quota ran silently, and the
+  // person only found out at the error. The gate is the button, never the menu
+  // item that opens this panel (D23I.5).
+  describe('a exigência de chave', () => {
+    it('holds Consultar with both fields filled and no key stored', async () => {
+      await mount({ hasKey: false })
+      await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+      await userEvent.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
+      await userEvent.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
+
+      await screen.findByText(/Sem chave do Context7/)
+      expect(screen.getByRole('button', { name: 'Consultar' })).toBeDisabled()
+    })
+
+    // Where requiring a key explains itself instead of only blocking (D23I.6).
+    it.each([
+      [true, /Chave do Context7 configurada/],
+      [false, /configure em Configurações/]
+    ])('says on the first screen whether the key is there (%s)', async (hasKey, text) => {
+      await mount({ hasKey })
+
+      await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+
+      expect(await screen.findByText(text)).toBeInTheDocument()
+    })
+  })
 
   // DM-22: the warning is permanent, never a first-time consent — it has to be
   // on screen in the turn the question leaves the machine.

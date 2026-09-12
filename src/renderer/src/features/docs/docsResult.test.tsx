@@ -76,6 +76,8 @@ function Probe(): React.JSX.Element {
  */
 async function showAnswer(docs: DocsResult): Promise<void> {
   api = installApiMock()
+  // Past the key gate (D23I.5) — this file is about the third screen.
+  vi.mocked(api.secrets.has).mockResolvedValue(true)
   await api.conversation.create({ id: 'c1', title: 'Primeira', createdAt: 1000 })
   render(providers(<Probe />))
   await screen.findByRole('button', { name: 'ir para Primeira' })
