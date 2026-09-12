@@ -12,13 +12,23 @@ import type { ViewState } from '../../shared/ui/state'
  */
 export function useDocsFetch(): {
   state: ViewState<ContextOutcome>
-  fetch: (args: { libraryId: string; query: string; version?: string }) => Promise<void>
+  fetch: (args: {
+    libraryId: string
+    query: string
+    version?: string
+    refresh?: boolean
+  }) => Promise<void>
   reset: () => void
 } {
   const { state, run, reset } = useAsyncAction<ContextOutcome>()
 
   const fetch = useCallback(
-    async (args: { libraryId: string; query: string; version?: string }): Promise<void> => {
+    async (args: {
+      libraryId: string
+      query: string
+      version?: string
+      refresh?: boolean
+    }): Promise<void> => {
       await run(() => window.api.docs.fetch(args))
     },
     [run]

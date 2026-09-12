@@ -98,6 +98,40 @@ async function showAnswer(docs: DocsResult): Promise<void> {
   await screen.findByRole('tablist')
 }
 
+// D23I.11: the label is the contract — one may not spend a call, the other
+// may not be served by the memo. The difference is one word in the payload.
+describe('os dois botões de repetir', () => {
+  it('rides the session memo on Ver de novo, spending nothing', async () => {
+    await showAnswer(ANSWER)
+    vi.mocked(api.docs.fetch).mockClear()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver de novo' }))
+
+    expect(api.docs.fetch).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(api.docs.fetch).mock.calls[0][0]).not.toHaveProperty('refresh')
+  })
+
+  it('asks for a fresh answer on Consultar de novo', async () => {
+    await showAnswer(ANSWER)
+    vi.mocked(api.docs.fetch).mockClear()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar de novo' }))
+
+    expect(vi.mocked(api.docs.fetch).mock.calls[0][0]).toMatchObject({ refresh: true })
+  })
+
+  // Frozen is frozen (D23G.7): offering either one after Anexar would offer a
+  // way to change what the model is about to be sent.
+  it('drops both once the consultation is attached', async () => {
+    await showAnswer(ANSWER)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Anexar' }))
+
+    expect(screen.queryByRole('button', { name: 'Ver de novo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Consultar de novo' })).not.toBeInTheDocument()
+  })
+})
+
 describe('a terceira tela', () => {
   // Both sides asserted: a derivation that read the search state instead of the
   // fetch state would leave the candidate list under the tabs, and a test that

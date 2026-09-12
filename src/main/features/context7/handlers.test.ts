@@ -288,3 +288,53 @@ describe('readDocsQuota', () => {
     expect(readDocsQuota(undefined, d)?.remaining).toBe(146)
   })
 })
+
+describe('fetchDocs e o memo de sessão', () => {
+  const READY = JSON.stringify({
+    codeSnippets: [
+      {
+        codeTitle: 'invalidateQueries',
+        codeDescription: '',
+        codeLanguage: 'ts',
+        codeTokens: 10,
+        codeId: 'https://github.com/tanstack/query/blob/main/docs/a.md',
+        pageTitle: 'Guide',
+        codeList: [{ language: 'ts', code: 'queryClient.invalidateQueries()' }]
+      }
+    ],
+    infoSnippets: []
+  })
+
+  const ARGS = { libraryId: '/tanstack/query', query: 'invalidar cache' }
+
+  it('answers a repeated question from the memo, without a second call', async () => {
+    const d = deps(reply(READY))
+
+    await fetchDocs(ARGS, d)
+    await fetchDocs(ARGS, d)
+
+    expect(d.sent).toHaveLength(1)
+  })
+
+  // The whole point of the second button: same key, and it still goes out.
+  it('spends a call when refresh is asked for', async () => {
+    const d = deps(reply(READY))
+
+    await fetchDocs(ARGS, d)
+    await fetchDocs({ ...ARGS, refresh: true }, d)
+
+    expect(d.sent).toHaveLength(2)
+  })
+
+  // Skips the read, never the write — otherwise `Ver de novo` would keep
+  // handing back the answer the refresh replaced.
+  it('leaves the fresh answer in the memo for the free button', async () => {
+    const d = deps(reply(READY))
+
+    await fetchDocs(ARGS, d)
+    await fetchDocs({ ...ARGS, refresh: true }, d)
+    await fetchDocs(ARGS, d)
+
+    expect(d.sent).toHaveLength(2)
+  })
+})

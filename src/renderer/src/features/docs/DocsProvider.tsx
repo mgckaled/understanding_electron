@@ -127,15 +127,21 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
 
   // `version` is left out of the payload when absent rather than sent empty:
   // the schema is `min(1)`, so a blank string would be a bug, not a default.
-  const fetchDocs = useCallback(async (): Promise<void> => {
-    if (selected === null || current === null) return
-    await runFetch({
-      libraryId: selected.id,
-      query: current.question,
-      ...(current.version === null ? {} : { version: current.version })
-    })
-    await queryClient.invalidateQueries({ queryKey: DOCS_QUOTA_KEY })
-  }, [current, queryClient, runFetch, selected])
+  const fetchDocs = useCallback(
+    async ({ refresh = false } = {}): Promise<void> => {
+      if (selected === null || current === null) return
+      await runFetch({
+        libraryId: selected.id,
+        query: current.question,
+        ...(current.version === null ? {} : { version: current.version }),
+        // Only when asked: the default path is what `Ver de novo` rides, and
+        // it must never spend a call the memo already paid for (D23I.11).
+        ...(refresh ? { refresh: true } : {})
+      })
+      await queryClient.invalidateQueries({ queryKey: DOCS_QUOTA_KEY })
+    },
+    [current, queryClient, runFetch, selected]
+  )
 
   const setLibrary = useCallback(
     (library: string) =>

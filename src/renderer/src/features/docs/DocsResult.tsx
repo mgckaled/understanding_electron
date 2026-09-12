@@ -20,7 +20,7 @@ const decimal = new Intl.NumberFormat('pt-BR')
 function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }): React.JSX.Element {
   const [active, setActive] = useState('trechos')
   const { isOn, toggle, offKeys } = useDocsSelection()
-  const { setSelectedTokens, budget, current, selected, pending, attach } = useDocs()
+  const { setSelectedTokens, budget, current, selected, pending, attach, fetchDocs } = useDocs()
   const frozen = pending !== null
 
   // Read into a const so the narrowing survives into the tab's closure.
@@ -117,6 +117,22 @@ function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }):
               model is about to be sent. */}
           {!frozen && (
             <>
+              {/* Two buttons, labelled by what they do — the fork of "a button
+                  that lies or a button that charges" dissolves when both
+                  exist. The first rides the session memo and costs nothing,
+                  dropping the manual marking back to the answer as it arrived;
+                  the second spends one of the month's calls (D23I.11). */}
+              <Button variant="ghost" size="sm" type="button" onClick={() => void fetchDocs()}>
+                Ver de novo
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => void fetchDocs({ refresh: true })}
+              >
+                Consultar de novo
+              </Button>
               <Button variant="ghost" size="sm" type="button" onClick={onBack}>
                 Voltar
               </Button>

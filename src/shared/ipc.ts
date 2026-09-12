@@ -1011,7 +1011,11 @@ export const argsSchema = {
     query: z.string().min(1),
     // Absent means the library's own default: "most recent" is not computable
     // from versions[] (D23A.6).
-    version: z.string().min(1).optional()
+    version: z.string().min(1).optional(),
+    // Skips READING the session memo, never writing it: it is the difference
+    // between the two buttons of the third screen — one returns the answer
+    // already paid for, the other spends a call (D23I.11).
+    refresh: z.boolean().optional()
   }),
   'docs:quota': z.void(),
   // Conversation storage (plano 14). The renderer mints `id` and stamps
@@ -1396,6 +1400,8 @@ export type Api = {
       libraryId: string
       query: string
       version?: string
+      /** Spends a call instead of returning the memoized answer (D23I.11). */
+      refresh?: boolean
     }): Promise<Result<ContextOutcome>>
     /** What the last answer of this session said was left; `null` before the first (D23I.7). */
     quota(): Promise<DocsQuota | null>

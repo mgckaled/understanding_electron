@@ -30,7 +30,13 @@ export type DocsApi = {
   resetSearch: () => void
   /** The second paid call, held beside the search for the same reason (D23E.3). */
   fetchState: ViewState<ContextOutcome>
-  fetchDocs: () => Promise<void>
+  /**
+   * The second paid call.
+   *
+   * @param refresh - Skips the session memo and spends a call; the default
+   *   returns the answer already paid for, free (D23I.11).
+   */
+  fetchDocs: (options?: { refresh?: boolean }) => Promise<void>
   /** Drops the answer alone, which is the third screen's way back (D23F.3). */
   resetFetch: () => void
   /** The picked candidate, or `null` while the search has no list to pick from. */

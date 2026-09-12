@@ -51,7 +51,10 @@ export async function fetchDocs(
   deps: DocsDeps
 ): Promise<Result<ContextOutcome>> {
   const key = `fetch|${args.libraryId}|${args.version ?? ''}|${args.query}`
-  const cached = deps.cache.get(key) as ContextOutcome | undefined
+  // `refresh` skips the read and never the write: the key stays the same, so
+  // the fresh answer replaces the one `Ver de novo` would hand back (D23I.11).
+  const cached =
+    args.refresh === true ? undefined : (deps.cache.get(key) as ContextOutcome | undefined)
   if (cached !== undefined) return ok(cached)
 
   try {
