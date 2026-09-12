@@ -563,7 +563,7 @@ chamada de modelo no main (`D9.1`).
 | 23-C | [D23C.6](plan/implemented/23-C-a-parte-e-a-persistencia.md) | `conversation:setDocsEnabled`, não `docs:toggle` — a operação é editar a transcrição |
 | 23-C | [D23C.7](plan/implemented/23-C-a-parte-e-a-persistencia.md) | `json_set` numa statement; a guarda `EXISTS` foi escrita e **removida** por não mudar nada observável |
 | 23-C | [D23C.8](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O preload se divide por papel (mecânica · tabela · composição), não por domínio |
-| 23-C | [D23C.9](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O livro-razão de privacidade não conta a consulta neste corte — vai para o 23-K, junto da pergunta enviada ao Context7 |
+| 23-C | [D23C.9](plan/implemented/23-C-a-parte-e-a-persistencia.md) | O livro-razão de privacidade não conta a consulta neste corte — vai para o `O-9`, painel próprio do Observatório, junto da pergunta enviada ao Context7 (saiu do arco 23 em 12/09/2026) |
 | 23-D | [D23D.1](plan/implemented/23-D-o-painel-nasce.md) | `PanelKind` ganha `'docs'`, sem tecla de atalho — `b` e `d` já estão tomadas e o desenho não pede uma terceira |
 | 23-D | [D23D.2](plan/implemented/23-D-o-painel-nasce.md) | A composição mora no provider, carimbada com a conversa: fechar preserva o texto, navegar descarta |
 | 23-D | [D23D.3](plan/implemented/23-D-o-painel-nasce.md) | `Documentação` nunca trava por anexo pendente; os três de arquivo travam — consulta não disputa o slot do composer |

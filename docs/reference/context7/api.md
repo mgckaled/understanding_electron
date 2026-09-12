@@ -241,4 +241,4 @@ Cinco das seis verificações abertas foram fechadas na sonda do corte 23-A (07/
 
   ⚠️ **Isso NÃO autoriza somar 200 + 1.000.** Cair para o anônimo quando a chave esgota reintroduziria o silêncio que motivou exigir a chave (D23I.13); se um dia os 200 forem aproveitados, que seja recuo **anunciado**. A hipótese do *pool global compartilhado* (fonte secundária, acima) **não é sustentada nem derrubada** por esta medição: 145 de 200 parece contagem própria, mas nada distingue "por cliente" de "por IP" com duas chamadas.
 
-- **O painel foi verificado ao vivo do 23-D ao 23-H**, corte a corte, e a comparação de silhueta dos três ícones **fechou no 23-H** (os três contadores só coexistem a partir dele). O que resta para o 23-J é a passada final sobre o conjunto, não a primeira olhada.
+- **O painel foi verificado ao vivo do 23-D ao 23-H**, corte a corte, e a comparação de silhueta dos três ícones **fechou no 23-H** (os três contadores só coexistem a partir dele). O que resta para o **23-K** (o fechamento, que era o `23-J` antes do remanejamento de letras de 12/09/2026) é a passada final sobre o conjunto, não a primeira olhada.

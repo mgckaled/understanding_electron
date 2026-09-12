@@ -12,7 +12,7 @@ import { DocsIcon } from './icon'
 //
 // `aria-pressed` follows its two siblings (D23H.4). The APG would have
 // `aria-expanded` here — a button that shows and hides a panel — and changing
-// one of three is worse than three consistent ones; the swap is 23-K's.
+// one of three is worse than three consistent ones; the swap is 23-J's.
 function DocsCount(): React.JSX.Element | null {
   const conversation = useActiveConversation()
   const { viewing, view, stopViewing, close } = useDocs()

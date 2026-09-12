@@ -4,7 +4,7 @@
 >
 > Siglas `DM-n` são provisórias. A definitiva (`D23.n`) nasce com o plano.
 >
-> ⚠️ **Ao começar um corte novo, leia § *[O que falta DECIDIR nos quatro cortes restantes](#o-que-falta-decidir-nos-quatro-cortes-restantes-levantado-em-12092026)*** — doze forquilhas levantadas no fechamento do 23-H, cada uma com o corte dono e a recomendação onde ela existe.
+> ⚠️ **Ao começar um corte novo, leia § *[O que falta DECIDIR nos dois cortes restantes](#o-que-falta-decidir-nos-dois-cortes-restantes-levantado-em-12092026)*** — doze forquilhas foram levantadas no fechamento do 23-H: quatro fecharam com o 23-I, uma foi **dissolvida** ao tirar o livro-razão do arco, duas viajaram com ele para o `O-9`, e **seis seguem abertas aqui**. ⚠️ **As letras dos dois cortes finais mudaram em 12/09/2026** — ver o aviso no fim de § *Os cortes* antes de acreditar numa citação antiga a `23-J` ou `23-K`.
 >
 > **Três anexos**, porque cada um é lido num momento diferente do arco: [`api.md`](api.md) (sondagens, formatos, medições — o 23-A vive nele), [`decisoes.md`](decisoes.md) (as 32, com a base de cada uma) e [`painel.md`](painel.md) (o desenho da interface — do 23-D em diante).
 
@@ -168,7 +168,7 @@ Os três eixos habituais, e o que cada um decide de fato:
 2. **Nenhum botão "cancelar" falso.** Sem id que enderece o `AbortController`, ele pararia de ouvir e deixaria a requisição correndo: mentira cara, porque a cota some do mesmo jeito.
 3. Promover a job depois é **barato de adiar** pelo teste da skill [`architecture`](../../../.claude/skills/architecture/SKILL.md) — *quantos arquivos toco se adiar?* O cliente já aceita `signal` (D23A.10), então é o handler, o `JobId` e o painel: ~6 arquivos, nenhum dado persistido, nenhum contrato que outro corte já consuma.
 
-⚠️ **O gatilho que reverte isto, e ele é medido, não impressão.** O 23-A sondou cinco bibliotecas e **não cronometrou chamada por chamada** — sabe que nenhuma chegou perto do teto, não sabe a distribuição. Se no 23-F ou no 23-J uma biblioteca grande com `fast=false` levar dezenas de segundos, o job deixa de ser conveniência e vira necessidade. **Cronometrar a primeira chamada real de biblioteca grande é o que fecha esta questão de vez.**
+⚠️ **O gatilho que reverte isto, e ele é medido, não impressão.** O 23-A sondou cinco bibliotecas e **não cronometrou chamada por chamada** — sabe que nenhuma chegou perto do teto, não sabe a distribuição. Se no 23-F ou no 23-K uma biblioteca grande com `fast=false` levar dezenas de segundos, o job deixa de ser conveniência e vira necessidade. **Cronometrar a primeira chamada real de biblioteca grande é o que fecha esta questão de vez.**
 
 ---
 
@@ -176,7 +176,7 @@ Os três eixos habituais, e o que cada um decide de fato:
 
 Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **nunca subcorte**.
 
-> ⚠️ **Não existe `23-A-1`.** O arco 21 produziu essa forma e ela não se pagou: um filho carrega o contexto do pai junto, o que anula o ganho de fatiar. **Corte que crescer demais vira dois irmãos** — se o 23-D não couber, ele passa a ser 23-D e 23-K, ambos no mesmo nível, cada um com o próprio arquivo e o próprio diário. A letra é etiqueta, não hierarquia.
+> ⚠️ **Não existe `23-A-1`.** O arco 21 produziu essa forma e ela não se pagou: um filho carrega o contexto do pai junto, o que anula o ganho de fatiar. **Corte que crescer demais vira dois irmãos** — se o 23-D não couber, ele passa a ser 23-D e 23-M (a primeira letra livre), ambos no mesmo nível, cada um com o próprio arquivo e o próprio diário. A letra é etiqueta, não hierarquia.
 
 **A ordem das letras é sugestão; a dependência é lei.** Divergência entre plano e execução é esperada — o encaixe reordena sem renomear nada.
 
@@ -191,19 +191,20 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 | ~~**23-G**~~ | ✅ **entregue (10/09/2026)** — seleção e orçamento. Caixa por trecho e por nota, rodapé com a soma da seleção e o veredito de caber, `Anexar` congelando a consulta, e a parte chegando ao modelo pelo `partForProvider` que o 23-C já tinha. **DM-16 e DM-25 saem de "adiadas".** Uma conta só: o `Composer` segue dono do `budgetFor` e devolve o `Budget` ao painel (D23G.1). Plano: [`plan/implemented/23-G`](../../plan/implemented/23-G-selecao-e-orcamento.md) | F · C |
 | ~~**23-H**~~ | ✅ **entregue (12/09/2026)** — a conversa. A linha retrátil com o interruptor e o `fora do contexto`, a releitura de uma consulta anexada no painel, o terceiro contador e o `histórico` que é navegação **e** controle. **DM-32 verificada ao vivo** — as três silhuetas a 16px são distintas. O `+` do cabeçalho ficou de fora, deliberadamente. Plano: [`plan/implemented/23-H`](../../plan/implemented/23-H-a-conversa.md) | C · F |
 | ~~**23-I**~~ | ✅ **entregue (12/09/2026)** — os **onze** erros, a chave e a cota. Cada situação com o seu texto e a sua ação, incluindo a décima primeira, que era dívida do 23-B (o teto de 30 s na tela) · a chave **exigida**, revogando a metade "opcional" de DM-19 · a cota restante e o estado da chave na primeira tela, por um *seam* `onQuota` e o canal `docs:quota` · `Ver de novo` e `Consultar de novo` como dois botões. **A sonda dos dois regimes respondeu: contadores separados** ([`api.md`](api.md)). Plano: [`plan/implemented/23-I`](../../plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | D |
-| **23-K** | **o livro-razão.** O Observatório **não vê a pergunta enviada ao Context7**, que sai da máquina mesmo em conversa 100% local (DM-22), e não conta a consulta reenviada ao modelo — são a mesma pergunta, e meia resposta não serve. ⚠️ Roda **antes** do J, apesar da letra | C · H |
-| **23-L** | **as minúcias.** O que se acumulou nos dez cortes: a variante inline do `MarkdownMessage` para o título em markdown, os três `aria-expanded`, o veredito sobre o `+` — **e a caixa `consulta ampla` (`fast=true`)**, decidida em 12/09/2026 ao dono relatar que 5 trechos podem não bastar (DM-18 deixa de ser absoluta). Separado do K em 12/09/2026: o corte único juntava instrumentação, design system e chrome, três naturezas num arquivo só | H |
-| **23-J** | **fechamento.** Verificação ao vivo, `ESCOPO.md` (nome do pilar, a linha de privacidade), guia antigo marcado `⛔ consumido`, pasta e apontadores | todos |
+| **23-J** | **as minúcias.** O que se acumulou nos nove cortes anteriores: a variante inline do `MarkdownMessage` para o título em markdown, os três `aria-expanded`, o veredito sobre o `+` — **e a caixa `consulta ampla` (`fast=true`)**, decidida em 12/09/2026 ao dono relatar que 5 trechos podem não bastar (DM-18 deixa de ser absoluta). Separado do livro-razão em 12/09/2026 — o corte único juntava instrumentação, design system e chrome, três naturezas num arquivo só —, e renomeado de `23-L` para `23-J` em 12/09/2026, quando o livro-razão deixou o arco | H |
+| **23-K** | **fechamento.** Verificação ao vivo, `ESCOPO.md` (nome do pilar, a linha de privacidade), guia antigo marcado `⛔ consumido`, pasta e apontadores | todos |
 
-**O caminho crítico é `A → B → D`.** Depois dele, `E`, `F` e `I` são independentes entre si; `C` pode entrar em qualquer momento depois de `A`, inclusive em paralelo a `D`. Só `G`, `H`, `K` e `J` têm duas dependências.
+**O caminho crítico é `A → B → D`.** Depois dele, `E`, `F` e `I` são independentes entre si; `C` pode entrar em qualquer momento depois de `A`, inclusive em paralelo a `D`. Só `G` e `H` têm duas dependências; **o arco fecha com dois cortes**, `J` e depois `K`.
 
-⚠️ **A letra `K` estava reservada para um eventual irmão do 23-D, e foi usada pelo corte novo em 08/09/2026; `L` foi usada pela divisão do próprio K em 12/09/2026.** Se aquela divisão do D acontecer, o irmão vira `23-M`. A letra é etiqueta, não hierarquia — e `K` executa **antes** de `J`, porque o J é o fechamento que depende de todos e um apanhado de pendências depois dele reabriria o que ele fechou.
+⚠️ **As letras foram remanejadas em 12/09/2026, e é preciso ler isto antes de acreditar numa citação antiga.** O livro-razão era o `23-K` e **saiu do arco** — virou painel próprio do Observatório (`O-9`, § abaixo); as minúcias eram o `23-L` e passaram a ser o **`23-J`**; o fechamento era o `23-J` e passou a ser o **`23-K`**. Quem citar `23-J` ou `23-K` em documento escrito antes desta data provavelmente quer dizer outra coisa — a regra de ouro continua sendo **citar a sigla da decisão**, que não se move, nunca a letra do corte. A primeira letra livre para um irmão futuro é `M`.
 
-### O que falta DECIDIR nos quatro cortes restantes (levantado em 12/09/2026)
+⚠️ **A ordem de execução não é mais uma exceção a explicar.** Antes o `K` precisava rodar **antes** do `J` porque um apanhado de pendências depois do fechamento reabriria o que ele fechou; agora a ordem é a alfabética — `J` (minúcias) e depois `K` (fechamento).
+
+### O que falta DECIDIR nos dois cortes restantes (levantado em 12/09/2026)
 
 Doze forquilhas levantadas ao fechar o 23-H. **Nenhuma é trabalho a fazer — é escolha a tomar**, e cada uma muda o que o plano do corte vai escrever.
 
-> ✅ **As quatro do 23-I foram fechadas pelo dono em 12/09/2026, na mesma conversa.** As oito restantes seguem **abertas por decisão**: o dono voltará a elas na sessão *depois* da implementação do 23-I. Onde há recomendação, ela está marcada **de pé** — é o que se propõe, não o que se decidiu.
+> ✅ **As quatro do 23-I foram fechadas e implementadas em 12/09/2026.** A **5 foi dissolvida** no mesmo dia, e dissolvê-la tirou um corte inteiro do arco: com painel próprio para o Context7, não há o que encaixar na tabela de privacidade — **6 e 7 viajaram junto para o `O-9`** (§ abaixo). Restam **seis no arco**, todas ainda **abertas por decisão**. Onde há recomendação, ela está marcada **de pé** — é o que se propõe, não o que se decidiu.
 
 #### 23-I — os erros, a chave e a cota · ✅ FECHADO
 
@@ -216,15 +217,20 @@ Doze forquilhas levantadas ao fechar o 23-H. **Nenhuma é trabalho a fazer — �
 
 ✅ **A verificação que entrou no 23-I por causa de 1 foi feita e respondida** (12/09/2026, 2 chamadas): anônimo e com-chave são **contadores separados** — 55 consumidos contra 201 no mesmo instante, mesma virada de mês. A tabela e os dois achados de graça estão em [`api.md`](api.md). ⚠️ **E a recomendação de não usar a soma segue de pé**, agora com o fato medido por trás: cair para o anônimo quando a chave esgota reintroduz exatamente o silêncio que motivou exigir a chave (D23I.13). Se os 200 forem aproveitados, que seja recuo **anunciado**, nunca automático.
 
-#### 23-K — o livro-razão · ⏳ ABERTO
+#### ~~23-K — o livro-razão~~ → **saiu do arco, virou `O-9`** (12/09/2026)
+
+**A decisão 5 não foi respondida: ela foi dissolvida.** O dono escolheu **painel dedicado, com registro próprio**, em vez de encaixar a consulta na tabela de privacidade — *"é possível adicionar mais informação caso seja necessário"*. Isso desfaz a forquilha inteira: com tabela própria, não há coluna `service` a alargar para além de `AiService` nem quarto contador a pendurar numa linha que fala de outra coisa. **A separação da trilha N sai validada em vez de esticada**, que era o argumento dela.
+
+E o destino segue a régua declarada da própria trilha: o Observatório é **gatilhado, não sequencial** — *"cada painel entra na fila quando o que ele observa passa a existir"* ([`ROADMAP § 2`](../../ROADMAP.md)). O sensor passou a existir entre o 23-A e o 23-I, então o painel entra na fila como `O-9`, ao lado dos três que ainda esperam sensor.
 
 | # | A decisão | Estado |
 |---|---|---|
-| 5 | **Como a consulta entra no livro-razão.** `privacy:list` é escrito no wrap de `chat()`, condicionado a `isCloudService` — e o Context7 **não é, nem nunca será, um `AiService`** (DN1A.5). Linha de tipo novo ou coluna nova? | sem recomendação. É a separação da trilha N cobrando o preço dela pela primeira vez |
-| 6 | **Quanto da pergunta se grava.** O texto inteiro torna o registro útil **e** faz o próprio registro virar mais um lugar onde a pergunta está escrita; só *"houve consulta a tal biblioteca"* é discreto e responde menos | sem recomendação — é a tensão de DM-22, agora dentro de casa |
-| 7 | **Contar uma vez ou por turno.** A consulta é reenviada ao modelo a cada mensagem; com provedor de nuvem, o mesmo conteúdo sai da máquina de novo, sempre | sem recomendação. ⚠️ **Ortogonal a 5 e 6:** a pergunta sai **uma** vez (para o Context7), a resposta sai **muitas** (para o modelo) |
+| 6 | **Quanto da pergunta se grava.** O texto inteiro torna o registro útil **e** faz o próprio registro virar mais um lugar onde a pergunta está escrita; só *"houve consulta a tal biblioteca"* é discreto e responde menos | ⏳ **aberta, agora no `O-9`.** ⚠️ Um fato que muda o custo dela: a pergunta **já está gravada** no `crivo.db`, dentro da parte persistida da conversa — gravá-la aqui cria a **segunda** cópia, num arquivo com retenção própria, não a primeira |
+| 7 | **Contar uma vez ou por turno.** A consulta é reenviada ao modelo a cada mensagem; com provedor de nuvem, o mesmo conteúdo sai da máquina de novo, sempre | ⏳ **aberta, agora no `O-9`.** ⚠️ A assimetria é o ponto: a pergunta sai **uma** vez (para o Context7), a resposta sai **muitas** (para o modelo). Com tabela própria as duas cabem, em vez de disputarem o mesmo formato de linha |
 
-#### 23-L — as minúcias · ⏳ ABERTO
+⚠️ **Duas coisas precisam ser carregadas para o `O-9`, senão a saída vira buraco silencioso.** (1) O arco 23 fecha com o ponto cego **não instrumentado** — e isso só é aceitável porque a **divulgação** já existe em dois lugares (o aviso permanente sob o campo, na tela em todo turno, e a linha do `ESCOPO.md` que o fechamento vai escrever): falta o *registro*, não o *aviso*. (2) O painel de privacidade atual passa a **mentir por omissão** — ele responde *"o que saiu desta máquina"* e mostra só nuvem-IA; precisa de uma linha apontando para o painel novo. A dívida também está escrita no fonte, em `core/observatory/privacy.ts`.
+
+#### 23-J — as minúcias · ⏳ ABERTO
 
 | # | A decisão | Estado |
 |---|---|---|
@@ -233,7 +239,7 @@ Doze forquilhas levantadas ao fechar o 23-H. **Nenhuma é trabalho a fazer — �
 | 10 | **Trocar `aria-pressed` por `aria-expanded` nos três contadores** toca `artifact` e `draft`, fora do arco 23 | sem recomendação. É dívida de precisão semântica, não barreira — um leitor de tela diz "pressionado" onde diria "expandido". Adiável sem custo crescente |
 | **13** | **A caixa `consulta ampla` (`fast=true`), desligada por padrão** — ✅ **decidida em 12/09/2026** e alocada aqui | ✅ o *quê* está fechado (ver DM-18 em [`decisoes.md`](decisoes.md) § *O que a execução fez*); o **como** é do plano: onde a caixa mora na primeira tela, se o rótulo explica o custo, e se 25 trechos mudam a rolagem da lista |
 
-#### 23-J — fechamento · ⏳ ABERTO
+#### 23-K — fechamento · ⏳ ABERTO
 
 | # | A decisão | Estado |
 |---|---|---|
@@ -255,8 +261,8 @@ Cada uma tem dono. **Cinco foram fechadas na sonda do 23-A** (07/09/2026, 12 cha
 | `libraryName` vs `query` no `/v2/libs/search` | 23-A | ✅ os dois respondem; duas chamadas **não** distinguem parâmetro de instabilidade. Fica `query` |
 | `202` na prática, e o enum de `state` | ~~23-I~~ | ✅ **encerrada sem sonda (D23I.12), e isso é o veredito.** Caçar custa cota sem garantia de achar, e o que o app precisava dela era o **texto** — a classificação é um ramo por código HTTP, exercitado por resposta montada à mão. Quais `state` existem segue desconhecido, e o painel não depende disso |
 | anônimo e com-chave são contadores **separados**? (os 200 somam com os 1.000?) | ~~23-I~~ | ✅ **separados** — 2 chamadas em 12/09/2026, 55 consumidos contra 201 no mesmo instante ([`api.md`](api.md)). ⚠️ Separados **não** quer dizer somáveis: a queda automática para o anônimo continua recusada (D23I.13) |
-| silhueta dos três ícones do cabeçalho a 16px | ~~23-J~~ | ✅ **fechada no 23-H** — os três contadores só existem juntos a partir dele, e as silhuetas são distintas |
-| o painel inteiro, ao vivo | 23-J | ⏳ aberta |
+| silhueta dos três ícones do cabeçalho a 16px | ~~fechamento~~ | ✅ **fechada no 23-H** — os três contadores só existem juntos a partir dele, e as silhuetas são distintas |
+| o painel inteiro, ao vivo | **23-K** | ⏳ aberta — a passada final sobre o conjunto, não a primeira olhada |
 
 ⚠️ **A cota é uma só, e sondar gasta o que usar gastaria.** 200 chamadas/mês no anônimo; as sondas de 06–07/09 levaram `Ratelimit-Remaining` de 200 a **146** em dois dias — 27% do mês. A suíte de testes **nunca** bate na API: as fixtures de `src/core/context7/__fixtures__/` foram gravadas uma vez, e os testes rodam contra elas.
 
@@ -283,7 +289,7 @@ Uma linha por premissa que caiu, com o ponteiro para onde o fato corrigido mora 
 | "a descrição do trecho é texto" | 23-F | é **markdown**: a API escreve código inline com acento grave, e renderizar a string crua os mostrava literais. Descrição e nota passam pelo `MarkdownMessage`, que é o dono do assunto e já trata texto de fora como não confiável (D11.2) |
 | "o rodapé mostra o custo exato, e é o único lugar do app onde o orçamento é exato antes de enviar" | 23-G | **verdade, e por pouco não se registrou o contrário.** A primeira medição ao vivo pôs `codeTokens` 293 contra um `prompt_eval_count` de **160** para o prompt inteiro, o que parecia contagem inflada do Context7. O segundo turno desmentiu: previsto ~1.168, medido **1.200** — 3% de diferença. O 160 era **cache de prefixo do Ollama**, não desacordo de tokenizador — [`ARMADILHAS.md`](../../ARMADILHAS.md) |
 | "o rodapé do painel e o medidor do composer podem divergir se o filtro ficar num lugar e a soma noutro" | 23-G | o risco era real e o conserto não foi um filtro compartilhado: o `Composer` continua **dono único** do `budgetFor` e devolve o `Budget` pronto ao painel (D23G.1). Duas contas nunca chegaram a existir |
-| "a descrição do trecho é markdown" (achado do 23-F) | 23-G | **o título também é**, e o 23-F não podia saber: nenhuma consulta daquele corte trouxe código no `codeTitle`. Apareceu na primeira linha da primeira consulta deste. Pendência do 23-K, com o conserto sendo uma variante inline do `MarkdownMessage` — [`ROADMAP § 3`](../../ROADMAP.md) |
+| "a descrição do trecho é markdown" (achado do 23-F) | 23-G | **o título também é**, e o 23-F não podia saber: nenhuma consulta daquele corte trouxe código no `codeTitle`. Apareceu na primeira linha da primeira consulta deste. Pendência do **23-J**, com o conserto sendo uma variante inline do `MarkdownMessage` — [`ROADMAP § 4`](../../ROADMAP.md) |
 | "o `histórico` do painel serve quem tem várias" — e o interruptor mora nele | 23-H | **os dois lugares, com um dono só.** O interruptor está na linha da transcrição **e** em cada linha do histórico; nenhum dos dois guarda estado, porque ambos chamam a mesma mutação e leem o mesmo `enabled` persistido. Ler `N tok ativos` e ter de sair dali para mudá-lo era a divisão que custaria (D23H.1) |
 | "o total do `histórico` e o medidor do composer precisam concordar" | 23-H | **concordam, medindo coisas diferentes de propósito.** O histórico soma tokens **exatos**; o composer estima por caractere. O que os une é o **conjunto** — os dois derivam de `enabled`, um pelo `partForProvider` e o outro somando os mesmos itens. Provado ao vivo: consulta de 871 tok, `Prompt: 1.017`, e o medidor previu ~2.419 para o turno seguinte (D23H.8) |
 | "o painel é um inquilino por vez, e o `PanelProvider` torna isso inexpressável" (DE1B.1) | 23-H | **inexpressável é quem OCUPA a região, nunca quem se DESENHA nela.** A releitura escapou do portão `open` e desenhou o painel de docs sobre a barra lateral com o rascunho aberto. A garantia é por-valor, não por-componente — [`ARMADILHAS.md`](../../ARMADILHAS.md) |

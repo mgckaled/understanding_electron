@@ -23,11 +23,10 @@ export function countAttachments(
   let imageCount = 0
   for (const message of messages) {
     for (const part of message.parts) {
-      // A Context7 consultation is deliberately not counted here yet (D23C.9):
-      // it would need a fourth column in observatory.db, and the ledger has a
-      // wider gap to close first — it never sees the question sent TO Context7,
-      // which leaves the machine even in a fully local conversation (DM-22).
-      // Both belong to 23-K.
+      // A Context7 consultation is deliberately not counted here (D23C.9), and
+      // never will be: it gets a panel and a table of its own (O-9). This one
+      // also never sees the question sent TO Context7, which leaves the machine
+      // even in a fully local conversation (DM-22) — same owner.
       if (part.kind === 'dataset') datasetCount++
       else if (part.kind === 'document') documentCount++
       else if (part.kind === 'image') imageCount++
