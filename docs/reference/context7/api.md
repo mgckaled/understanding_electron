@@ -220,7 +220,9 @@ Pela via MCP elas chegam embutidas na prosa do `content[]`, indistinguíveis do 
 
 ## O que ainda não foi verificado
 
-Cinco das seis verificações abertas foram fechadas na sonda do corte 23-A (07/09/2026, 12 chamadas) — ver § *A sonda do 23-A* acima. Resta **uma**:
+Cinco das seis verificações abertas foram fechadas na sonda do corte 23-A (07/09/2026, 12 chamadas) — ver § *A sonda do 23-A* acima. Restam **três**, e a segunda nasceu de uma pergunta do dono:
 
 - **Comportamento do `202` na prática, e quais `state` existem além de `finalized`.** Seis buscas devolveram `finalized` em 100% dos ~28 resultados; não se achou biblioteca em indexação sem sair caçando, e caçar custaria cota sem garantia. **Movida para o 23-I**, que é o corte dos nove textos de erro; a classificação do status no cliente (23-A) não depende de vê-lo ao vivo — é um ramo por código HTTP, exercitado por resposta montada à mão.
-- **Nada do painel foi verificado ao vivo** — o desenho de [`painel.md`](painel.md) é alvo, e a comparação de silhueta dos três ícones do cabeçalho é a primeira coisa a olhar renderizada (23-J).
+- **⚠️ Anônimo e com-chave são contadores separados, ou o mesmo?** Pergunta do dono em 12/09/2026: *"posso considerar que tenho 200 anônimas + 1.000 da chave?"* O que se sabe é que as **duas rotas** (`/libs/search` e `/v2/context`) compartilham um contador — sondado no 23-A. Sobre os **dois regimes**, nada: os 200 vêm do header de resposta anônima, os 1.000 vêm da documentação, e ninguém conferiu se uma chamada autenticada decrementa o contador anônimo também. **Custa 2 chamadas:** uma com chave e uma sem, lendo `Ratelimit-Limit`/`Ratelimit-Remaining` nos dois headers. Dono: **23-I**. ⚠️ Independente do resultado, aproveitar a soma por queda automática para o anônimo reintroduziria o silêncio que motivou exigir a chave.
+
+- **O painel foi verificado ao vivo do 23-D ao 23-H**, corte a corte, e a comparação de silhueta dos três ícones **fechou no 23-H** (os três contadores só coexistem a partir dele). O que resta para o 23-J é a passada final sobre o conjunto, não a primeira olhada.
