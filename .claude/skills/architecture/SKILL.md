@@ -71,6 +71,8 @@ App.tsx                 composição — quem entra em qual slot, e a casca
 
 ⚠️ **`features/panel/` é a fatia mais nova e a mais estranha: ela não tem domínio, tem uma região.** Guarda **qual inquilino ocupa a faixa da direita**, e nada além disso; `artifact` e `draft` guardam a própria seleção e pedem a região. Fica em `features/` e não em `app/` porque a casca não importa de `features/` (D13.1), e `panel` precisa ser importada pelas duas. O ganho é que "só um painel aberto por vez" vira estado **inexpressável** em vez de regra que dois lugares têm de lembrar (DE1B.1).
 
+⚠️ **E o inexpressável cobre quem OCUPA a região, nunca quem se DESENHA nela** — a distinção custou um layout inteiro no 23-H. Cada painel decide sozinho se renderiza, e o portão é o provider da feature expor todo estado-que-faz-renderizar atrás de `open ? valor : null`. Um valor novo que escape do portão (ali, a releitura de uma consulta anexada) desenha um segundo `<aside>` numa casca que reservou uma faixa só, e ele vai parar sobre a sidebar — sem erro, sem aviso, e sem teste de camada que pegue. **A garantia é por-valor, não por-componente:** ao dar a um painel uma fonte de conteúdo nova, ela não vem de graça. Sintoma e conserto: [`ARMADILHAS.md`](../../../docs/ARMADILHAS.md).
+
 ## Aliases, nunca caminho relativo entre camadas
 
 `@shared`, `@core`, `@renderer`. Declarados uma vez em `config/aliases.ts` e importados pelos três blocos do `electron.vite.config.ts` e pelos dois `tsconfig` — `@renderer` só existe no `tsconfig.web.json`, porque `main/` e `workers/` não devem importar do renderer. Sem alias único, `src/renderer/src/features/x/hooks/useY.ts` importaria o contrato como `../../../../../shared/ipc`, e qualquer arquivo que se mova quebra a contagem de pontos.

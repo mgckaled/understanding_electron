@@ -137,6 +137,10 @@ Uma linha por medição — a forma é regra, ver [`README § Número que se rem
 | 07/09/2026 | 23-B | 151 / 1430 | **124,0s** | um arquivo e 16 testes a mais que a linha acima, e **4,8s a menos** — pelo terceiro corte seguido a diferença fica dentro do ruído, o que continua dizendo que a suíte mede ambiente tanto quanto código |
 | 08/09/2026 | 23-C | 152 / 1447 | **99,2s** | portão inteiro. Um arquivo e 17 testes a mais, e **24,8s a menos** que a linha acima — a maior queda da série sem nenhuma mudança de configuração, o que reforça o que ela já dizia: a variação é da máquina, não do código |
 | 08/09/2026 | 23-D | 153 / 1460 | **109,3s** | ⚠️ **só `vitest run`, não o portão inteiro** — a linha não é comparável com as de cima sem descontar `typecheck` e `lint`. Um arquivo e 13 testes a mais; o corte é nível 2, então o custo novo é `environment` (jsdom), a fatia que a série já apontou como dominante |
+| 08/09/2026 | 23-E | 153 / 1472 | **112,85s** | portão inteiro. Doze testes a mais que a linha do 23-D e nenhum arquivo novo — o corte é 100% renderer sobre componentes que já existiam |
+| 08/09/2026 | 23-F | 154 / 1488 | **106,34s** | portão inteiro. Um arquivo e 16 testes a mais, **6,5s a menos** — o ruído da série continua maior que o efeito de um corte |
+| 10/09/2026 | 23-G | 155 / 1506 | **143,43s** | portão inteiro. Um arquivo e 18 testes a mais, e **37s a mais** — o maior salto da série do arco, sem nada no corte que o explique. Remedir a frio antes de tratar como regressão, que é o que a série já ensinou com os ~88s do 18-D |
+| 12/09/2026 | 23-H | 156 / 1526 | **137,35s** | ⚠️ **só `vitest run`**, como a linha do 23-D — não comparável com as de portão inteiro sem descontar `typecheck` e `lint`. Um arquivo e 20 testes a mais. ⚠️ **Uma corrida deste commit falhou em 3 testes a 234,09s e as duas seguintes passaram inteiras a 137s e 139s** — a que falhou disputava CPU com dois outros processos `pnpm` que eu tinha deixado em background. Os nomes dos três **não foram capturados**, então a contenção é hipótese e não diagnóstico; fica registrado como o primeiro caso da série em que a variação de ambiente passou de lenta a **vermelha** |
 | 28/08/2026 | E-2-A/B | 116 / 1130 | **~80s** | portão inteiro. **Bundle do renderer: 3.025,32 → 3.287,07 kB (+261,75 kB)** pelas ~27 gramáticas de código — 2,2× o que a sonda do E-2-B previu, e ~112 kB do salto ficaram **não atribuídos** |
 
 **O que a série provou, e uma medição isolada não provaria:** de 24 para 93 arquivos e de 172 para 832 testes, o total **não** cresceu proporcionalmente. Um pico isolado (os ~88s do 18-D) é suspeito de ambiente, não de regressão — e foi remedir a frio que decidiu.
@@ -233,6 +237,14 @@ A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resoluçã
 **O conserto óbvio é o que a skill [`design-system`](../.claude/skills/design-system/SKILL.md) manda recusar,** e o alternativo não cabe: um partidor de acento grave criaria um segundo dono do markdown, e mandar o título pelo `MarkdownMessage` como ele está hoje põe um `<p>` de bloco dentro do `<button>` do retrátil, em 18px fixos, numa linha que precisa truncar.
 
 **O que resolve é uma variante inline do próprio primitivo** — `span` em vez de `p`, herdando o tamanho de quem chama —, mantendo a fonte única e servindo qualquer legenda futura. Isso é trabalho de design system, e pela régua do envelope ele não nasce dentro de um corte de feature: fica para o **23-K**, que é o das minúcias. Decidido com o dono em 10/09/2026.
+
+### Os três contadores do cabeçalho usam `aria-pressed` onde a APG pede `aria-expanded` (candidata ao 23-K)
+
+**Achado por pesquisa externa no 23-H, e deliberadamente não consertado ali.** `ArtifactCount`, `DraftCount` e agora `DocsCount` marcam-se com `aria-pressed`, e o comentário dos dois primeiros justifica a escolha **contra `aria-current`** — comparação que não era a relevante. A [documentação do MDN](https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Attributes/aria-expanded) e o [padrão de botão da WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/button/) separam as duas coisas: `aria-pressed` descreve um estado binário de recurso (mudo, negrito), `aria-expanded` descreve um controle que **mostra e esconde conteúdo** — que é exatamente o que os três fazem com a região da direita.
+
+**Por que não foi consertado no 23-H:** um terceiro contador divergindo sozinho é pior que três consistentes, e trocar os três é mudança de chrome que atravessa três fatias de `features/`. Custo real: três atributos, três `aria-label` (o rótulo hoje diz "Abrir/Fechar", que passa a ser redundante com o estado), e os testes que afirmam `aria-pressed` em cada um. Se vier junto, considerar `aria-controls` apontando para o `<aside>` — a APG o pede no mesmo par, e o `SidePanel` já tem id estável.
+
+⚠️ **Não é defeito de acessibilidade grave:** um leitor de tela anuncia "pressionado" em vez de "expandido", o que é impreciso e não enganoso. É dívida de precisão semântica, não barreira.
 
 ### Parquet não está no seletor de arquivo
 

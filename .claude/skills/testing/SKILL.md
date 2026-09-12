@@ -57,6 +57,10 @@ A regra vale em todos os cinco níveis, e é mais fácil de violar do que parece
 
 ⚠️ **Sabotagem que muda a superfície de tipo prova o compilador, não o teste.** Remover a chamada de uma função de guarda deixa a função sem uso, e o `typecheck` reprova (`TS6133`) **antes** de o Vitest rodar — o vermelho que aparece é do portão errado. Mantenha o símbolo em uso ao sabotar (`sameBudget(a, b) && false`).
 
+⚠️ **Uma asserção pode nunca ser avaliada, e o verde parece igual.** Duas formas, ambas pagas no 23-H: um matcher **sem os parênteses** (`expect(x).toBeVisible` em vez de `toBeVisible()`) não afirma nada, e uma **opção que a query não aceita** (`getByText(texto, { hidden: true })` — só `getByRole` filtra por visibilidade) é inerte. Nenhuma das duas falha em runtime; quem as pegou foi o `pnpm typecheck`, não a suíte. É por isso que rodar o portão inteiro antes de commitar um teste novo não é zelo — é a **única** verificação que enxerga esta classe.
+
+⚠️ **Vacuosidade não é propriedade do teste: é do par teste × implementação, e muda quando a implementação muda.** No 23-H, "o painel some ao trocar de conversa" nasceu vacuoso (o painel sumia de qualquer jeito, porque só a composição segurava a região) e **virou discriminante** um passo depois, quando um segundo valor passou a segurar a região sozinho. O inverso acontece igual. **Reprove sob sabotagem de novo sempre que mexer em quem guarda o estado que o teste observa** — não basta ter provado o vermelho uma vez.
+
 **Sabotagem larga demais prova menos do que parece.** Anular a tela inteira num teste com duas asserções (*"as abas aparecem"* **e** *"a lista some"*) derruba a primeira e deixa a segunda sem exercício — no 23-F foram necessárias **duas** sabotagens para o mesmo teste. A régua: cada asserção discriminante quer o defeito que **ela** inverteria, não um defeito qualquer.
 
 **Prove o smoke test antes de confiar nele.** Sabote `files` no `electron-builder.yml` (`'!out/preload/**'`), reempacote, rode — precisa falhar (`#root` vazio, `window.api` nunca aparece, timeout). Reverta a linha, reempacote, confirme verde. Um teste de fumaça que passa incondicionalmente é pior que nenhum.
