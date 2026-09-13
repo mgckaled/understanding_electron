@@ -114,7 +114,12 @@ function Snippet({
             id={`${boxId}-title`}
             className={cx('truncate font-ui text-sm', on ? 'text-text' : 'text-text-faint')}
           >
-            {snippet.title}
+            {/* Inline through the app's markdown owner: `codeTitle` carries
+                inline code in backticks, and they showed as literal characters
+                (D23J.2). The block form would put a <p> at 18px inside this
+                button. The ↗ below keeps the raw title in its aria-label — a
+                screen reader reads the backtick, which is noise and not a lie. */}
+            <MarkdownMessage inline text={snippet.title} />
           </span>
           <span
             className={cx(

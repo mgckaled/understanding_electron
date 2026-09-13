@@ -342,3 +342,21 @@ describe('os dois estados vazios', () => {
     expect(screen.getByText('Esta resposta não trouxe nota — só código.')).toBeInTheDocument()
   })
 })
+
+// D23J.2: `codeTitle` comes back with inline code in backticks, and the raw
+// string showed them as literal characters — the same class the 23-F fixed for
+// the description, missed because no consultation of that cut had code in the
+// field.
+describe('o título do trecho é markdown', () => {
+  it('renders inline code as a chip instead of literal backticks', async () => {
+    await showAnswer({
+      ...ANSWER,
+      snippets: [snippet('a#0', 'Rollback using `onMutate`', 182)]
+    })
+
+    const title = screen.getByText('onMutate')
+
+    expect(title.tagName).toBe('CODE')
+    expect(screen.queryByText(/`/)).toBeNull()
+  })
+})

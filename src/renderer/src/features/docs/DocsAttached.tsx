@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { DocsPart } from '@shared/ipc'
+import MarkdownMessage from '../../shared/ui/MarkdownMessage/MarkdownMessage'
 import Tabs, { type TabDefinition } from '../../shared/ui/Tabs/Tabs'
 import DocsSnippetList from './DocsSnippetList'
 import { LIST, NoteList, RuleList } from './DocsLists'
@@ -61,7 +62,9 @@ function DocsAttached({ part }: { part: DocsPart }): React.JSX.Element {
               <ul className={LIST}>
                 {part.omitted.map((one) => (
                   <li key={one.key} className="flex items-baseline gap-3 text-xs">
-                    <span className="truncate text-text-faint">{one.title}</span>
+                    <span className="truncate text-text-faint">
+                      <MarkdownMessage inline text={one.title} />
+                    </span>
                     <span className="ml-auto flex-none text-text-faint line-through">
                       {decimal.format(one.tokens)} tok
                     </span>

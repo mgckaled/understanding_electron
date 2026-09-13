@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { memo, useMemo, type ReactNode } from 'react'
 import type { Element } from 'hast'
 import { Check, Copy, NotebookPen } from 'lucide-react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
@@ -27,6 +27,10 @@ const rehypePlugins: Options['rehypePlugins'] = [
   // highlights, it is not a bundle lever). Real shrinking needs createLowlight.
   [rehypeHighlight, { detect: false }]
 ]
+
+// A block element inside a truncating <button> breaks the row; `p` is the only
+// block react-markdown builds for a one-line title.
+const DROPPED_INLINE = ['p']
 
 // Images: under CSP `img-src 'self' data:` a remote src is blocked and leaves a
 // silent gap, so returning null drops the attribute and shows the alt text — a
@@ -155,12 +159,19 @@ const anchor: Components['a'] = ({ href, children }) => {
 function MarkdownMessage({
   text,
   highlight = true,
-  codeActions
+  codeActions,
+  inline = false
 }: {
   text: string
   highlight?: boolean
   /** Absent means no draft button on the code blocks — three of the four callers (DE2A.6). */
   codeActions?: CodeActions
+  /**
+   * Renders as a `<span>` inheriting the caller's font size, for third-party
+   * text living inside a control — a snippet title in a truncating button
+   * (D23J.2). The block form fixes the reading size on its own sheet.
+   */
+  inline?: boolean
 }): React.JSX.Element {
   // Was a module constant until E-2-A; it now closes over a prop, so it is
   // memoised — a new object here rebuilds the whole rendered tree.
@@ -176,18 +187,29 @@ function MarkdownMessage({
     [codeActions]
   )
 
-  return (
-    <div className={styles.markdown}>
-      <Markdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={highlight ? rehypePlugins : undefined}
-        urlTransform={urlTransform}
-        components={components}
-      >
-        {text}
-      </Markdown>
-    </div>
+  const markdown = (
+    <Markdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={highlight ? rehypePlugins : undefined}
+      urlTransform={urlTransform}
+      components={components}
+      // The documented way to drop the wrapping block and keep its children,
+      // so no second markdown owner is written for a one-line caption.
+      disallowedElements={inline ? DROPPED_INLINE : undefined}
+      unwrapDisallowed={inline}
+    >
+      {text}
+    </Markdown>
   )
+
+  if (inline) return <span className={styles.inline}>{markdown}</span>
+
+  return <div className={styles.markdown}>{markdown}</div>
 }
 
-export default MarkdownMessage
+// Memoised because parsing is the cost here, and a title renders inside trees
+// that re-render on every keystroke of the composer: without this, typing one
+// character reparses every snippet title on screen. Measured, not assumed: the
+// inline variant put contextBudget.test.tsx at 21,2 s against 18,7 s without
+// it, and this brought it back to 19,2 s (D23J.2).
+export default memo(MarkdownMessage)

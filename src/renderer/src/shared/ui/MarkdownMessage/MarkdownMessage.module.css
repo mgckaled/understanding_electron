@@ -75,7 +75,8 @@
 }
 
 /* Inline code: a chip that separates a column name from the prose around it. */
-.markdown code {
+.markdown code,
+.inline code {
   padding: 0 var(--space-2);
   background: var(--color-surface-sunken);
   border-radius: var(--radius-sm);
@@ -87,9 +88,23 @@
   font-size: 0.9em;
 }
 
-.markdown a {
+.markdown a,
+.inline a {
   color: var(--color-accent-text);
   text-decoration: underline;
+}
+
+/*
+ * The inline variant (D23J.2). It declares NO font-size on purpose: that is the
+ * whole point — third-party text inside a control has to be the size of the
+ * control, and the block form above fixes the reading size, which is why a
+ * snippet title in a truncating <button> could not use it. The two selectors
+ * above are shared rather than copied; a third container is what would ask for
+ * an extraction.
+ */
+.inline {
+  font-size: inherit;
+  color: inherit;
 }
 
 .markdown blockquote {
