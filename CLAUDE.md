@@ -48,12 +48,12 @@ Ciclo de um plano, em uma linha: nasce em `plan/active/` → cada sessão acresc
 
 Aplica o funil arquivo → linha → bloco do princípio acima; a tabela é a particularidade de `docs/` — qual exceção cada arquivo impõe.
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,79 MB / ~771k tokens** em 138 arquivos (remedido 13/09/2026), e `plan/implemented/` sozinho responde por **58%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,97 MB / ~781k tokens** em 139 arquivos (remedido 13/09/2026, depois do refinamento da N-3), e `plan/implemented/` sozinho responde por **56%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
 | **`plan/implemented/`** (86 arq.) | **~439k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
-| `reference/` (31 arq.) | ~122k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| `reference/` (32 arq.) | ~132k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
 | `HISTORY-archive.md` | ~60k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
 | `study/` (12 arq.) | ~38k | `Grep` no conceito; `Read` com `offset` na seção achada |
 | `ARMADILHAS.md` | ~34k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |

@@ -75,7 +75,15 @@ Argumentos já **estruturados** — objeto, não string a reparsear. Os seis mod
 
 ⚠️ **Os `nemotron` gastam ~3× mais tokens de prompt** que o `gemma4:31b` para a mesma ferramenta (354 contra 121) — o template de chat deles é mais verboso. Numa cota medida em tempo de GPU, isso conta.
 
-**É o contorno para a ausência de `format`** ([`api.md`](api.md) § 4.1): uma ferramenta cujo schema de parâmetros seja o schema do passo entrega saída estruturada por outro caminho — mas só nos quatro modelos que acionam de fato. **Só o modo `stream: false` foi testado** — se `tool_calls` chega em streaming é pergunta em aberto, e ela decide se o contorno cabe na UX de stream do app.
+**É o contorno para a ausência de `format`** ([`api.md`](api.md) § 4.1): uma ferramenta cujo schema de parâmetros seja o schema do passo entrega saída estruturada por outro caminho — mas só nos quatro modelos que acionam de fato.
+
+✅ **A pergunta em aberto sobre streaming fechou no refinamento de 13/09/2026.** Só o modo `stream: false` tinha sido sondado; a documentação do Ollama responde o resto (`docs/capabilities/streaming.mdx` e `tool-calling.mdx`, este último com exemplo em JS):
+
+- `tool_calls` **chega em streaming**, em `message.tool_calls` dentro de um chunk com `done: false`;
+- o array chega **completo num chunk**, e `arguments` já é **objeto** — não são deltas de string a remontar, ao contrário do formato OpenAI;
+- o padrão documentado é acumular `thinking`, `content` e `tool_calls` do stream e devolvê-los na mensagem do assistente no turno seguinte.
+
+⚠️ **Medido no local, não contra a nuvem** — mas o fio NDJSON da nuvem é idêntico ao local em todos os campos sondados ([`api.md`](api.md) § 2), então a forma vale até que alguém meça o contrário. **A UX de stream do app deixa de ser objeção ao contorno** — o que ficou no caminho foi a decisão `DNC-19`, que escolheu o gate em vez do contorno, e não uma limitação técnica.
 
 ---
 
@@ -84,6 +92,10 @@ Argumentos já **estruturados** — objeto, não string a reparsear. Os seis mod
 `gemma4:31b`, campo `images` com um PNG 16×16 vermelho em base64, perguntado que cor predomina: respondeu **"Vermelho"**, com `prompt_eval_count: 281`.
 
 Mesmo formato de fio do Ollama local (`ChatMessage.images`, `D17.5`), então `toChatMessagesWithImages` serve sem alteração.
+
+✅ **E o `IMAGE_TOKEN_ESTIMATE` do app não precisa mudar.** A ficha de `ollama.com/library/gemma4:31b-cloud` publica resolução variável com orçamentos de **70, 140, 280, 560 ou 1120** tokens por imagem. O `prompt_eval_count: 281` medido acima encaixa no degrau de **280** — e o app estima **270** (`IMAGE_TOKEN_ESTIMATE`, skill [`ai`](../../../.claude/skills/ai/SKILL.md)), medido no `gemma3:4b` local. Erro de ~4 %, na direção conservadora.
+
+⚠️ **Mas o degrau é configurável, e o app não o configura.** Uma imagem grande pode cair num orçamento maior, e aí 270 subconta em até 4×. Não é problema hoje — com `costed: false` o app não orça janela para este provedor —, mas seria no dia em que alguém quisesse um medidor fiel de custo na nuvem. Outros dados da mesma ficha: **256 k de contexto**, 30,7 B de parâmetros, encoder de visão de ~550 M, janela deslizante de 1024, **sem áudio**.
 
 ⚠️ **É a razão pela qual a armadilha do caminho `-cloud` ([`README.md`](README.md) § 1) é mais grave do que parece:** este provedor recebe **imagem**. Um caminho que não registre no ledger de privacidade não deixaria de registrar apenas texto.
 

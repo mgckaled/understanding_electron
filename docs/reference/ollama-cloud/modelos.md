@@ -1,6 +1,8 @@
-# Ollama Cloud — qual dos seis usar
+# Ollama Cloud — dos seis, quais dois
 
 > Anexo de [`README.md`](README.md). Bateria de qualidade rodada em 13/09/2026, **n=1 por célula** salvo onde indicado. Velocidade e cota estão em [`desempenho.md`](desempenho.md); esta página responde outra pergunta — **qual modelo escolher**, que velocidade sozinha não responde.
+>
+> ✅ **A resposta está em § 5: dois — `gemma4:31b` e `gpt-oss:120b`.** As seções 1–4 são a evidência que levou até lá, e continuam sendo o método a repetir quando o catálogo mudar.
 
 ⚠️ **A régua desta página não é "qual é o melhor modelo", é "qual serve a este app".** O crivo responde sobre **o arquivo que o usuário anexou** e sobre **a documentação que ele consultou**. Um modelo que preenche lacunas com o plausível é pior aqui do que um modelo lento, e foi isso que a bateria procurou separar.
 
@@ -88,13 +90,26 @@ Deu a melhor resposta em português dos seis: duas frases exatas, precisas, nome
 
 ---
 
-## 5. Recomendação
+## 5. Veredito — dois modelos, quatro rejeições
 
-Se a trilha **N-3** acontecer:
+> ✅ **Decidido no refinamento de 13/09/2026** (`DNC-1`–`DNC-4`, [`decisoes.md`](decisoes.md)). Esta seção **revoga** a recomendação anterior, que punha os três `nemotron` como alternativas.
 
-1. **`gemma4:31b` como padrão** — mais rápido, mais conciso, português impecável, ferramenta consistente, e o único com visão.
-2. **`gpt-oss:120b` como segundo**, para tarefas que peçam mais capacidade bruta — sabendo da inconsistência com ferramenta.
-3. **Os três `nemotron` como alternativas**, nunca como padrão de nada. São, porém, três dos **quatro** modelos que acionam ferramenta de forma confiável — se o contorno para `format` virar caminho, eles deixam de ser dispensáveis.
-4. **`gpt-oss:20b` fora**, enquanto o 400 com `tools` persistir.
+**Entram dois:**
 
-⚠️ **Reconfira antes de tratar qualquer linha desta página como fixa.** É n=1 por célula, num dia, contra um serviço que muda. O que vale reter não são os vereditos — é **o método**: as quatro tarefas, e o fato de que fidelidade a material anexado separa modelos que SQL e velocidade não separam.
+1. **`gemma4:31b` — o padrão.** Vence ou empata nas quatro tarefas, e vence **por concisão**: 19 tokens onde o `gpt-oss:120b` gasta 334 para a mesma resposta certa. Português sem um deslize, ferramenta consistente, menor `prompt_eval` dos seis, 256 k de contexto, **o único com `vision`**. Numa cota medida em tempo de GPU, concisão é preço (`DNC-2`).
+2. **`gpt-oss:120b` — o segundo, e a ressalva mudou de natureza.** Entra pela capacidade bruta: 116 B, 315 tok/s, ~8× o melhor local. A verbosidade **deixou de ser tara permanente** — `think: 'low'` é um botão de custo documentado que esta bateria não usou, porque o app manda booleano e `gpt-oss` só aceita nível ([`api.md`](api.md) § 4.2). A ressalva que **fica** é o acionamento inconsistente de ferramenta, e ela não morde enquanto o app não tiver caminho baseado em ferramenta (`DNC-3`).
+
+**Saem quatro, e não é por empate** — são quatro rejeições distintas, o que importa para quem quiser reabrir uma delas (`DNC-4`):
+
+| Modelo | Por que sai | O que faria voltar |
+|---|---|---|
+| `gpt-oss:20b` | HTTP 400 em toda requisição com `tools`; dominado pelo `120b` mesmo sem ferramenta | o 400 ser corrigido **e** algum papel que o `120b` não cubra |
+| `nemotron-3-nano:30b` | **inventou sintaxe** com o cartão do Context7 em contexto (1 erro em 2), onde o `qwen3.5:2b` local acertou | repetir a tarefa de fidelidade com **n maior** e não reproduzir o erro |
+| `nemotron-3-super` | **não vence nada** — dominado pelo `gemma4:31b` em velocidade, concisão e visão | uma tarefa em que ele ganhe, ainda não encontrada |
+| `nemotron-3-ultra` | 74–82 s por resposta, 131–153 s de TTFT que não é *cold start*; o app não tem estado de tela para "aceito, nada chegando" | esse estado de tela existir **e** a latência cair |
+
+⚠️ **A régua que decide não é "qual é o melhor modelo".** É a da skill [`architecture`](../../../.claude/skills/architecture/SKILL.md): **opção que não vence nenhuma tarefa é ponto de extensão especulativo**, e isso vale para linha de menu tanto quanto para código. Um seletor com seis entradas empurra ao usuário uma escolha que a medição já sabe responder.
+
+⚠️ **E os `nemotron` tinham um argumento a favor que caiu junto.** Eram três dos quatro modelos que acionam ferramenta de forma confiável — o que os salvaria *se* o contorno de `format` por ferramenta virasse caminho. `DNC-19` fechou esse caminho por ora (gate, não contorno), então a premissa não se cumpre. **Se o gatilho de saída estruturada for disparado um dia, esta linha é a primeira a reler.**
+
+⚠️ **Reconfira antes de tratar qualquer número desta página como fixo.** É n=1 por célula, num dia, contra um serviço que muda. O que vale reter não são os vereditos — é **o método**: as quatro tarefas, e o fato de que fidelidade a material anexado separa modelos que SQL e velocidade não separam.

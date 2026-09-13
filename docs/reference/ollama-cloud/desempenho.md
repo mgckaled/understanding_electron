@@ -48,32 +48,39 @@ Três achados:
 
 ---
 
-## 3. Custo de cota — contar requisições engana
+## 3. Custo de cota — o painel não permite atribuir por lote
 
-Dois pontos medidos no painel da conta, no mesmo dia:
+Três pontos lidos no painel da conta, todos em 13/09/2026:
 
-| Momento | Requisições | Cota usada |
-|---|---:|---:|
-| Após a 1ª rodada (respostas curtas) | 23 | **0,2 %** |
-| Após a 2ª rodada (inclui os pesados) | 42 | **1,7 %** |
+| Momento | Requisições | Cota usada | Delta do lote |
+|---|---:|---:|---|
+| Após a 1ª rodada (respostas curtas) | 23 | **0,2 %** | — |
+| Após a 2ª rodada (inclui os pesados) | 42 | **1,7 %** | +19 req · **+1,5 pp** |
+| **Final (bateria de qualidade + diagnóstico do 400)** | **76** | **1,9 %** | +34 req · **+0,2 pp** |
 
-**19 requisições a mais custaram 1,5 pontos percentuais — 7,5× o que as 23 primeiras custaram juntas.** A unidade é **tempo de GPU**, e a segunda rodada concentrou tudo que é caro: duas chamadas a `nemotron-3-ultra` (~290 s somados), duas com prompt de 32 k tokens, e seis chamadas às ferramentas web.
+⚠️ **A terceira leitura desmonta a conclusão que as duas primeiras sugeriam.** Com dois pontos, a leitura óbvia era que requisições pesadas custam ~7,5× as leves. O terceiro lote tinha **34 requisições e quatro chamadas a `nemotron-3-ultra`** — o modelo mais caro dos seis, que no lote anterior aparecia como a explicação do salto — e custou **0,2 pp**, praticamente a taxa do lote mais leve de todos.
 
-Distribuição final por linha do painel:
+Os dois lotes com mais `ultra` estão nos **extremos opostos** da tabela. Nenhuma hipótese de "segundos de GPU" reconcilia isso sozinha.
+
+✅ **A conclusão não é que a cota é barata — é que este painel não é instrumento de medida.** O número é arredondado a uma casa decimal, não é carimbado por requisição e pode não atualizar em tempo real. **Todo modelo de custo construído sobre deltas daqui está construído sobre ruído** (`DNC-16`).
+
+**O único número defensável é o total:** 76 requisições de sondagem deliberadamente pesada — seis chamadas ao `ultra`, dois prompts de 32 k tokens, seis às ferramentas web — consumiram **1,9 %**. Ordem de grandeza: **~4.000 requisições/mês** nesse perfil. Conversa cotidiana com `gemma4:31b` fica folgadamente abaixo.
+
+> 🔍 **Hipótese que reconciliaria o ruído, não verificada.** Fontes de terceiros descrevem a faixa gratuita com **níveis 1 a 4 por peso de modelo** e janelas de 5 h / 7 dias. Um multiplicador por nível explicaria saltos não lineares melhor que tempo de GPU sozinho — mas **conflita com o painel medido**, que diz `1,9% used` e `Resets in 3 weeks`. Prevalece o medido.
+
+Distribuição final por linha do painel (76 no total):
 
 | Linha | Requisições |
 |---|---:|
-| `gpt-oss:20b` | 15 |
-| `gemma4:31b` | 10 |
-| `gpt-oss:120b` | 4 |
+| `gpt-oss:20b` | 20 |
+| `gemma4:31b` | 16 |
+| `gpt-oss:120b` | 11 |
+| `nemotron-3-nano:30b` | 10 |
+| `nemotron-3-super` | 7 |
+| `nemotron-3-ultra` | 6 |
 | **web search** | 4 |
-| `nemotron-3-nano:30b` | 3 |
-| `nemotron-3-super` | 2 |
-| `nemotron-3-ultra` | 2 |
 | **web fetch** | 2 |
 
 ⚠️ **As ferramentas web aparecem como linhas próprias e consomem a mesma cota** — confirmando o texto do painel de que *capabilities such as web search draw from your included usage*. Não há orçamento separado para elas.
 
-⚠️ **Não extrapole por número de requisições.** A média deste conjunto misto dá ~0,04 %/requisição (≈ 2.500 requisições/mês), mas a primeira rodada dava ~0,009 % (≈ 11.000/mês) — uma diferença de 4× conforme o perfil. O que a cota realmente conta é segundo de GPU: um modelo lento, uma resposta longa ou um raciocínio extenso custam múltiplos de uma pergunta curta a um modelo rápido.
-
-**A leitura útil para dimensionar uso real:** a faixa gratuita é generosa para conversa cotidiana com os modelos rápidos (`gpt-oss:120b`, `nemotron-3-nano:30b`), e se esvazia depressa com `nemotron-3-ultra` — cujo custo por resposta é da ordem de 100× o de uma pergunta curta, pela latência sozinha.
+⚠️ **E não há header de cota**, então o app não tem como ler saldo em runtime. Somado à inatribuição acima, é o que fecha `DNC-15`: **o crivo não exibirá indicador de cota para este provedor.** Não é lacuna a preencher depois — é a forma final, e a diferença contra o Context7, onde `docs:quota` lê o header da última resposta (`D23I.10`).
