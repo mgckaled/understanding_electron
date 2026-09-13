@@ -1,13 +1,16 @@
 # Decisões — crivo
 
-Índice tabular das decisões registradas **dentro do texto de cada plano**. Não é uma fonte nova: a coluna *descrição* é o título de um heading que já existia — copiado verbatim, nunca reescrito — e o link vai até o plano, onde mora a narrativa completa (alternativa descartada, medição, porquê). O dono de história e narrativa continua sendo [`HISTORY.md`](HISTORY.md); este arquivo só resolve uma busca que hoje custava abrir um documento acima do teto de leitura de uma chamada só para achar um parágrafo.
+Índice tabular das decisões registradas **dentro do texto de cada plano**. Não é uma fonte nova: a coluna *descrição* nomeia a decisão e o link vai até o plano, onde mora a narrativa completa (alternativa descartada, medição, porquê).
+
+⚠️ **A descrição NÃO é cópia verbatim, e dizer o contrário já envelheceu aqui.** O preâmbulo original prometia *"copiado verbatim, nunca reescrito"*, e as linhas do arco 23 são paráfrase declarada: o título dentro do plano costuma ser curto demais para se sustentar sozinho num índice (`D23F.1 — corte 100% renderer` não diz de que corte), então a linha acrescenta o bastante para responder sem abrir o plano. **O que não pode mudar é o sentido**; o que pode é a forma. Corrigido no 23-K (D23K.6). O dono de história e narrativa continua sendo [`HISTORY.md`](HISTORY.md); este arquivo só resolve uma busca que hoje custava abrir um documento acima do teto de leitura de uma chamada só para achar um parágrafo.
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os headings dos planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**303 linhas** em 27/08/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
+Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**575 linhas** em 13/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
-- **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, sem heading atômico (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
+- **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, **sem sigla própria** (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
+- ⚠️ **O que decide uma linha é a decisão ter sigla própria, não o formato em que ela foi escrita.** Três formatos convivem nos planos — `### D<id> — título`, `**D<id> — título.**` e `- **D<id> — título.**` — e os três rendem uma linha **por decisão**. O critério antigo ("heading atômico") descreveria 23-C, 23-D, 23-E, 23-F, 23-H, 23-I e 23-J como uma linha cada, o que nunca foi a prática: eles escrevem em negrito e têm uma linha por sigla. Ajustado no 23-K (D23K.6), junto da régua correspondente em [`README.md`](README.md).
 - **Alguns desses 10 planos citam ids próprios** (`R4.1`–`R4.6`, `R5.1`–`R5.8`, `DS5.1`–`DS5.7`) — mas como início de frase em **negrito**, dentro do parágrafo, nunca como heading. Este índice resolve esses ids só na granularidade do plano inteiro; não abre uma linha por `R4.x`/`DS5.x`.
 - O link de cada linha aponta para o **arquivo** do plano, sem âncora de heading. Um link por fragmento (`#d18a3`) pareceria mais preciso, mas o GitHub fatia o **heading inteiro** num slug — não só o id — e quebraria em silêncio a cada edição de título. A sigla já está na linha; `Ctrl+F` no arquivo aberto resolve o resto sem depender de um slug frágil.
 
@@ -585,6 +588,62 @@ chamada de modelo no main (`D9.1`).
 | 23-E | [D23E.9](plan/implemented/23-E-a-desambiguacao.md) | Sem versão indexada o seletor fica ausente, não desabilitado — é o caso comum, não a borda |
 | 23-E | [D23E.10](plan/implemented/23-E-a-desambiguacao.md) | O `Consultar` da tela 2 nasce ligado, com render provisório — molde de D23D.6 |
 | 23-E | [D23E.11](plan/implemented/23-E-a-desambiguacao.md) | O cabeçalho não muda: `/lib · versão` pressupõe consulta resolvida (23-F) |
+| 23-F | [D23F.1](plan/implemented/23-F-o-resultado.md) | Corte 100% renderer — `docs:fetch` já devolvia o `DocsResult` inteiro desde o 23-B |
+| 23-F | [D23F.2](plan/implemented/23-F-o-resultado.md) | A terceira tela é derivada do resultado da consulta, como a segunda era do da busca |
+| 23-F | [D23F.3](plan/implemented/23-F-o-resultado.md) | `Voltar` da tela 3 vai à tela 2, nunca ao formulário — o caminho de volta é a lista |
+| 23-F | [D23F.4](plan/implemented/23-F-o-resultado.md) | O cabeçalho nomeia a biblioteca e a versão só quando há resposta sob o nome |
+| 23-F | [D23F.5](plan/implemented/23-F-o-resultado.md) | Sem `Consultar de novo` neste corte: o memo devolveria a mesma resposta, e o botão seria no-op |
+| 23-F | [D23F.6](plan/implemented/23-F-o-resultado.md) | O rodapé diz o total exato e não tem `Anexar` — a seleção é do 23-G |
+| 23-F | [D23F.7](plan/implemented/23-F-o-resultado.md) | A aba Regras aparece quando há **regra**, não quando o campo existe — `rules` pode vir com três listas vazias |
+| 23-F | [D23F.8](plan/implemented/23-F-o-resultado.md) | A aba Regras distingue a procedência das três listas: só `libraryOwn` vem do repositório |
+| 23-F | [D23F.9](plan/implemented/23-F-o-resultado.md) | Cada trecho é um retrátil, com o primeiro já aberto |
+| 23-F | [D23F.10](plan/implemented/23-F-o-resultado.md) | `↗` ausente, não desabilitado, quando o `codeId` não parseia como URL |
+| 23-F | [D23F.11](plan/implemented/23-F-o-resultado.md) | Blocos idênticos dentro do mesmo trecho aparecem uma vez — `codeList[]` são variantes, não partes |
+| 23-F | [D23F.12](plan/implemented/23-F-o-resultado.md) | O destaque de sintaxe reusa o `tokenize` de `features/draft`; promover a primitivo espera o terceiro chamador |
+| 23-F | [D23F.13](plan/implemented/23-F-o-resultado.md) | Densidade: metadado em chrome, código e prosa em leitura — e a descrição, que a tabela não previa, é markdown |
+| 23-G | [D23G.1](plan/implemented/23-G-selecao-e-orcamento.md) | O `Composer` continua dono único do `budgetFor` e devolve o `Budget` pronto ao painel — dois seriam livres para divergir |
+| 23-G | [D23G.2](plan/implemented/23-G-selecao-e-orcamento.md) | Token de Context7 entra pelo `flatTokens`, nunca por caractere: converter jogaria fora a única medida exata do app |
+| 23-G | [D23G.3](plan/implemented/23-G-selecao-e-orcamento.md) | A seleção guarda o conjunto do que está **de fora**, não do que está dentro — vazio significa "tudo vai" |
+| 23-G | [D23G.4](plan/implemented/23-G-selecao-e-orcamento.md) | Notas têm caixa de marcação, como os trechos |
+| 23-G | [D23G.5](plan/implemented/23-G-selecao-e-orcamento.md) | Sem "marcar todos": o caso medido é de 5 trechos, e o estado misto do APG exige `indeterminate` por `ref` |
+| 23-G | [D23G.6](plan/implemented/23-G-selecao-e-orcamento.md) | `Anexar` desabilita por dois motivos, e o rodapé ao lado nomeia qual deles |
+| 23-G | [D23G.7](plan/implemented/23-G-selecao-e-orcamento.md) | `Anexar` congela **um** pendente por vez, carimbado pela conversa |
+| 23-G | [D23G.8](plan/implemented/23-G-selecao-e-orcamento.md) | O envio limpa tudo e o painel volta ao Estado 1 — a via de volta a uma consulta enviada é o histórico |
+| 23-G | [D23G.9](plan/implemented/23-G-selecao-e-orcamento.md) | Divergência deliberada: nenhum sinal fora do painel neste corte, e o buraco é nomeado em vez de disfarçado |
+| 23-G | [D23G.10](plan/implemented/23-G-selecao-e-orcamento.md) | O montador da parte é função pura em `core/`, com o `id` cunhado no renderer |
+| 23-H | [D23H.1](plan/implemented/23-H-a-conversa.md) | O desligar mora nos **dois** lugares (linha e histórico), com um dono só: nenhum dos dois guarda estado |
+| 23-H | [D23H.2](plan/implemented/23-H-a-conversa.md) | `DocsLine` mora em `features/docs/`, não em `conversation/` — o assunto é a consulta |
+| 23-H | [D23H.3](plan/implemented/23-H-a-conversa.md) | Três irmãos num contêiner flex, nunca botão dentro de botão: o React não avisa e o HTML é inválido |
+| 23-H | [D23H.4](plan/implemented/23-H-a-conversa.md) | O contador usa `aria-pressed` como os dois irmãos, **contra** o que a APG recomenda — três consistentes valem mais que um certo sozinho |
+| 23-H | [D23H.5](plan/implemented/23-H-a-conversa.md) | A releitura é componente próprio, não um modo do `DocsResult`, que carrega seleção, congelamento e veredito |
+| 23-H | [D23H.6](plan/implemented/23-H-a-conversa.md) | O omitido aparece como título e custo, nunca como código — a parte nunca guardou o código do recusado |
+| 23-H | [D23H.7](plan/implemented/23-H-a-conversa.md) | Invalidação simples, sem escrita otimista: o `onMutate` fica registrado como conserto se o piscar aparecer |
+| 23-H | [D23H.8](plan/implemented/23-H-a-conversa.md) | Os dois totais na tela medem coisas diferentes de propósito — tokens exatos contra chars estimados, unidos pelo mesmo conjunto |
+| 23-H | [D23H.9](plan/implemented/23-H-a-conversa.md) | Acrescentada em execução: na releitura, o omitido ganha aba própria, presente só quando existe |
+| 23-I | [D23I.1](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | O mapeamento de falha é função pura no renderer e **não** entra em `messages.ts`, dono da tradução de `AppError['kind']` |
+| 23-I | [D23I.2](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | O `StateView` não ganha *slot* de erro: o painel trata o ramo antes de chamá-lo, pela régua do envelope |
+| 23-I | [D23I.3](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | 401/403 ganham texto próprio no renderer; só o 429 passa intacto, porque o cliente já compõe a data real |
+| 23-I | [D23I.4](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | As situações 5 e 7 não abrem Configurações: **nomeiam** — `Settings` é autocontido em duas instâncias do `App.tsx` |
+| 23-I | [D23I.5](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | O portão da chave fica no `Consultar`, e o item `Documentação` do menu `+` continua nunca travando |
+| 23-I | [D23I.6](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | A cota e o estado da chave só existem na tela 1 — administração não segue a pessoa pelo processo |
+| 23-I | [D23I.7](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | Sem número é `sem consulta nesta sessão`, nunca zero: não existe endpoint de cota, só o header da última resposta |
+| 23-I | [D23I.8](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | O número exibido é sempre o do header, nunca a constante documentada |
+| 23-I | [D23I.9](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | A cota viaja por um *seam* injetado (`onQuota`), chamado **antes** de qualquer checagem de status — o 429 lança |
+| 23-I | [D23I.10](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | `docs:quota` não devolve `Result`, pela régua de `dataset:queueDepth` |
+| 23-I | [D23I.11](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | `Ver de novo` e `Consultar de novo` são dois botões, e a diferença é uma palavra no payload |
+| 23-I | [D23I.12](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | O `202` **não se caça**: custa cota sem garantia de achar, e o que o app precisava dela era o texto |
+| 23-I | [D23I.13](plan/implemented/23-I-os-erros-a-chave-e-a-cota.md) | A soma dos dois regimes de cota, se existir um dia, nunca é automática — recuo anunciado ou nada |
+| 23-J | [D23J.1](plan/implemented/23-J-as-minucias.md) | O `+` do cabeçalho do painel **não existe**, e o veredito é o entregável — zero linha de código |
+| 23-J | [D23J.2](plan/implemented/23-J-as-minucias.md) | `MarkdownMessage` ganha `inline`, com a exceção à régua do envelope escrita: `.inline` não declara `font-size` |
+| 23-J | [D23J.3](plan/implemented/23-J-as-minucias.md) | A amplitude se chama `broad` no app e `fast` só no fio — o vocabulário do vendor é invertido |
+| 23-J | [D23J.4](plan/implemented/23-J-as-minucias.md) | A chave do memo passa a incluir a amplitude: sem ela, o caminho amplo devolve a resposta estreita já paga |
+| 23-J | [D23J.5](plan/implemented/23-J-as-minucias.md) | `broad` mora na composição e volta a `false` quando ela zera — "desligada por padrão" é por consulta, não por sessão |
+| 23-J | [D23J.6](plan/implemented/23-J-as-minucias.md) | A caixa fica em linha própria sob o campo Pergunta, e não no `DocsAdmin`: altera a requisição, não descreve a conta |
+| 23-J | [D23J.7](plan/implemented/23-J-as-minucias.md) | `<input type="checkbox">`, nunca `Switch`: só age quando `Consultar` é apertado |
+| 23-J | [D23J.8](plan/implemented/23-J-as-minucias.md) | `marcar todos`/`desmarcar todos` reabrem D23G.5 só onde a premissa dela caiu — 5 trechos viraram 25 |
+| 23-J | [D23J.9](plan/implemented/23-J-as-minucias.md) | A parte persistida não registra a amplitude: a contagem de trechos já é o registro |
+| 23-J | [D23J.10](plan/implemented/23-J-as-minucias.md) | Os três `aria-expanded` ficam adiados, e o adiamento se escreve no registro que os prometeu |
+| 23-J | [D23J.11](plan/implemented/23-J-as-minucias.md) | A linha na transcrição conta os descartados em vez de listá-los — 18 riscados enterravam os 7 enviados |
 
 ---
 

@@ -1,12 +1,13 @@
 # Context7 — guia de implementação (arco 23)
 
-> **As 32 decisões estão fechadas** (06–07/09/2026). Este é o material de entrada do arco 23: o que foi medido, o que foi decidido e com que base, e o desenho do painel. A **narrativa** congelou aqui: o dono do que se decide durante a execução é o plano de cada corte. O guia, porém, **continua vivo como referência e como errata** — ele é o que se lê ao começar o corte seguinte, então cada fechamento de corte devolve para cá o que a execução contrariou (§ *[O que a execução já contrariou](#o-que-a-execução-já-contrariou)*). Fora isso, consulta por `Grep`.
+> ⛔ **Documento consumido — leitura histórica, não fonte de regra.** O arco 23 fechou em 13/09/2026, com onze cortes entregues. **O dono do assunto passou a ser a skill [`ctx-7`](../../../.claude/skills/ctx-7/SKILL.md)**, que carrega o que ainda amarra código: a decisão REST-e-não-MCP com o par de números, as três camadas, estado de tela vs `AppError`, a chave do memo, a cota e a fronteira de privacidade. **Não `Read` inteiro** — `Grep` se precisar do que sobra aqui, que é o *como chegamos lá*:
 >
-> Siglas `DM-n` são provisórias. A definitiva (`D23.n`) nasce com o plano.
+> - as **32 decisões `DM-n`**, fechadas em 06–07/09/2026 **antes de existir código**, cada uma com a base declarada ([`decisoes.md`](decisoes.md)) e a errata do que a execução fez com elas;
+> - as **sondas com data** contra a API real, e os números daquele momento ([`api.md`](api.md));
+> - o **desenho do painel antes da tela existir** ([`painel.md`](painel.md)), com o aviso de cada divergência que a execução produziu;
+> - a tabela dos onze cortes, as forquilhas que foram levantadas e como cada uma fechou.
 >
-> ⚠️ **Ao começar um corte novo, leia § *[O que falta DECIDIR nos dois cortes restantes](#o-que-falta-decidir-nos-dois-cortes-restantes-levantado-em-12092026)*** — doze forquilhas foram levantadas no fechamento do 23-H: quatro fecharam com o 23-I e **quatro com o 23-J**, uma foi **dissolvida** ao tirar o livro-razão do arco, duas viajaram com ele para o `O-9`, e **duas seguem abertas**, ambas do fechamento (o peso da linha no `ESCOPO.md` e o destino deste guia). ⚠️ **As letras dos dois cortes finais mudaram em 12/09/2026** — ver o aviso no fim de § *Os cortes* antes de acreditar numa citação antiga a `23-J` ou `23-K`.
->
-> **Três anexos**, porque cada um é lido num momento diferente do arco: [`api.md`](api.md) (sondagens, formatos, medições — o 23-A vive nele), [`decisoes.md`](decisoes.md) (as 32, com a base de cada uma) e [`painel.md`](painel.md) (o desenho da interface — do 23-D em diante).
+> ⚠️ **O que estiver aqui e na skill ao mesmo tempo, a skill vence** — este documento congelou; ela acompanha o código. O que motivou o arco e o que ele entregou está no [`HISTORY.md`](../../HISTORY.md); o índice por sigla, no [`DECISOES.md`](../../DECISOES.md).
 
 ---
 

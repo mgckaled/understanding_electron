@@ -32,7 +32,7 @@ A diferença é a forma de usar: em vez de menus e botões, você **conversa** c
 - **Você pergunta, ele responde ou trata o dado.** *"Qual a média de idade por cidade?"* devolve um resultado. *"Tira os registros repetidos por CPF"* devolve o arquivo já limpo.
 - **A limpeza vira uma receita.** A sequência de passos que arrumou um arquivo pode ser salva e **reaplicada a outro parecido** — é o que transforma faxina manual em processo repetível, e o maior ganho do app.
 
-A mesma conversa também lê documento e imagem como contexto, busca a web, consulta documentação de biblioteca e mostra o raciocínio do modelo — cada capacidade um pilar próprio, não um acessório. O critério que decide o que entra como pilar está em [`ESCOPO § O teste que separa pilar de produto novo`](docs/ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo).
+A mesma conversa também lê documento e imagem como contexto, consulta a documentação de uma biblioteca e mostra o raciocínio do modelo — cada capacidade um pilar próprio, não um acessório; busca web é o pilar que ainda falta. O critério que decide o que entra como pilar está em [`ESCOPO § O teste que separa pilar de produto novo`](docs/ESCOPO.md#o-teste-que-separa-pilar-de-produto-novo).
 
 O projeto tem **dois objetivos de peso igual**: entregar a ferramenta acima, e servir de **estudo aprofundado** do ecossistema Electron, com as decisões e os erros registrados em vez de apagados. É o que explica a densidade de [`docs/`](docs/README.md).
 
@@ -71,6 +71,7 @@ O projeto tem **dois objetivos de peso igual**: entregar a ferramenta acima, e s
 | ✅ | **Raciocínio visível** — o modelo mostra como pensou, separado da resposta, nos três provedores |
 | ✅ | **Exportar a resposta** como `.md`, `.txt`, `.pdf` ou `.docx` — e um bloco de código sai verbatim, com a extensão da linguagem |
 | ✅ | **Observatório** — oito painéis em que o app se descreve: memória, processos, canais, motores, disco, desempenho por modelo e o livro-razão do que saiu da máquina |
+| ✅ | **Consultar documentação de biblioteca** — o app pergunta ao [Context7](https://context7.com), você escolhe trecho a trecho o que vai ao modelo, e vê o custo exato em tokens antes de enviar |
 | ✅ | Cinco níveis de teste, do unitário ao aplicativo já empacotado |
 
 **O que ainda falta:**
@@ -78,7 +79,7 @@ O projeto tem **dois objetivos de peso igual**: entregar a ferramenta acima, e s
 | | |
 |---|---|
 | ⬜ | Tabela grande exibida com fluidez, e gráficos como resultado |
-| ⬜ | Busca web e documentação (MCP) no chat |
+| ⬜ | Busca web no chat |
 | ⬜ | Receitas salvas e reaplicáveis |
 | ⬜ | Projeto — agrupar conversas sob um contexto comum |
 | ⬜ | Parquet no seletor de arquivo |
@@ -195,9 +196,9 @@ Cada assunto tem **um** dono; os demais apontam para ele, nunca duplicam.
 | [`docs/DECISOES.md`](docs/DECISOES.md) | Índice tabular de cada decisão, por sigla |
 | [`docs/study/`](docs/study/README.md) | Caderno didático, do zero ao estado atual |
 | [`CLAUDE.md`](CLAUDE.md) | Stack fixada, regras do projeto e ambiente de desenvolvimento |
-| [`.claude/skills/`](.claude/skills/) | Dono técnico por assunto — camadas, contrato IPC, design system, testes, comentários, camada de dados e camada de IA |
+| [`.claude/skills/`](.claude/skills/) | Dono técnico por assunto — camadas, contrato IPC, design system, testes, comentários, camada de dados, camada de IA e consulta de documentação |
 
-⚠️ **A documentação é grande de propósito e não se lê inteira.** São ~660k tokens em 117 arquivos, dos quais `plan/implemented/` responde por quase 60%; o protocolo de consulta — buscar pelo termo, ler só a seção — está em [`CLAUDE.md § Protocolo de leitura`](CLAUDE.md#protocolo-de-leitura-da-documentação).
+⚠️ **A documentação é grande de propósito e não se lê inteira.** São ~758k tokens em 133 arquivos, dos quais `plan/implemented/` responde por quase 60%; o protocolo de consulta — buscar pelo termo, ler só a seção — está em [`CLAUDE.md § Protocolo de leitura`](CLAUDE.md#protocolo-de-leitura-da-documentação).
 
 ---
 

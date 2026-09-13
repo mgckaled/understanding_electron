@@ -1,5 +1,7 @@
 # Context7 — as 32 decisões
 
+> ⛔ **Documento consumido — leitura histórica, não fonte de regra** (arco 23 fechado em 13/09/2026): as 32 foram fechadas **antes de existir código**, e a seção de errata diz o que a execução fez com cada uma. O que sobreviveu está na skill [`ctx-7`](../../../.claude/skills/ctx-7/SKILL.md); o índice por sigla é o [`DECISOES.md`](../../DECISOES.md). **Não `Read` inteiro** — `Grep` pelo termo.
+
 > Anexo de [`README.md`](README.md). Todas fechadas em 06–07/09/2026. Cada uma declara **em que se apoia**, porque a força varia. Consulta por `Grep` na sigla `DM-<n>`.
 
 ---

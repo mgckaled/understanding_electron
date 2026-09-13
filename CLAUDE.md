@@ -1,6 +1,6 @@
 # crivo
 
-Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**, com análise de dados como o pilar mais maduro — abrir CSV, Excel ou JSON (Parquet está no escopo e **ainda não** no seletor — skill [`data`](.claude/skills/data/SKILL.md)), perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado; documento, imagem, código, busca web, documentação (MCP) e raciocínio visível entram pela mesma conversa, cada um como pilar próprio (critério em [`ESCOPO.md`](docs/ESCOPO.md)). O motor de dados é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
+Aplicação **Electron**: uma ferramenta local multiuso **operada por conversa**, com análise de dados como o pilar mais maduro — abrir CSV, Excel ou JSON (Parquet está no escopo e **ainda não** no seletor — skill [`data`](.claude/skills/data/SKILL.md)), perguntar sobre o arquivo em português, e sair com uma resposta ou com o dado tratado; documento, imagem, código, busca web, documentação (Context7) e raciocínio visível entram pela mesma conversa, cada um como pilar próprio (critério em [`ESCOPO.md`](docs/ESCOPO.md)). O motor de dados é o DuckDB; o tratamento vive num pipeline de passos que compila para SQL. O objetivo declarado do projeto é duplo: entregar essa ferramenta funcionando localmente e servir de veículo de aprendizado do ecossistema Electron com TypeScript.
 
 ---
 
@@ -48,19 +48,19 @@ Ciclo de um plano, em uma linha: nasce em `plan/active/` → cada sessão acresc
 
 Aplica o funil arquivo → linha → bloco do princípio acima; a tabela é a particularidade de `docs/` — qual exceção cada arquivo impõe.
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,71 MB / ~749k tokens** em 132 arquivos (remedido 13/09/2026), e `plan/implemented/` sozinho responde por **58%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,75 MB / ~758k tokens** em 133 arquivos (remedido 13/09/2026), e `plan/implemented/` sozinho responde por **58%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| **`plan/implemented/`** (85 arq.) | **~434k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
+| **`plan/implemented/`** (86 arq.) | **~439k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
 | `reference/` (26 arq.) | ~110k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
 | `HISTORY-archive.md` | ~60k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
 | `study/` (12 arq.) | ~38k | `Grep` no conceito; `Read` com `offset` na seção achada |
 | `ARMADILHAS.md` | ~34k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
-| `DECISOES.md` | ~21k | `Grep` na sigla (`D<n>.<n>`, `DT<n>`) — é tabela, uma linha responde |
+| `DECISOES.md` | ~23k | `Grep` na sigla (`D<n>.<n>`, `DT<n>`) — é tabela, uma linha responde |
 | `ROADMAP.md` | ~17k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
 | `ESCOPO.md` | ~13k | `Grep` no pilar ou na operação |
-| `HISTORY.md` | ~10k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
+| `HISTORY.md` | ~11k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
 | `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
 | `README.md` | ~5k | único que cabe inteiro |
 
@@ -86,6 +86,7 @@ Cada assunto tem **um** dono. Os demais apontam — nunca duplicam. Fato duplica
 | Convenção de comentário e docstring (TSDoc) | skill [`comments`](.claude/skills/comments/SKILL.md) |
 | Camada de dados (DuckDB, `utilityProcess`, Arrow, motor restrito) | skill [`data`](.claude/skills/data/SKILL.md) |
 | Camada de IA — provedor/streaming, orçamento de contexto e RAM, raciocínio, proposta NL→passo | skill [`ai`](.claude/skills/ai/SKILL.md) (R-6, set/2026) |
+| Consulta de documentação (Context7) — REST e nunca MCP, cliente/handlers/painel, memo de sessão, cota e chave, a pergunta que sai da máquina | skill [`ctx-7`](.claude/skills/ctx-7/SKILL.md) (arco 23, set/2026) |
 | RAG e ML clássico — fatias 5/6 do plano 09, ainda não iniciadas | [`docs/plan/active/09-camada-de-ia.md`](docs/plan/active/09-camada-de-ia.md) |
 | Frota Ollama instalada, peso/cache KV por faixa de contexto, ficha técnica dos modelos de nuvem opt-in, elegíveis, inviáveis, descartados | [`docs/reference/models/`](docs/reference/models/README.md) — **inclusive a frota instalada**, desde ago/2026 |
 | Decisões, alternativas descartadas, marcos entregues | [`docs/HISTORY.md`](docs/HISTORY.md) (10 mais recentes) + [`HISTORY-archive.md`](docs/HISTORY-archive.md) |

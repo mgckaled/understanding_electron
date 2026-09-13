@@ -221,20 +221,36 @@ Quando o modelo expõe o próprio raciocínio, ele aparece **separado da respost
 
 ## Ferramentas do chat
 
-Duas capacidades trazem para dentro da conversa algo que estava fora dela — busca web e documentação —, propostas em [`reference/web-fetch-mcp-thinking/README.md`](reference/web-fetch-mcp-thinking/README.md). Cada uma é pilar próprio pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo): vive inteira dentro da conversa, sem estado que sobreviva a ela. Raciocínio visível **não** é ferramenta — é capacidade do modelo, e tem [seção própria](#raciocínio-é-do-produto-não-do-provedor).
+Duas capacidades trazem para dentro da conversa algo que estava fora dela — busca web e documentação. **Documentação está entregue** (arco 23, set/2026) e o dono técnico é a skill [`ctx-7`](../.claude/skills/ctx-7/SKILL.md); busca web ainda não nasceu, e o material de entrada dela é [`reference/web-fetch-mcp-thinking/README.md`](reference/web-fetch-mcp-thinking/README.md). Cada uma é pilar próprio pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo): vive inteira dentro da conversa, sem estado que sobreviva a ela. Raciocínio visível **não** é ferramenta — é capacidade do modelo, e tem [seção própria](#raciocínio-é-do-produto-não-do-provedor).
 
 | | Faz | Não faz |
 |---|---|---|
 | **Busca web** | uma URL vira contexto da resposta: o app busca e extrai o texto principal | Não indexa, não vira dataset — não passa pelo DuckDB — e não vira arquivo de saída, mesma regra do documento anexado |
-| **Documentação (MCP)** | um servidor remoto nomeado — **Context7** — para consulta de biblioteca/framework | Não é suporte a MCP em geral; ligar outro servidor é decisão nova, não implícita nesta |
+| **Documentação (Context7)** | um serviço remoto nomeado — **Context7** — para consulta de biblioteca/framework, pela **API REST pública** | Não é suporte a MCP: **não há MCP nenhum no app**. Ligar um servidor MCP é decisão nova, não implícita nesta |
 
 Ao avaliar um servidor MCP futuro, a diretriz — recomendação, não regra — é que ele tende a fazer sentido quando traz para dentro da conversa algo que está fora dela e que o aplicativo não produz localmente. O que o aplicativo já é, como o motor de dados e a leitura de arquivo escolhida pelo usuário, raramente ganha em ser terceirizado.
 
 **Como a ferramenta é acionada é decisão do plano que a construir, não premissa deste documento.** São três caminhos possíveis, com fronteiras de privacidade diferentes: o modelo pedir, por *tool calling* (exige `tools`); o usuário fornecer o endereço (não exige capacidade nenhuma); ou o provedor de nuvem resolver por conta própria. Nenhum é o caminho canônico — e o precedente que desautoriza presumir um deles é o raciocínio visível, que está entregue e **não** chegou por *tool calling* em provedor nenhum.
 
+⚠️ **Para documentação isso já está decidido, e virou o segundo precedente:** quem aciona é o **usuário**, por ato explícito, e nenhum provedor precisa declarar `tools` — a consulta é operação do aplicativo, não capacidade do modelo. Foi decidido por medição, não por gosto: definir as duas ferramentas MCP custa **2.060 tokens reenviados em toda requisição**, contra 352–1.244 de uma resposta inteira pela REST. Busca web herda o precedente, **não** a obrigação: ela decide o próprio caminho quando tiver plano.
+
 **Quem executa a busca web — o próprio app ou um servidor MCP de busca — é decisão em aberto**, e não altera a fronteira do pilar.
 
 ⚠️ **A capacidade exigida limita quais modelos servem à conversa.** *Tool calling* pede `tools`; anexo de imagem pede `vision`. Quando o modelo escolhido não junta as duas, usar a ferramenta e anexar imagem são caminhos exclusivos naquela conversa — trocar de modelo resolve, ao custo do descarregamento. Quais modelos juntam o quê: [`reference/models/`](reference/models/README.md).
+
+### Consultar documentação manda a pergunta para fora da máquina
+
+Até aqui, **o que sai desta máquina era governado pela escolha de provedor**: conversa com modelo local, nada sai. A consulta de documentação quebra isso — e o fato é do produto, não do plano que o construiu.
+
+A pergunta viaja **como escrita**, para um serviço de terceiro, **inclusive quando a conversa é 100% local**. Ela vai inteira de propósito: é a pergunta que ordena o resultado do lado deles, e extrair termos degradaria justamente o que o serviço faz bem. O caso que define o risco é concreto — *"como faço paginação no TanStack Query para a tabela de faturamento do cliente Acme"* sai da máquina com o nome do cliente dentro.
+
+Três consequências, e nenhuma é opcional:
+
+- **O aviso é permanente sob o campo, nunca consentimento de primeira vez.** Aviso que se aceita uma vez não está na tela no turno em que o vazamento acontece.
+- **A consulta é sempre ato explícito do usuário** — não há busca ao digitar, e nenhum modelo decide consultar sozinho. Cada consulta é um botão apertado.
+- **O que saiu fica registrado.** Hoje essa é a única das três **em dívida**: o Observatório não vê a consulta, e o painel de privacidade responde *"o que saiu desta máquina"* mostrando só nuvem-IA. A dívida tem dono e nome — o painel `O-9` ([`ROADMAP § 2`](ROADMAP.md)) — e é aceitável **só** porque a divulgação já existe em dois lugares. Falta o registro, não o aviso.
+
+O mesmo vale para qualquer ferramenta futura que alcance a rede: **a fronteira do app deixou de ser "o provedor de IA"** e passou a ser "toda saída, cada uma declarada".
 
 ### A URL escolhida pelo modelo não é a URL clicada pelo usuário
 

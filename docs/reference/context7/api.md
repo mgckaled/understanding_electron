@@ -1,5 +1,7 @@
 # Context7 — a API, medida
 
+> ⛔ **Documento consumido — leitura histórica, não fonte de regra** (arco 23 fechado em 13/09/2026): o fio medido virou [`api.md`](../../../.claude/skills/ctx-7/api.md) da skill, com o que ainda amarra código; aqui ficam as sondas com data e os números daquele momento. **Não `Read` inteiro** — `Grep` pelo termo.
+
 > Anexo de [`README.md`](README.md). O que foi sondado contra a API real, o que veio da fonte primária e o que segue sem verificação. **É o material do corte 23-A** — quem estiver construindo o cliente lê este arquivo, não o guia inteiro.
 
 ---

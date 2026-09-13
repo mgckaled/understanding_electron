@@ -12,6 +12,15 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### 23-A — O cliente Context7: REST em `core/`, e a sonda que mudou três premissas (set/2026)
+Origem: primeiro dos dez cortes do arco 23, que trocou a integração com o Context7 de MCP para REST (DM-0) — definir as duas ferramentas MCP custa **2.060 tokens reenviados em toda requisição**, contra 352–1.244 de uma resposta inteira, e pelo MCP se trunca enquanto pela REST se seleciona. Entrega: `core/context7/` com os tipos do fio, a normalização e o cliente das duas rotas, `fetch` injetado, 35 testes contra seis fixtures gravadas verbatim da API real.
+
+Decisões: o cliente mora em `core/`, não em `main/` (D23A.1) — **descartado o SDK oficial**, que o empurraria para fora da meta de 85% e para o risco de ESM no bundle (DE1D.9); `CONTEXT7_BASE_URL` fica em `core/` como exceção nomeada a DM-20 (D23A.2), porque aquela regra descreve adaptadores de provedor e aqui não há adaptador; estado de tela volta como união e só falha de serviço lança `UpstreamError` (D23A.3) — entregar o 404 a `describeUpstreamError` apresentaria um erro de digitação como falha de sistema. A ordenação precisou de **quatro** chaves (D23A.4): o desempate por `id` não basta porque `id` se repete dentro da mesma resposta.
+
+**A sonda de 12 chamadas derrubou três premissas do próprio guia.** `fast=true` não muda só a ordem, muda o tamanho — 25 trechos e 3.497 tokens contra 3 e 383 na mesma pergunta —, então o teto de "4 ou 5 trechos" era do reranqueador deles e nunca da API; isso dá medição ao argumento de premissa que já havia revogado DM-16. `codeId` endereça a **página**, não o trecho (cinco trechos do zod compartilham um só), então serve de link e nunca de identidade. E `infoSnippets` **tem** procedência: `pageId` é URL completa, ao contrário do que o guia afirmava — a assimetria que a aba Notas ia ter de aguentar não existe.
+
+Achado que só a interface revelaria depois: o teste do 429 pegou um defeito antes de qualquer uso — formatar `Ratelimit-Reset` (epoch na virada do mês **UTC**) na data UTC mandaria o usuário esperar um dia inteiro por uma cota que às 21h do dia anterior já voltou. A mensagem passou a dar data e hora locais. Uma verificação fica aberta e mudou de dono: o `202` e o enum de `state` foram para o 23-I, porque seis buscas devolveram `finalized` em 100% dos ~28 resultados e caçar uma biblioteca em indexação custaria cota sem garantia. [`plan/implemented/23-A-cliente-context7.md`](plan/implemented/23-A-cliente-context7.md)
+
 ### Portões por momento: o turno deixa de pagar pela suíte (set/2026)
 Origem: o `Stop` rodava `pnpm check:fast` ao fim de **toda** resposta — ~150 s de CPU saturada por turno, com a máquina travando para obedecer comando. Trabalho sem plano, aberto por um relato de uso e fechado no mesmo dia.
 
