@@ -48,19 +48,19 @@ Ciclo de um plano, em uma linha: nasce em `plan/active/` → cada sessão acresc
 
 Aplica o funil arquivo → linha → bloco do princípio acima; a tabela é a particularidade de `docs/` — qual exceção cada arquivo impõe.
 
-**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,67 MB / ~735k tokens** em 131 arquivos (remedido 12/09/2026), e `plan/implemented/` sozinho responde por **58%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
+**Nenhum arquivo de `docs/` se lê na íntegra.** A pasta soma **~2,71 MB / ~749k tokens** em 132 arquivos (remedido 13/09/2026), e `plan/implemented/` sozinho responde por **58%** dela. Ler dois arquivos inteiros já é mais contexto do que a maior parte das sessões precisa, e o custo aparece como autocompactação, que apaga o trabalho da própria sessão.
 
 | Arquivo | ~tokens | Como consultar |
 |---|---|---|
-| **`plan/implemented/`** (84 arq.) | **~427k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
-| `reference/` (26 arq.) | ~102k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
-| `HISTORY-archive.md` | ~59k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
+| **`plan/implemented/`** (85 arq.) | **~434k** | `Grep` no nome do plano, na sigla `D<n>.<n>` ou no símbolo. **Nunca** `Read` — nem "só para ver o diário". A maior pasta do repositório e a de consulta mais rara |
+| `reference/` (26 arq.) | ~110k | `Grep` no assunto; três documentos ali estão marcados `⛔ consumido` |
+| `HISTORY-archive.md` | ~60k | `Grep` no nome do plano/fase ou da decisão. **Nunca** `Read` |
 | `study/` (12 arq.) | ~38k | `Grep` no conceito; `Read` com `offset` na seção achada |
-| `ARMADILHAS.md` | ~33k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
+| `ARMADILHAS.md` | ~34k | `Grep` no **sintoma** — símbolo, API, mensagem de erro. **Nunca** `Read` |
 | `DECISOES.md` | ~21k | `Grep` na sigla (`D<n>.<n>`, `DT<n>`) — é tabela, uma linha responde |
-| `ROADMAP.md` | ~16k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
+| `ROADMAP.md` | ~17k | `Grep` no item; `§ 2` e `§ 3` têm `offset` estável |
 | `ESCOPO.md` | ~13k | `Grep` no pilar ou na operação |
-| `HISTORY.md` | ~9k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
+| `HISTORY.md` | ~10k | `Grep` no assunto; ou `Read` com `offset`/`limit` na seção achada |
 | `plan/active/` (2 arq.) | ~7k | o plano **em execução** se lê inteiro; os demais, `Grep` |
 | `README.md` | ~5k | único que cabe inteiro |
 

@@ -6,6 +6,8 @@
 >
 > ⚠️ **O que o 23-H acrescentou, e onde o desenho da transcrição e do cabeçalho já divergem (12/09/2026).** Existem: a linha retrátil, o terceiro contador, o `histórico ▾` e a **quarta tela do painel** — a releitura de uma consulta anexada, que o desenho não previa e sem a qual o contador e o `⧉` não teriam destino. Divergências deliberadas: (1) o interruptor está nos **dois** lugares, não só no histórico (D23H.1); (2) o corpo aberto da linha lista os omitidos com `— não enviado`, e na releitura eles ganham **aba própria**, `Não enviados (N)`, presente só quando existem (D23H.9) — o desenho não dizia onde eles iam; (3) o **`+` do cabeçalho não existe**, e é decisão e não esquecimento: ele inicia uma composição sem voltar ao composer, e o item `Documentação` do popover de anexos já faz isso; (4) o `histórico` não tem o total por linha do mock — tem `N trechos · M notas · custo`, as **mesmas palavras** da linha da transcrição, depois de `5 · 1.637 tok` ter lido como *"cinco o quê?"* na verificação ao vivo.
 >
+> ⚠️ **O que o 23-J acrescentou, o que ele decidiu NÃO construir, e o que ele TIROU (13/09/2026).** Tirou a lista de descartados do corpo da linha na transcrição, que virou uma contagem (D23J.11) — ver § *A linha na conversa*. Existem: a caixa **`consulta ampla`** na primeira tela — em linha própria **sob o campo Pergunta**, não dentro do bloco de administração como este anexo escrevera, porque ela altera a requisição e não descreve a conta (D23J.6) —, o par **`marcar todos · desmarcar todos`** no topo da aba Trechos, e o **título do trecho renderizado como markdown** (chip de código onde antes apareciam acentos graves), nos quatro lugares que o desenham. ⚠️ **E o `+` do cabeçalho está decidido a NÃO existir** (D23J.1): o desenho abaixo ainda o mostra, e é a última coisa deste anexo que a tela não tem — o item `Documentação` do popover já inicia a composição e o `histórico` já responde *"onde estou"*.
+>
 > ⚠️ **Três coisas que o desenho do Estado 3 errou, corrigidas pela tela real.** O `7` de `Trechos (7)` continua sendo número inventado — o real foi **5**, e nenhuma sonda passou disso. A **descrição** de cada trecho não aparece no mock e é markdown de verdade, com código inline em acento grave: renderizá-la crua mostrava os acentos. E `Notas (0)` é o caso comum, não a borda, então a aba fica com estado vazio próprio em vez de sumir — ao contrário de Regras, que some, porque `rules` é opcional no schema enquanto `infoSnippets` é sempre presente e às vezes vazia.
 >
 > ⚠️ **Três coisas que o desenho do Estado 2 errou, corrigidas pela tela real.** O `◉` no primeiro candidato é conveniência de teclado, **não** um palpite acertado: em `pandas`, a ordenação pôs uma biblioteca de nicho na frente e o `pandas` de verdade em terceiro. O ramo **não** é sempre `main` (`master` apareceu em dois de cinco), então a linha o exibe sempre, ao contrário do mock. E `versions[]` vazia é o **caso comum**, não a borda: o seletor inteiro fica ausente ali.
@@ -89,7 +91,9 @@ O "retoma" é o que faz isso não incomodar: o provider segura a composição, e
 └──────────────────────────────────────────────────────────┘
 ```
 
-O `+` inicia uma consulta sem voltar ao composer — é o que transforma o painel de formulário de uma vez só em bancada de trabalho. Com duas restrições:
+⚠️ **O `+` foi decidido a NÃO existir (D23J.1, 13/09/2026), e o que segue é o desenho que ele teria tido.** O argumento que o derrubou é o mesmo que as duas restrições abaixo já anunciavam: ele é um terceiro caminho para um destino que dois já servem.
+
+O `+` iniciaria uma consulta sem voltar ao composer — o que transformaria o painel de formulário de uma vez só em bancada de trabalho. Com duas restrições:
 
 - **Não abre um segundo painel.** Um inquilino por vez é invariante de construção (DE1B.1): o `+` troca o conteúdo para o estado *compondo*, e o `histórico ▾` é o caminho de volta. Composições paralelas exigiriam um segundo eixo de navegação dentro do painel, e aí o `histórico` deixa de responder sozinho *"onde estou"*.
 - **Só existe enquanto o painel mostra uma consulta anexada.** Compondo, você já está numa nova — um `+` ali ou não faz nada, ou descarta em silêncio o que está digitado. Ausente, não desabilitado (DF3B.2).
@@ -178,7 +182,9 @@ O corpo **não é um `ViewState` só — são dois em série**, e dizer isso ago
 
 ### Estado 1 — compondo, nada consultado
 
-> ⚠️ **A primeira tela ganha três coisas, decididas em 12/09/2026 e ainda não construídas.** Ela passa a ser o **único** lugar de administração da consulta, porque *"tem espaço de sobra e é o único lugar onde faz sentido"* — nada disso acompanha a pessoa pelas telas 2 e 3. São: (1) **a cota restante** do Context7, que chega no header de toda resposta e hoje é descartada — ⚠️ na primeira consulta depois de abrir o app **não há número**, e o texto tem de dizer isso em vez de mostrar zero; (2) **uma linha breve dizendo se a chave está configurada**, que é onde a exigência de chave do 23-I se explica em vez de só bloquear; (3) **uma caixa `consulta ampla`, desligada por padrão**, que troca `fast=false` por `fast=true` e leva a resposta de ~5 trechos para até 25, pela mesma chamada de cota (DM-18 deixa de ser absoluta). As duas primeiras são do **23-I**, a terceira do **23-J** (era `23-L` até o remanejamento de letras de 12/09/2026).
+> ⚠️ **A primeira tela ganha três coisas, decididas em 12/09/2026 e ainda não construídas.** Ela passa a ser o **único** lugar de administração da consulta, porque *"tem espaço de sobra e é o único lugar onde faz sentido"* — nada disso acompanha a pessoa pelas telas 2 e 3. São: (1) **a cota restante** do Context7, que chega no header de toda resposta — ⚠️ na primeira consulta depois de abrir o app **não há número**, e o texto tem de dizer isso em vez de mostrar zero; (2) **uma linha breve dizendo se a chave está configurada**, que é onde a exigência de chave do 23-I se explica em vez de só bloquear; (3) **uma caixa `consulta ampla`, desligada por padrão**, que troca `fast=false` por `fast=true` e leva a resposta de ~5 trechos para até 25, pela mesma chamada de cota (DM-18 deixa de ser absoluta).
+
+> ✅ **As três existem: 1 e 2 desde o 23-I, 3 desde o 23-J.** A única divergência é de lugar, e é decisão: a caixa **não** ficou ao lado da cota e da chave. As duas primeiras descrevem **a conta** e vivem num bloco que só aparece depois de a chave carregar; a caixa altera **a requisição**, como o seletor de versão da tela 2 — então fica logo abaixo do campo Pergunta, onde age (D23J.6).
 
 
 ```
@@ -291,7 +297,7 @@ Aberta:
         · invalidateQueries após mutação                 182 tok
         · onSuccess vs onSettled                          96 tok
         · useMutation — assinatura completa              310 tok
-        · staleTime e a interação com refetch             — não enviado
+      1 trecho não enviado — no painel
 ```
 
 Desligada do contexto (DM-31):
@@ -308,7 +314,7 @@ O que o desenho fixa:
 | Mesmo ícone `Library` do composer, do contador e do painel | um ícone para o assunto inteiro; o olho liga os quatro lugares sem pensar |
 | Fechada por padrão | mensagem histórica não se abre sozinha, igual ao raciocínio |
 | O corpo lista **títulos e custo**, nunca o código dos trechos | o conteúdo é do painel; a linha responde *"o que foi enviado e quanto custou"* |
-| Trecho não enviado aparece riscado/`— não enviado` | é o registro da escolha do bloco 1; sem ele, a seleção some da transcrição |
+| ~~Trecho não enviado aparece riscado/`— não enviado`~~ → **a contagem, nunca a lista** (D23J.11) | o desenho estava certo para cinco trechos com um descartado; no caminho amplo são **18 riscados enterrando os 7 enviados**. A linha passa a dizer `N trechos não enviados — no painel`, e o registro não some: a parte guarda título e custo de cada um (D23C.3) e a releitura tem **aba própria** para eles (D23H.9) |
 | A palavra "Context7" no rótulo | a procedência que DM-32 mandou ficar no texto |
 
 ⚠️ **São dois controles, e não podem ser aninhados.** `ReasoningDisclosure` usa um `<button>` para o cabeçalho inteiro; aqui é preciso um segundo para abrir o painel (`⧉`). Botão dentro de botão é HTML inválido e o React nem avisa — os dois são **irmãos** num contêiner flex, com o `⧉` fora do alvo de clique do retrátil.

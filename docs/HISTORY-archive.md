@@ -12,6 +12,17 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### Portões por momento: o turno deixa de pagar pela suíte (set/2026)
+Origem: o `Stop` rodava `pnpm check:fast` ao fim de **toda** resposta — ~150 s de CPU saturada por turno, com a máquina travando para obedecer comando. Trabalho sem plano, aberto por um relato de uso e fechado no mesmo dia.
+
+**Duas medições reformaram o desenho.** A suíte é **87%** do portão (typecheck 14,7 s + lint 3,8 s + docs 0,3 s contra ~130 s de testes), e ela **duplica o `test_related`**, que já roda os testes do grafo de imports a cada arquivo editado, durante o turno. Além disso, **só o Vitest paraleliza** — `typecheck` é 1 processo, `lint` é 0 —, então os oito processos Node que saturavam eram exclusivamente workers de teste.
+
+Entrega: o custo passa para o momento que a régua do projeto sempre nomeou. O `Stop` roda `check:turn` (typecheck + lint + docs) quando código mudou, `check:docs` quando só documentação, **nada** quando nada mudou; a suíte inteira vai para um `PreToolUse` de `git commit`, que **bloqueia** se falhar. Os dois decidem por mtime contra um marcador, nunca por `git status` — commitar no meio da sessão limpa o status sem limpar o risco. **Turno: 150 s → 35 s**, e commits seguidos sem tocar código pulam a suíte.
+
+**Afinidade de CPU foi tentada, medida e removida** — e é o achado que sobrevive ao trabalho. As duas formas óbvias falham em direções opostas: `start /affinity`/`Start-Process` fixam a máscara mas **engolem o código de saída** (medido: 0 para um filho que saiu 7 — portão incapaz de reprovar, em silêncio, mesma família do `args` que já deixou cinco hooks inertes); setar pelo PID preserva o código mas **não alcança os netos**, porque no Windows a máscara é herdada na criação e o `cmd.exe` cria o filho antes de o PowerShell subir (medido: neto ainda via 8 CPUs). O que funciona — fixar o terminal inteiro — é decisão de máquina, com a comparação dos quatro modos em [`reference/ambiente/`](reference/ambiente/README.md). Diagnóstico: [`ARMADILHAS.md`](ARMADILHAS.md).
+
+Junto: `maxWorkers: '50%'` no Vitest, `check-doc-links.mjs` no portão, e a régua de redação subindo do plano `R-7` para o [`docs/README.md`](README.md), seu dono permanente.
+
 ### R-7 — Refatoração documental: o ruído sai, o fato fica (set/2026)
 Origem: pedido do usuário, adiado desde a trilha R-2 — *"ruído exagerado de história, narração e medição onde não deveria ter"*, com cinco tetos estourados. Cinco frentes viraram **quatro cortes**, um commit cada, e **nenhuma linha de `src/`**.
 

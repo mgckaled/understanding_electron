@@ -236,17 +236,11 @@ A costura de `service`/`allModels` (união dos catálogos Ollama/GLM, resoluçã
 
 ⚠️ A dívida também está escrita no fonte, em `core/observatory/privacy.ts`, para quem chegar por lá.
 
-### O título do trecho do Context7 é markdown e sai cru — falta uma variante inline do `MarkdownMessage` (a implementar no 23-J)
-
-**Achado na verificação ao vivo do 23-G, 10/09/2026, na primeira linha da primeira consulta real.** O `codeTitle` da API traz código inline em acento grave (``Optimistic Cache Update with Rollback using `onMutate` ``) e a linha do trecho o renderiza como string crua, mostrando os acentos. É a mesma classe que o 23-F consertou para a **descrição** e para a **nota**; o título passou batido porque nenhuma consulta daquele corte trouxe código no campo, e não é caso raro — apareceu de primeira.
-
-**O conserto óbvio é o que a skill [`design-system`](../.claude/skills/design-system/SKILL.md) manda recusar,** e o alternativo não cabe: um partidor de acento grave criaria um segundo dono do markdown, e mandar o título pelo `MarkdownMessage` como ele está hoje põe um `<p>` de bloco dentro do `<button>` do retrátil, em 18px fixos, numa linha que precisa truncar.
-
-**O que resolve é uma variante inline do próprio primitivo** — `span` em vez de `p`, herdando o tamanho de quem chama —, mantendo a fonte única e servindo qualquer legenda futura. Isso é trabalho de design system, e pela régua do envelope ele não nasce dentro de um corte de feature: fica para o **23-J**, que é o das minúcias — era `23-L` até o remanejamento de letras de 12/09/2026. Decidido com o dono em 10/09/2026.
-
-### Os três contadores do cabeçalho usam `aria-pressed` onde a APG pede `aria-expanded` (candidata ao 23-J)
+### Os três contadores do cabeçalho usam `aria-pressed` onde a APG pede `aria-expanded` (considerada e adiada no 23-J)
 
 **Achado por pesquisa externa no 23-H, e deliberadamente não consertado ali.** `ArtifactCount`, `DraftCount` e agora `DocsCount` marcam-se com `aria-pressed`, e o comentário dos dois primeiros justifica a escolha **contra `aria-current`** — comparação que não era a relevante. A [documentação do MDN](https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Attributes/aria-expanded) e o [padrão de botão da WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/button/) separam as duas coisas: `aria-pressed` descreve um estado binário de recurso (mudo, negrito), `aria-expanded` descreve um controle que **mostra e esconde conteúdo** — que é exatamente o que os três fazem com a região da direita.
+
+⚠️ **Considerada no 23-J e adiada pelo dono (13/09/2026)** — o corte das minúcias era o lugar natural, e a decisão foi não entrar. O motivo não mudou desde o 23-H, e é o que mantém isto adiável sem prazo: **o custo não cresce com o tempo**. Um quarto contador é que o mudaria, porque aí seriam quatro atributos a trocar de uma vez em vez de três.
 
 **Por que não foi consertado no 23-H:** um terceiro contador divergindo sozinho é pior que três consistentes, e trocar os três é mudança de chrome que atravessa três fatias de `features/`. Custo real: três atributos, três `aria-label` (o rótulo hoje diz "Abrir/Fechar", que passa a ser redundante com o estado), e os testes que afirmam `aria-pressed` em cada um. Se vier junto, considerar `aria-controls` apontando para o `<aside>` — a APG o pede no mesmo par, e o `SidePanel` já tem id estável.
 

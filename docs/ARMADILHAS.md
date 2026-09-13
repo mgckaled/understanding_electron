@@ -26,7 +26,9 @@ Provar um vermelho por sabotagem via shell (`python -c`, `sed -i`) tem um modo d
 
 **No 23-J o gatilho foi um primitivo de markdown desenhando um título** dentro de árvores que rerenderizam a cada tecla do composer — `contextBudget.test.tsx` foi de **18,71 s** para **21,17 s**.
 
-⚠️ **Os dois consertos errados são simétricos:** subir o `testTimeout` esconde a próxima regressão de verdade, e desfazer a mudança joga fora a feature por um sintoma que não é dela. **O certo é medir o delta** (rode o arquivo isolado antes e depois — o custo aparece em segundos, não em asserção) e atacar a causa; ali, `memo` no componente, porque o que pesava era o **parse** refeito a cada render do pai: voltou a **19,2 s**.
+⚠️ **Os dois consertos errados são simétricos:** subir o **teto global** esconde a próxima regressão de verdade, e desfazer a mudança joga fora a feature por um sintoma que não é dela. **O certo é medir o delta** (rode o arquivo isolado antes e depois — o custo aparece em segundos, não em asserção) e atacar a causa; ali, `memo` no componente, porque o que pesava era o **parse** refeito a cada render do pai: voltou a **19,2 s**.
+
+⚠️ **E o que sobra depois de atacar a causa tem conserto próprio, que não é o global.** No 23-J os mesmos dois testes voltaram a bloquear um commit já com o `memo` no lugar: a ~1,7 s e ~2,5 s **isolados com a máquina ociosa**, eles vivem no limite, e a variação entre corridas nesta máquina é de ±15%. O conserto é um **teto explícito no próprio teste** (`it(nome, fn, 15_000)`) com o número medido em comentário — o `testTimeout` global fica onde está, para todo o resto, e uma regressão de verdade ainda estoura 15 s. **Teto por teste é dimensionamento; teto global é cegueira.**
 
 **Quem pega isto é o portão de commit, nunca o `test_related`** — o hook roda o grafo do arquivo tocado, sem contenção, e por isso fica verde. Um commit reprovado com "passa isolado" é este diagnóstico até prova em contrário.
 
