@@ -116,17 +116,20 @@ function DocsLine({ part, messageId }: { part: DocsPart; messageId: string }): R
               </span>
             </li>
           ))}
-          {/* The record of what the user left out, title and cost alone — the
-              part never kept its code (D23C.3). */}
-          {part.omitted.map((one) => (
-            <li key={one.key} className="flex items-baseline gap-3 line-through">
-              <span className="truncate text-text-faint">
-                <MarkdownMessage inline text={one.title} />
-              </span>
-              <span className="ml-auto flex-none text-text-faint">— não enviado</span>
-            </li>
-          ))}
         </ul>
+        {/* The count, never the list (D23J.11). Listing what was left out was
+            right when a consultation had five snippets and one was dropped; on
+            the broad path it is eighteen struck-through rows burying the seven
+            that were actually sent. The record does not vanish — `DocsAttached`
+            has had a tab of its own for it since D23H.9, and the part still
+            carries every omitted title and cost (D23C.3). */}
+        {part.omitted.length > 0 && (
+          <p className="mt-2 text-2xs text-text-faint">
+            {part.omitted.length === 1
+              ? '1 trecho não enviado — no painel'
+              : `${part.omitted.length} trechos não enviados — no painel`}
+          </p>
+        )}
       </div>
     </div>
   )

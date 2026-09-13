@@ -303,6 +303,13 @@ describe('uma consulta de documentação no orçamento', () => {
     expect(screen.getByRole('button', { name: 'Anexar' })).toBeDisabled()
   })
 
+  // The two heaviest cases of the file get an explicit ceiling, and the number
+  // is measured rather than picked: ~1,7 s and ~2,5 s alone, which the 5 s
+  // default only misses under full-suite contention (`maxWorkers: '50%'`). The
+  // render cost that put them there was already attacked at the cause — the
+  // markdown primitive is memoised — so what is left is a heavy integration
+  // test against a default never sized for it. A real regression still blows
+  // 15 s; the global default stays where it is, for everything else.
   it('refuses to attach when nothing is checked', async () => {
     const user = userEvent.setup()
     const api = mount()
@@ -312,7 +319,7 @@ describe('uma consulta de documentação no orçamento', () => {
     await user.click(screen.getByRole('checkbox', { name: SNIPPET.title }))
 
     expect(screen.getByRole('button', { name: 'Anexar' })).toBeDisabled()
-  })
+  }, 15_000)
 
   // The whole point of the cut reaching the wire: `partForProvider` has handled
   // `docs` since 23-C, so attaching is what finally makes the model see it.
@@ -329,7 +336,7 @@ describe('uma consulta de documentação no orçamento', () => {
     await waitFor(() => expect(api.ai.chat).toHaveBeenCalled())
     const sent = vi.mocked(api.ai.chat).mock.calls[0][0].messages.at(-1)
     expect(sent?.parts).toContainEqual(expect.objectContaining({ kind: 'docs', enabled: true }))
-  })
+  }, 15_000)
 
   // Frozen means frozen (D23G.7): re-marking afterwards would leave the panel
   // describing something other than what the model was sent.

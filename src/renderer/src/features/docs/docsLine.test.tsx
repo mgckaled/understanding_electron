@@ -139,14 +139,18 @@ describe('DocsLine', () => {
     expect(screen.queryByText(/invalidateQueries\(\{/)).not.toBeInTheDocument()
   })
 
-  it('registra o que ficou de fora, com título e custo e sem código', async () => {
+  // D23J.11: the count, never the list. Listing the omitted was right at five
+  // snippets and one dropped; on the broad path it is eighteen struck-through
+  // rows burying the seven that were sent. The record lives in the panel, which
+  // has had a tab of its own for it since D23H.9.
+  it('conta o que ficou de fora sem listar, e não nomeia nenhum omitido', async () => {
     const user = userEvent.setup()
     await mount()
 
     await user.click(screen.getByRole('button', { expanded: false }))
 
-    expect(screen.getByText('setQueryData otimista')).toBeInTheDocument()
-    expect(screen.getByText('— não enviado')).toBeInTheDocument()
+    expect(screen.getByText('1 trecho não enviado — no painel')).toBeInTheDocument()
+    expect(screen.queryByText('setQueryData otimista')).not.toBeInTheDocument()
   })
 
   it('desliga a consulta do reenvio e grava a escolha', async () => {
