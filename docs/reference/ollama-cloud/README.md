@@ -10,7 +10,7 @@
 
 | Anexo | O que responde |
 |---|---|
-| [`decisoes.md`](decisoes.md) | **As 31 decisões `DNC-<n>`, fechadas antes de existir código** — escolha de modelo, catálogo, fronteira, raciocínio, cota, privacidade, e o que ficou declaradamente fora |
+| [`decisoes.md`](decisoes.md) | **As 32 decisões `DNC-<n>`, fechadas antes de existir código** — escolha de modelo, catálogo, fronteira, raciocínio, cota, privacidade, e o que ficou declaradamente fora |
 | [`api.md`](api.md) | Endpoints medidos um a um, o fio NDJSON, as cinco divergências contra o daemon local, os dois defeitos que a sondagem expôs, erros e status |
 | [`desempenho.md`](desempenho.md) | TTFT e tok/s dos seis modelos, contexto grande, cache de prompt — com a régua de comparação contra a frota local |
 | [`capacidades.md`](capacidades.md) | Busca web, extração de página, *tool calling*, visão, e a ausência de *embeddings* |
@@ -34,7 +34,7 @@ A Ollama publica os mesmos endpoints do daemon local em `https://ollama.com`, au
 
 **Três fatos medidos em 13/09/2026 que dimensionam a armadilha:**
 
-1. **Ela é latente, não viva.** O `/api/tags` **local** desta máquina devolve 13 modelos, **nenhum** com sufixo `-cloud` — a máquina não está logada. O risco é o dia em que alguém rodar `ollama signin`, não hoje.
+1. **Ela é latente, não viva.** O `/api/tags` **local** desta máquina devolve 12 modelos, **nenhum** com sufixo `-cloud` — a máquina não está logada. O risco é o dia em que alguém rodar `ollama signin`, não hoje.
 2. **A decisão não é do app.** O daemon roteia para a nuvem por configuração do usuário, e desligar isso é `OLLAMA_NO_CLOUD=1` ou `{"disable_ollama_cloud": true}` em `~/.ollama/server.json` (FAQ oficial). **O crivo não controla esse interruptor** e não pode contar com ele: o conteúdo do catálogo local é entrada de fora.
 3. **Por isso a defesa é do lado do app, e é barata.** Descartar do catálogo local todo modelo cujo nome termine em `-cloud` torna o estado perigoso **inexpressável**, em vez de regra que alguém precisa lembrar — mesma forma do `features/panel/` na skill [`architecture`](../../../.claude/skills/architecture/SKILL.md). É o corte **N-3-A** (§ 5).
 

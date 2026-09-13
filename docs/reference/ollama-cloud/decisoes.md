@@ -1,4 +1,4 @@
-# Ollama Cloud — as 31 decisões
+# Ollama Cloud — as 32 decisões
 
 > Anexo de [`README.md`](README.md). Todas fechadas em **13/09/2026**, **antes de existir código** — mesma forma das `DM-<n>` do arco 23 ([`reference/context7/decisoes.md`](../context7/decisoes.md)). Consulta por `Grep` na sigla `DNC-<n>`. **Não `Read` inteiro.**
 
@@ -108,6 +108,19 @@ Cada decisão declara **em que se apoia**, porque a força varia:
 
   ⚠️ **O que sobra por medir antes de codificar:** os números acima valem para **esta máquina, com 5,65 GiB livres em 13/09/2026**. O custo por token é propriedade do modelo e não varia; o **teto**, sim — `contextCeiling` já lê `freeBytes` na hora, e a RAM livre desta máquina oscila 1,5–2 GiB.
 
+- **DNC-32 · Não existe teto de utilidade, e `DEFAULT_NUM_CTX` fica em 32768** *(juízo)*. Levantada a hipótese de limitar um modelo pequeno a ~128k, já que um 2B não usa bem 262k. **Recusada como mecanismo novo, aceita como substância:** o app **já tem** o botão — o default de 32k é exatamente o *"não gaste 168k num 2B"*, como recomendação em vez de parede. Um teto chumbado seria um **terceiro número** a manter, contradizendo o medido e envelhecendo sozinho.
+
+  **Dois tetos de naturezas diferentes, e fundi-los é o erro:** o de **RAM** é física — acima dele o Ollama trunca em silêncio —, logo **duro e dinâmico**, relido a cada chamada; o de **utilidade** é juízo, logo não é teto, é onde o *default* cai.
+
+  ⚠️ **O que realmente desaconselha escolher o máximo é a trava, não a qualidade** (D15.13): a janela fecha no primeiro envio, e o teto de RAM se move com o que mais roda na máquina — travar em 262k com 8,5 GiB livres faz a conversa virar `'unaffordable'` quando o browser abrir. **Escolher o teto é frágil por construção**, e isso é dica de interface, não trava.
+
+  Tetos reais medidos, para dimensionar a faixa (a variação da máquina é documentada como 6,5–8,5 GiB livres):
+
+  | Modelo | 6,5 GiB | 8,5 GiB |
+  |---|---:|---:|
+  | `qwen3.5:2b` | 231.039 | 262.144 *(satura o teto treinado)* |
+  | `qwen3.5:4b` | 72.869 | 130.933 |
+
 ---
 
 ## Serviço e fronteira
@@ -118,7 +131,7 @@ Cada decisão declara **em que se apoia**, porque a força varia:
 
 - **DNC-9 · O catálogo local descarta todo modelo terminado em `-cloud`** *(juízo)*. Torna o estado perigoso **inexpressável** em vez de regra que alguém precisa lembrar — mesma forma de `features/panel/` na skill [`architecture`](../../../.claude/skills/architecture/SKILL.md). Três fatos sustentam:
 
-  1. A ameaça é **latente, não viva**: o `/api/tags` local desta máquina tem 13 modelos, nenhum `-cloud` (medido em 13/09/2026).
+  1. A ameaça é **latente, não viva**: o `/api/tags` local desta máquina tem 12 modelos, nenhum `-cloud` (medido em 13/09/2026).
   2. O interruptor **não é do app**: quem decide é `OLLAMA_NO_CLOUD=1` / `disable_ollama_cloud` no `~/.ollama/server.json` do usuário *(publicada, FAQ oficial)*. O conteúdo do catálogo local é entrada de fora.
   3. Um usuário que **queira** os modelos de nuvem já tem o caminho certo: o serviço próprio de `DNC-8`. Descartar não tira capacidade, redireciona.
 
