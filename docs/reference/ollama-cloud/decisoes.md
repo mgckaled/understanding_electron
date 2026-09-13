@@ -1,4 +1,4 @@
-# Ollama Cloud — as 30 decisões
+# Ollama Cloud — as 31 decisões
 
 > Anexo de [`README.md`](README.md). Todas fechadas em **13/09/2026**, **antes de existir código** — mesma forma das `DM-<n>` do arco 23 ([`reference/context7/decisoes.md`](../context7/decisoes.md)). Consulta por `Grep` na sigla `DNC-<n>`. **Não `Read` inteiro.**
 
@@ -44,6 +44,69 @@ Cada decisão declara **em que se apoia**, porque a força varia:
 - **DNC-6 · `attention` e `sizeBytes` são forçados, nunca herdados** *(precedente)*. Hoje os seis não reportam `attention.head_count_kv`, então `readAttention()` devolve `null` → `contextCeiling` devolve `null` → `costed: false`. **Está certo por acidente.** Se um modelo passar a publicar os três campos de atenção, o app começaria a orçar RAM **local** para um modelo que não usa RAM local, em silêncio. O adaptador força `attention: null` e `sizeBytes: 0` — que é o que `GLM_MODELS`/`GEMINI_MODELS` já fazem, e por isso é precedente, não invenção. `sizeBytes` herdado exibiria 13,7 GB de disco que não existe.
 
 - **DNC-7 · Catálogo sem chave, disponibilidade com chave** *(medida)*. Os dois fatos convivem e parecem contraditórios: o **catálogo** é público, mas `/api/version` **também** responde 200 sem chave — então o ping não prova credencial nenhuma. Vale a régua da skill [`ai`](../../../.claude/skills/ai/SKILL.md): *"disponível" significa "há chave guardada", nunca um ping*. Aqui ela vale **apesar** de o ping ser tecnicamente possível, não por ser impossível como em Gemini/GLM — e essa diferença precisa estar no comentário, senão alguém "conserta" para um ping de verdade.
+
+---
+
+## Orçamento de contexto — desfazer a sobrecarga de `attention: null`
+
+- **DNC-31 · `ceilingOf` decide por serviço, e o custo de KV da família `qwen35` passa a ser CALCULADO — não estimado por fallback** *(medida)*. Entra no **`N-3-A`**, como terceiro item, com o mesmo caráter dos outros dois: conserto do código de hoje, sem tocar nuvem.
+
+  ⚠️ **Esta decisão foi reescrita na mesma sessão, depois de medir.** A primeira versão mandava cair em `DEFAULT_NUM_CTX` (32768) quando a atenção fosse ilegível. **Era errado, e o dono apontou antes de qualquer código:** um teto arbitrário não protege nem libera — só troca uma ficção por uma restrição. A medição confirmou em cheio, e o registro do erro fica porque o raciocínio que o produziu vai reaparecer.
+
+  | Modelo | Hoje exibe | Fallback de 32k | **Teto REAL medido** |
+  |---|---:|---:|---:|
+  | `qwen3.5:4b` | 262.144 | 32.768 | **48.192** |
+  | `qwen3.5:2b` | 262.144 | 32.768 | **168.096** |
+
+  O fallback teria restringido o `2b` — **o modelo local mais usado** — em **5,1×** sobre o que a máquina aguenta de verdade. `budgetFor.fits` recusa acima de `0,9 × numCtx`, então isso não é cosmético: é o app barrando consulta que caberia.
+
+  **`attention === null` carrega hoje dois significados incompatíveis:** *"é de nuvem, RAM é de graça"* (intencional, DN1C.2) e *"não consegui ler a atenção deste modelo local"* (o bug da F-6). ⚠️ **E `DNC-6` aprofunda a sobrecarga** ao decidir **forçar** `attention: null` para nuvem — sem desfazê-la antes, o `N-3-C` cimenta a ambiguidade.
+
+  A consequência é viva e está no território do `N-3-B`. `ConversationView.tsx` faz `entry.attention === null ? entry.contextLength : contextCeiling(...)`, então os dois `qwen3.5` — **locais** — recebem o teto **treinado**:
+
+  | Modelo | Peso | `attention` | Teto oferecido |
+  |---|---|---|---|
+  | `qwen3:4b` | 2,3 GB | legível | **4k** — calculado contra a RAM livre |
+  | `qwen3.5:4b` | 3,2 GB | `null` | **256k** — ficção |
+
+  Um modelo **maior**, na mesma máquina, oferecendo janela **64× maior**. É o erro que a skill [`ai`](../../../.claude/skills/ai/SKILL.md) descreve como *"oferecer só o teto treinado é o erro que parece honesto e não é"*. Três efeitos encadeados: `fitsInMemory(262144)` é verdadeiro, então **`não cabe` nunca aparece**; `bandOptions` oferece **as sete faixas** até 256k, com `max={ceiling}`; e uma janela que não couber faz o Ollama **descartar o começo do prompt em silêncio**, que é a armadilha para a qual `num_ctx` não é rede de segurança.
+
+  **A regra passa a ser, e as duas metades são independentes:**
+
+  1. **`ceilingOf` decide por SERVIÇO** — nuvem → teto treinado; local → `contextCeiling`. Nunca por `attention === null`, que estava sobrecarregado.
+  2. **`kvBytesPerToken` aprende a família híbrida**, e aí `readAttention` deixa de devolver `null` para ela.
+
+  ### A medição que substituiu a hipótese
+
+  Carregando cada modelo em `num_ctx` 2048 e 16384 e lendo o tamanho residente em `/api/ps`, a inclinação dá o custo por token **direto, sem precisar de `head_count_kv`** — o mesmo método que produziu `FIXED_OVERHEAD_BYTES` e o `OVERHEAD = 1,06`:
+
+  | Modelo | RAM a 2048 | RAM a 16384 | **KV/token medido** |
+  |---|---:|---:|---:|
+  | `qwen3.5:4b` | 3.113.673.029 | 3.643.895.969 | **36.985 B** (36,1 KiB) |
+  | `qwen3.5:2b` | 2.368.177.435 | 2.576.047.142 | **14.500 B** (14,2 KiB) |
+
+  ⚠️ **E isso REPROVA a hipótese registrada na F-6.** Ela propunha usar `head_count` no lugar de `head_count_kv`; para o `4b` isso prevê **347.341 B/token** contra os 36.985 medidos — **9,4× para cima**. Codificada, teria esmagado o teto para ~1/9 do real: muito pior que o estado atual, e exatamente na direção que o dono temia. **A hipótese não foi refinada, foi derrubada.**
+
+  ### O que a medição revelou, e por que a conta errava tanto
+
+  ⚠️ **`qwen35` publica um bloco `ssm.*` completo** — `conv_kernel`, `group_count`, `inner_size`, `state_size`, `time_step_rank`. **É arquitetura híbrida Mamba**, a mesma família do `granite4`, e não um caso novo. Com `full_attention_interval = 4`, **só 1 em cada 4 camadas cresce com o contexto**; as demais são Mamba, de estado constante. A conta ingênua contava as 32.
+
+  Com `growingLayers = block_count / full_attention_interval` e os `key_length`/`value_length` **publicados** (256 cada), a fórmula fecha nos dois:
+
+  | Modelo | camadas que crescem | `kvHeads` | previsto | medido/previsto |
+  |---|---:|---:|---:|---:|
+  | `qwen3.5:4b` | 8 (de 32) | 4 | 32.768 B | **1,13** |
+  | `qwen3.5:2b` | 6 (de 24) | 2 | 12.288 B | **1,18** |
+
+  ⚠️ **O `OVERHEAD` desta família é maior que o do projeto** (1,13–1,18 contra `1,06`), e o resíduo está na direção **perigosa** — a fórmula subestima. Use ≥ 1,2 para esta família, ou o teto sai grande demais.
+
+  ⚠️ **Um confundimento honesto, que só um terceiro modelo desfaz:** `kvHeads = head_count / 4` e `kvHeads = head_count / full_attention_interval` **dão o mesmo resultado nos dois modelos medidos**, porque o intervalo é 4 em ambos. Não dá para saber qual das duas é a regra. **Não codifique a que for mais fácil de escrever** — meça um `qwen35` com intervalo diferente, ou trate o divisor como constante da família com o confundimento anotado no comentário.
+
+  ### O efeito na F-6
+
+  ✅ **A frente 2 da F-6 fica resolvida em dados e absorvida pelo `N-3-A`** — era "hipótese a verificar antes de corrigir", e a verificação aconteceu aqui, derrubando a hipótese e entregando a substituta. **A F-6 encolhe para uma frente só**: o gate `vision`+`tools` do `Composer`/`AttachButton`, que é decisão de produto e segue **independente da N-3**.
+
+  ⚠️ **O que sobra por medir antes de codificar:** os números acima valem para **esta máquina, com 5,65 GiB livres em 13/09/2026**. O custo por token é propriedade do modelo e não varia; o **teto**, sim — `contextCeiling` já lê `freeBytes` na hora, e a RAM livre desta máquina oscila 1,5–2 GiB.
 
 ---
 

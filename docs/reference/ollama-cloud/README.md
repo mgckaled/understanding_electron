@@ -10,7 +10,7 @@
 
 | Anexo | O que responde |
 |---|---|
-| [`decisoes.md`](decisoes.md) | **As 30 decisões `DNC-<n>`, fechadas antes de existir código** — escolha de modelo, catálogo, fronteira, raciocínio, cota, privacidade, e o que ficou declaradamente fora |
+| [`decisoes.md`](decisoes.md) | **As 31 decisões `DNC-<n>`, fechadas antes de existir código** — escolha de modelo, catálogo, fronteira, raciocínio, cota, privacidade, e o que ficou declaradamente fora |
 | [`api.md`](api.md) | Endpoints medidos um a um, o fio NDJSON, as cinco divergências contra o daemon local, os dois defeitos que a sondagem expôs, erros e status |
 | [`desempenho.md`](desempenho.md) | TTFT e tok/s dos seis modelos, contexto grande, cache de prompt — com a régua de comparação contra a frota local |
 | [`capacidades.md`](capacidades.md) | Busca web, extração de página, *tool calling*, visão, e a ausência de *embeddings* |
@@ -155,7 +155,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 
 | Corte | Entrega | Depende de |
 |---|---|---|
-| **N-3-A** | **a trava antes da porta.** Nenhuma linha de nuvem. (1) A guarda de acúmulo de raciocínio (`DNC-14`) — `reasoningAssembled` e a montagem de `ReasoningPart` passam a respeitar `onThinking`/`wantsReasoning`. (2) O catálogo local descarta todo modelo terminado em `-cloud` (`DNC-9`). **Os dois são conserto do código de hoje**, verificáveis sem chave e sem serviço novo | — |
+| **N-3-A** | **a trava antes da porta.** Nenhuma linha de nuvem. (1) A guarda de acúmulo de raciocínio (`DNC-14`). (2) O catálogo local descarta todo modelo terminado em `-cloud` (`DNC-9`). (3) O teto de contexto: `ceilingOf` decide por **serviço** — não por `attention === null`, que está sobrecarregado —, e `kvBytesPerToken` aprende a família híbrida `qwen35`, com os números **já medidos** (`DNC-31`). Absorve a frente 2 da **F-6**, que fica com uma frente só. **Os três são conserto do código de hoje**, verificáveis sem chave e sem serviço novo | — |
 | **N-3-B** | **o popover em uma linha.** `flex-row` com nome truncando, `560px`, o tripé de limite para o `title`, vocabulário unificado, `não cabe` sem `até 0k`, separador `·`, coluna de chips alinhada, e **um mecanismo de destaque só** — o das linhas de nuvem é hoje inerte (`DNC-23`–`DNC-29`). **100% renderer, nenhum canal tocado** | — |
 | **N-3-C** | **o serviço e o catálogo sondado.** `'ollama-cloud'` em `aiServiceSchema` **e** em `CLOUD_PROVIDERS` (`DNC-8`), campo no cofre ao lado de Gemini/GLM/Context7, adaptador por parametrização de `ollama.ts` (`DNC-10`), catálogo sondado com lista fixa (`DNC-5`) e `attention`/`sizeBytes` forçados (`DNC-6`), disponibilidade por `hasKey()` (`DNC-7`), `loaded`/`unload` no-op (`DNC-11`), e o gate de `ai:propose` (`DNC-19`). **Um modelo só: `gemma4:31b`** — o que respeita `think: false` hoje. Termina com conversa funcionando | A · B |
 | **N-3-D** | **o segundo modelo e o nível de raciocínio.** `ThinkValue` no contrato (`DNC-12`), `'low'` como piso do `gpt-oss` (`DNC-13`), `gpt-oss:120b` entra na lista fixa (`DNC-3`), e `total_duration` alimenta o painel Desempenho (`DNC-20`) | C |
@@ -171,7 +171,7 @@ Nenhuma das três é decisão em aberto; todas são medição que o plano do cor
 
 | Corte | A verificar | Por que não dá para supor |
 |---|---|---|
-| **A** | a guarda reprova sob sabotagem | Um teste de "não persiste raciocínio" pode nascer vacuoso se o campo nem for renderizado nesse estado — já aconteceu neste projeto (skill [`testing`](../../../.claude/skills/testing/SKILL.md)). Prove o **estado final** que o defeito inverteria |
+| **A** | a guarda reprova sob sabotagem; e o teto dos dois `qwen3.5` **ao vivo**, não só em teste | Um teste de "não persiste raciocínio" pode nascer vacuoso se o campo nem for renderizado nesse estado — já aconteceu neste projeto (skill [`testing`](../../../.claude/skills/testing/SKILL.md)). Prove o **estado final** que o defeito inverteria. E `DNC-31` muda o que o popover e o `ContextControl` **mostram**: confira que o `até 256k` virou `até 32k` nos dois, e que `qwen3:4b` continua em `até 4k` — o contraste entre os dois é o que prova que o ramo certo foi tomado |
 | **B** | a largura final **na janela estreita**, e que as classes existem no CSS **construído** | Duas coisas que só o olho pega: `min-w-0` e qualquer utilitário no degrau `0` **não geram CSS** neste projeto, e jsdom não faz layout — nenhum teste de nível 2 reprova uma linha que quebrou. `560px` é ponto de partida, não medida (`DNC-24`) |
 | **C** | o catálogo sondado devolve os `capabilities` esperados para `gemma4:31b` | A armadilha `/api/tags` vs `/api/show` é a razão do N+1 (skill [`ai`](../../../.claude/skills/ai/SKILL.md)); com lista fixa de dois, o custo é três requisições |
 | **D** | **quanto `think: 'low'` reduz de fato** | `DNC-13` afirma que ataca a raiz do custo, e isso é dedução da documentação — **o número não foi medido**. A régua de 332 contra 48 tokens é o antes; o depois é sonda do corte |
