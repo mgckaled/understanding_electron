@@ -17,7 +17,7 @@ type DocsComposeProps = {
 }
 
 function DocsCompose({ onSearch, result }: DocsComposeProps): React.JSX.Element | null {
-  const { current, setLibrary, setQuestion } = useDocs()
+  const { current, setLibrary, setQuestion, setBroad } = useDocs()
   // Compiles without a channel because `context7` joined CLOUD_PROVIDERS in the
   // 23-B (D23B.4) — the key was already a credential, it just was not required.
   const { loaded, hasKey } = useCloudSecret('context7')
@@ -52,6 +52,26 @@ function DocsCompose({ onSearch, result }: DocsComposeProps): React.JSX.Element 
             placeholder="como invalidar o cache depois de uma mutação"
           />
         </Field>
+
+        {/* Where it acts, not with the administration below: this one changes
+            the REQUEST, like the version picker, while the quota and the key
+            describe the account (D23J.6). The label carries the cost rather
+            than hiding it — nobody spends context without being told. */}
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={current.broad}
+            onChange={(event) => setBroad(event.target.checked)}
+            className="mt-[2px] size-6 flex-none accent-accent"
+          />
+          <span className="flex flex-col gap-1">
+            <span className="font-ui text-sm text-text">consulta ampla</span>
+            <span className="text-xs text-text-faint">
+              Traz até 25 trechos em vez de ~5, pela mesma consulta da cota. Sem reranqueamento, a
+              ordem é arbitrária.
+            </span>
+          </span>
+        </label>
 
         {/* Permanent, never a first-time consent (DM-22): a warning accepted
             once is not on screen in the turn the question leaves the machine. */}

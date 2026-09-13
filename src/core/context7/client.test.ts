@@ -120,6 +120,23 @@ describe('fetchLibraryContext', () => {
     expect(outcome.docs.rules).toBeNull()
   })
 
+  // The vendor's parameter is inverted: `fast=true` is the BROAD answer, so a
+  // caller reading the wire word would get it backwards (D23J.3).
+  it('asks for the whole candidate set when broad, and never by default', async () => {
+    const wide = deps(reply(fixtureText('context-tanstack-query-fast')))
+
+    const outcome = await fetchLibraryContext({ ...args, broad: true }, wide)
+
+    expect(wide.urls[0]).toContain('fast=true')
+    expect(outcome.status).toBe('ready')
+    if (outcome.status !== 'ready') return
+    expect(outcome.docs.snippets.length).toBeGreaterThan(20)
+
+    const narrow = deps(reply(fixtureText('context-tanstack-query')))
+    await fetchLibraryContext({ ...args, broad: false }, narrow)
+    expect(narrow.urls[0]).toContain('fast=false')
+  })
+
   it('pins the version by appending it to the library id', async () => {
     const d = deps(reply(fixtureText('context-tanstack-query')))
 
@@ -261,7 +278,9 @@ describe('a cota no header', () => {
 
   it('hands over the 429 too, which is where the number matters most', async () => {
     const seen: unknown[] = []
-    const d = deps(reply('{}', { status: 429, headers: { ...HEADERS, 'ratelimit-remaining': '0' } }))
+    const d = deps(
+      reply('{}', { status: 429, headers: { ...HEADERS, 'ratelimit-remaining': '0' } })
+    )
 
     await searchLibraries('tanstack query', { ...d, onQuota: (q) => seen.push(q) }).catch(
       (error: unknown) => error

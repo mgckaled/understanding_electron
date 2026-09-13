@@ -15,7 +15,6 @@ import type {
 // none. Named exception, overridable so a probe never edits code (D23A.2).
 const CONTEXT7_BASE_URL = 'https://context7.com/api/v2'
 
-// `fast=false` keeps their LLM reranking (DM-18), which costs seconds.
 export const CONTEXT7_TIMEOUT_MS = 30_000
 
 export type Context7Deps = {
@@ -59,17 +58,23 @@ export async function searchLibraries(query: string, deps: Context7Deps): Promis
  *
  * @param version - A version the library indexes; absent means the library's
  *   default, because "most recent" is not computable from `versions[]` (D23A.6).
+ * @param broad - Skips their LLM reranking, which is what caps the answer at
+ *   4-5 snippets: measured at 25 snippets and 3.497 tokens against 3 and 383 on
+ *   the same question, for the same call off the quota (DM-18, D23J.3).
  * @returns The three lists, or the outcome the panel draws instead of them.
  */
 export async function fetchLibraryContext(
-  args: { libraryId: string; query: string; version?: string },
+  args: { libraryId: string; query: string; version?: string; broad?: boolean },
   deps: Context7Deps
 ): Promise<ContextOutcome> {
   const libraryId =
     args.version === undefined ? args.libraryId : `${args.libraryId}/${args.version}`
+  // The vendor's word is inverted — `fast` describes their latency, not the
+  // answer — so the translation stays in the one place that knows the wire.
+  const fast = args.broad === true ? 'true' : 'false'
   const response = await request(
     '/context',
-    { libraryId, query: args.query, type: 'json', fast: 'false' },
+    { libraryId, query: args.query, type: 'json', fast },
     deps
   )
   const body = await response.text()

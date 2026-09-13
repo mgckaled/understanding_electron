@@ -17,6 +17,7 @@ export function useDocsFetch(): {
     query: string
     version?: string
     refresh?: boolean
+    broad?: boolean
   }) => Promise<void>
   reset: () => void
 } {
@@ -28,6 +29,7 @@ export function useDocsFetch(): {
       query: string
       version?: string
       refresh?: boolean
+      broad?: boolean
     }): Promise<void> => {
       await run(() => window.api.docs.fetch(args))
     },

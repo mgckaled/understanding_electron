@@ -12,6 +12,12 @@ export type DocsComposition = {
   candidateKey: string | null
   /** `null` is the library's own default — "most recent" is not computable (D23A.6). */
   version: string | null
+  /**
+   * Off by default, and off again for the next consultation (D23J.5): asking
+   * for the whole candidate set once is not asking for every later question to
+   * cost thousands of tokens in silence.
+   */
+  broad: boolean
 }
 
 export type DocsApi = {
@@ -21,6 +27,7 @@ export type DocsApi = {
   setQuestion: (value: string) => void
   selectCandidate: (key: string) => void
   setVersion: (value: string | null) => void
+  setBroad: (value: boolean) => void
   /**
    * The paid search, held here and not in the panel: the candidate list is part
    * of the composition, and closing the panel must not lose it (D23E.3).

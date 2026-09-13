@@ -83,7 +83,8 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
           library: '',
           question: '',
           candidateKey: null,
-          version: null
+          version: null,
+          broad: false
         }
       })
       if (open) toggleRegion('docs', trigger)
@@ -119,6 +120,12 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     [resetFetch]
   )
 
+  const setBroad = useCallback(
+    (broad: boolean) =>
+      setComposition((previous) => (previous === null ? previous : { ...previous, broad })),
+    []
+  )
+
   const setVersion = useCallback(
     (version: string | null) =>
       setComposition((previous) => (previous === null ? previous : { ...previous, version })),
@@ -136,7 +143,10 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
         ...(current.version === null ? {} : { version: current.version }),
         // Only when asked: the default path is what `Ver de novo` rides, and
         // it must never spend a call the memo already paid for (D23I.11).
-        ...(refresh ? { refresh: true } : {})
+        ...(refresh ? { refresh: true } : {}),
+        // Left out when false rather than sent as such: absent already means
+        // narrow on the wire, and the two spellings would be the same request.
+        ...(current.broad ? { broad: true } : {})
       })
       await queryClient.invalidateQueries({ queryKey: DOCS_QUOTA_KEY })
     },
@@ -201,7 +211,14 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
     setComposition((previous) =>
       previous === null
         ? previous
-        : { ...previous, library: '', question: '', candidateKey: null, version: null }
+        : {
+            ...previous,
+            library: '',
+            question: '',
+            candidateKey: null,
+            version: null,
+            broad: false
+          }
     )
   }, [resetFetch, resetSearch])
 
@@ -219,6 +236,7 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       setQuestion,
       selectCandidate,
       setVersion,
+      setBroad,
       searchState,
       search,
       resetSearch: backToCompose,
@@ -249,6 +267,7 @@ function DocsProvider({ children }: { children: ReactNode }): React.JSX.Element 
       setQuestion,
       selectCandidate,
       setVersion,
+      setBroad,
       searchState,
       search,
       backToCompose,

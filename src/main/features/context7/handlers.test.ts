@@ -326,6 +326,26 @@ describe('fetchDocs e o memo de sessão', () => {
     expect(d.sent).toHaveLength(2)
   })
 
+  // D23J.4, and the failure it prevents is not an error on screen: with the
+  // amplitude out of the key, ticking `consulta ampla` would be answered by the
+  // narrow response already paid for, for free, and read as the box doing
+  // nothing at all.
+  it('tells the two amplitudes apart, in both directions', async () => {
+    const d = deps(reply(READY))
+
+    await fetchDocs(ARGS, d)
+    await fetchDocs({ ...ARGS, broad: true }, d)
+
+    expect(d.sent).toHaveLength(2)
+    expect(d.sent[0].url).toContain('fast=false')
+    expect(d.sent[1].url).toContain('fast=true')
+
+    // And each one keeps its own memo rather than the last one winning.
+    await fetchDocs(ARGS, d)
+    await fetchDocs({ ...ARGS, broad: true }, d)
+    expect(d.sent).toHaveLength(2)
+  })
+
   // Skips the read, never the write — otherwise `Ver de novo` would keep
   // handing back the answer the refresh replaced.
   it('leaves the fresh answer in the memo for the free button', async () => {

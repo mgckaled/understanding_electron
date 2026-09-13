@@ -1015,7 +1015,11 @@ export const argsSchema = {
     // Skips READING the session memo, never writing it: it is the difference
     // between the two buttons of the third screen — one returns the answer
     // already paid for, the other spends a call (D23I.11).
-    refresh: z.boolean().optional()
+    refresh: z.boolean().optional(),
+    // The wire calls this `fast`, inverted: it skips THEIR reranking, so the
+    // whole candidate set comes back — ~25 snippets instead of ~5, for the same
+    // call off the quota. Named for what it does to the answer (D23J.3).
+    broad: z.boolean().optional()
   }),
   'docs:quota': z.void(),
   // Conversation storage (plano 14). The renderer mints `id` and stamps
@@ -1402,6 +1406,8 @@ export type Api = {
       version?: string
       /** Spends a call instead of returning the memoized answer (D23I.11). */
       refresh?: boolean
+      /** Brings the whole candidate set, unranked — ~25 snippets for the same call (D23J.3). */
+      broad?: boolean
     }): Promise<Result<ContextOutcome>>
     /** What the last answer of this session said was left; `null` before the first (D23I.7). */
     quota(): Promise<DocsQuota | null>

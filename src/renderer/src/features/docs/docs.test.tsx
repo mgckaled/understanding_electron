@@ -47,12 +47,17 @@ const WEBSITE: LibraryCandidate = {
 let api: Api
 
 function Probe(): React.JSX.Element {
-  const { toggle } = useDocs()
+  const { toggle, clearPending } = useDocs()
   const { conversations, select } = useConversations()
   return (
     <>
       <button type="button" onClick={(event) => toggle(event.currentTarget)}>
         consultar documentação
+      </button>
+      {/* What the Composer calls once the consultation has been sent; the send
+          itself is proven in contextBudget.test.tsx. */}
+      <button type="button" onClick={clearPending}>
+        limpar pendente
       </button>
       {conversations.map((conversation) => (
         <button key={conversation.id} type="button" onClick={() => select(conversation.id)}>
@@ -420,5 +425,53 @@ describe('a segunda chamada', () => {
     await userEvent.click(screen.getAllByRole('radio')[1])
 
     expect(screen.queryByText(/nada respondeu a essa pergunta/)).not.toBeInTheDocument()
+  })
+})
+
+// D23J.5 and D23J.6: a box that changes the REQUEST, off by default and off
+// again for the next consultation.
+describe('a caixa consulta ampla', () => {
+  const BOX = { name: /consulta ampla/ }
+
+  async function compose(): Promise<void> {
+    await mount()
+    await userEvent.click(screen.getByRole('button', { name: 'consultar documentação' }))
+    await userEvent.type(screen.getByLabelText('Biblioteca'), 'tanstack query')
+    await userEvent.type(screen.getByLabelText('Pergunta'), 'invalidar cache')
+  }
+
+  it('starts off, because 25 snippets are never what nobody asked for', async () => {
+    await compose()
+
+    expect(screen.getByRole('checkbox', BOX)).not.toBeChecked()
+  })
+
+  it('reaches the paid call as broad', async () => {
+    await compose()
+    vi.mocked(api.docs.search).mockResolvedValue({
+      ok: true,
+      value: { status: 'found', candidates: [CANDIDATE, TWIN] }
+    })
+
+    await userEvent.click(screen.getByRole('checkbox', BOX))
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+    await screen.findByRole('radio', { checked: true })
+    vi.mocked(api.docs.fetch).mockResolvedValue({ ok: true, value: { status: 'empty' } })
+    await userEvent.click(screen.getByRole('button', { name: 'Consultar' }))
+
+    expect(vi.mocked(api.docs.fetch).mock.calls[0][0]).toMatchObject({ broad: true })
+  })
+
+  // Ticked, then sent: the next consultation must not carry an amplitude
+  // nobody asked for twice. Asserted after really ticking it — asserting the
+  // default here would pass against no reset at all.
+  it('goes back off once the consultation has been sent', async () => {
+    await compose()
+    await userEvent.click(screen.getByRole('checkbox', BOX))
+    expect(screen.getByRole('checkbox', BOX)).toBeChecked()
+
+    await userEvent.click(screen.getByRole('button', { name: 'limpar pendente' }))
+
+    expect(screen.getByRole('checkbox', BOX)).not.toBeChecked()
   })
 })

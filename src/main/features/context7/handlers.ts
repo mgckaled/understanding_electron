@@ -50,7 +50,12 @@ export async function fetchDocs(
   args: Args<'docs:fetch'>,
   deps: DocsDeps
 ): Promise<Result<ContextOutcome>> {
-  const key = `fetch|${args.libraryId}|${args.version ?? ''}|${args.query}`
+  // The amplitude is part of the key, not a detail of it: without it, ticking
+  // `consulta ampla` on the same library and question would hand back the
+  // narrow answer already memoized, for free, and read as the box doing
+  // nothing. A silent success, which is the failure this project fears most.
+  const amplitude = args.broad === true ? 'broad' : 'narrow'
+  const key = `fetch|${args.libraryId}|${args.version ?? ''}|${amplitude}|${args.query}`
   // `refresh` skips the read and never the write: the key stays the same, so
   // the fresh answer replaces the one `Ver de novo` would hand back (D23I.11).
   const cached =
