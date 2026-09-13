@@ -360,3 +360,37 @@ describe('o título do trecho é markdown', () => {
     expect(screen.queryByText(/`/)).toBeNull()
   })
 })
+
+// D23J.8: D23G.5 refused a "mark all" on two arguments, and the broad path
+// knocks the first one down — it rested on "the measured case is 5 snippets".
+// The second (the APG mixed-state box, which needs an imperative `ref`) never
+// applied to a pair of plain buttons.
+describe('marcar e desmarcar todos', () => {
+  it('clears the snippets and leaves the notes checked', async () => {
+    await showAnswer(ANSWER)
+
+    await userEvent.click(screen.getByRole('button', { name: 'desmarcar todos' }))
+
+    expect(screen.getByText('1 de 3 · ~22 tok', { exact: false })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Anexar' })).toBeEnabled()
+  })
+
+  it('acts on the keys of this tab alone, leaving the notes as they were', async () => {
+    await showAnswer(ANSWER)
+
+    await userEvent.click(screen.getByRole('button', { name: 'desmarcar todos' }))
+    await userEvent.click(screen.getByRole('button', { name: 'marcar todos' }))
+
+    expect(screen.getByText('3 de 3', { exact: false })).toBeInTheDocument()
+  })
+
+  // Frozen is frozen (D23G.7): the pair would offer a way to change what the
+  // model is about to be sent.
+  it('is gone once the consultation is attached', async () => {
+    await showAnswer(ANSWER)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Anexar' }))
+
+    expect(screen.queryByRole('button', { name: 'desmarcar todos' })).not.toBeInTheDocument()
+  })
+})

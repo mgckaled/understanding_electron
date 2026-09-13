@@ -19,7 +19,7 @@ const decimal = new Intl.NumberFormat('pt-BR')
  */
 function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }): React.JSX.Element {
   const [active, setActive] = useState('trechos')
-  const { isOn, toggle, offKeys } = useDocsSelection()
+  const { isOn, toggle, markAll, clearAll, offKeys } = useDocsSelection()
   const { setSelectedTokens, budget, current, selected, pending, attach, fetchDocs } = useDocs()
   const frozen = pending !== null
 
@@ -77,7 +77,17 @@ function DocsResult({ docs, onBack }: { docs: DocsAnswer; onBack: () => void }):
       id: 'trechos',
       label: `Trechos (${docs.snippets.length})`,
       render: () => (
-        <DocsSnippetList snippets={docs.snippets} isOn={isOn} onToggle={toggle} frozen={frozen} />
+        <DocsSnippetList
+          snippets={docs.snippets}
+          isOn={isOn}
+          onToggle={toggle}
+          // Scoped to this tab's keys, and that is the decision (D23J.8): notes
+          // stay at five even on the broad path, so a pair per tab would double
+          // the control to save one click.
+          onMarkAll={() => markAll(docs.snippets.map((one) => one.key))}
+          onClearAll={() => clearAll(docs.snippets.map((one) => one.key))}
+          frozen={frozen}
+        />
       )
     },
     {

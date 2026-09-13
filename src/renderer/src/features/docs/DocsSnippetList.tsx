@@ -180,11 +180,16 @@ function DocsSnippetList({
   snippets,
   isOn,
   onToggle,
+  onMarkAll,
+  onClearAll,
   frozen
 }: {
   snippets: DocSnippet[]
   isOn: (key: string) => boolean
   onToggle: (key: string) => void
+  /** Absent on a consultation already sent, where the selection is inert (D23G.7). */
+  onMarkAll?: () => void
+  onClearAll?: () => void
   frozen: boolean
 }): React.JSX.Element {
   if (snippets.length === 0) {
@@ -193,24 +198,41 @@ function DocsSnippetList({
     )
   }
 
+  // Always present rather than above some number of items (D23J.8): a
+  // threshold would be an invented constant, and this project has paid for a
+  // ruler fixed without a measured consequence behind it.
+  const bulk = !frozen && onMarkAll !== undefined && onClearAll !== undefined
+
   return (
-    // A group of checkboxes, not switches: the APG reserves the switch for a
-    // binary action, and these are items in a list of options (DF3F.8).
-    <div
-      role="group"
-      aria-label="Trechos a enviar"
-      className="flex min-h-[0px] flex-1 flex-col gap-4 overflow-y-auto p-5"
-    >
-      {snippets.map((snippet, at) => (
-        <Snippet
-          key={snippet.key}
-          snippet={snippet}
-          open={at === 0}
-          on={isOn(snippet.key)}
-          onToggle={() => onToggle(snippet.key)}
-          frozen={frozen}
-        />
-      ))}
+    <div className="flex min-h-[0px] flex-1 flex-col">
+      {bulk && (
+        <div className="flex flex-none items-center gap-2 px-5 pt-4">
+          <Button variant="ghost" size="sm" type="button" onClick={onMarkAll}>
+            marcar todos
+          </Button>
+          <Button variant="ghost" size="sm" type="button" onClick={onClearAll}>
+            desmarcar todos
+          </Button>
+        </div>
+      )}
+      {/* A group of checkboxes, not switches: the APG reserves the switch for a
+          binary action, and these are items in a list of options (DF3F.8). */}
+      <div
+        role="group"
+        aria-label="Trechos a enviar"
+        className="flex min-h-[0px] flex-1 flex-col gap-4 overflow-y-auto p-5"
+      >
+        {snippets.map((snippet, at) => (
+          <Snippet
+            key={snippet.key}
+            snippet={snippet}
+            open={at === 0}
+            on={isOn(snippet.key)}
+            onToggle={() => onToggle(snippet.key)}
+            frozen={frozen}
+          />
+        ))}
+      </div>
     </div>
   )
 }
