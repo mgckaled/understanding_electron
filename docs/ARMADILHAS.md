@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **115** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **116** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -18,6 +18,17 @@ Provar um vermelho por sabotagem via shell (`python -c`, `sed -i`) tem um modo d
 **A leitura errada é fatal para o método:** "não passou" parece confirmar a sabotagem, e o teste segue sem nunca ter sido exercitado. O vermelho que vale é `Tests  N failed`, com o **nome** do teste esperado na lista de falhas; qualquer outra forma de não-verde é a suíte não tendo corrido.
 
 ⚠️ **Conserto de rota:** para `&&` dentro de string em `python -c` sob Git Bash, use `'...'` simples de Python **sem** escape (`'{false && ('`), ou o `Edit`, que não passa pelo shell. E confira o arquivo (`grep` na linha tocada) antes de crer no resultado da corrida.
+
+⚠️ **E o gatilho não é só sabotagem — é escrever qualquer teste por heredoc.** No 23-J, um **apóstrofo dentro do nome de um teste** (`it('acts on this tab's keys alone')`) fechou a string e produziu o mesmo `Transform failed` / `Tests  no tests`. Não havia sabotagem nenhuma em curso: o arquivo simplesmente não compilava. Ao escrever nome de teste em inglês por heredoc, a contração (`tab's`, `doesn't`, `it's`) é o caractere a vigiar, e a saída a conferir é a **contagem**, nunca a ausência de verde.
+
+### Teste que passa isolado e estoura por timeout na suíte inteira — é custo de render, não lógica (set/2026)
+`Test timed out in 5000ms` em dois testes que passam sozinhos em ~2,2 s **não é intermitência nem defeito de lógica**: é o teto padrão do Vitest contra a contenção da suíte, que roda com `maxWorkers: '50%'`. Um teste a ~2,2 s isolado já vive a ~2,3× do teto sob carga, e qualquer coisa que some ~10% ao render o empurra para fora.
+
+**No 23-J o gatilho foi um primitivo de markdown desenhando um título** dentro de árvores que rerenderizam a cada tecla do composer — `contextBudget.test.tsx` foi de **18,71 s** para **21,17 s**.
+
+⚠️ **Os dois consertos errados são simétricos:** subir o `testTimeout` esconde a próxima regressão de verdade, e desfazer a mudança joga fora a feature por um sintoma que não é dela. **O certo é medir o delta** (rode o arquivo isolado antes e depois — o custo aparece em segundos, não em asserção) e atacar a causa; ali, `memo` no componente, porque o que pesava era o **parse** refeito a cada render do pai: voltou a **19,2 s**.
+
+**Quem pega isto é o portão de commit, nunca o `test_related`** — o hook roda o grafo do arquivo tocado, sem contenção, e por isso fica verde. Um commit reprovado com "passa isolado" é este diagnóstico até prova em contrário.
 
 ### `prompt_eval_count` menor que o prompt — é cache de prefixo, não estimativa errada (set/2026)
 Comparar uma contagem de tokens com o `prompt_eval_count` do Ollama parece a verificação definitiva, e **não é**: o campo conta o que o modelo precisou **avaliar**, não o tamanho do prompt. Prefixo já avaliado numa requisição anterior não reaparece na conta.
