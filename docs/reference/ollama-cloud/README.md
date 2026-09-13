@@ -2,7 +2,7 @@
 
 > **Data:** sondagem e refinamento em 13/09/2026 · **Estado:** ✅ vivo · **Natureza:** medição, mais o recorte que a trilha N-3 executa.
 >
-> Registra **o que a API faz**, medido contra o serviço real: **76 requisições** contadas no painel da conta — 27 mapeando a API, o restante na bateria de qualidade e no diagnóstico do HTTP 400. A sessão de refinamento fechou quatro perguntas contra a documentação oficial e o fonte do Ollama, e **§ 5 recorta a trilha N-3 em quatro cortes**.
+> Registra **o que a API faz**, medido contra o serviço real: **76 requisições** contadas no painel da conta — 27 mapeando a API, o restante na bateria de qualidade e no diagnóstico do HTTP 400. A sessão de refinamento fechou quatro perguntas contra a documentação oficial e o fonte do Ollama, e **§ 5 recorta a trilha N-3 em cinco cortes**.
 >
 > **Continua não sendo plano.** Cada corte nasce como arquivo na sessão em que for executado ([`ROADMAP § 1`](../../ROADMAP.md), linha N-3) — o que § 5 entrega é o escopo e a ordem, para que a sessão de planejamento não precise refazer esta leitura.
 
@@ -10,7 +10,7 @@
 
 | Anexo | O que responde |
 |---|---|
-| [`decisoes.md`](decisoes.md) | **As 29 decisões `DNC-<n>`, fechadas antes de existir código** — escolha de modelo, catálogo, fronteira, raciocínio, cota, privacidade, e o que ficou declaradamente fora |
+| [`decisoes.md`](decisoes.md) | **As 30 decisões `DNC-<n>`, fechadas antes de existir código** — escolha de modelo, catálogo, fronteira, raciocínio, cota, privacidade, e o que ficou declaradamente fora |
 | [`api.md`](api.md) | Endpoints medidos um a um, o fio NDJSON, as cinco divergências contra o daemon local, os dois defeitos que a sondagem expôs, erros e status |
 | [`desempenho.md`](desempenho.md) | TTFT e tok/s dos seis modelos, contexto grande, cache de prompt — com a régua de comparação contra a frota local |
 | [`capacidades.md`](capacidades.md) | Busca web, extração de página, *tool calling*, visão, e a ausência de *embeddings* |
@@ -159,6 +159,7 @@ Arquivos separados, estilo 18-A — nunca passos dentro de um arquivo só, e **n
 | **N-3-B** | **o popover em uma linha.** `flex-row` com nome truncando, `560px`, o tripé de limite para o `title`, vocabulário unificado, `não cabe` sem `até 0k`, separador `·`, coluna de chips alinhada, e **um mecanismo de destaque só** — o das linhas de nuvem é hoje inerte (`DNC-23`–`DNC-29`). **100% renderer, nenhum canal tocado** | — |
 | **N-3-C** | **o serviço e o catálogo sondado.** `'ollama-cloud'` em `aiServiceSchema` **e** em `CLOUD_PROVIDERS` (`DNC-8`), campo no cofre ao lado de Gemini/GLM/Context7, adaptador por parametrização de `ollama.ts` (`DNC-10`), catálogo sondado com lista fixa (`DNC-5`) e `attention`/`sizeBytes` forçados (`DNC-6`), disponibilidade por `hasKey()` (`DNC-7`), `loaded`/`unload` no-op (`DNC-11`), e o gate de `ai:propose` (`DNC-19`). **Um modelo só: `gemma4:31b`** — o que respeita `think: false` hoje. Termina com conversa funcionando | A · B |
 | **N-3-D** | **o segundo modelo e o nível de raciocínio.** `ThinkValue` no contrato (`DNC-12`), `'low'` como piso do `gpt-oss` (`DNC-13`), `gpt-oss:120b` entra na lista fixa (`DNC-3`), e `total_duration` alimenta o painel Desempenho (`DNC-20`) | C |
+| **N-3-E** | **o fechamento.** Verificação ao vivo, e o que sobrevive se divide em **três** destinos: regra que decide a primeira linha vai para a skill `ai`; ficha dos dois modelos de nuvem vai para `reference/models/`, que fica **vivo**; a narrativa da sondagem fica aqui, marcada `⛔ consumido`. Mais `ESCOPO.md`, pasta e apontadores (`DNC-30`) | todos |
 
 **A ordem é dependência, não sugestão.** `A` e `B` **não tocam nuvem** e podiam rodar isolados a qualquer momento — abrem a trilha de propósito, pela mesma regra nos dois casos: **consertar antes de acrescentar.** `A` garante que nenhum modelo de nuvem chegue antes da guarda que o `gpt-oss` vai exercitar; `B` garante que as linhas novas não entrem num popover já quebrado. Entre si **são independentes** — `A` é adaptador e catálogo, `B` é renderer — e a ordem alfabética entre os dois é etiqueta, não lei. `D` existe separado de `C` porque `ThinkValue` muda o contrato dos **três** provedores já existentes, e misturá-lo com o nascimento de um quarto seria duas variáveis no mesmo corte.
 

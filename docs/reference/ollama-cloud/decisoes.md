@@ -1,4 +1,4 @@
-# Ollama Cloud — as 29 decisões
+# Ollama Cloud — as 30 decisões
 
 > Anexo de [`README.md`](README.md). Todas fechadas em **13/09/2026**, **antes de existir código** — mesma forma das `DM-<n>` do arco 23 ([`reference/context7/decisoes.md`](../context7/decisoes.md)). Consulta por `Grep` na sigla `DNC-<n>`. **Não `Read` inteiro.**
 
@@ -149,6 +149,24 @@ Cada decisão declara **em que se apoia**, porque a força varia:
   | Linha **de nuvem** | CSS `hover:border-border hover:bg-surface-raised` | ⚠️ **`bg-surface-raised` é a cor do próprio fundo do popover** — a mudança de fundo é invisível, só a borda aparece |
 
   Unifica no mecanismo **local** (estado JS), por dois motivos: a cor está certa, e o estado JS é o único que sincroniza com a navegação por teclado do `role="listbox"` — um `:hover` puro deixa mouse e setas destacando linhas diferentes. **Os defaults também divergem** (`border-border` nas locais contra `border-transparent` nas de nuvem) e passam a ser um só.
+
+---
+
+## O fechamento — o corte `N-3-E`
+
+- **DNC-30 · O fechamento é corte próprio, e o destino do que sobra é TRIPLO** *(precedente)*. Ao fim da trilha, esta pasta deixa de ser fonte de regra e passa a **`⛔ consumido`**, como `reference/context7/`. Duas partes na decisão:
+
+  **(a) Corte próprio, não rodapé do `N-3-D`.** O arco 23 deu ao fechamento o seu próprio corte (`23-K`), separado das minúcias (`23-J`), e o motivo registrado foi de ordem: *um apanhado de pendências depois do fechamento reabriria o que ele fechou*. O mesmo vale aqui, mais dois argumentos: o `N-3-D` já carrega uma **medição** (quanto `think: 'low'` reduz) e uma mudança de contrato que atravessa os quatro provedores; e a verificação ao vivo do fechamento só pode acontecer **depois** de `D` estar pronto. R-6 e R-7 confirmam o padrão — consolidação documental sempre teve unidade própria neste projeto.
+
+  **(b) O destino não é só a skill, e essa é a diferença contra o arco 23.** Lá, `reference/context7/` pôde ser consumido por inteiro porque a skill `ctx-7` absorveu tudo que sobreviveu. Aqui **já existe um segundo dono vivo**: `reference/models/`, cuja fronteira R6.1 traçou de propósito. Sem a divisão, ou esta pasta duplica aquela (dívida, e o segundo lugar envelhece calado), ou aquela fica desatualizada em silêncio.
+
+  | O que sobrevive | Vai para | Estado final |
+  |---|---|---|
+  | Regra que decide a primeira linha de código — forçar `attention`/`sizeBytes`, `ThinkValue` e o piso do `gpt-oss`, a armadilha `-cloud`, disponibilidade por `hasKey()` apesar de o ping funcionar | skill [`ai`](../../../.claude/skills/ai/SKILL.md) | ✅ dono |
+  | Ficha dos dois modelos de nuvem — teto, capacidades, e o fato de **não custarem RAM local** | [`reference/models/`](../models/README.md) | ✅ **vivo**, nunca consumido |
+  | A narrativa da sondagem — as 76 requisições, a série de cota, a bateria de qualidade, as rejeições com motivo | esta pasta | ⛔ consumido |
+
+  ⚠️ **A régua que separa (1) de (3) é a mesma do `CLAUDE.md`:** vai para a skill o que alguém violaria **sem saber** ao escrever a primeira linha; fica aqui o que se consulta uma vez e não decide código. *"76 requisições custaram 1,9 %"* não muda nenhuma linha — `DNC-15` (não exibir cota), que saiu daí, muda.
 
 ---
 
