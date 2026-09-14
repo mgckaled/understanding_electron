@@ -207,7 +207,7 @@ Como cada número é calculado — cache KV por token, margem, faixas de janela,
 
 ### O gate de capacidade é correção, não cortesia
 
-Um anexo só é enviado a um modelo que declare a capacidade correspondente — `vision`, no caso de imagem. Quando o modelo selecionado não declara, o aplicativo **recusa o envio**: não manda sem a imagem, não avisa depois.
+Um anexo só é enviado a um modelo que declare a capacidade correspondente — hoje só a imagem exige uma, `vision`; dados tabulares e documento viajam como texto e não pedem nenhuma. **A pergunta é por anexo, nunca sobre o modelo inteiro:** capacidades convivem, e um modelo com `vision` **e** `tools` é comum desde set/2026. Quando o modelo selecionado não declara, o aplicativo **recusa o envio**: não manda sem a imagem, não avisa depois.
 
 O motivo não é elegância de interface. Sem receber a imagem, o modelo responde assim mesmo — descreve um gráfico inteiro, com números plausíveis e nenhuma hesitação, sobre um arquivo que nunca viu. É a mesma classe da [falha silenciosa do NL→SQL](HISTORY.md): num caminho gerado por modelo, o perigo não é a exceção, é o sucesso. Anexo que falha em silêncio não produz erro — produz resposta convincente sobre um arquivo inexistente.
 
