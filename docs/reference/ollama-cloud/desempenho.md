@@ -57,8 +57,9 @@ Três pontos lidos no painel da conta, todos em 13/09/2026:
 | Após a 1ª rodada (respostas curtas) | 23 | **0,2 %** | — |
 | Após a 2ª rodada (inclui os pesados) | 42 | **1,7 %** | +19 req · **+1,5 pp** |
 | **Final (bateria de qualidade + diagnóstico do 400)** | **76** | **1,9 %** | +34 req · **+0,2 pp** |
+| **Verificação ao vivo do `N-3-C` e do `N-3-D` (14/09)** | **82** | **2,2 %** | +6 req · **+0,3 pp** |
 
-⚠️ **A terceira leitura desmonta a conclusão que as duas primeiras sugeriam.** Com dois pontos, a leitura óbvia era que requisições pesadas custam ~7,5× as leves. O terceiro lote tinha **34 requisições e quatro chamadas a `nemotron-3-ultra`** — o modelo mais caro dos seis, que no lote anterior aparecia como a explicação do salto — e custou **0,2 pp**, praticamente a taxa do lote mais leve de todos.
+⚠️ **A quarta leitura (14/09) é a mais eloquente: seis requisições custaram +0,3 pp, mais que as 34 do lote anterior.** ⚠️ **A terceira já desmontava a conclusão que as duas primeiras sugeriam.** Com dois pontos, a leitura óbvia era que requisições pesadas custam ~7,5× as leves. O terceiro lote tinha **34 requisições e quatro chamadas a `nemotron-3-ultra`** — o modelo mais caro dos seis, que no lote anterior aparecia como a explicação do salto — e custou **0,2 pp**, praticamente a taxa do lote mais leve de todos.
 
 Os dois lotes com mais `ultra` estão nos **extremos opostos** da tabela. Nenhuma hipótese de "segundos de GPU" reconcilia isso sozinha.
 

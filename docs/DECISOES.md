@@ -6,7 +6,7 @@
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**601 linhas** em 14/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
+Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**609 linhas** em 14/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
 - **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, **sem sigla própria** (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
@@ -732,6 +732,14 @@ chamada de modelo no main (`D9.1`).
 | N-3-C | [DN3C.8](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `loaded` devolve lista vazia e `unload` é no-op: `/api/ps` responde 401, resposta verdadeira |
 | N-3-C | [DN3C.9](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `ai:propose` recusa **todo** serviço de nuvem — limite do app que a nuvem só tornou visível |
 | N-3-C | [DN3C.10](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `think` continua booleano neste corte: `gemma4:31b` o respeita, e `ThinkValue` é do `N-3-D` |
+| N-3-D | [DN3D.1](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | `ThinkLevel` sobe ao `ChatFn`, e quem o preenche é o handler — o `N-3-E` troca só quem decide o valor |
+| N-3-D | [DN3D.2](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | Quem exige nível é reconhecido pelo **nome de família**: `capabilities` reporta `thinking`, nunca 'exige nível' |
+| N-3-D | [DN3D.3](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | Com o interruptor desligado, o `gpt-oss` recebe `'low'` mesmo assim — não há off, e o padrão custa 7× |
+| N-3-D | [DN3D.4](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | Entra `gpt-oss:120b`; o `20b` fica fora por HTTP 400 com `tools` e por ser dominado |
+| N-3-D | [DN3D.5](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | `total_duration` vira coluna própria — refinar `Rede+Prefill` mudaria um número documentado sem aviso |
+| N-3-D | [DN3D.6](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | A coluna do banco é degrau novo (`v5`), nunca edição do `v2`: linha antiga fica `NULL`, não zero |
+| N-3-D | [DN3D.7](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | Quanto `'low'` reduz é medição do corte — e o roteiro que pedia delta de geração era inválido por construção |
+| N-3-D | [DN3D.8](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | Escolher esforço vira `N-3-E` e o fechamento desce para `N-3-F`: três dos quatro serviços têm nível |
 
 ---
 
