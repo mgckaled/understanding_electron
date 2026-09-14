@@ -9,6 +9,7 @@ export type ChatTiming = Pick<
   | 'evalTokens'
   | 'ttftMs'
   | 'decodeMs'
+  | 'totalDurationMs'
   | 'loadDurationMs'
   | 'promptEvalDurationMs'
   | 'nativeEvalDurationMs'
@@ -59,8 +60,14 @@ export async function measureChatTiming(
   }
 
   const t2 = performance.now()
-  const { promptTokens, evalTokens, loadDurationMs, promptEvalDurationMs, nativeEvalDurationMs } =
-    result.value
+  const {
+    promptTokens,
+    evalTokens,
+    totalDurationMs,
+    loadDurationMs,
+    promptEvalDurationMs,
+    nativeEvalDurationMs
+  } = result.value
   return {
     result,
     timing: {
@@ -68,6 +75,7 @@ export async function measureChatTiming(
       ttftMs: t1 - t0,
       decodeMs: t2 - t1,
       ...(promptTokens === undefined ? {} : { promptTokens }),
+      ...(totalDurationMs === undefined ? {} : { totalDurationMs }),
       ...(loadDurationMs === undefined ? {} : { loadDurationMs }),
       ...(promptEvalDurationMs === undefined ? {} : { promptEvalDurationMs }),
       ...(nativeEvalDurationMs === undefined ? {} : { nativeEvalDurationMs })

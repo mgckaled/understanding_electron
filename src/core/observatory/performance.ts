@@ -8,6 +8,7 @@ export type PerformanceEvent = {
   evalTokens: number
   ttftMs: number
   decodeMs: number
+  totalDurationMs?: number
   loadDurationMs?: number
   promptEvalDurationMs?: number
   nativeEvalDurationMs?: number

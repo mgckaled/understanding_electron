@@ -76,7 +76,9 @@ type OllamaChatLine = {
   prompt_eval_count?: number
   eval_count?: number
   // Nanoseconds, only Ollama has these (O-7, § 9.2) — converted to ms at the
-  // point of return, never re-exposed in this unit past this file.
+  // point of return, never re-exposed in this unit past this file. The cloud
+  // sends total_duration ALONE, which is why it is read apart (DNC-20).
+  total_duration?: number
   load_duration?: number
   prompt_eval_duration?: number
   eval_duration?: number
@@ -85,11 +87,15 @@ type OllamaChatLine = {
 const NS_PER_MS = 1e6
 
 function nativeDurations(line: OllamaChatLine): {
+  totalDurationMs?: number
   loadDurationMs?: number
   promptEvalDurationMs?: number
   nativeEvalDurationMs?: number
 } {
   return {
+    ...(line.total_duration === undefined
+      ? {}
+      : { totalDurationMs: line.total_duration / NS_PER_MS }),
     ...(line.load_duration === undefined ? {} : { loadDurationMs: line.load_duration / NS_PER_MS }),
     ...(line.prompt_eval_duration === undefined
       ? {}

@@ -183,6 +183,28 @@ describe('ollamaChat', () => {
     expect(result).toEqual({ content: 'ok', promptTokens: 1850, evalTokens: 42 })
   })
 
+  // The cloud reports total_duration and NONE of the other three (DNC-20), so
+  // it is read on its own — and absence has to stay absence, never a zero the
+  // panel would average in as an instant reply.
+  it('converts total_duration to ms, apart from the other durations', async () => {
+    stubChatStream([
+      '{"message":{"content":"ok"},"done":true,"eval_count":42,"total_duration":2411000000}\n'
+    ])
+
+    const result = await ollamaChat(messages, { model: 'gemma4:31b' })
+
+    expect(result.totalDurationMs).toBe(2411)
+    expect('loadDurationMs' in result).toBe(false)
+  })
+
+  it('omits totalDurationMs when the final line does not carry it', async () => {
+    stubChatStream(['{"message":{"content":"ok"},"done":true,"eval_count":42}\n'])
+
+    const result = await ollamaChat(messages, { model: 'gemma4:31b' })
+
+    expect('totalDurationMs' in result).toBe(false)
+  })
+
   it('omits the counters rather than reporting zero when they are absent', async () => {
     // A cloud provider may not report them, and the contract says their absence
     // must not break anything. Zero would be a lie the meter would act on.

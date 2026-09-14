@@ -235,6 +235,11 @@ export type ChatReply = {
   promptTokens?: number
   evalTokens?: number
   /**
+   * The provider's own total for the call, in ms — the only duration Ollama
+   * Cloud reports, and the one the panel compares against our clock (DNC-20).
+   */
+  totalDurationMs?: number
+  /**
    * Ollama-only wall-clock breakdown (nanosecond fields converted to ms at
    * the adapter), in ms (O-7, § 9.2). Cloud providers never set these — the
    * observatory reads their absence as "no load phase", never as zero.
