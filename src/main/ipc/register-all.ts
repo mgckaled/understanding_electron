@@ -264,11 +264,19 @@ export async function registerAll(): Promise<() => void> {
   }
   // N-1-B: what step 1 (N-1-A) left as a single fixed adapter is now a
   // service→provider resolver — nothing else in this file changes shape.
-  // N-1-C adds the third branch the same way.
+  //
+  // ⚠️ A Record, not an if-chain ending in `return ollamaAdapter` (DN3C.2). The
+  // default branch was the dangerous one: a service someone forgets to wire
+  // would not fail, it would route to the LOCAL daemon — the shape of the risk
+  // DNC-8 exists to prevent, by omission instead of by tag. Here a missing
+  // service is a compile error.
+  const ADAPTERS: Record<AiService, ProviderAdapter> = {
+    ollama: ollamaAdapter,
+    glm: glmAdapter,
+    gemini: geminiAdapter
+  }
   function resolveProvider(service: AiService): ProviderAdapter {
-    if (service === 'glm') return glmAdapter
-    if (service === 'gemini') return geminiAdapter
-    return ollamaAdapter
+    return ADAPTERS[service]
   }
 
   handle('ai:isAvailable', (args) => {
