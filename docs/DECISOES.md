@@ -6,7 +6,7 @@
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**609 linhas** em 14/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
+Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**615 linhas** em 14/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
 - **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, **sem sigla própria** (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
@@ -740,6 +740,12 @@ chamada de modelo no main (`D9.1`).
 | N-3-D | [DN3D.6](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | A coluna do banco é degrau novo (`v5`), nunca edição do `v2`: linha antiga fica `NULL`, não zero |
 | N-3-D | [DN3D.7](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | Quanto `'low'` reduz é medição do corte — e o roteiro que pedia delta de geração era inválido por construção |
 | N-3-D | [DN3D.8](plan/implemented/N-3-D-o-segundo-modelo-e-o-nivel-de-raciocinio.md) | Escolher esforço vira `N-3-E` e o fechamento desce para `N-3-F`: três dos quatro serviços têm nível |
+| N-3-E | [DN3E.1](plan/implemented/N-3-E-o-fechamento-da-trilha.md) | O piso do `gpt-oss` vai de `'low'` para `'medium'` — esforço compra qualidade de resposta, não só rastro |
+| N-3-E | [DN3E.2](plan/implemented/N-3-E-o-fechamento-da-trilha.md) | A escolha de esforço sai da N-3 e vira escopo declarado da `N-2`; `DN3D.8` revogada por medição |
+| N-3-E | [DN3E.3](plan/implemented/N-3-E-o-fechamento-da-trilha.md) | O levantamento de esforço ganha dono em `reference/reasoning/`, não em `models/` nem em `ollama-cloud/` |
+| N-3-E | [DN3E.4](plan/implemented/N-3-E-o-fechamento-da-trilha.md) | `200` não prova que o modelo honra o nível: quem valida o `ThinkValue` é o servidor |
+| N-3-E | [DN3E.5](plan/implemented/N-3-E-o-fechamento-da-trilha.md) | O destino triplo de `DNC-30` executado — skill `ai` (regra), `cloud-optin.md` (ficha viva), pasta consumida |
+| N-3-E | [DN3E.6](plan/implemented/N-3-E-o-fechamento-da-trilha.md) | A renumeração é desfeita no que é estado atual e mantida no que é história |
 
 ---
 
