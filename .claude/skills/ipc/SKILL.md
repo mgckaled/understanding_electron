@@ -129,7 +129,9 @@ Transferir posse funciona **dentro** de um processo (renderer → Web Worker, me
 | `performance` | `list` | não — mesma leitura de `observatory.db`, já agregada no main antes de sair (O-7, DO7.5) |
 | `privacy` | `list` | não — mesma leitura de `observatory.db`; a escrita acontece no wrap de `chat()`, condicionada a `isCloudService` (O-8) |
 
-⚠️ **`secrets` é tipado por `CloudProvider`, que desde o 23-B não significa "provedor de IA":** `'context7'` entrou lá por ter credencial, e nunca será um `AiService` — é a separação de DN1A.5 sendo usada pela primeira vez em cheio (D23B.4). Quatro `Record<CloudProvider, …>` exaustivos cobram entrada nova no `typecheck`.
+⚠️ **`secrets` é tipado por `CloudProvider`, que desde o 23-B não significa "provedor de IA":** `'context7'` entrou lá por ter credencial, e nunca será um `AiService` — é a separação de DN1A.5 sendo usada pela primeira vez em cheio (D23B.4). **E `'ollama-cloud'` (N-3-C) é o primeiro valor a estar nos DOIS conjuntos ao mesmo tempo** — a outra direção da mesma separação.
+
+⚠️ **Três mapas escritos à mão cobram entrada nova no `typecheck`** — `ENV_VAR_BY_PROVIDER` (`secrets/seed.ts`), `PROVIDER_LABEL` (`settings/CloudSecrets.tsx`) e `CLOUD_LABEL` (`observatory/CapabilitiesPanel.tsx`); os outros três `Record<CloudProvider, …>` do repositório são anotação sobre objeto **derivado** de `CLOUD_PROVIDERS`, e se preenchem sozinhos. Do lado de `AiService` são dois (`HINTS`, `SERVICE_LABEL`) — mais **um array que o compilador NÃO cobra**: `AI_SERVICES` (`observatory/useCapabilities.ts`) é escrito à mão e um serviço ausente ali compila, passa no lint e some do painel Capacidades sem sinal. Recontado em 14/09/2026; remeça antes de citar.
 
 `secrets:read` **não existe** — nem por omissão, por desenho (DN1A.3): a regra de mão única do [`CLAUDE.md`](../../../CLAUDE.md#segurança) proíbe o renderer de reler um segredo já gravado, só perguntar se ele existe.
 

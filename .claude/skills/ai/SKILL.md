@@ -1,6 +1,6 @@
 ---
 name: ai
-description: A camada de IA do crivo — a fronteira de rede injetável (ChatFn/ProbeFn/ModelsFn), o orçamento de RAM (KV cache por token) e de tokens (calibração, faixas de contexto, ancoramento pós-fato), a armadilha `/api/tags` vs `/api/show`, o contrato único de streaming/raciocínio/motivo-de-parada sobre três provedores (Ollama, Gemini, GLM), e o limite de privacidade nível 1/2/3 na tradução de mensagem para prompt. Use ao tocar `src/core/ai/`, `src/main/features/ai/`, decidir orçamento de contexto, adicionar provedor ou expor uma capacidade nova. Não cobre a frota Ollama instalada nem o catálogo de nuvem (`docs/reference/models/`), nem o contrato dos canais `ai:*` (skill `ipc`).
+description: A camada de IA do crivo — a fronteira de rede injetável (ChatFn/ProbeFn/ModelsFn), o orçamento de RAM (KV cache por token) e de tokens (calibração, faixas de contexto, ancoramento pós-fato), a armadilha `/api/tags` vs `/api/show`, o contrato único de streaming/raciocínio/motivo-de-parada sobre quatro serviços em três formatos de fio (Ollama local e de nuvem, Gemini, GLM), e o limite de privacidade nível 1/2/3 na tradução de mensagem para prompt. Use ao tocar `src/core/ai/`, `src/main/features/ai/`, decidir orçamento de contexto, adicionar provedor ou expor uma capacidade nova. Não cobre a frota Ollama instalada nem o catálogo de nuvem (`docs/reference/models/`), nem o contrato dos canais `ai:*` (skill `ipc`).
 ---
 
 # Camada de IA — crivo
@@ -103,9 +103,24 @@ Além de `'cancelled'`/`'timeout'` (do lado do app), existe `MessageStopped: 'co
 
 `dropRedundantVariants` descarta um modelo cujo `parent_model` (`ollama create`) também está instalado — um clone feito para um app irmão (mill.tools) compartilhando o mesmo Ollama, não uma segunda instalação; mantém o variante quando o pai está ausente, porque aí é o único jeito restante de rodar aqueles pesos.
 
-## Três provedores, um contrato — streaming, raciocínio e erro
+## Ollama Cloud: mesmo parser, alvo diferente — e as quatro regras que decidem a primeira linha
 
-Os três adaptadores implementam o mesmo `ChatFn`, mas o formato de fio diverge; a tabela é o que muda ao adicionar um quarto provedor:
+`'ollama-cloud'` (N-3-C) é serviço próprio em `aiServiceSchema` **e** em `CLOUD_PROVIDERS`, nunca a tag `-cloud` do daemon local: `isCloudService()` decide por `service !== 'ollama'`, e é ela que liga o ledger de privacidade. O adaptador é `providers/ollama.ts` **parametrizado** por um `OllamaTarget` (`baseUrl`, `label`, `headers`, `keepTag`, `normalize`) — o fio é idêntico ao local, medido campo a campo, então uma segunda cópia significaria dois donos do mesmo parser divergindo em silêncio.
+
+| Regra | Por quê |
+|---|---|
+| `attention` e `sizeBytes` são **forçados**, `contextLength` e `capabilities` são **herdados** | hoje a nuvem não publica atenção e `costed: false` sai de graça — está certo **por acidente**. Um modelo que passe a publicá-la faria o app orçar RAM local para quem não usa RAM local; `sizeBytes` herdado exibiria dezenas de GB de disco que não existem |
+| "disponível" é `hasKey()`, **apesar** de o ping funcionar | `/api/version` em `ollama.com` responde **200 sem chave**, então um ping provaria só que há internet. Vale aqui por decisão, não por impossibilidade como em Gemini/GLM — sem esta nota alguém "conserta" para um ping de verdade |
+| o filtro `-cloud`/`:cloud` é do alvo **local** e não viaja | o sufixo é a grafia de roteamento do daemon local (`ollama run gpt-oss:120b-cloud`); a REST responde pelo nome **nu**. Herdado na nuvem, descartaria justamente o que se quer — e em silêncio |
+| a sonda só acontece **com chave guardada** | o catálogo é público, mas sondá-lo no boot faria o app falar com terceiro sem opt-in. Sem chave não há linha no seletor — deliberado, contra a convenção de "linha desabilitada com dica" de GLM/Gemini, que pressupõe catálogo de graça. A guarda mora no **adaptador** (`headers()` lança antes de qualquer `fetch`), não no chamador |
+
+⚠️ **Lista fixa de modelos, aplicada ANTES do `/api/show`** (`OLLAMA_CLOUD_MODEL_NAMES`, `core/ai/models.ts`): `/api/tags` traz 20 modelos, 14 respondem **402**, e o catálogo autenticado é idêntico ao anônimo — nada na API separa os gratuitos. Filtrar antes paga o N+1 (1 + 1, não 1 + 20). A lista envelhece, e isso é aceito: um modelo que suma não aparece; um modelo novo e bom **não entra sozinho**.
+
+⚠️ **`ai:propose` recusa todo serviço de nuvem** (`features/ai/propose.ts`), com `AppError` `'blocked'`, antes de gastar o perfil. Não é limite deste provedor: `format` (D19.3) é o que restringe a decodificação ao schema do passo, e **nem `gemini.ts` nem `glm.ts` jamais o implementaram** — `ai:propose` já era só-Ollama-local sem estar declarado. O contorno por ferramenta forçada existe e está medido, mas é **gatilho** no `ROADMAP § 2`, não corte reservado.
+
+## Quatro serviços, três formatos de fio — streaming, raciocínio e erro
+
+Os adaptadores implementam o mesmo `ChatFn`, mas o formato de fio diverge; a tabela é o que muda ao adicionar um provedor. **São quatro serviços e três colunas**: `'ollama-cloud'` é o mesmo fio de `'ollama'`, por parametrização (seção acima), e é exatamente por isso que não ganha coluna própria.
 
 | | Ollama | Gemini | GLM |
 |---|---|---|---|

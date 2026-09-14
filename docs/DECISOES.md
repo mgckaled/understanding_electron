@@ -6,7 +6,7 @@
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**591 linhas** em 13/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
+Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**601 linhas** em 14/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
 - **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, **sem sigla própria** (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
@@ -722,6 +722,16 @@ chamada de modelo no main (`D9.1`).
 | N-3-B | [DN3B.4](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | `até <n>k` nos dois grupos, e `não cabe` sozinho: o teto só aparece quando há teto útil |
 | N-3-B | [DN3B.5](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | Um destaque só, em união discriminada — "duas linhas destacadas" vira estado inexpressável |
 | N-3-B | [DN3B.6](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | `560px` é ponto de partida, e o juiz é a janela estreita; `max-w` porque jsdom não reprova transbordo |
+| N-3-C | [DN3C.1](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `'ollama-cloud'` entra em `aiServiceSchema` **e** em `CLOUD_PROVIDERS` — primeiro valor nos dois conjuntos |
+| N-3-C | [DN3C.2](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `resolveProvider` vira mapa exaustivo: o ramo padrão roteava serviço desconhecido para o daemon **local** |
+| N-3-C | [DN3C.3](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | O adaptador é `ollama.ts` parametrizado por alvo — e o filtro `-cloud` **não** viaja com a parametrização |
+| N-3-C | [DN3C.4](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | Lista fixa de um modelo, aplicada **antes** do `/api/show`: 1+1 requisições, não 1+20 |
+| N-3-C | [DN3C.5](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `attention` e `sizeBytes` forçados; `contextLength` e `capabilities` herdados — o ganho da sonda |
+| N-3-C | [DN3C.6](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | Disponibilidade por `hasKey()` **apesar** de o ping funcionar, e o comentário existe para impedir o 'conserto' |
+| N-3-C | [DN3C.7](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | A sonda só acontece com chave guardada — sem chave não há linha, contra a convenção de GLM/Gemini |
+| N-3-C | [DN3C.8](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `loaded` devolve lista vazia e `unload` é no-op: `/api/ps` responde 401, resposta verdadeira |
+| N-3-C | [DN3C.9](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `ai:propose` recusa **todo** serviço de nuvem — limite do app que a nuvem só tornou visível |
+| N-3-C | [DN3C.10](plan/implemented/N-3-C-o-servico-e-o-catalogo-sondado.md) | `think` continua booleano neste corte: `gemma4:31b` o respeita, e `ThinkValue` é do `N-3-D` |
 
 ---
 
