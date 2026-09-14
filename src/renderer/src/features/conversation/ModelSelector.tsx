@@ -29,6 +29,21 @@ const GROUP_LABEL =
 const ROW = 'flex cursor-pointer items-center gap-3 rounded-md border px-4 py-2'
 const ROW_NAME = 'min-w-[0px] flex-1 truncate font-ui text-md'
 
+/**
+ * Which row is highlighted, in the one shape both groups share (DNC-29). A
+ * discriminated union rather than an index plus a hovered name: the cloud rows
+ * are not in the listbox, so two independent states would let the mouse and the
+ * arrow keys light up two rows at once. Here that is unexpressable.
+ */
+type Highlight = { group: 'local'; index: number } | { group: 'cloud'; name: string }
+
+// The colour goes DOWN a step from the Popover's own `surface-raised`, which is
+// what the design system asks for where an item already sits on it — and is
+// exactly why the cloud rows' old `hover:bg-surface-raised` was invisible: it
+// painted the background with the background.
+const rowHighlight = (on: boolean): string =>
+  on ? 'border-border-strong bg-surface' : 'border-transparent'
+
 /** The row's middle column — every metadata item separated by `·` (DNC-28),
  *  right-aligned inside a fixed width so the chip column lines up. */
 function RowMeta({ items }: { items: React.ReactNode[] }): React.JSX.Element {
@@ -85,7 +100,10 @@ function ModelPicker({
   const models = state.status === 'ready' ? state.data : []
 
   const [open, setOpen] = useState(false)
-  const [highlighted, setHighlighted] = useState(0)
+  const [highlight, setHighlight] = useState<Highlight>({ group: 'local', index: 0 })
+  // -1 while the highlight sits on a cloud row: `models[-1]` is undefined, which
+  // both aria-activedescendant and Enter already guard against.
+  const localIndex = highlight.group === 'local' ? highlight.index : -1
   const anchorName = toAnchorName(useId())
   const listboxId = useId()
   const listboxRef = useRef<HTMLDivElement>(null)
@@ -98,20 +116,31 @@ function ModelPicker({
 
   const openMenu = (): void => {
     const index = models.findIndex((model) => model.name === selected)
-    setHighlighted(index === -1 ? 0 : index)
+    setHighlight({ group: 'local', index: index === -1 ? 0 : index })
     setOpen(true)
   }
+
+  // An arrow pressed while the mouse highlighted a cloud row comes back to the
+  // listbox, which is where the focus was the whole time.
+  const moveLocal = (step: number): void =>
+    setHighlight((current) => ({
+      group: 'local',
+      index: Math.max(
+        0,
+        Math.min((current.group === 'local' ? current.index : -1) + step, models.length - 1)
+      )
+    }))
 
   const onListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setHighlighted((index) => Math.min(index + 1, models.length - 1))
+      moveLocal(1)
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
-      setHighlighted((index) => Math.max(index - 1, 0))
+      moveLocal(-1)
     } else if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      const model = models[highlighted]
+      const model = models[localIndex]
       if (model !== undefined) {
         onSelect(model.name)
         setOpen(false)
@@ -172,7 +201,7 @@ function ModelPicker({
             tabIndex={0}
             onKeyDown={onListKeyDown}
             aria-activedescendant={
-              models[highlighted] !== undefined ? `${listboxId}-option-${highlighted}` : undefined
+              models[localIndex] !== undefined ? `${listboxId}-option-${localIndex}` : undefined
             }
             className="flex flex-col gap-1 focus-visible:outline-none"
           >
@@ -194,10 +223,8 @@ function ModelPicker({
                     onSelect(model.name)
                     setOpen(false)
                   }}
-                  onMouseEnter={() => setHighlighted(index)}
-                  className={`${ROW} text-text ${
-                    index === highlighted ? 'border-border-strong bg-surface' : 'border-border'
-                  }`}
+                  onMouseEnter={() => setHighlight({ group: 'local', index })}
+                  className={`${ROW} text-text ${rowHighlight(index === localIndex)}`}
                 >
                   <span className={ROW_NAME} title={model.name}>
                     {model.name}
@@ -264,7 +291,10 @@ function ModelPicker({
                 onSelect(model.name)
                 setOpen(false)
               }}
-              className={`group ${ROW} text-left text-text hover:border-border hover:bg-surface-raised disabled:cursor-not-allowed disabled:text-text-faint disabled:hover:border-transparent disabled:hover:bg-transparent border-transparent`}
+              onMouseEnter={() => setHighlight({ group: 'cloud', name: model.name })}
+              className={`group ${ROW} text-left text-text disabled:cursor-not-allowed disabled:text-text-faint ${rowHighlight(
+                highlight.group === 'cloud' && highlight.name === model.name
+              )}`}
             >
               <span className={ROW_NAME} title={model.name}>
                 {model.name}

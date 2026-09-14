@@ -180,6 +180,25 @@ describe('ModelSelector', () => {
     expect(flash).toHaveAttribute('title', '5 RPM · 250k TPM · 20 RPD')
   })
 
+  it('highlights exactly one row, whatever the arrows and the mouse do (DNC-29)', async () => {
+    // The cloud rows are not in the listbox, so an index for Locais plus a
+    // hovered name for Nuvem would let the keyboard and the mouse light up two
+    // rows at once. `.bg-surface` is an exact class token — CapabilityChip's
+    // `bg-surface-raised` is a different one and never counts here.
+    const user = userEvent.setup()
+    mount(true)
+    await user.click(await modelTrigger())
+
+    const list = (await screen.findByRole('listbox', { hidden: true })).parentElement
+    if (list === null) throw new Error('listbox has no wrapper')
+
+    await user.keyboard('{ArrowDown}')
+    expect(list.querySelectorAll('.bg-surface')).toHaveLength(1)
+
+    await user.hover(screen.getByRole('button', { name: /gemini-3\.7-flash/, hidden: true }))
+    expect(list.querySelectorAll('.bg-surface')).toHaveLength(1)
+  })
+
   it('keeps the missing-key hint in the title of a disabled cloud row, never the rate-limit tripod (DN3B.2)', async () => {
     const user = userEvent.setup()
     // No keys at all: both Gemini rows are disabled, and Gemini is the provider
