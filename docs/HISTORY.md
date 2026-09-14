@@ -36,7 +36,7 @@ Três a oito linhas. Se precisar de mais, o detalhe pertence ao plano, não aqui
 ## Entregas (marcos)
 
 ### N-3-E — O fechamento da trilha: o piso que estava errado, e a escada que mudou de dono (set/2026)
-Quinto e último corte da trilha N-3. Entrega: uma linha de produção, o registro da `N-2` e o fechamento. `check:fast` verde na suíte inteira; a verificação ao vivo foi curta porque só um comportamento mudou.
+Quinto e último corte da trilha N-3. Entrega: uma linha de produção, o registro da `N-2` e o fechamento. `check:fast` verde na suíte inteira; a verificação ao vivo foi curta porque só um comportamento mudou — e **confirmou a decisão**: com `medium`, o rastro deixou de ser uma linha e passou a enumerar o plano da resposta, que a resposta então seguiu.
 
 **O piso do `gpt-oss` estava errado, e o erro era meu do dia anterior** (`DN3E.1`). `DNC-13`/`DN3D.3` escolheram `'low'` pelo custo — a cota é tempo de GPU e a família gera 7× mais tokens. **O argumento tratava raciocínio como exibição, e ele não é:** esforço compra qualidade de **resposta**, não só tamanho de rastro. Fixar o mínimo degradava toda resposta do modelo, inclusive com o interruptor **desligado**, onde a economia parecia de graça — ali o usuário diz *"não quero ver"*, nunca *"pode pensar menos"*. A verificação ao vivo do `N-3-D` tinha mostrado o sintoma sem que eu o lesse assim: uma linha de rastro é, num modelo de raciocínio, quase não raciocinar. `'medium'` é o default documentado do modelo, então o app **deixa de decidir por ele** — e o fio continua mandando nível, que é o tipo certo e a costura que a `N-2` vai usar.
 
