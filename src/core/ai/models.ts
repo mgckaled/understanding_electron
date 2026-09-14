@@ -60,6 +60,40 @@ export const GEMINI_MODELS: AiModel[] = [
   }
 ]
 
+/**
+ * The free-tier models this app offers from Ollama Cloud (N-3-C, DNC-1/DNC-5).
+ * A fixed list, not the whole catalog: `/api/tags` at ollama.com answers with
+ * 20 models — 14 of them reply HTTP 402 — and the authenticated catalog is
+ * byte-identical to the anonymous one, so nothing in the API tells the paid
+ * ones apart. Filtering before the probe also pays the N+1 down to 1 + 1.
+ *
+ * ⚠️ Bare names, never the `-cloud`/`:cloud` spelling: that suffix belongs to
+ * the LOCAL daemon's cloud routing (`ollama run gpt-oss:120b-cloud`), while
+ * the REST API answers to the bare name (docs.ollama.com/api/authentication).
+ *
+ * `gpt-oss:120b` is deliberately absent until N-3-D: it only accepts a
+ * reasoning LEVEL, never the boolean this app sends today (DNC-12).
+ */
+export const OLLAMA_CLOUD_MODEL_NAMES = ['gemma4:31b'] as const
+
+/**
+ * Like `normalizeOllamaModel`, but `attention` and `sizeBytes` are FORCED
+ * rather than read (DNC-6). Today the cloud reports no attention block at all,
+ * so `costed: false` falls out on its own — which is right by ACCIDENT. Were a
+ * model to start publishing one, the app would silently budget local RAM for
+ * something that uses none; and an inherited `sizeBytes` would show 13,7 GB of
+ * disk that does not exist. What IS inherited is the context ceiling and the
+ * capabilities — the whole point of probing instead of hand-writing the card.
+ */
+export function normalizeOllamaCloudModel(tag: OllamaTag, show: OllamaShow): AiModel {
+  return {
+    ...normalizeOllamaModel(tag, show),
+    provider: 'ollama-cloud',
+    sizeBytes: 0,
+    attention: null
+  }
+}
+
 // The two raw shapes this module normalizes. Declared loose on purpose: they
 // belong to Ollama, not to us, and every field the app depends on is read
 // defensively below. A missing field yields null, never a throw — the catalog

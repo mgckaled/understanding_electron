@@ -174,7 +174,10 @@ export type DatasetRef = {
 // set of providers — z.infer keeps the type from being written in parallel.
 // 'glm' joined in N-1-B; 'gemini' joined in N-1-C, promoted from CloudProvider
 // (which it already was, since N-1-A — a secret slot without a live adapter).
-export const aiServiceSchema = z.enum(['ollama', 'glm', 'gemini'])
+// 'ollama-cloud' joined in N-3-C as a service of its OWN, never as a `-cloud`
+// tag under 'ollama': isCloudService() decides by `service !== 'ollama'`, and it
+// is what turns the privacy ledger on (DNC-8).
+export const aiServiceSchema = z.enum(['ollama', 'glm', 'gemini', 'ollama-cloud'])
 export type AiService = z.infer<typeof aiServiceSchema>
 
 export const chatMessageSchema = z.object({
@@ -871,7 +874,9 @@ export const DEFAULT_APP_SETTINGS: AppSettings = { numThread: 4, theme: 'system'
  */
 // 'context7' joined in 23-B and is the proof the distinction was worth
 // keeping: it holds a credential and will NEVER be an AI service (D23B.4).
-export const CLOUD_PROVIDERS = ['gemini', 'glm', 'context7'] as const
+// 'ollama-cloud' (N-3-C) is the first value to be in BOTH sets at once — the
+// other direction of that same distinction.
+export const CLOUD_PROVIDERS = ['gemini', 'glm', 'context7', 'ollama-cloud'] as const
 export type CloudProvider = (typeof CLOUD_PROVIDERS)[number]
 export const cloudProviderSchema = z.enum(CLOUD_PROVIDERS)
 

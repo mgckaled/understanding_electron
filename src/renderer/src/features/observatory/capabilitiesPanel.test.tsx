@@ -59,11 +59,11 @@ describe('CapabilitiesPanel', () => {
     // The mock resolves the same catalog for all three services (DO4.1
     // covers one service per section), so the model name legitimately
     // appears three times — once per section, not a rendering bug.
-    expect(await screen.findAllByText(TEST_MODEL.name)).toHaveLength(3)
-    expect(api.ai.isAvailable).toHaveBeenCalledTimes(3)
-    expect(api.ai.models).toHaveBeenCalledTimes(3)
+    expect(await screen.findAllByText(TEST_MODEL.name)).toHaveLength(4)
+    expect(api.ai.isAvailable).toHaveBeenCalledTimes(4)
+    expect(api.ai.models).toHaveBeenCalledTimes(4)
     expect(api.ai.loaded).toHaveBeenCalledTimes(1)
-    expect(api.secrets.has).toHaveBeenCalledTimes(3)
+    expect(api.secrets.has).toHaveBeenCalledTimes(4)
   })
 
   it('disables the initial button while the first sondagem is in flight', async () => {
@@ -117,11 +117,11 @@ describe('CapabilitiesPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Sondar capacidades' }))
     await screen.findAllByText(TEST_MODEL.name)
 
-    expect(api.ai.isAvailable).toHaveBeenCalledTimes(3)
+    expect(api.ai.isAvailable).toHaveBeenCalledTimes(4)
 
     await user.click(screen.getByRole('button', { name: 'Sondar capacidades de novo' }))
 
-    await waitFor(() => expect(api.ai.isAvailable).toHaveBeenCalledTimes(6))
+    await waitFor(() => expect(api.ai.isAvailable).toHaveBeenCalledTimes(8))
   })
 
   it('keeps an embedder out of its own service table — it belongs to Embedder only', async () => {

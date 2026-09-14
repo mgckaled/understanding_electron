@@ -27,7 +27,7 @@ describe('useCapabilities', () => {
     expect(api.secrets.has).not.toHaveBeenCalled()
   })
 
-  it('calls all ten points after refetch, and one dead service does not hide the other two', async () => {
+  it('sondas every service after refetch, and one dead service does not hide the others', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockImplementation(async (service) => {
       if (service === 'glm') throw new Error('daemon down')
@@ -41,15 +41,17 @@ describe('useCapabilities', () => {
 
     await waitFor(() => expect(result.current.data).toBeDefined())
 
-    expect(api.ai.isAvailable).toHaveBeenCalledTimes(3)
-    expect(api.ai.models).toHaveBeenCalledTimes(3)
+    // Four since N-3-C: 'ollama-cloud' is an AI service of its own (DNC-8).
+    expect(api.ai.isAvailable).toHaveBeenCalledTimes(4)
+    expect(api.ai.models).toHaveBeenCalledTimes(4)
     expect(api.ai.loaded).toHaveBeenCalledTimes(1)
-    // Three, not two: Context7 holds a credential without being an AI
-    // service (D23B.4).
-    expect(api.secrets.has).toHaveBeenCalledTimes(3)
+    // Four, not three: Context7 holds a credential without being an AI service
+    // (D23B.4), and 'ollama-cloud' is the first value in BOTH sets at once.
+    expect(api.secrets.has).toHaveBeenCalledTimes(4)
 
     expect(result.current.data?.services.ollama.availability.status).toBe('ready')
     expect(result.current.data?.services.gemini.availability.status).toBe('ready')
     expect(result.current.data?.services.glm.availability.status).toBe('error')
+    expect(result.current.data?.services['ollama-cloud'].availability.status).toBe('ready')
   })
 })

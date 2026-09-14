@@ -14,7 +14,8 @@ import { useCloudSecret } from './useCloudSecret'
 const PROVIDER_LABEL: Record<CloudProvider, string> = {
   gemini: 'Google (Gemini)',
   glm: 'Z.ai (GLM)',
-  context7: 'Context7 (documentação)'
+  context7: 'Context7 (documentação)',
+  'ollama-cloud': 'Ollama (nuvem)'
 }
 
 /**

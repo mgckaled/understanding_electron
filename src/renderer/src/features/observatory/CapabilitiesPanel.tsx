@@ -13,7 +13,8 @@ import { AI_SERVICES, useCapabilities, type ServiceCapability } from './useCapab
 const CLOUD_LABEL: Record<CloudProvider, string> = {
   gemini: 'Gemini',
   glm: 'GLM',
-  context7: 'Context7'
+  context7: 'Context7',
+  'ollama-cloud': 'Ollama Cloud'
 }
 
 const CELL = 'px-3 py-2 text-xs'

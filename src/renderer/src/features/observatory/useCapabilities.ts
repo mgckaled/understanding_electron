@@ -11,7 +11,10 @@ import type {
 } from '@shared/ipc'
 import type { ViewState } from '../../shared/ui/state'
 
-export const AI_SERVICES: AiService[] = ['ollama', 'glm', 'gemini']
+// ⚠️ Hand-written, and NOT checked by the compiler like the Record<AiService>
+// maps are: a service missing here compiles, lints and passes the suite — the
+// Capacidades panel just never shows its card (DN3C.1).
+export const AI_SERVICES: AiService[] = ['ollama', 'glm', 'gemini', 'ollama-cloud']
 
 export type ServiceCapability = {
   availability: ViewState<AiAvailability>

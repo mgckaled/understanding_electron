@@ -8,7 +8,9 @@ import { hasSecret, writeSecret } from './handlers'
 const ENV_VAR_BY_PROVIDER: Record<CloudProvider, string> = {
   gemini: 'GEMINI_API_KEY',
   glm: 'GLM_API_KEY',
-  context7: 'CONTEXT7_API_KEY'
+  context7: 'CONTEXT7_API_KEY',
+  // The Ollama CLI's own variable name, on purpose: one key serves both.
+  'ollama-cloud': 'OLLAMA_API_KEY'
 }
 
 /**

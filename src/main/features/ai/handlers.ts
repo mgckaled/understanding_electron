@@ -34,7 +34,8 @@ const CATALOG_TIMEOUT_MS = 60_000
 const HINTS: Record<AiService, string> = {
   ollama: 'Verifique se o Ollama está em execução (ollama serve) na porta 11434.',
   glm: 'Configure a chave da Z.ai em Configurações para usar o GLM.',
-  gemini: 'Configure a chave do Google AI Studio em Configurações para usar o Gemini.'
+  gemini: 'Configure a chave do Google AI Studio em Configurações para usar o Gemini.',
+  'ollama-cloud': 'Configure a chave da Ollama em Configurações para usar os modelos de nuvem.'
 }
 
 /**

@@ -80,6 +80,13 @@ import {
   makeGeminiProbe
 } from '../features/ai/providers/gemini'
 import {
+  makeOllamaCloudChat,
+  makeOllamaCloudModels,
+  makeOllamaCloudProbe,
+  ollamaCloudLoaded,
+  ollamaCloudUnload
+} from '../features/ai/providers/ollamaCloud'
+import {
   createConversation,
   listConversations,
   removeConversation,
@@ -262,6 +269,15 @@ export async function registerAll(): Promise<() => void> {
     unload: geminiUnload,
     chat: makeGeminiChat(() => readSecretForUse('gemini', db, decryptSecret))
   }
+  // No `host`: a cloud adapter has no endpoint worth showing in the footer,
+  // and the key is read fresh on every call, same closure shape as GLM's.
+  const ollamaCloudAdapter: ProviderAdapter = {
+    probe: makeOllamaCloudProbe(() => hasSecret({ provider: 'ollama-cloud' }, db)),
+    models: makeOllamaCloudModels(() => readSecretForUse('ollama-cloud', db, decryptSecret)),
+    loaded: ollamaCloudLoaded,
+    unload: ollamaCloudUnload,
+    chat: makeOllamaCloudChat(() => readSecretForUse('ollama-cloud', db, decryptSecret))
+  }
   // N-1-B: what step 1 (N-1-A) left as a single fixed adapter is now a
   // service→provider resolver — nothing else in this file changes shape.
   //
@@ -273,7 +289,8 @@ export async function registerAll(): Promise<() => void> {
   const ADAPTERS: Record<AiService, ProviderAdapter> = {
     ollama: ollamaAdapter,
     glm: glmAdapter,
-    gemini: geminiAdapter
+    gemini: geminiAdapter,
+    'ollama-cloud': ollamaCloudAdapter
   }
   function resolveProvider(service: AiService): ProviderAdapter {
     return ADAPTERS[service]
