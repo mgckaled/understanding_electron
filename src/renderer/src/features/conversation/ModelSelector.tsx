@@ -22,17 +22,17 @@ import { formatContext, formatRateLimit } from './modelFormat'
 const GROUP_LABEL =
   'flex items-center gap-2 px-4 text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase'
 
-// One line per model (DNC-23): name flexes and truncates, metadata sits in a
-// fixed-width column so the chips start at the same x on every row (DNC-28).
-// ⚠️ `min-w-[0px]`, never `min-w-0`: the project sets `--spacing-*: initial`
-// and redeclares only steps 1-9, so every step-0 utility emits no CSS at all.
+// One line per model (DNC-23): name, metadata column, chips.
 const ROW = 'flex cursor-pointer items-center gap-3 rounded-md border px-4 py-2'
-// ⚠️ Fixed width, NOT `flex-1`: with the name growing, all the row's slack goes
-// to it, so the metadata column slides left or right with the CHIP COUNT and
-// the chips end up flush right — measured on screen, the very alignment DNC-28
-// exists to avoid. Two fixed columns before the chips is what puts their left
-// edge at the same x on every row.
-const ROW_NAME = 'w-[160px] flex-none truncate font-ui text-md'
+// ⚠️ `min-w-[0px]`, never `min-w-0`: the project sets `--spacing-*: initial`
+// and redeclares only steps 1-9, so every step-0 utility emits no CSS at all,
+// and a name with no lower bound pushes the chips out of the row.
+//
+// The name GROWS, so the chips end flush right and the metadata column slides
+// with the chip count. Both shapes were built and looked at side by side; the
+// owner chose this one (DN3B.1). A fixed name column aligns the chips' left
+// edge instead, at the cost of a ragged right margin.
+const ROW_NAME = 'min-w-[0px] flex-1 truncate font-ui text-md'
 
 /**
  * Which row is highlighted, in the one shape both groups share (DNC-29). A
@@ -53,7 +53,7 @@ const rowHighlight = (on: boolean): string =>
  *  right-aligned inside a fixed width so the chip column lines up. */
 function RowMeta({ items }: { items: React.ReactNode[] }): React.JSX.Element {
   return (
-    <span className="flex w-[160px] flex-none items-center justify-end gap-2 text-2xs text-text-muted group-disabled:opacity-40">
+    <span className="flex w-[170px] flex-none items-center justify-end gap-2 text-2xs text-text-muted group-disabled:opacity-40">
       {items.map((item, index) => (
         <Fragment key={index}>
           {index > 0 && <span aria-hidden="true">·</span>}
@@ -231,9 +231,7 @@ function ModelPicker({
                   onMouseEnter={() => setHighlight({ group: 'local', index })}
                   className={`${ROW} text-text ${rowHighlight(index === localIndex)}`}
                 >
-                  <span className={ROW_NAME} title={model.name}>
-                    {model.name}
-                  </span>
+                  <span className={ROW_NAME}>{model.name}</span>
                   {/* The ceiling only shows while there IS a useful one: a tiny
                       ceiling rounds to "até 0k" beside the verdict (DNC-27). */}
                   <RowMeta
@@ -303,9 +301,7 @@ function ModelPicker({
                 highlight.group === 'cloud' && highlight.name === model.name
               )}`}
             >
-              <span className={ROW_NAME} title={model.name}>
-                {model.name}
-              </span>
+              <span className={ROW_NAME}>{model.name}</span>
               {/* `até <n>k` in both groups (DNC-26): "de contexto" was a second
                   grammar for the same fact, one list apart from the first. */}
               <RowMeta
