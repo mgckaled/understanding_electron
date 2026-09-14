@@ -320,6 +320,12 @@ A camada que mata a exfiltração de zero clique existe por outro motivo declara
 
 ---
 
-## O que este documento deliberadamente NÃO faz
+## A relação com a proposta de cortes
 
-**Não recorta cortes.** O recorte em `22-A`, `22-B`, … depende de `DW-1` e `DW-4` — se o pilar for só `fetch` pelo app, o primeiro corte é um guarda de SSRF; se for os dois pela Ollama, o primeiro corte é um cliente REST e o guarda encolhe para uma validação de saída. Recortar antes de decidir isso é desenhar contra requisito imaginado.
+A proposta está no [`README.md`](README.md) § 7, e é **condicional a estas decisões** — o que a torna legível como uma tabela de consequências, não como um plano.
+
+**Dois cortes não dependem de decisão nenhuma** (`22-A` e `22-B`, que carregam `DW-23`, `DW-24`, `DW-27` e `DW-29`): valem hoje, entregam valor sozinhos, e sobrevivem mesmo se o arco 22 nunca acontecer.
+
+**Do terceiro em diante, o recorte pressupõe** `DW-1` = *as duas operações* e `DW-4` = *Ollama*. Decidido outra coisa, muda de tamanho: se o pilar for só `fetch` **pelo app**, o guarda de URL triplica (DNS fixado, redirect revalidado, teto de descompressão) e entra um corte de extração com dependência nova; se for só `search`, o painel encolhe de uma lista para uma página.
+
+⚠️ **Nenhuma decisão foi fechada por ter virado linha de tabela na proposta.** A proposta mostra o que cada resposta custa — é insumo da decisão, nunca o registro dela.

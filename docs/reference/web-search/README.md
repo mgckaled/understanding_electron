@@ -2,7 +2,7 @@
 
 > **Status: levantamento em andamento, nada decidido.** Material de **entrada** do arco 22, reunido em 14/09/2026. Substitui a *Feature 1* de [`web-fetch-mcp-thinking/README.md`](../web-fetch-mcp-thinking/README.md), cuja premissa — *tool calling* como espinha dorsal — já foi derrubada duas vezes, pelo arco 21 e pelo arco 23.
 >
-> ⚠️ **Este documento não recorta cortes de plano.** O recorte depende de duas decisões que ainda não foram tomadas (`DW-1` e `DW-4`), e recortar antes seria desenhar contra requisito imaginado. Ver [`decisoes.md`](decisoes.md).
+> ⚠️ **A proposta de cortes (§ 7) é CONDICIONAL, e isso não é formalidade.** Só os dois primeiros valem qualquer que seja a decisão; do terceiro em diante ela pressupõe `DW-1` = *as duas operações* e `DW-4` = *Ollama*. Decidido outra coisa, a parte B é redesenhada — a tabela de *o que muda* está no fim da seção. **Nenhuma das 29 decisões está fechada.** Ver [`decisoes.md`](decisoes.md).
 
 | Anexo | O que guarda |
 |---|---|
@@ -155,7 +155,52 @@ As 29, em [`decisoes.md`](decisoes.md). As **cinco que travam tudo o mais**:
 
 ---
 
-## 7. Metodologia e proveniência
+## 7. Proposta de cortes — condicional, e por isso em duas partes
+
+⚠️ **Isto não é o recorte final.** Os cortes de 1 a 2 valem **qualquer** que seja a decisão; os de 3 em diante pressupõem `DW-1` = *as duas operações* e `DW-4` = *Ollama*. Se qualquer uma das duas mudar, a parte B é redesenhada — o que muda está dito no fim.
+
+O molde é o **arco 23**, deliberadamente: mesma classe de feature (conteúdo de fora, sob demanda, painel com seleção), caminho já percorrido uma vez. Onze cortes lá, onze aqui. **Uma sessão por corte, arquivo de plano próprio, teste ao vivo como fase obrigatória.**
+
+### Parte A — a trava antes da porta (incondicional)
+
+Precedente direto: `N-3-A` e `N-3-B`, os dois primeiros cortes da trilha N-3, que **não tocavam nuvem** — *consertar antes de acrescentar*.
+
+| | Corte | O que faz | Camadas |
+|---|---|---|---|
+| **22-A** | **o link deixa de mentir** | `DW-23` host visível (ou confirmação) · `DW-27` punycode · `DW-29` o comentário do `urlTransform` passa a dizer que é defesa | renderer, 1 arquivo |
+| **22-B** | **o invisível deixa de passar** | `DW-24` remoção do bloco Unicode Tags na entrada, em `core/`, aplicada onde texto de fora já entra hoje (Context7) | `core/` puro + 1 chamador |
+
+✅ **Os dois entregam valor sozinhos, hoje, sem nada do arco existir** — o Context7 já traz texto de fora. Se o arco 22 nunca acontecer, estes dois continuam tendo valido a pena.
+✅ Os dois são pequenos de verdade: nível 1 e 2, sem canal novo, sem rede.
+
+### Parte B — o pilar (pressupõe `DW-1` = as duas · `DW-4` = Ollama)
+
+| | Corte | O que faz | Camadas |
+|---|---|---|---|
+| **22-C** | **o guarda de URL** | `checkFetchUrl` irmã de `checkExternalUrl` (`DW-18`): esquema + destino privado **por endereço, nunca por grafia**. Puro. Serve à privacidade mesmo delegando | `core/` puro |
+| **22-D** | **o cliente** | `core/web/` — `fetch` injetado, parse das duas respostas, fixtures gravadas **contra a API real**, não contra a doc | `core/` puro |
+| **22-E** | **a fronteira** | `web:search`/`web:fetch` nos seis lugares, handlers, memo de sessão com `max_results` na chave (`DW-11`), `mapWebError` próprio (`DW-10`), a chave do cofre (`DW-5`, `DW-6`) | `shared` + `main` + `preload` |
+| **22-F** | **a parte que persiste** | as partes no contrato (`DW-8`), `partForProvider`, o cartão delimitado (`DW-20`/`DW-25`). ⚠️ **`attachmentPartOf` é por exclusão** (`DW-9`) — o `kind` novo precisa ser nomeado lá ou vira cartão de anexo em silêncio | `shared` + `core/ai` |
+| **22-G** | **o painel nasce** | a casca, o formulário, o gatilho no menu `+` (`DW-2`, `DW-3`), `max_results` como `SegmentedField` (`DW-16`), o aviso permanente (`DW-21`). **Sem resultado ainda** | renderer |
+| **22-H** | **o resultado** | as telas de resposta, a URL por item em destaque, os estados (`empty`, sem chave) | renderer |
+| **22-I** | **a seleção e o orçamento** | as caixas de marcação, o grão (`DW-12`), o custo em tokens por item e o total | renderer |
+| **22-J** | **a conversa** | anexar, congelar, o histórico, o `[●─]` de desligar, o contador do cabeçalho (`DW-15`), o `omitted` (`DW-17`) | renderer + `core/ai` |
+| **22-K** | **o fechamento** | o ledger de privacidade (`DW-22`), verificação ao vivo, e o destino do que sobrevive — regra para skill, ficha para `reference/`, narrativa `⛔ consumida` | docs + `main` |
+
+⚠️ **`22-I` é o corte que mais pode estourar**, e é onde `DW-12` cobra: se a unidade for a seção de markdown, o particionador nasce aqui. Se ele crescer no plano, divide antes de executar — não durante.
+
+### O que muda se as decisões forem outras
+
+| Se… | Então |
+|---|---|
+| `DW-4` = **app busca direto** | **`22-C` triplica** — vira DNS resolvido e fixado, `redirect: 'manual'` revalidando cada salto, teto de fio **e** de descompressão (`DW-28`), escolha de `fetch` (`DW-19`). Provavelmente dois cortes. E entra um corte de **extração** (`jsdom` + readability/defuddle), que é dependência nova com justificativa registrada |
+| `DW-1` = **só `fetch`** | some o `max_results` de `22-G`, `22-D` encolhe para uma rota, e `22-H` fica bem menor — uma página, não uma lista |
+| `DW-1` = **só `search`** | `22-C` perde o caso de URL colada pela pessoa, mas **não** some: a URL de cada resultado ainda é exibida e clicável |
+| `DW-26` = **manter a perna C aberta** | a Parte A deixa de ser suficiente, e o arco precisa de defesa em profundidade que este levantamento recomenda **não** construir |
+
+---
+
+## 8. Metodologia e proveniência
 
 | Fonte | O que veio dela | Data |
 |---|---|---|
