@@ -135,8 +135,12 @@ describe('ModelSelector', () => {
     const glm = await screen.findByRole('button', { name: /glm-4\.7-flash/, hidden: true })
     expect(glm).toBeDisabled()
     // formatContext divides by 1024 (binary thousands), same as every other
-    // row — 200.000 trained tokens reads "195k", not a round "200k".
-    expect(glm).toHaveTextContent('195k de contexto')
+    // row — 200.000 trained tokens reads "195k", not a round "200k". The
+    // "de contexto" suffix is gone: both groups say "até <n>k" now (DNC-26).
+    expect(glm).toHaveTextContent('até 195k')
+    expect(glm).not.toHaveTextContent('de contexto')
+    // A concurrency cap is short and stays on the line; only the RPM·TPM·RPD
+    // tripod moves to the hover (DN3B.3).
     expect(glm).toHaveTextContent('1 simultânea')
 
     // Not a selectable option: the arrow-key listbox is scoped to Locais.
@@ -169,8 +173,27 @@ describe('ModelSelector', () => {
     expect(glm).toBeDisabled()
     expect(flashLite).toBeEnabled()
     expect(flash).toBeEnabled()
-    expect(flashLite).toHaveTextContent('15 RPM')
-    expect(flash).toHaveTextContent('20 RPD')
+    // The tripod is administration and left the line for the hover (DNC-25) —
+    // on an ENABLED row, where nothing else claims `title`.
+    expect(flashLite).not.toHaveTextContent('15 RPM')
+    expect(flashLite).toHaveAttribute('title', '15 RPM · 250k TPM · 500 RPD')
+    expect(flash).toHaveAttribute('title', '5 RPM · 250k TPM · 20 RPD')
+  })
+
+  it('keeps the missing-key hint in the title of a disabled cloud row, never the rate-limit tripod (DN3B.2)', async () => {
+    const user = userEvent.setup()
+    // No keys at all: both Gemini rows are disabled, and Gemini is the provider
+    // whose limit is a tripod — the one case where the two would collide.
+    mount()
+    await user.click(await modelTrigger())
+
+    const flashLite = await screen.findByRole('button', {
+      name: /gemini-3\.5-flash-lite/,
+      hidden: true
+    })
+    expect(flashLite).toBeDisabled()
+    expect(flashLite).toHaveAttribute('title', expect.stringContaining('chave'))
+    expect(flashLite).not.toHaveAttribute('title', expect.stringContaining('RPM'))
   })
 
   it('selecting a Gemini model before the first send does not revert to the first Ollama model (N-1-C, same regression N-1-B proved for GLM)', async () => {
@@ -518,6 +541,17 @@ describe('a model that does not fit', () => {
     await user.click(await modelTrigger())
 
     expect(await screen.findByRole('option', { name: /não cabe/, hidden: true })).toBeEnabled()
+  })
+
+  it('states the verdict alone, without an "até 0k" beside it (DNC-27)', async () => {
+    // formatContext rounds a tiny ceiling down to "0k" — the function is right,
+    // it is the row that decides not to show a ceiling there is none of.
+    const user = userEvent.setup()
+    mountBig()
+    await user.click(await modelTrigger())
+
+    const row = await screen.findByRole('option', { name: /não cabe/, hidden: true })
+    expect(row).not.toHaveTextContent('até')
   })
 
   it('says why, instead of offering a context window of zero', async () => {

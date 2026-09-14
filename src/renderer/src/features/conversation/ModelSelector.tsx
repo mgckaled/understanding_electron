@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useRef, useState } from 'react'
 import { ChevronDown, Cloud, HardDrive } from 'lucide-react'
 import type { AiModel, AiService } from '@shared/ipc'
 import { fitsInMemory, type Budget } from '@core/ai/budget'
@@ -21,6 +21,28 @@ import { formatContext, formatRateLimit } from './modelFormat'
 
 const GROUP_LABEL =
   'flex items-center gap-2 px-4 text-2xs font-semibold tracking-[0.04em] text-text-faint uppercase'
+
+// One line per model (DNC-23): name flexes and truncates, metadata sits in a
+// fixed-width column so the chips start at the same x on every row (DNC-28).
+// ⚠️ `min-w-[0px]`, never `min-w-0`: the project sets `--spacing-*: initial`
+// and redeclares only steps 1-9, so every step-0 utility emits no CSS at all.
+const ROW = 'flex cursor-pointer items-center gap-3 rounded-md border px-4 py-2'
+const ROW_NAME = 'min-w-[0px] flex-1 truncate font-ui text-md'
+
+/** The row's middle column — every metadata item separated by `·` (DNC-28),
+ *  right-aligned inside a fixed width so the chip column lines up. */
+function RowMeta({ items }: { items: React.ReactNode[] }): React.JSX.Element {
+  return (
+    <span className="flex w-[170px] flex-none items-center justify-end gap-2 text-2xs text-text-muted group-disabled:opacity-40">
+      {items.map((item, index) => (
+        <Fragment key={index}>
+          {index > 0 && <span aria-hidden="true">·</span>}
+          {item}
+        </Fragment>
+      ))}
+    </span>
+  )
+}
 
 type ModelPickerProps = {
   state: ViewState<AiModel[]>
@@ -128,10 +150,12 @@ function ModelPicker({
         open={open}
         onClose={() => setOpen(false)}
         anchorName={anchorName}
-        // Widened from 300px (N-1-C): the Nuvem rows now carry a second line
-        // (context + rate limit + capability chips), same content density the
-        // Locais rows already had.
-        className="flex w-[380px] flex-col gap-1"
+        // 300px (N-1-C: the Nuvem rows had grown a second line) → 380 → 560,
+        // and this time the width follows a change of AXIS instead of standing
+        // in for one (DNC-24). `max-w` because the popover is anchored and
+        // jsdom does no layout: no level-2 test would fail a popover that ran
+        // off a narrow window.
+        className="flex w-[560px] max-w-[90vw] flex-col gap-1"
       >
         <p className={GROUP_LABEL}>
           <HardDrive size={ICON_SIZE.sm} strokeWidth={ICON_STROKE} />
@@ -152,13 +176,13 @@ function ModelPicker({
             }
             className="flex flex-col gap-1 focus-visible:outline-none"
           >
-            {/* Two lines (F2.2): name alone on top; size, the machine's real
-                  ceiling ("memória" — the practical limit, not a per-token
-                  cost) and capability chips below. Every row, not just the
-                  selected one — a scope change from the old single-line
-                  `optionLabel` + capabilities shown only for `current`. */}
+            {/* One line (DNC-23): name, then size and the machine's real ceiling
+                  ("memória" — the practical limit, not a per-token cost), then
+                  the chips. Every row, not just the selected one — a scope
+                  change F2.2 made over the old single-line `optionLabel`. */}
             {models.map((model, index) => {
               const ceiling = ceilingOf(model)
+              const fits = fitsInMemory(ceiling)
               const chips = capabilityChips(model)
               return (
                 <div
@@ -171,15 +195,29 @@ function ModelPicker({
                     setOpen(false)
                   }}
                   onMouseEnter={() => setHighlighted(index)}
-                  className={`flex cursor-pointer flex-col gap-1 rounded-md border px-4 py-2 ${
+                  className={`${ROW} text-text ${
                     index === highlighted ? 'border-border-strong bg-surface' : 'border-border'
                   }`}
                 >
-                  <span className="font-ui text-md text-text">{model.name}</span>
-                  <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted">
-                    <span>{formatSize(model.sizeBytes)}</span>
-                    {ceiling !== null && <span>até {formatContext(ceiling)}</span>}
-                    {!fitsInMemory(ceiling) && <span className="text-warn-text">não cabe</span>}
+                  <span className={ROW_NAME} title={model.name}>
+                    {model.name}
+                  </span>
+                  {/* The ceiling only shows while there IS a useful one: a tiny
+                      ceiling rounds to "até 0k" beside the verdict (DNC-27). */}
+                  <RowMeta
+                    items={[
+                      formatSize(model.sizeBytes),
+                      ...(ceiling !== null && fits ? [`até ${formatContext(ceiling)}`] : []),
+                      ...(fits
+                        ? []
+                        : [
+                            <span key="fits" className="text-warn-text">
+                              não cabe
+                            </span>
+                          ])
+                    ]}
+                  />
+                  <span className="flex flex-none items-center gap-1">
                     {chips.map((chip) => (
                       <CapabilityChip key={chip.capability} {...chip} />
                     ))}
@@ -209,26 +247,41 @@ function ModelPicker({
         {cloudModels.map((model) => {
           const ready = cloudReadyFor[model.provider] ?? false
           const chips = capabilityChips(model)
+          const rateLimit = model.rateLimit
+          // The RPM·TPM·RPD tripod is administration — nobody picks a model by
+          // RPD — so it moves to the hover (DNC-25), while a concurrency cap is
+          // short and stays on the line (DN3B.3). The key hint wins the `title`
+          // whenever the row is disabled: it is the only actionable of the two,
+          // and the row already owned that attribute since N-1-B (DN3B.2).
+          const tripod = rateLimit?.kind === 'rate' ? formatRateLimit(rateLimit) : undefined
           return (
             <button
               key={model.name}
               type="button"
               disabled={!ready}
-              title={ready ? undefined : cloudHintFor[model.provider]}
+              title={ready ? tripod : cloudHintFor[model.provider]}
               onClick={() => {
                 onSelect(model.name)
                 setOpen(false)
               }}
-              className="group flex cursor-pointer flex-col gap-1 rounded-md border border-transparent px-4 py-2 text-left text-text hover:border-border hover:bg-surface-raised disabled:cursor-not-allowed disabled:text-text-faint disabled:hover:border-transparent disabled:hover:bg-transparent"
+              className={`group ${ROW} text-left text-text hover:border-border hover:bg-surface-raised disabled:cursor-not-allowed disabled:text-text-faint disabled:hover:border-transparent disabled:hover:bg-transparent border-transparent`}
             >
-              <span className="font-ui text-md">{model.name}</span>
+              <span className={ROW_NAME} title={model.name}>
+                {model.name}
+              </span>
+              {/* `até <n>k` in both groups (DNC-26): "de contexto" was a second
+                  grammar for the same fact, one list apart from the first. */}
+              <RowMeta
+                items={[
+                  ...(model.contextLength !== null
+                    ? [`até ${formatContext(model.contextLength)}`]
+                    : []),
+                  ...(rateLimit?.kind === 'concurrency' ? [formatRateLimit(rateLimit)] : [])
+                ]}
+              />
               {/* CapabilityChip sets its own color/background, so disabled:text-*
-                  can't reach it — group-disabled:opacity fades the line instead. */}
-              <span className="flex flex-wrap items-center gap-2 text-2xs text-text-muted group-disabled:opacity-40">
-                {model.contextLength !== null && (
-                  <span>{formatContext(model.contextLength)} de contexto</span>
-                )}
-                {model.rateLimit !== undefined && <span>{formatRateLimit(model.rateLimit)}</span>}
+                  can't reach it — group-disabled:opacity fades the chips instead. */}
+              <span className="flex flex-none items-center gap-1 group-disabled:opacity-40">
                 {chips.map((chip) => (
                   <CapabilityChip key={chip.capability} {...chip} />
                 ))}
