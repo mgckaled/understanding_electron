@@ -12,6 +12,13 @@ As da montagem inicial do ambiente estão detalhadas em [`study/04-diario-de-bor
 
 ## Ativas
 
+### O modelo aceitou `think: 'high'` e nada mudou — quem valida o nível é o servidor, não o modelo (set/2026)
+Medido em 14/09/2026 contra o Ollama 0.34.0 local, ao decidir se a escolha de esforço cabia na frota. `think` aceita booleano **ou** nível, e o daemon **valida a string**: `think: "banana"` devolve HTTP **400** nomeando o enum (`must be "high", "medium", "low", "max", true, or false`). Daí a leitura errada — *"respondeu 200, logo o modelo honra o nível"*. Não honra: `200` prova apenas que a string é legal.
+
+**A prova é comparar a saída, não o status.** Com `options: { seed: 42, temperature: 0 }` e o mesmo prompt, `qwen3.5:2b` devolveu **1.210 caracteres de rastro e 447 tokens** para `true`, `'low'`, `'medium'` **e** `'high'` — idêntico byte a byte; o `qwen3.5:4b`, 1.367 e 502 nos dois níveis testados. Só o `gpt-oss` **exige** nível, e por contrato documentado.
+
+⚠️ **É a terceira forma do mesmo modo de falha nesta API** — ao lado do `think: false` que o `gpt-oss` ignora e do `num_ctx` cujo excedente é descartado em silêncio: **aqui o padrão é o sucesso silencioso**, e todo parâmetro novo precisa de uma medição que compare o efeito, nunca do status da resposta. Método de sonda registrado em [`reference/reasoning/`](reference/reasoning/README.md) § *Esforço de pensamento*. [`plan/implemented/N-3-E-o-fechamento-da-trilha.md`](plan/active/N-3-E-o-fechamento-da-trilha.md)
+
 ### `Tests  no tests` depois de sabotar o fonte — a suíte não correu, e isso não é um vermelho (set/2026)
 Provar um vermelho por sabotagem via shell (`python -c`, `sed -i`) tem um modo de falha que **se parece com sucesso**: se o texto injetado quebrar a sintaxe, o Vitest não roda teste nenhum e imprime `Tests  no tests` junto de `Transform failed with 1 error`. Aconteceu no 23-F com `\&\&` — o `&` escapado pelo shell entrou literal no `.tsx`.
 

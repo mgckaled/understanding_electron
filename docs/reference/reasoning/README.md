@@ -141,6 +141,96 @@ Precedente já validado no plano 19 (feedback do usuário): sessões curtas vira
 - Fonte primária do GLM confirmada via Context7 (`docs.z.ai`), não só resumo de busca — `reasoning_content`/`thinking.type` batem com o que o comentário do `glm.ts` já registrava.
 - `measureChatTiming` lido por inteiro — a interação com O-7 acima é sobre o código real, não suposição.
 
+---
+
+## Esforço de pensamento — o levantamento que dá escopo à trilha `N-2`
+
+> Medido e pesquisado em **14/09/2026**, no fechamento da trilha N-3 (`DN3E.2`/`DN3E.3`). Este documento é o dono porque o assunto é **API de raciocínio**, que já é o dele: `reference/models/` é ficha por modelo, e `reference/ollama-cloud/` ficou `⛔ consumido` no mesmo dia.
+
+O `N-3-D` pôs o nível de raciocínio no fio (`ChatFn.thinkLevel`), com o valor decidido no main por `requiredThinkLevel`. **Quem escolhe o valor é a `N-2`** — e este levantamento existe para que aquele corte não refaça a pesquisa nem redesenhe a tela.
+
+### As três famílias de contrato
+
+| Família | Forma | Quem |
+|---|---|---|
+| **A — enum de níveis** | `reasoning_effort: low\|medium\|high` | **OpenAI** (`minimal`/`low`/`medium`/`high`, padrão `medium`) · **Groq** (`gpt-oss` low/medium/high; **Qwen3 só `none`/padrão**; `qwen3.8-27b` os quatro, padrão **`none`**) · **Cerebras** (`qwen-3.8-27b` padrão **`high`**) · **xAI** (low/high, com modelo que recusa) · **Ollama** (booleano **ou** `low`/`medium`/`high`/`max`) |
+| **B — orçamento em tokens** | `budget_tokens` | **Anthropic** (mínimo 1.024, e é **alvo, não teto**) · **Gemini 2.5** (`thinkingBudget`) |
+| **C — enum próprio** | nem um nem outro | **Gemini 3.x** (`thinking_level`, quatro valores **variáveis por modelo**) · **GLM** (só `enabled`/`disabled` — **sem escada**) |
+
+⚠️ **O Anthropic passou a ter os dois** (Opus 4.8: `effort` com `low`/`high`/`xhigh`/`max` **ao lado** do `budget_tokens`), então a convergência para o enum é real mas os conjuntos não coincidem — `minimal`, `none`, `xhigh` e `max` aparecem em subconjuntos diferentes.
+
+**O precedente de tradução é o OpenRouter:** aceita `reasoning.effort` **ou** `reasoning.max_tokens`, nunca os dois, e converte enum→orçamento por razão fixa — **0,8 / 0,5 / 0,2 / 0,1** para high/medium/low/minimal, com `clamp(…, 1024, 32000)`. É o desenho a copiar quando um provedor da família B entrar: o vocabulário do app é um só, e a tradução é do adaptador.
+
+### O método de sonda — o ativo reutilizável
+
+Medir se um modelo **honra** o nível, e não se o servidor o aceita:
+
+1. `ollama ps` vazio antes de começar; um modelo residente por vez.
+2. Mesmo prompt, `options: { seed: 42, temperature: 0 }`, `stream: false`.
+3. Duas chamadas, `think: 'low'` e `think: 'high'`.
+4. Comparar o **tamanho do rastro** (`message.thinking`) e o `eval_count`.
+5. `keep_alive: 0` ao terminar; `ollama ps` vazio de novo.
+
+**O que reprova o nível é o rastro não mudar.** Resultado de 14/09/2026, com este método:
+
+| Modelo | `think` | Rastro | `eval_count` |
+|---|---|---:|---:|
+| `qwen3.5:2b` | `true` · `'low'` · `'medium'` · `'high'` | **1.210 ch nos quatro** | **447 nos quatro** |
+| `qwen3.5:4b` | `'low'` · `'high'` | **1.367 ch nos dois** | **502 nos dois** |
+
+Saída **idêntica byte a byte** — não é "quase igual": o nível não existe para esses pesos. Na frota local, portanto, **nenhum** modelo honra nível; só o `gpt-oss` (nuvem) exige um, por contrato documentado.
+
+⚠️ **E é por isso que um teste por status HTTP não serve** — a armadilha está em [`ARMADILHAS.md`](../../ARMADILHAS.md), buscável pelo sintoma *"aceitou o nível e nada mudou"*.
+
+### O desenho aprovado pelo dono — não redesenhar
+
+Decidido em 14/09/2026 sobre mockups em texto, com duas alternativas **recusadas**: números medidos por degrau (lidos do Observatório) e o laço com a reserva de janela (`REASONING_OUTPUT_RESERVE_RATIO`) — este último porque as janelas dos modelos opt-in são folgadas para esta máquina. **A escada é seca.**
+
+Uma pílula no composer, ao lado da janela de contexto — **nunca no seletor de modelo**, que o `N-3-B` acabou de reduzir a uma linha por modelo. Três classes de modelo, três estados:
+
+```
+local sem pensamento (gemma3:4b, qwen2.5:7b)
+  ⊕  Modelo [gemma3:4b ▾]  ⟳  Janela de contexto [32k ▾]              ↑
+
+local com pensamento, mas booleano (qwen3.5:2b, qwen3.5:4b)
+  ⊕  Modelo [qwen3.5:2b ▾]  ⟳  Janela de contexto [112k ▾]            ↑
+
+com escada (gpt-oss:120b, e os provedores da N-2)
+  ⊕  Modelo [gpt-oss:120b ▾]  ⟳  Janela [64k ▾]  Esforço [Médio ▾]    ↑
+```
+
+A pílula ocupa um vão entre a janela (à esquerda) e o enviar (ancorado à direita), então **sumir não empurra ninguém**. Aberta:
+
+```
+                          ┌─────────────────────────┐
+                          │  ESFORÇO DE PENSAMENTO  │
+                          │   ○ Baixo               │
+                          │   ● Médio               │
+                          │   ○ Alto                │
+                          │  ───────────────────────│
+                          │  Este modelo sempre     │
+                          │  pensa; o interruptor   │
+                          │  decide se você vê.     │
+                          └─────────────────────────┘
+  ⊕  Modelo [gpt-oss:120b ▾]  ⟳  Janela [64k ▾]  Esforço [Médio ▾]
+```
+
+Na janela estreita a fila quebra, e **isso só o olho decide** — jsdom não faz layout, e o `N-3-B` pagou três vezes por esta classe:
+
+```
+┌────────────────────────────────────┐
+│  ⊕  Modelo [gpt-oss:120b ▾]  ⟳     │
+│     Janela [64k ▾]  [◐ Médio ▾]  ↑ │
+└────────────────────────────────────┘
+```
+
+**Duas regras que o desenho fixa, e que a `N-2` não deve redecidir:**
+
+1. **A pílula aparece pela escada do MODELO, nunca pelo estado do interruptor de raciocínio.** Amarrar um ao outro esconderia justamente o controle que economiza cota — o `gpt-oss` pensa de qualquer forma.
+2. **O controle some, não desabilita.** No `qwen3.5` não é que o esforço esteja indisponível: **não há escada**; no GLM não há nem no provedor. Cinza afirmaria *"existe, só não agora"*, que é falso nos dois.
+
+⚠️ **E o critério de quem tem escada não pode ser perguntado ao provedor** — ele aceita de todos. `effortLadder(name)` nasce irmã de `requiredThinkLevel` (`core/ai/models.ts`), por nome de família, com a tabela acima como fonte.
+
 ## O que não tinha sido verificado ao escrever este guia — todos respondidos no 21-A
 
 - Ao vivo: o `qwen3:4b` com `think: true` realmente intercala `message.thinking` antes de `message.content` neste binário do Ollama (0.32.14) — a doc descreve o comportamento, a medição de ago/2026 (`ARMADILHAS.md` § *`message.thinking` do Ollama é campo irmão*) só provou que o campo existe e é ignorado, não a ordem de chegada linha a linha.
