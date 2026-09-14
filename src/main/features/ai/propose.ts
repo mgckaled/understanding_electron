@@ -43,6 +43,22 @@ export async function propose(
   runProfile: (hash: string, includeTopValues?: boolean) => Promise<ColumnProfile[]>,
   recordPrivacy?: (event: PrivacyEvent) => void
 ): Promise<Result<StepProposal>> {
+  // ⚠️ Not a limit of THIS provider — a limit of the app that the cloud only
+  // made visible (DNC-19). `format` (D19.3) is what constrains decoding to the
+  // step schema, and neither gemini.ts nor glm.ts ever implemented it: they
+  // drop the option in silence, so ai:propose has been Ollama-local-only since
+  // it was written, undeclared. Ollama Cloud ignores `format` too — measured
+  // across four models and all three request shapes, every one HTTP 200 with
+  // markdown. Refusing here says so, where degrading blamed the model for it.
+  if (isCloudService(service)) {
+    return err({
+      kind: 'blocked',
+      reason:
+        'A proposta de passos só funciona com um modelo local (Ollama). ' +
+        'Escolha um modelo local nesta conversa para propor passos.'
+    })
+  }
+
   const controller = jobs.create(jobId)
   let timedOut = false
   const timeout = setTimeout(() => {

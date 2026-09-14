@@ -132,14 +132,16 @@ describe('propose', () => {
   // an attachment part — recordPrivacy must see it too, or a proposal
   // against a cloud service reads as nothing having left the machine.
   describe('recordPrivacy (O-8)', () => {
-    it('records a cloud proposal with one dataset card', async () => {
-      const chatFn: ChatFn = async () => ({
-        content: JSON.stringify({ kind: 'steps', steps: [{ kind: 'limit', count: 1 }] })
-      })
+    // Inverted in N-3-C, not weakened: a cloud proposal is now refused before
+    // any provider call (DNC-19), so nothing leaves the machine and there is no
+    // event to record. The ledger entry this used to assert would have been a
+    // record of a disclosure that no longer happens.
+    it('refuses a cloud proposal before spending the profile, and records nothing', async () => {
+      const chatFn = vi.fn()
       const runProfile = vi.fn().mockResolvedValue(profile)
       const recordPrivacy = vi.fn()
 
-      await propose(
+      const result = await propose(
         {
           service: 'gemini',
           model: 'gemini-2.0-flash',
@@ -153,13 +155,11 @@ describe('propose', () => {
         recordPrivacy
       )
 
-      expect(recordPrivacy).toHaveBeenCalledWith({
-        service: 'gemini',
-        model: 'gemini-2.0-flash',
-        datasetCount: 1,
-        documentCount: 0,
-        imageCount: 0
-      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) expect(result.error.kind).toBe('blocked')
+      expect(runProfile).not.toHaveBeenCalled()
+      expect(chatFn).not.toHaveBeenCalled()
+      expect(recordPrivacy).not.toHaveBeenCalled()
     })
 
     it('never records a local (Ollama) proposal', async () => {

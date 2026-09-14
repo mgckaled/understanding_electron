@@ -14,8 +14,13 @@ import { selectableModels } from './conversations'
  *
  * @param service - Which provider's catalog (N-1-B) — the query key includes
  *   it, so switching service never shows the other one's cached list.
+ * @param enabled - Whether to ask at all. `false` keeps a probed cloud catalog
+ *   from reaching the network before its key exists (DN3C.7).
  */
-export function useAiModels(service: AiService): {
+export function useAiModels(
+  service: AiService,
+  enabled = true
+): {
   state: ViewState<AiModel[]>
   reload: () => void
 } {
@@ -24,7 +29,8 @@ export function useAiModels(service: AiService): {
 
   const { data, isPending, isError } = useQuery({
     queryKey: modelsKey,
-    queryFn: () => window.api.ai.models(service)
+    queryFn: () => window.api.ai.models(service),
+    enabled
   })
 
   const reload = useCallback((): void => {
@@ -32,6 +38,9 @@ export function useAiModels(service: AiService): {
   }, [queryClient, modelsKey])
 
   const state = useMemo((): ViewState<AiModel[]> => {
+    // ⚠️ Before isPending, not after: a disabled query stays `isPending` for
+    // ever in TanStack v5, which would read as a spinner that never resolves.
+    if (!enabled) return { status: 'idle' }
     if (isPending) return { status: 'loading' }
     // A rejected query means the IPC itself failed, which is a defect rather
     // than a provider being down — that arrives as a resolved Result below.
@@ -44,7 +53,7 @@ export function useAiModels(service: AiService): {
     // so hidden entries stayed on screen and every level-1 test still passed.
     const usable = selectableModels(data.value)
     return usable.length === 0 ? { status: 'empty' } : { status: 'ready', data: usable }
-  }, [data, isPending, isError])
+  }, [data, isPending, isError, enabled])
 
   return useMemo(() => ({ state, reload }), [state, reload])
 }

@@ -36,6 +36,18 @@ const CODER: AiModel = {
   variantOf: null
 }
 
+/** As the probed cloud catalog returns it: no local RAM cost, real ceiling. */
+const CLOUD_MODEL: AiModel = {
+  provider: 'ollama-cloud',
+  name: 'gemma4:31b',
+  parameterSize: '32.7B',
+  sizeBytes: 0,
+  capabilities: ['completion', 'thinking', 'tools', 'vision'],
+  contextLength: 262_144,
+  attention: null,
+  variantOf: null
+}
+
 /**
  * `geminiReady` must be applied BEFORE render: useCloudCatalog's
  * useCloudSecret('gemini') fires its query as part of the initial mount, so
@@ -195,6 +207,39 @@ describe('ModelSelector', () => {
     const glm = await screen.findByRole('button', { name: /glm-4\.7-flash/, hidden: true })
     expect(glm).toBeEnabled()
     expect(glm).toHaveAttribute('title', '1 simultânea')
+  })
+
+  it('never asks for the Ollama Cloud catalog before its key exists (DN3C.7)', async () => {
+    const user = userEvent.setup()
+    const api = mount()
+    await user.click(await modelTrigger())
+
+    // No row, and — the half that matters — no request: the catalog is PROBED,
+    // so asking without a key would be traffic to a third party nobody opted
+    // into. The other two cloud providers are pinned tables and cost nothing.
+    expect(
+      screen.queryByRole('button', { name: /gemma4/, hidden: true })
+    ).not.toBeInTheDocument()
+    expect(api.ai.models).not.toHaveBeenCalledWith('ollama-cloud')
+  })
+
+  it('lists the probed Ollama Cloud catalog once the key is stored (DN3C.7)', async () => {
+    const user = userEvent.setup()
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.secrets.has).mockImplementation(async (p) => p === 'ollama-cloud')
+    vi.mocked(api.ai.models).mockImplementation(async (service) =>
+      service === 'ollama-cloud'
+        ? { ok: true, value: [CLOUD_MODEL] }
+        : { ok: true, value: [TEST_MODEL] }
+    )
+    render(providers(<ConversationView />))
+    await user.click(await modelTrigger())
+
+    const row = await screen.findByRole('button', { name: /gemma4:31b/, hidden: true })
+    expect(row).toBeEnabled()
+    // Probed, not hand-written: the ceiling comes from the real /api/show.
+    expect(row).toHaveTextContent('até 256k')
   })
 
   it('highlights exactly one row, whatever the arrows and the mouse do (DNC-29)', async () => {
