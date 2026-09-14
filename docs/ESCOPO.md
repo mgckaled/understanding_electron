@@ -221,7 +221,7 @@ Quando o modelo expõe o próprio raciocínio, ele aparece **separado da respost
 
 ## Ferramentas do chat
 
-Duas capacidades trazem para dentro da conversa algo que estava fora dela — busca web e documentação. **Documentação está entregue** (arco 23, set/2026) e o dono técnico é a skill [`ctx-7`](../.claude/skills/ctx-7/SKILL.md); busca web ainda não nasceu, e o material de entrada dela é [`reference/web-fetch-mcp-thinking/README.md`](reference/web-fetch-mcp-thinking/README.md). Cada uma é pilar próprio pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo): vive inteira dentro da conversa, sem estado que sobreviva a ela. Raciocínio visível **não** é ferramenta — é capacidade do modelo, e tem [seção própria](#raciocínio-é-do-produto-não-do-provedor).
+Duas capacidades trazem para dentro da conversa algo que estava fora dela — busca web e documentação. **Documentação está entregue** (arco 23, set/2026) e o dono técnico é a skill [`ctx-7`](../.claude/skills/ctx-7/SKILL.md); busca web ainda não nasceu, e o material de entrada dela é [`reference/web-search/`](reference/web-search/README.md) (levantamento de 14/09/2026, que substituiu o guia antigo). ⚠️ **Aquele levantamento reabre a definição da linha abaixo:** são **duas** operações, não uma — buscar por uma pergunta e abrir uma URL —, e a tabela a seguir descreve só a segunda. Cada uma é pilar próprio pelo [primeiro teste](#o-teste-que-separa-pilar-de-produto-novo): vive inteira dentro da conversa, sem estado que sobreviva a ela. Raciocínio visível **não** é ferramenta — é capacidade do modelo, e tem [seção própria](#raciocínio-é-do-produto-não-do-provedor).
 
 | | Faz | Não faz |
 |---|---|---|

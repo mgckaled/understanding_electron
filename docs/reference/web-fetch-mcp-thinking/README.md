@@ -33,6 +33,8 @@ Responsabilidades por processo:
 
 ## Feature 1 — Web Fetch local
 
+> ⚠️ **Superada em 14/09/2026.** O levantamento vivo do arco 22 é [`reference/web-search/`](../web-search/README.md), e ele contraria esta seção em três pontos: (1) são **duas** operações, não uma — buscar por pergunta e abrir uma URL; (2) o conteúdo **já chega extraído em markdown** pela API do provedor, então `@mozilla/readability` + `jsdom` deixam de ser premissa e viram uma escolha com custo; (3) o *tool calling* proposto abaixo foi recusado pelo arco 23 (`DM-0`) e não existe no app. Use este parágrafo só como ponto de partida histórico.
+
 **Objetivo:** permitir que o modelo busque conteúdo de uma URL e use isso como contexto na resposta, sem depender do endpoint cloud do Ollama.
 
 **Onde roda:** main process, como uma tool comum no loop de tool calling.
