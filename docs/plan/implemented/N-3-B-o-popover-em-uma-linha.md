@@ -30,9 +30,15 @@ Arquivo único tocado: `src/renderer/src/features/conversation/ModelSelector.tsx
 
 | Bloco | Classe | Por quê |
 |---|---|---|
-| nome | `flex-1 min-w-[0px] truncate` | o único que flexiona; trunca com reticências |
-| metadados | `flex-none w-[…] text-right` | **largura fixa** — é o que faz os chips começarem no mesmo `x` em toda linha (`DNC-28`, decidido pelo dono nesta sessão) |
+| nome | `min-w-[0px] flex-1 truncate` | cresce e absorve a sobra; trunca com reticências |
+| metadados | `w-[170px] flex-none justify-end` | coluna própria, encostada nos chips |
 | chips | `flex-none` | o defeito recorrente do projeto é ícone+texto quebrando sem `flex-none` |
+
+⚠️ **Qual alinhamento sai daí é consequência de flexbox, não de largura, e a resposta veio da tela — não da mesa.** Com o nome em `flex-1`, toda a sobra vai para ele: os chips terminam **colados à direita** e a coluna de metadados desliza conforme a **quantidade de chips**. Alinhar a borda **esquerda** dos chips exige que *tudo* à esquerda deles seja fixo — nome incluído.
+
+**As duas formas foram construídas e olhadas lado a lado, e o dono escolheu a de chips à direita** (`DN3B.1`), revendo a escolha que tinha feito no papel, quando ainda era mockup ASCII. A forma de coluna fixa custava um nome truncado cedo e uma margem direita irregular.
+
+⚠️ **Nenhum nível de teste alcança esta escolha.** A suíte esteve verde nas duas formas: jsdom não faz layout. O único juiz é o print.
 
 ⚠️ **`min-w-[0px]`, nunca `min-w-0`.** O projeto desliga `--spacing-*: initial` e redeclara só os degraus 1–9 (`assets/tailwind.css:13`), então **todo utilitário no degrau `0` não gera CSS nenhum** — confirmado no fonte nesta sessão. Não há lint, typecheck nem teste de nível 2 que avise: o nome empurra os chips para fora e nada reprova. É o gatilho aberto do [`ROADMAP § 2`](../../ROADMAP.md), com dano medido três vezes.
 
@@ -48,15 +54,19 @@ title={ready ? rateLimitTitle : cloudHintFor[model.provider]}
 
 A dica vence quando desabilitada, porque é a única **acionável**: "configure uma chave" resolve o estado; "500 RPD" não resolve nada de quem nem consegue clicar.
 
-⚠️ **E o nome truncado ganha `title` próprio, no `<span>` do nome, nos dois grupos** — o alvo de hover interno vence o externo, então cada zona da linha diz do que fala. Busca web desta sessão: **`title` é fonte de *último recurso* de nome acessível e parte das tecnologias assistivas o ignora** — por isso ele nunca é a única fonte do nome aqui: o texto do DOM continua completo (só o CSS corta), e o nome acessível da linha não muda. É também o que mantém de pé os `getByRole(..., { name: /…/ })` dos testes existentes.
+⚠️ **O nome NÃO ganha `title` próprio, e a primeira versão ganhou — foi regressão vista no print.** A ideia era dar o nome completo ao que truncasse; o efeito real foi um balão em **toda** linha repetindo texto já visível (nenhum nome da frota chega ao corte) e cobrindo a linha de baixo. Exibir `title` só no que de fato transborda exige medir por `ref` — maquinaria para um caso que hoje não ocorre. O texto do DOM continua completo de qualquer forma, então o nome acessível nunca dependeu disto: busca web desta sessão confirma que **`title` é fonte de último recurso de nome acessível e parte das tecnologias assistivas o ignora**.
 
 ⚠️ **Risco medido, e ele é de um caminho que já existe hoje:** `title` em elemento `disabled` só aparece enquanto ninguém aplicar `pointer-events: none` — é a causa documentada de tooltip sumido em elemento desabilitado (busca web). O projeto usa `disabled:cursor-not-allowed`, **nunca** `pointer-events-none`, e assim tem de continuar. **Vai para a verificação ao vivo:** a dica de chave existe desde o `N-1-B` e nunca foi olhada com o olho.
 
-### DN3B.3 — Só `kind: 'rate'` sai da linha; `kind: 'concurrency'` fica
+### DN3B.3 — O limite de faixa gratuita sai da linha **inteiro**, qualquer que seja o `kind`
 
-Confirmado pelo dono nesta sessão. A régua não é comprimento, é **estrutura**: `CloudRateLimit` já é união discriminada (`shared/ipc.ts:313`), então a condição é o próprio `kind`, não um juízo sobre quantos caracteres são demais. É também o que `DNC-28` pressupõe ao citar `195k de contexto 1 simultânea` como a frase corrida que o separador `·` conserta — se a concorrência tivesse saído junto, aquele exemplo não existiria.
+⚠️ **Esta decisão foi revertida na verificação ao vivo, e o registro do erro fica.** A primeira versão separava por `kind`: o tripé ia para o `title`, a concorrência (`1 simultânea`, do GLM) ficava na linha. O argumento era que `CloudRateLimit` já é união discriminada (`shared/ipc.ts:313`), então a condição seria **estrutural** em vez de juízo sobre comprimento — e `DNC-28` parecia pressupor isso ao citar `195k de contexto 1 simultânea` como a frase corrida que o `·` conserta.
 
-`formatRateLimit` **não muda**: a mesma função alimenta os dois destinos.
+**O dono olhou a tela e desfez o argumento em uma frase:** os dois são limite de faixa gratuita, logo a mesma coisa, e ter um sempre visível enquanto o outro só aparece no hover é incoerente. A régua de `DNC-25` é sobre **natureza** — *informação de administração não segue a pessoa pelo processo* —, não sobre forma; a união discrimina o **formato** do limite, nunca o que ele é. Separar por `kind` partiu um fato em duas regras.
+
+E havia um sintoma visual junto: era a **única** linha mais longa que as vizinhas, quebrando a leitura de coluna que `DNC-28` existe para dar.
+
+`formatRateLimit` **não muda** — a mesma função alimenta o único destino.
 
 ### DN3B.4 — `até <n>k` nos dois grupos, e `não cabe` sozinho
 
@@ -161,3 +171,6 @@ Nível 2 (jsdom), em `modelSelection.test.tsx`. ⚠️ **O que o jsdom prova é 
 
 | Data | O que mudou | Observações |
 |---|---|---|
+| 13/09/2026 | Passo 3: verificação ao vivo pelo dono, **três reversões**, e fechamento | **O print reprovou o que a suíte aprovou, três vezes seguidas.** (1) *Alinhamento*: entreguei largura fixa só na coluna do meio e declarei o item 3 cumprido; o print mostrou os chips colados à direita e o metadado de `gemma3:1b` (sem chips) sozinho na borda — com o nome em `flex-1`, a sobra vai toda para ele e a coluna desliza com a **quantidade de chips**. Corrigido para duas colunas fixas… e então o dono, vendo as duas formas lado a lado, **escolheu a primeira** — revendo o que escolhera sobre o mockup ASCII. A forma final é a original mais as duas correções abaixo, e o registro que fica é: *sobre ASCII se escolhe errado; construir as duas foi o que decidiu*. (2) *`1 simultânea`*: `DN3B.3` separava o limite por `kind` com um argumento estrutural (a união discrimina); o dono desfez em uma frase — os dois são limite de faixa gratuita, e a régua de `DNC-25` é sobre natureza, não forma. Era também a única linha mais longa que as vizinhas. (3) *Balão no nome*: `title={model.name}` em toda linha virou tooltip repetindo texto visível e cobrindo a linha de baixo, porque nenhum nome da frota chega ao corte. ⚠️ **As três passaram por `typecheck`, `lint` e suíte verdes** — jsdom não faz layout, e nenhum nível alcança esta classe. Confirmados ao vivo: `title` em elemento `disabled` **funciona** (primeira verificação disso neste app, desde o `N-1-B`), o destaque único, e o tripé só no hover. Fechamento: `HISTORY.md` com a 11ª entrada empurrando o `23-C` para o arquivo, seis linhas em `DECISOES.md` (575 → **591**, a contagem declarada estava um corte atrás), uma entrada nova em `ARMADILHAS.md` (**118**, idem) e duas regras na skill `design-system` |
+| 13/09/2026 | Passos 1 e 2 implementados, com cinco sabotagens no passo 1 e uma no passo 2 | **Passo 1.** Três testes existentes codificavam o texto de hoje e mudaram junto — nenhum enfraquecido: `195k de contexto` virou `até 195k`, e as duas asserções de `15 RPM`/`20 RPD` viraram asserções de `title`. Cada sabotagem derrubou **só** o seu teste, com o nome na lista de falhas. **Passo 2.** A sabotagem que prova o destaque único é o índice local caindo em `0` no ramo de nuvem — duas linhas destacadas, reprovado por contagem. ⚠️ **Um susto que não era regressão:** `contextBudget.test.tsx` estourou o teto de 5 s sob a suíte inteira e passa isolado em 24 s — é o custo de render sob contenção que a skill `testing` registra **para este mesmo arquivo**, agravado pelo `pnpm dev` rodando junto. Classes arbitrárias conferidas no **CSS construído**: `min-w-[0px]` gera uma regra, `min-w-0` gera **zero** |
+| 13/09/2026 | Plano escrito. Sete skills invocadas, os seis arquivos de `reference/ollama-cloud/` lidos na íntegra, `DN3B.1`–`DN3B.6` fixadas | **O refinamento externo e a leitura do código mudaram três coisas do recorte.** (a) `DNC-25` manda o tripé para o `title` e **não previu que a linha de nuvem já usa `title`** para a dica de chave ausente, desde o `N-1-B` — a regra virou dono-por-estado, com a dica vencendo por ser a única acionável. (b) `DNC-29` manda unificar o destaque no mecanismo local *porque ele sincroniza com as setas*, mas **as linhas de nuvem não estão no listbox** — o argumento não as alcança, e dois estados independentes acenderiam duas linhas. (c) Busca web: `title` em elemento desabilitado só morre com `pointer-events: none` (o projeto usa `disabled:cursor-not-allowed`), e `title` é fonte de **último recurso** de nome acessível, que parte das tecnologias assistivas ignora — o nome nunca pode depender dele. Context7 na doc do Tailwind confirmou que `truncate`/`flex-1`/`flex-none` não dependem da escala de espaçamento, logo nenhum cai no buraco do degrau `0`. Duas perguntas ao dono: alinhamento dos chips (escolha depois revista na tela) e o destino do limite de concorrência (idem) |

@@ -68,6 +68,10 @@ Um token de cor de estado serve a **duas** funções físicas opostas, e um úni
 
 **Hover de superfície sobe um degrau na escada existente**, nunca tint: `bg-surface` → `hover:bg-surface-raised`, e o inverso onde o item já parte de `bg-surface-raised`. Seleção/estado ativo é composição de três coisas, não um fundo: borda esquerda de 2px na cor de acento (`border-l-2`, largura **sempre reservada**, mesmo inativa, para o texto não deslocar ao ativar) + o mesmo `bg-surface-raised` do hover + `font-semibold`.
 
+⚠️ **O "inverso" não é detalhe de estilo: violá-lo produz um hover que não faz NADA, e ninguém reclama.** Toda linha dentro de um `Popover` já parte de `bg-surface-raised` (é o fundo do primitivo), então `hover:bg-surface-raised` ali pinta o fundo com a própria cor do fundo — só a borda aparece. Ficou assim num grupo inteiro do seletor de modelo desde o `N-1-B` até o `N-3-B`, ao lado de um grupo irmão que fazia certo. **Ao pintar hover, pergunte de que degrau o elemento PARTE**, nunca qual é o degrau "de hover".
+
+⚠️ **E um destaque que o mouse e o teclado dividem quer UM estado, não dois.** Onde só parte da lista é navegável por seta (um `role="listbox"` que não cobre todas as linhas), um índice para umas e um nome hospedado para as outras acende duas linhas ao mesmo tempo. União discriminada — `{ group: 'local'; index } | { group: 'cloud'; name }` — torna isso inexpressável (`DN3B.5`).
+
 **Radius** (`sm` 4px, `md` 6px, `lg` 10px, `full` circular) **não** segue "sm = controle, md = card". Medido: **`md` é o default** (botão, input, linha de lista, item de menu, contêiner sem escolha própria); **`lg` é o contêiner de superfície primário** (`Dialog`, `Popover`, os três cartões de anexo, `Composer`, bolha de mensagem); **`sm` tem um único consumidor** (`CapabilityChip`); `full` é circular/pílula.
 
 ## Tema: alternador manual sobre `nativeTheme`, `tokens.css` nunca muda (DS4.2)

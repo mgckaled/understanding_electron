@@ -2,7 +2,7 @@
 
 Erro que já custou tempo uma vez, registrado para não custar de novo. **Consulta-se por sintoma, não por data** — é o motivo de este arquivo existir separado do [`HISTORY.md`](HISTORY.md), que é cronológico.
 
-> ⚠️ **Não leia este arquivo na íntegra.** São **116** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
+> ⚠️ **Não leia este arquivo na íntegra.** São **118** entradas. Busque pelo sintoma (`Grep` no termo do erro, do símbolo ou da API) e leia só a entrada que bater. A regra completa de leitura está no [`CLAUDE.md`](../CLAUDE.md) § Protocolo de leitura da documentação.
 
 **Régua de compressão:** número medido + mecanismo + conserto sobrevivem; narrativa de investigação sai (ela pertence ao diário do plano). Título é o sintoma como ele aparece, não a conclusão — é o título que o `Grep` precisa acertar.
 
@@ -397,6 +397,14 @@ Causa no 23-H: o `DocsProvider` expunha `current: open ? current : null` e, ao g
 **Conserto e regra:** todo estado que faz um painel renderizar sai do provider atrás do mesmo `open ? valor : null`. Ao dar a um painel uma **fonte de conteúdo nova**, a garantia de DE1B.1 não vem de graça — ela é por-valor, não por-componente. Teste que reprova: outro inquilino chama `raise` e o painel some (`docsLine.test.tsx` § *sai da região quando outro inquilino a toma*).
 
 ---
+
+### Largura fixa no meio de um `flex-row` não alinha coluna nenhuma (set/2026)
+
+Uma linha de lista com nome + metadados + chips, querendo os chips começando no mesmo `x` em toda linha: dar largura fixa **só** à coluna do meio não faz nada. Com o nome em `flex-1`, toda a sobra da linha vai para ele, então a coluna de metadados desliza conforme a **quantidade de chips** e os chips terminam colados à direita — o alinhamento oposto ao pedido. Para alinhar a borda **esquerda** dos chips, *tudo* à esquerda deles precisa ser fixo, nome incluído; o preço é nome truncado cedo e margem direita irregular.
+
+⚠️ **E nenhum nível de teste reprova qualquer uma das duas formas** — jsdom não faz cálculo de caixa, então a suíte fica verde nas duas. O juiz é o print. Visto no `N-3-B`, depois de `check:fast` inteiro verde; a escolha final entre as duas formas foi do dono, e **mudou** em relação ao que ele escolhera sobre um mockup ASCII, o que é o próprio argumento de construir antes de decidir.
+
+⚠️ Um parente próximo mora na mesma linha de código: `min-w-0` **não gera CSS** neste projeto (`--spacing-*: initial`, degraus 1–9 redeclarados), então o nome sem limite inferior empurra os chips para fora sem que lint, `typecheck` ou jsdom digam nada. Conferível no CSS construído: `min-w-[0px]` gera uma regra, `min-w-0` gera zero.
 
 ## Arquivadas — trilhas encerradas
 

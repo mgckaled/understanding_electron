@@ -6,7 +6,7 @@
 
 ## Como as linhas nasceram
 
-Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**575 linhas** em 13/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
+Levantamento mecânico (grep sobre os planos, não transcrição manual), feito no plano `R-5` (ago/2026). ⚠️ **Os números abaixo são o retrato daquele levantamento, não o total de hoje** — a tabela cresce a cada plano (**591 linhas** em 13/09/2026, conferidas por `grep -cE '^\| [^|]+ \| \['`). Remeça antes de citar, nunca copie daqui:
 
 - **203 linhas** vêm de um heading próprio, `### D<id> — <título>`, dentro de 30 arquivos de plano — 29 em [`plan/implemented/`](plan/implemented/) e 1 em [`plan/active/09`](plan/active/09-camada-de-ia.md), marcado "(ativo)" por ainda não ter fechado.
 - **10 linhas** vêm de planos cuja seção `## Decisões` é só prosa corrida, **sem sigla própria** (`R-1`–`R-4`, `F-1`, `F-2`, `DS-5`–`DS-8`) — cada um ganha **uma** linha, com a própria sigla do plano e a descrição igual ao título do marco já escrito em `HISTORY.md`/`HISTORY-archive.md`.
@@ -716,6 +716,12 @@ chamada de modelo no main (`D9.1`).
 | N-3-A | [DN3A.8](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | `OVERHEAD` passa a depender da arquitetura: 1,06 pura, 1,2 híbrida |
 | N-3-A | [DN3A.9](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | A regra de admissão exige o intervalo, e é isso que mantém o embedder fora do custeio |
 | N-3-A | [DN3A.10](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | Errata: a tabela de verificação do recorte cita `até 32k` e `qwen3:4b`, os dois mortos |
+| N-3-B | [DN3B.1](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | A linha vira `flex-row`, e **qual** alinhamento sai daí é escolha do olho: as duas formas foram construídas e olhadas |
+| N-3-B | [DN3B.2](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | O `title` da linha de nuvem tem um dono por estado — a dica de chave vence o limite, por ser a única acionável |
+| N-3-B | [DN3B.3](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | O limite de faixa gratuita sai da linha **inteiro**, qualquer que seja o `kind` — revertida contra a tela |
+| N-3-B | [DN3B.4](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | `até <n>k` nos dois grupos, e `não cabe` sozinho: o teto só aparece quando há teto útil |
+| N-3-B | [DN3B.5](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | Um destaque só, em união discriminada — "duas linhas destacadas" vira estado inexpressável |
+| N-3-B | [DN3B.6](plan/implemented/N-3-B-o-popover-em-uma-linha.md) | `560px` é ponto de partida, e o juiz é a janela estreita; `max-w` porque jsdom não reprova transbordo |
 
 ---
 
