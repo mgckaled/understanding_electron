@@ -18,12 +18,44 @@ const OLLAMA_HOST = 'http://127.0.0.1:11434'
 /** For display only (the footer's popover) — never re-parsed back into a URL. */
 export const ollamaDisplayHost = OLLAMA_HOST.replace(/^https?:\/\//, '')
 
+/**
+ * Which Ollama this adapter is talking to. Measured against the cloud, the
+ * NDJSON parser below serves both without a line of difference — transport,
+ * `message.thinking` as a sibling field, the final `done_reason`, the counters,
+ * the `system` role and the `images` field are all identical (DNC-10), so a
+ * second copy would mean two owners of one parser drifting in silence.
+ */
+export type OllamaTarget = {
+  baseUrl: string
+  /** Prefix for this target's console diagnostics — never shown in the UI. */
+  label: string
+  /** Per-request headers; throws when a credential this target requires is absent. */
+  headers: () => Record<string, string>
+  /**
+   * Which tags the catalog keeps, decided BEFORE spending an `/api/show` on
+   * them. ⚠️ The `-cloud`/`:cloud` filter belongs to the LOCAL target and must
+   * not be inherited here (DN3C.3): the suffix is the local daemon's
+   * cloud-routing spelling, while the REST API at ollama.com answers to the
+   * bare name — so filtering it there would drop the very models wanted.
+   */
+  keepTag: (name: string) => boolean
+  normalize: (tag: OllamaTag, show: OllamaShow) => AiModel
+}
+
+const LOCAL: OllamaTarget = {
+  baseUrl: OLLAMA_HOST,
+  label: 'ollama',
+  headers: () => ({}),
+  keepTag: (name) => !isCloudRoutedName(name),
+  normalize: normalizeOllamaModel
+}
+
 // Raw, untreated — the terminal running `pnpm dev` is the only place the
 // actual Ollama error body is visible; the UI only gets the short
 // classification from describeUpstreamError.
-async function upstreamErrorFor(response: Response): Promise<UpstreamError> {
+async function upstreamErrorFor(target: OllamaTarget, response: Response): Promise<UpstreamError> {
   const body = await response.text().catch(() => '')
-  console.error(`[ollama] HTTP ${response.status}`, body)
+  console.error(`[${target.label}] HTTP ${response.status}`, body)
   return new UpstreamError(response.status, describeUpstreamError(response.status, body))
 }
 
@@ -70,19 +102,27 @@ function nativeDurations(line: OllamaChatLine): {
 
 // Cheapest availability ping: /api/version returns only { version }, without
 // enumerating models or touching disk (D9.3 — short timeout for the probe).
-export const ollamaProbe: ProbeFn = async ({ signal }) => {
-  const response = await fetch(`${OLLAMA_HOST}/api/version`, { signal })
-  if (!response.ok) throw await upstreamErrorFor(response)
-  const body = (await response.json()) as { version?: string }
-  return body.version ?? 'unknown'
+export function makeOllamaProbe(target: OllamaTarget): ProbeFn {
+  return async ({ signal }) => {
+    const response = await fetch(`${target.baseUrl}/api/version`, {
+      headers: target.headers(),
+      signal
+    })
+    if (!response.ok) throw await upstreamErrorFor(target, response)
+    const body = (await response.json()) as { version?: string }
+    return body.version ?? 'unknown'
+  }
 }
 
 // Both catalog endpoints answer with one JSON body — no streaming, unlike
 // /api/chat — so they share this. Non-2xx becomes UpstreamError for the handler
 // to classify, exactly as ollamaProbe does.
-async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
-  const response = await fetch(`${OLLAMA_HOST}${path}`, init)
-  if (!response.ok) throw await upstreamErrorFor(response)
+async function requestJson<T>(target: OllamaTarget, path: string, init: RequestInit): Promise<T> {
+  const response = await fetch(`${target.baseUrl}${path}`, {
+    ...init,
+    headers: { ...target.headers(), ...init.headers }
+  })
+  if (!response.ok) throw await upstreamErrorFor(target, response)
   return (await response.json()) as T
 }
 
@@ -94,29 +134,34 @@ async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
  * inference, and firing fourteen parallel requests would contend with the answer
  * the user is waiting for. The renderer pays it once and caches.
  */
-export const ollamaModels: ModelsFn = async ({ signal }) => {
-  const tags = await requestJson<{ models?: OllamaTag[] }>('/api/tags', { signal })
+export function makeOllamaModels(target: OllamaTarget): ModelsFn {
+  return async ({ signal }) => {
+    const tags = await requestJson<{ models?: OllamaTag[] }>(target, '/api/tags', { signal })
 
-  const models: AiModel[] = []
-  for (const tag of tags.models ?? []) {
-    // Dropped before it costs a /api/show, and before anything downstream can
-    // see it — the renderer is not the place for this (DN3A.4).
-    if (isCloudRoutedName(tag.name)) continue
-    const show = await requestJson<OllamaShow>('/api/show', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model: tag.name }),
-      signal
-    })
-    models.push(normalizeOllamaModel(tag, show))
+    const models: AiModel[] = []
+    for (const tag of tags.models ?? []) {
+      // Dropped before it costs a /api/show, and before anything downstream can
+      // see it — the renderer is not the place for this (DN3A.4). WHICH tags
+      // are dropped is the target's call, never this loop's (DN3C.3).
+      if (!target.keepTag(tag.name)) continue
+      const show = await requestJson<OllamaShow>(target, '/api/show', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ model: tag.name }),
+        signal
+      })
+      models.push(target.normalize(tag, show))
+    }
+    return models
   }
-  return models
 }
 
 /** What is resident right now. Metadata only — it loads nothing. */
-export const ollamaLoaded: LoadedFn = async ({ signal }) => {
-  const body = await requestJson<{ models?: OllamaRunning[] }>('/api/ps', { signal })
-  return (body.models ?? []).map(normalizeOllamaRunning)
+export function makeOllamaLoaded(target: OllamaTarget): LoadedFn {
+  return async ({ signal }) => {
+    const body = await requestJson<{ models?: OllamaRunning[] }>(target, '/api/ps', { signal })
+    return (body.models ?? []).map(normalizeOllamaRunning)
+  }
 }
 
 /**
@@ -124,13 +169,15 @@ export const ollamaLoaded: LoadedFn = async ({ signal }) => {
  * `/api/generate` with no prompt and `keep_alive: 0` is the documented unload:
  * answers `done_reason: 'unload'`, never runs inference, costs nothing.
  */
-export const ollamaUnload: UnloadFn = async (model, { signal }) => {
-  await requestJson('/api/generate', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ model, keep_alive: 0 }),
-    signal
-  })
+export function makeOllamaUnload(target: OllamaTarget): UnloadFn {
+  return async (model, { signal }) => {
+    await requestJson(target, '/api/generate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model, keep_alive: 0 }),
+      signal
+    })
+  }
 }
 
 // Built separately so an absent value means ABSENT, never zero: an options
@@ -149,15 +196,16 @@ function chatOptions(numThread?: number, numCtx?: number): Record<string, number
 // non-streaming body has the exact same shape as the streaming loop's final
 // line, so OllamaChatLine covers both.
 async function requestStructuredChat(
+  target: OllamaTarget,
   model: string,
   messages: Parameters<ChatFn>[0],
   format: Record<string, unknown>,
   options: Record<string, number> | undefined,
   signal: AbortSignal | undefined
 ): Promise<{ content: string; promptTokens?: number; evalTokens?: number }> {
-  const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
+  const response = await fetch(`${target.baseUrl}/api/chat`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...target.headers() },
     body: JSON.stringify({
       model,
       messages,
@@ -169,7 +217,7 @@ async function requestStructuredChat(
     signal
   })
 
-  if (!response.ok) throw await upstreamErrorFor(response)
+  if (!response.ok) throw await upstreamErrorFor(target, response)
   const body = (await response.json()) as OllamaChatLine
   if (body.error !== undefined) throw new UpstreamError(null, body.error)
 
@@ -180,100 +228,107 @@ async function requestStructuredChat(
   }
 }
 
-export const ollamaChat: ChatFn = async (
-  messages,
-  { model, numThread, numCtx, signal, onChunk, onThinking, format }
-) => {
-  const options = chatOptions(numThread, numCtx)
+export function makeOllamaChat(target: OllamaTarget): ChatFn {
+  return async (messages, { model, numThread, numCtx, signal, onChunk, onThinking, format }) => {
+    const options = chatOptions(numThread, numCtx)
 
-  if (format !== undefined) {
-    return requestStructuredChat(model, messages, format, options, signal)
-  }
+    if (format !== undefined) {
+      return requestStructuredChat(target, model, messages, format, options, signal)
+    }
 
-  const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model,
-      messages,
-      stream: true,
-      // D21A.1: onThinking's presence is the request, not a separate flag.
-      think: onThinking !== undefined,
-      ...(options === undefined ? {} : { options })
-    }),
-    signal
-  })
+    const response = await fetch(`${target.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...target.headers() },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+        // D21A.1: onThinking's presence is the request, not a separate flag.
+        think: onThinking !== undefined,
+        ...(options === undefined ? {} : { options })
+      }),
+      signal
+    })
 
-  if (!response.ok || response.body === null) {
-    throw await upstreamErrorFor(response)
-  }
+    if (!response.ok || response.body === null) {
+      throw await upstreamErrorFor(target, response)
+    }
 
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let assembled = ''
-  let reasoningAssembled = ''
-  let buffer = ''
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let assembled = ''
+    let reasoningAssembled = ''
+    let buffer = ''
 
-  try {
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
+    try {
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
 
-      // NDJSON: one JSON object per line, but a socket read can split a line
-      // across two chunks — carry the tail in `buffer` until its newline lands.
-      let newline: number
-      while ((newline = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, newline).trim()
-        buffer = buffer.slice(newline + 1)
-        if (line === '') continue
+        // NDJSON: one JSON object per line, but a socket read can split a line
+        // across two chunks — carry the tail in `buffer` until its newline lands.
+        let newline: number
+        while ((newline = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, newline).trim()
+          buffer = buffer.slice(newline + 1)
+          if (line === '') continue
 
-        const parsed = JSON.parse(line) as OllamaChatLine
-        if (parsed.error !== undefined) {
-          console.error('[ollama] mid-stream error', parsed.error)
-          throw new UpstreamError(null, parsed.error)
-        }
+          const parsed = JSON.parse(line) as OllamaChatLine
+          if (parsed.error !== undefined) {
+            console.error('[ollama] mid-stream error', parsed.error)
+            throw new UpstreamError(null, parsed.error)
+          }
 
-        // message.thinking is a sibling field, streamed before message.content
-        // (docs.ollama.com/capabilities/thinking) — the two never share a piece.
-        // Accumulated only when asked: a model may stream `thinking` against a
-        // `think: false` it does not honour, and the trace would be persisted
-        // with the toggle off (DN3A.1).
-        const thinkingPiece = parsed.message?.thinking ?? ''
-        if (thinkingPiece !== '' && onThinking !== undefined) {
-          reasoningAssembled += thinkingPiece
-          onThinking(thinkingPiece)
-        }
-        const piece = parsed.message?.content ?? ''
-        if (piece !== '') {
-          assembled += piece
-          onChunk?.(piece)
-        }
-        // The final line carries the counters — the only exact token count the
-        // app can have, so they must not be dropped.
-        if (parsed.done === true) {
-          return {
-            content: assembled,
-            ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
-            ...(parsed.prompt_eval_count === undefined
-              ? {}
-              : { promptTokens: parsed.prompt_eval_count }),
-            ...(parsed.eval_count === undefined ? {} : { evalTokens: parsed.eval_count }),
-            ...(parsed.done_reason === 'length' ? { stopped: 'context-exhausted' as const } : {}),
-            ...nativeDurations(parsed)
+          // message.thinking is a sibling field, streamed before message.content
+          // (docs.ollama.com/capabilities/thinking) — the two never share a piece.
+          // Accumulated only when asked: a model may stream `thinking` against a
+          // `think: false` it does not honour, and the trace would be persisted
+          // with the toggle off (DN3A.1).
+          const thinkingPiece = parsed.message?.thinking ?? ''
+          if (thinkingPiece !== '' && onThinking !== undefined) {
+            reasoningAssembled += thinkingPiece
+            onThinking(thinkingPiece)
+          }
+          const piece = parsed.message?.content ?? ''
+          if (piece !== '') {
+            assembled += piece
+            onChunk?.(piece)
+          }
+          // The final line carries the counters — the only exact token count the
+          // app can have, so they must not be dropped.
+          if (parsed.done === true) {
+            return {
+              content: assembled,
+              ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled }),
+              ...(parsed.prompt_eval_count === undefined
+                ? {}
+                : { promptTokens: parsed.prompt_eval_count }),
+              ...(parsed.eval_count === undefined ? {} : { evalTokens: parsed.eval_count }),
+              ...(parsed.done_reason === 'length' ? { stopped: 'context-exhausted' as const } : {}),
+              ...nativeDurations(parsed)
+            }
           }
         }
       }
+    } finally {
+      reader.releaseLock()
     }
-  } finally {
-    reader.releaseLock()
-  }
 
-  // The stream ended without a `done` line — a truncated response rather than a
-  // finished one. What arrived is still worth keeping; there are simply no
-  // counters to report, which is the same shape a cloud provider may produce.
-  return {
-    content: assembled,
-    ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled })
+    // The stream ended without a `done` line — a truncated response rather than a
+    // finished one. What arrived is still worth keeping; there are simply no
+    // counters to report, which is the same shape a cloud provider may produce.
+    return {
+      content: assembled,
+      ...(reasoningAssembled === '' ? {} : { reasoning: reasoningAssembled })
+    }
   }
 }
+
+// The local daemon, the instance every existing caller already imports —
+// register-all.ts and this module's own tests never learn that a target exists.
+export const ollamaProbe = makeOllamaProbe(LOCAL)
+export const ollamaModels = makeOllamaModels(LOCAL)
+export const ollamaLoaded = makeOllamaLoaded(LOCAL)
+export const ollamaUnload = makeOllamaUnload(LOCAL)
+export const ollamaChat = makeOllamaChat(LOCAL)
