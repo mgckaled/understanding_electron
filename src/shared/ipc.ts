@@ -270,7 +270,20 @@ export type AiAvailability = {
  */
 export type AiModelAttention = {
   blockCount: number
-  headCountKv: number
+  /**
+   * attention.head_count_kv as published, `null` for a hybrid that omits it
+   * (qwen35 reports the field as literal null). Derived from `headCount` by the
+   * budget math in that case, never here — see core/ai/memory.ts (DN3A.6).
+   */
+  headCountKv: number | null
+  /** attention.head_count — only read when `headCountKv` is absent. */
+  headCount: number | null
+  /**
+   * full_attention_interval: one layer in N is full attention, the rest
+   * recurrent (Mamba/Gated DeltaNet) with a fixed-size state that does NOT grow
+   * with the window. `null` for a pure-attention model, where every layer grows.
+   */
+  fullAttentionInterval: number | null
   /** attention.key_length when present, else embedding_length / head_count. */
   headDim: number
   /**

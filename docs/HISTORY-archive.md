@@ -12,6 +12,15 @@ Formato, teto e critério de arquivamento: [`docs/README.md`](README.md#régua-d
 
 ## Entregas (marcos)
 
+### 23-B — A fronteira do Context7: dois canais, a chave no cofre, e o job que não nasceu (set/2026)
+Origem: segundo dos dez cortes do arco 23. O 23-A tinha entregue um cliente que ninguém chamava — sem canal, sem handler, sem lugar para a chave. Entrega: `docs:search` e `docs:fetch` em `window.api`, handlers de nível 3 em `main/features/context7/`, `'context7'` no cofre de segredos e o campo em Configurações. 16 testes no módulo novo; `check:fast` em **151 arquivos / 1430 testes, 124,0s**.
+
+**A pergunta que o guia reservou para este corte foi decidida por um argumento que nenhum dos dois lados dele trazia: cancelar não devolve cota** (D23B.1). A requisição é contada no instante em que chega ao Context7, então o botão compraria "parar de esperar", nunca uma das 200 chamadas do mês — e `JobEvent` é `progress | chunk | log`, que uma chamada REST não tem. `invoke` simples, com três condições e um gatilho de reversão **medido, não estimado**: a chamada real ao `/vercel/next.js` com `fast=false` levou **2.222 ms**, 7% do teto de 30 s. O gatilho não disparou.
+
+Decisões de fronteira: o canal nomeia a **operação** (`docs`) e o segredo nomeia o **portador** (`context7`) — D23B.2; os tipos normalizados sobem para `shared/ipc.ts` porque `shared` não pode importar `core` (D23B.3); `'context7'` entra em `CLOUD_PROVIDERS` e é a primeira vez que a separação de DN1A.5 paga por si — portador de credencial que jamais será provedor de IA, e o `typecheck` cobrou quatro `Record` exaustivos (D23B.4). **O guia estava errado num ponto que a leitura do código desmentiu:** `mapProviderError` não serve aqui, é keyed por `AiService` e distribui dicas sobre Ollama.
+
+Dois achados só a execução daria. O primeiro veio do dono ao ver o custo de repetir a sonda: **o freio de cota mora na fronteira, não no painel** — memo de sessão, com `indexing` e falha deliberadamente fora dele para não matar o `Tentar de novo` (D23B.10). O segundo veio da resposta real: `codeList[]` são **variantes** do mesmo exemplo (TypeScript e JavaScript), e juntá-las num texto só renderizava o mesmo `GET()` duas vezes — `DocSnippet` passou a carregar `blocks[]`, no momento em que ainda não havia consumidor para migrar (D23B.11). Dívida nomeada com prazo: `src/preload/index.ts` fechou em **104 linhas**, acima do teto "sem exceção", a dividir antes do 23-C. [`plan/implemented/23-B-a-fronteira.md`](plan/implemented/23-B-a-fronteira.md)
+
 ### 23-A — O cliente Context7: REST em `core/`, e a sonda que mudou três premissas (set/2026)
 Origem: primeiro dos dez cortes do arco 23, que trocou a integração com o Context7 de MCP para REST (DM-0) — definir as duas ferramentas MCP custa **2.060 tokens reenviados em toda requisição**, contra 352–1.244 de uma resposta inteira, e pelo MCP se trunca enquanto pela REST se seleciona. Entrega: `core/context7/` com os tipos do fio, a normalização e o cliente das duas rotas, `fetch` injetado, 35 testes contra seis fixtures gravadas verbatim da API real.
 

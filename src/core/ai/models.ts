@@ -115,15 +115,24 @@ function readHeadDim(info: Record<string, unknown> | undefined): number | null {
 function readAttention(info: Record<string, unknown> | undefined): AiModelAttention | null {
   const blockCount = readInfo(info, 'block_count')
   const headCountKv = readInfo(info, 'attention.head_count_kv')
+  const headCount = readInfo(info, 'attention.head_count')
+  const fullAttentionInterval = readInfo(info, 'full_attention_interval')
   const headDim = readHeadDim(info)
 
-  // All three are required to cost a context window. An embedder reports none
-  // of them, and it is never offered for conversation anyway.
-  if (blockCount === null || headCountKv === null || headDim === null) return null
+  // Size and dimension are always required. The head count comes either
+  // published or, for a hybrid that reports head_count_kv as literal null
+  // (qwen35), derived from head_count — which needs the interval too. Demanding
+  // the interval is what keeps an embedder out: nomic-embed publishes
+  // head_count and block_count but neither head_count_kv nor an interval
+  // (measured, DN3A.9), and costing it would invent a number.
+  const heads = headCountKv !== null || (headCount !== null && fullAttentionInterval !== null)
+  if (blockCount === null || headDim === null || !heads) return null
 
   return {
     blockCount,
     headCountKv,
+    headCount,
+    fullAttentionInterval,
     headDim,
     // Kept exactly as reported, including values larger than the model's own
     // context ceiling. Deciding whether a window is ACTIVE needs a ceiling to
@@ -188,6 +197,23 @@ export function exposesReasoning(model: AiModel): boolean {
 export function dropRedundantVariants(models: AiModel[]): AiModel[] {
   const installed = new Set(models.map((model) => model.name))
   return models.filter((model) => model.variantOf === null || !installed.has(model.variantOf))
+}
+
+/**
+ * Whether this local-catalog name is really routed to Ollama's cloud, which
+ * `ollama signin` publishes into /api/tags like any installed model. It would
+ * arrive under `provider: 'ollama'`, and `isCloudService` reads that as local —
+ * so data, images included, would leave the machine with no privacy-ledger row
+ * (DN3A.3). The switch belongs to the user's server.json, never to this app, so
+ * the catalog is outside input and the drop happens here.
+ *
+ * Both spellings are in circulation: the docs show `gpt-oss:120b-cloud`, the
+ * newer catalog uses `qwen3.5:cloud`. Matching only one leaves the silent hole
+ * this guard exists to close, and neither is verifiable from a machine that
+ * never signed in.
+ */
+export function isCloudRoutedName(name: string): boolean {
+  return /[-:]cloud$/.test(name)
 }
 
 /** Models the catalog declares `embedding` for (O-4, DO4.5) — takes whatever catalog the caller passes; it is the caller's job to have already dropped redundant variants (`dropRedundantVariants`), not this function's. */

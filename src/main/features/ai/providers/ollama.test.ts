@@ -104,6 +104,26 @@ describe('ollamaModels', () => {
     expect(models[1].capabilities).toContain('insert')
   })
 
+  it('drops a cloud-routed model without even asking /api/show about it (DN3A.4)', async () => {
+    const fetchMock = stubCatalog(
+      {
+        models: [
+          { name: 'gemma3:4b', size: 3_338_801_804, details: { parameter_size: '4.3B' } },
+          { name: 'gpt-oss:120b-cloud', size: 13_700_000_000, details: { parameter_size: '116B' } },
+          { name: 'qwen3.5:cloud', size: 0, details: { parameter_size: '397B' } }
+        ]
+      },
+      { 'gemma3:4b': { capabilities: ['completion', 'vision'], model_info: {} } }
+    )
+
+    const models = await ollamaModels({})
+
+    expect(models.map((m) => m.name)).toEqual(['gemma3:4b'])
+    // 1 for /api/tags plus 1 for the only model left: the two cloud entries
+    // never cost a request, which is what "drop before sonding" means.
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('returns an empty list when the daemon has no model pulled', async () => {
     stubCatalog({ models: [] }, {})
 
@@ -228,6 +248,19 @@ describe('ollamaChat', () => {
     const result = await ollamaChat(messages, { model: 'gemma3:4b', onThinking: () => {} })
 
     expect('reasoning' in result).toBe(false)
+  })
+
+  it('drops a thinking trace nobody asked for, instead of returning it (DN3A.1)', async () => {
+    // The wire carries reasoning against a think: false the model ignored —
+    // gpt-oss does exactly this, so the result must not carry it back.
+    stubChatStream([
+      '{"message":{"thinking":"Pensando"},"done":false}\n',
+      '{"message":{"content":"Pronto"},"done":true}\n'
+    ])
+
+    const result = await ollamaChat(messages, { model: 'gpt-oss:120b' })
+
+    expect(result).toEqual({ content: 'Pronto' })
   })
 
   it('keeps a partial reasoning trace in the truncated-stream fallback', async () => {

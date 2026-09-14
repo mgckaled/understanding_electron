@@ -147,8 +147,11 @@ export function makeGeminiChat(getApiKey: () => string | null): ChatFn {
     function stepFor(index: number, type: string): StepAccumulator {
       let step = steps.get(index)
       if (step === undefined) {
-        const known = type === 'thought' || type === 'model_output'
-        if (!known) console.error(`[gemini] unknown step type: ${type}, ignoring`)
+        const recognized = type === 'thought' || type === 'model_output'
+        if (!recognized) console.error(`[gemini] unknown step type: ${type}, ignoring`)
+        // A thought step arriving when no trace was asked for is dropped whole,
+        // signature included — that signature is what 21-D-B resends (DN3A.1).
+        const known = recognized && (type === 'model_output' || onThinking !== undefined)
         step = { type, known, signature: '', reasoningText: '', contentText: '' }
         steps.set(index, step)
       }

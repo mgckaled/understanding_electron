@@ -125,6 +125,19 @@ describe('makeGlmChat', () => {
     expect('reasoning' in result).toBe(false)
   })
 
+  it('drops a reasoning trace nobody asked for, instead of returning it (DN3A.1)', async () => {
+    stubStream([
+      'data: {"choices":[{"delta":{"reasoning_content":"Pensando"},"finish_reason":null}]}\n\n',
+      'data: {"choices":[{"delta":{"content":"Pronto"},"finish_reason":"stop"}]}\n\n',
+      'data: [DONE]\n\n'
+    ])
+
+    const result = await chat(messages, { model: 'glm-4.7-flash' })
+
+    expect(result).toMatchObject({ content: 'Pronto' })
+    expect('reasoning' in result).toBe(false)
+  })
+
   it('assembles content across SSE chunks and forwards each piece to onChunk', async () => {
     stubStream([
       'data: {"choices":[{"delta":{"content":"Olá"},"finish_reason":null}]}\n\n',

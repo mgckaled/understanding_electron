@@ -706,6 +706,17 @@ chamada de modelo no main (`D9.1`).
 | — | RE6.8 | a revisão não abre plano de código — F-6, arco 22 e o agrupador de projeto seguem onde estão |
 | — | RE6.9 | o `ESCOPO.md` é atemporal e sem narrativa; a régua é aceite, verificada por grep |
 
+| N-3-A | [DN3A.1](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | A guarda de raciocínio vai aos **três** adaptadores, não só ao `ollama.ts` que a sondagem mediu |
+| N-3-A | [DN3A.2](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | O portão do renderer entra mesmo sendo segunda linha de defesa — é ele que torna o estado **persistido** inexpressável |
+| N-3-A | [DN3A.3](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | O predicado de nuvem cobre as duas grafias (`-cloud` e `:cloud`) — errata de `DNC-9`, achada por busca web |
+| N-3-A | [DN3A.4](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | O descarte acontece em `ollamaModels`, antes do `/api/show`, nunca em `selectableModels` |
+| N-3-A | [DN3A.5](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | `offeredCeiling`/`costsLocalRam` nascem em `core/ai/memory.ts` — e eram **duas** cópias do ternário, não uma |
+| N-3-A | [DN3A.6](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | `AiModelAttention` ganha dois campos descritivos; toda a aritmética híbrida fica com um dono só |
+| N-3-A | [DN3A.7](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | O divisor de cabeças é 4 por `config.json` publicado, não por confundimento — e não é constante de família |
+| N-3-A | [DN3A.8](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | `OVERHEAD` passa a depender da arquitetura: 1,06 pura, 1,2 híbrida |
+| N-3-A | [DN3A.9](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | A regra de admissão exige o intervalo, e é isso que mantém o embedder fora do custeio |
+| N-3-A | [DN3A.10](plan/implemented/N-3-A-a-trava-antes-da-porta.md) | Errata: a tabela de verificação do recorte cita `até 32k` e `qwen3:4b`, os dois mortos |
+
 ---
 
 ## Plano ainda ativo

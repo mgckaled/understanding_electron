@@ -236,13 +236,17 @@ export function useConversationChat(
         // Reasoning rides ahead of text, never resent as text to a provider
         // (D21A.3) — its `signature` (D21D.6), when the provider returned
         // one, is what gemini.ts resends as a `thought` step instead.
+        // A trace the conversation never asked for is not kept, whatever the
+        // provider streamed back: gpt-oss ignores `think: false`, and persisting
+        // its reasoning with the toggle off is the durable half of DN3A.2.
+        const replyReasoning = wantsReasoning ? result.value.reasoning : undefined
         const replyParts: MessagePart[] =
-          result.value.reasoning === undefined
+          replyReasoning === undefined
             ? [{ kind: 'text', text: result.value.content }]
             : [
                 {
                   kind: 'reasoning',
-                  text: result.value.reasoning,
+                  text: replyReasoning,
                   ...(result.value.reasoningSignature === undefined
                     ? {}
                     : { signature: result.value.reasoningSignature })
@@ -279,12 +283,16 @@ export function useConversationChat(
       // empty assistant message is noise, not honesty. A turn cancelled mid
       // reasoning, before any content arrived, still has something worth
       // keeping (D21A, Passo 5).
-      if (stopped === null || (partial === '' && reasoningPartial === '')) return
+      // Same gate as the resolved path (DN3A.2), applied BEFORE the guard above:
+      // an interrupted turn whose only content is unasked-for reasoning has
+      // nothing worth keeping, and would otherwise persist an empty text part.
+      const keptReasoning = wantsReasoning ? reasoningPartial : ''
+      if (stopped === null || (partial === '' && keptReasoning === '')) return
       const interruptedParts: MessagePart[] =
-        reasoningPartial === ''
+        keptReasoning === ''
           ? [{ kind: 'text', text: partial }]
           : [
-              { kind: 'reasoning', text: reasoningPartial },
+              { kind: 'reasoning', text: keptReasoning },
               { kind: 'text', text: partial }
             ]
       append(conversationId, {

@@ -1,4 +1,5 @@
-import type { AiModel } from '@shared/ipc'
+import type { AiModel, AiModelAttention } from '@shared/ipc'
+import { isCloudService } from './messages'
 
 // What a context window COSTS IN RAM, and how large a one this machine can
 // afford (D15.2). Arithmetic over the `attention` block /api/show returns, plus
@@ -10,6 +11,22 @@ import type { AiModel } from '@shared/ipc'
  * per token against the 36,0 the formula predicts, on qwen2.5-coder:3b (D15.8).
  */
 const OVERHEAD = 1.06
+
+/**
+ * The same overhead for a hybrid (Mamba/Gated DeltaNet plus attention) family,
+ * where the measured residual is 1,13–1,18 and points at UNDERSTATING the cost —
+ * the dangerous direction. Measured on both qwen3.5 models (DN3A.8).
+ */
+const HYBRID_OVERHEAD = 1.2
+
+/**
+ * Query heads per KV head, for a hybrid that publishes no head_count_kv. Not a
+ * family rule: the published config gives 16/4 and 8/2 on the dense line but
+ * 32/2 on the 397B MoE, so this is the dense line's measured ratio, and a third
+ * hybrid with another ratio reopens it (DN3A.7). Erring high costs window, never
+ * safety.
+ */
+const HYBRID_QUERY_PER_KV_HEAD = 4
 
 /**
  * Weights aside, a loaded model costs this much before a single token of
@@ -42,7 +59,25 @@ function growingLayers(model: AiModel): number {
   const window = attention.slidingWindow
   const ceiling = model.contextLength
   const windowIsActive = window !== null && ceiling !== null && window < ceiling
-  return windowIsActive ? 1 : attention.blockCount
+  if (windowIsActive) return 1
+
+  // A hybrid grows only on its full-attention layers — one in N, the rest hold a
+  // fixed-size recurrent state. Rounding up keeps the estimate on the safe side
+  // of a block count the interval does not divide (DN3A.7).
+  const interval = attention.fullAttentionInterval
+  if (interval !== null && interval > 0) return Math.ceil(attention.blockCount / interval)
+  return attention.blockCount
+}
+
+/**
+ * KV heads: published when the model reports them, derived for a hybrid that
+ * does not. Null when neither route is available, which `readAttention` already
+ * refuses to build — kept here so the arithmetic never silently reads a zero.
+ */
+function kvHeads(attention: AiModelAttention): number | null {
+  if (attention.headCountKv !== null) return attention.headCountKv
+  if (attention.headCount === null || attention.fullAttentionInterval === null) return null
+  return attention.headCount / HYBRID_QUERY_PER_KV_HEAD
 }
 
 /**
@@ -56,8 +91,12 @@ export function kvBytesPerToken(model: AiModel): number | null {
   const attention = model.attention
   if (attention === null) return null
 
+  const heads = kvHeads(attention)
+  if (heads === null) return null
+
   const layers = growingLayers(model)
-  return 2 * layers * attention.headCountKv * attention.headDim * 2 * OVERHEAD
+  const overhead = attention.fullAttentionInterval === null ? OVERHEAD : HYBRID_OVERHEAD
+  return 2 * layers * heads * attention.headDim * 2 * overhead
 }
 
 /** Total resident bytes this model would occupy at the given context window. */
@@ -91,4 +130,34 @@ export function contextCeiling(
   if (forCache <= 0) return 0
 
   return Math.min(trained, Math.floor(forCache / perToken))
+}
+
+/**
+ * Whether this model's window is a real reservation of local RAM, or a
+ * client-side budget only (cloud, DN1C.2) — what decides whether
+ * `conversationWindow` ever freezes it.
+ */
+export function costsLocalRam(model: AiModel): boolean {
+  return !isCloudService(model.provider)
+}
+
+/**
+ * The largest window the selector should OFFER, decided by service.
+ *
+ * Never by `attention === null`, which carried two incompatible meanings until
+ * DN3A.5 — "cloud, so RAM is free" and "could not read this local model's
+ * attention" — and under the second one the two hybrid qwen3.5 were offered
+ * their trained 262144 on a machine that holds a fifth of it.
+ *
+ * @param freeBytes - Undefined while the reading is still in flight; irrelevant
+ *   for a cloud model, whose ceiling does not depend on this machine.
+ */
+export function offeredCeiling(
+  model: AiModel,
+  freeBytes: number | undefined,
+  marginBytes: number
+): number | null {
+  if (!costsLocalRam(model)) return model.contextLength
+  if (freeBytes === undefined) return null
+  return contextCeiling(model, freeBytes, marginBytes)
 }

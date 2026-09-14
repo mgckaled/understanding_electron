@@ -690,13 +690,34 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
       ])
     ])
 
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+    const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
 
     expect(result.content).toBe('ok')
     expect(result.reasoning).toBe('Pensando')
     expect(consoleSpy).toHaveBeenCalledWith('[gemini] thought step closed without a signature')
 
     consoleSpy.mockRestore()
+  })
+
+  it('drops a thought step nobody asked for, signature included (DN3A.1)', async () => {
+    stubStream([
+      sse([
+        {
+          event_type: 'step.start',
+          index: 0,
+          step: { type: 'thought', signature: 'sig-immediate', summary: [{ text: 'Pensando' }] }
+        },
+        modelOutput(1, 'ok')
+      ])
+    ])
+
+    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+
+    expect(result.content).toBe('ok')
+    expect('reasoning' in result).toBe(false)
+    // The signature is what 21-D-B resends, so leaking it would resend a trace
+    // the conversation never requested.
+    expect('reasoningSignature' in result).toBe(false)
   })
 
   it('grau 2: throws when a completed turn produced a model_output step with no text at all', async () => {
@@ -739,7 +760,7 @@ describe('makeGeminiChat — contract guard (D21D.3, D21D.5)', () => {
       ])
     ])
 
-    const result = await chat(messages, { model: 'gemini-3.7-flash' })
+    const result = await chat(messages, { model: 'gemini-3.7-flash', onThinking: () => {} })
 
     expect(result).toMatchObject({ content: 'ok', reasoning: 'Pensando' })
   })

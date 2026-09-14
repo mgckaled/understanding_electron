@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { installApiMock } from '@test/api-mock'
+import { installApiMock, TEST_MODEL } from '@test/api-mock'
 import { providers } from '@test/renderer-providers'
 import type {
+  AiModel,
   Api,
   AppError,
   ChatReply,
@@ -40,6 +41,22 @@ async function whenReady(): Promise<void> {
 /** The view alone, under the stores it now reads from. */
 function renderView(): HTMLElement {
   return render(providers(<ConversationView />)).container
+}
+
+/** Same catalog entry the other tests assert, with `thinking` so the switch below is reachable. */
+const THINKING_MODEL: AiModel = {
+  ...TEST_MODEL,
+  capabilities: ['completion', 'vision', 'thinking']
+}
+
+/**
+ * Turns the composer's `Raciocínio visível` switch on. A trace is only kept when
+ * the turn asked for it (DN3A.2), so every test about reasoning has to ask —
+ * and the popover content computes `display: none` under jsdom, hence `hidden`.
+ */
+async function askForReasoning(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'Adicionar anexo' }))
+  await user.click(screen.getByRole('switch', { name: 'Raciocínio visível', hidden: true }))
 }
 
 /** The view plus the sidebar pieces, for anything about switching or settings. */
@@ -96,6 +113,11 @@ async function reply(
 async function interrupted(error: AppError, chunk?: string, reasoning?: string): Promise<Api> {
   const api = installApiMock()
   vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+  // A trace only reaches the transcript when the turn asked for it (DN3A.2), so
+  // a case that emits one has to turn the switch on to keep its own subject.
+  if (reasoning !== undefined) {
+    vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [THINKING_MODEL] })
+  }
   let settle: (result: Result<ChatReply>) => void = () => {}
   vi.mocked(api.ai.chat).mockReturnValue(
     new Promise<Result<ChatReply>>((resolve) => {
@@ -107,6 +129,7 @@ async function interrupted(error: AppError, chunk?: string, reasoning?: string):
 
   renderView()
   await whenReady()
+  if (reasoning !== undefined) await askForReasoning(user)
   await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
   await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
@@ -192,9 +215,34 @@ describe('ConversationView', () => {
   it('renders and keeps the reasoning trace once the reply lands (arco 21)', async () => {
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [THINKING_MODEL] })
     vi.mocked(api.ai.chat).mockResolvedValue({
       ok: true,
       value: { content: 'Olá!', reasoning: 'Pensando bem' }
+    })
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+    await askForReasoning(user)
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    expect(await screen.findByText('Olá!')).toBeInTheDocument()
+    const trigger = screen.getByRole('button', { name: 'Ollama' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await user.click(trigger)
+    expect(screen.getByText('Pensando bem')).toBeInTheDocument()
+  })
+
+  it('keeps no trace when the turn never asked for one, however the provider answers (DN3A.2)', async () => {
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    // A provider answering with reasoning nobody asked for is the real case, not
+    // a hypothetical: gpt-oss ignores `think: false` and streams it anyway.
+    vi.mocked(api.ai.chat).mockResolvedValue({
+      ok: true,
+      value: { content: 'Olá!', reasoning: 'Pensando bem', reasoningSignature: 'sig' }
     })
     const user = userEvent.setup()
 
@@ -204,10 +252,11 @@ describe('ConversationView', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 
     expect(await screen.findByText('Olá!')).toBeInTheDocument()
-    const trigger = screen.getByRole('button', { name: 'Ollama' })
-    expect(trigger).toHaveAttribute('aria-expanded', 'false')
-    await user.click(trigger)
-    expect(screen.getByText('Pensando bem')).toBeInTheDocument()
+    // The disclosure only renders for a message that HAS a reasoning part, so
+    // its absence is the persisted state, not just a hidden trace.
+    expect(screen.queryByRole('button', { name: 'Ollama' })).toBeNull()
+    const [, appended] = vi.mocked(api.conversation.append).mock.lastCall ?? []
+    expect(appended?.parts).toEqual([{ kind: 'text', text: 'Olá!' }])
   })
 
   it('shows the reasoning trace live while the reply is still in flight (arco 21, Passo 7)', async () => {
@@ -837,6 +886,35 @@ describe('ConversationView — resposta interrompida', () => {
     expect(vi.mocked(api.conversation.append).mock.calls[0]?.[1]).toMatchObject({ role: 'user' })
   })
 
+  it('writes nothing when the only thing that arrived is a trace nobody asked for (DN3A.2)', async () => {
+    // Same lie as the resolved path, on the interrupted one: a reasoning event
+    // reaching a turn that never asked must not become the whole message —
+    // without the gate this persisted a reasoning part plus an empty text.
+    const api = installApiMock()
+    vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    let settle: (result: Result<ChatReply>) => void = () => {}
+    vi.mocked(api.ai.chat).mockReturnValue(
+      new Promise<Result<ChatReply>>((resolve) => {
+        settle = resolve
+      })
+    )
+    const emit = stubJobEvents(api)
+    const user = userEvent.setup()
+
+    renderView()
+    await whenReady()
+    await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    const jobId = vi.mocked(api.ai.chat).mock.calls[0]?.[1] as JobEvent['jobId']
+    act(() => emit({ jobId, type: 'reasoning', text: 'Pensando…' }))
+    await act(async () => settle({ ok: false, error: { kind: 'cancelled' } }))
+
+    // Only the user's own message was written: no assistant row at all.
+    expect(api.conversation.append).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(api.conversation.append).mock.calls[0]?.[1]).toMatchObject({ role: 'user' })
+  })
+
   it('keeps a reasoning-only partial cancelled before any content token arrived (arco 21)', async () => {
     // The guard used to read `partial === ''` alone — a cancel mid-reasoning,
     // before content started, has an empty `partial` too, and would have been
@@ -901,6 +979,7 @@ describe('ConversationView — resposta interrompida', () => {
     const user = userEvent.setup()
     const api = installApiMock()
     vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
+    vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [THINKING_MODEL] })
     vi.mocked(api.ai.chat).mockResolvedValue({
       ok: true,
       value: {
@@ -913,6 +992,7 @@ describe('ConversationView — resposta interrompida', () => {
 
     renderView()
     await whenReady()
+    await askForReasoning(user)
     await user.type(screen.getByPlaceholderText(PROMPT), 'oi')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
 

@@ -1,6 +1,6 @@
 import type { AiModel } from '@shared/ipc'
 import { conversationWindow } from '@core/ai/budget'
-import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
+import { costsLocalRam, offeredCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { GEMINI_MODELS, GLM_MODELS } from '@core/ai/models'
 import { useSystemMemory } from '../../shared/hooks/useSystemMemory'
 import { useAiModels } from './useAiModels'
@@ -31,16 +31,13 @@ export function useResolvedContextWindow(input: {
   const allModels: AiModel[] = [...installed, ...GLM_MODELS, ...GEMINI_MODELS]
   const current = allModels.find((entry) => entry.name === modelName)
 
+  // Same `offeredCeiling` the composer's meter uses — the branch is by SERVICE,
+  // and this second copy of it is why DN3A.5 moved the decision into core: fixing
+  // only ConversationView would have left the overload alive on ai:propose's path.
   const ceiling =
-    current === undefined
-      ? null
-      : current.attention === null
-        ? current.contextLength
-        : memory === undefined
-          ? null
-          : contextCeiling(current, memory.freeBytes, RAM_MARGIN_BYTES)
+    current === undefined ? null : offeredCeiling(current, memory?.freeBytes, RAM_MARGIN_BYTES)
 
-  const costed = current?.attention !== null
+  const costed = current === undefined ? true : costsLocalRam(current)
 
   const contextWindow = conversationWindow({ locked, reserved: storedNumCtx, ceiling, costed })
   return contextWindow.status === 'open' || contextWindow.status === 'locked'

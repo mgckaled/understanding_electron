@@ -25,7 +25,14 @@ const CODER: AiModel = {
   sizeBytes: 1_929_000_000,
   capabilities: ['completion', 'tools', 'insert'],
   contextLength: 32768,
-  attention: { blockCount: 36, headCountKv: 2, headDim: 128, slidingWindow: null },
+  attention: {
+    blockCount: 36,
+    headCountKv: 2,
+    headCount: null,
+    fullAttentionInterval: null,
+    headDim: 128,
+    slidingWindow: null
+  },
   variantOf: null
 }
 
@@ -484,7 +491,14 @@ describe('a model that does not fit', () => {
     sizeBytes: 5.9 * 1024 ** 3,
     capabilities: ['completion', 'tools'],
     contextLength: 32768,
-    attention: { blockCount: 28, headCountKv: 4, headDim: 128, slidingWindow: null },
+    attention: {
+      blockCount: 28,
+      headCountKv: 4,
+      headCount: null,
+      fullAttentionInterval: null,
+      headDim: 128,
+      slidingWindow: null
+    },
     variantOf: null
   }
 

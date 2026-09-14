@@ -6,6 +6,7 @@ import {
   exposesReasoning,
   findEmbedders,
   hasCapability,
+  isCloudRoutedName,
   normalizeOllamaModel,
   normalizeOllamaRunning,
   type OllamaShow,
@@ -106,6 +107,59 @@ describe('normalizeOllamaModel', () => {
     const fromTags: OllamaShow = { ...gemma3_4b, capabilities: ['completion'] }
 
     expect(hasCapability(normalizeOllamaModel(tag('gemma3:4b'), fromTags), 'vision')).toBe(false)
+  })
+
+  it('reads the hybrid attention block qwen3.5 publishes, kv head count and all (DN3A.9)', () => {
+    // Verbatim from /api/show on 13/09/2026. head_count_kv is literal null, not
+    // absent, and the ssm.* block plus full_attention_interval are what say the
+    // window only grows on one layer in four.
+    const qwen35_4b: OllamaShow = {
+      capabilities: ['completion', 'vision', 'tools', 'thinking'],
+      model_info: {
+        'qwen35.attention.head_count': 16,
+        'qwen35.attention.head_count_kv': null,
+        'qwen35.attention.key_length': 256,
+        'qwen35.attention.value_length': 256,
+        'qwen35.block_count': 32,
+        'qwen35.context_length': 262144,
+        'qwen35.embedding_length': 2560,
+        'qwen35.full_attention_interval': 4,
+        'qwen35.ssm.conv_kernel': 4,
+        'qwen35.ssm.state_size': 128,
+        // The parallel vision namespace this model also carries — the same trap
+        // D15.8 records, met again by a model it did not anticipate.
+        'qwen35.vision.attention.head_count': 16,
+        'qwen35.vision.block_count': 24
+      }
+    }
+
+    const model = normalizeOllamaModel(tag('qwen3.5:4b'), qwen35_4b)
+
+    expect(model.attention).toEqual({
+      blockCount: 32,
+      headCountKv: null,
+      headCount: 16,
+      fullAttentionInterval: 4,
+      headDim: 256,
+      slidingWindow: null
+    })
+  })
+
+  it('still refuses to cost an embedder, which publishes head_count with no interval', () => {
+    // nomic-embed-text reports exactly these two keys and nothing else
+    // (measured). Admitting a block on head_count alone would start costing it
+    // with an invented number — the interval is what keeps it out (DN3A.9).
+    const embedder: OllamaShow = {
+      capabilities: ['embedding'],
+      model_info: {
+        'nomic-bert.attention.head_count': 12,
+        'nomic-bert.block_count': 12,
+        'nomic-bert.context_length': 2048,
+        'nomic-bert.embedding_length': 768
+      }
+    }
+
+    expect(normalizeOllamaModel(tag('nomic-embed-text'), embedder).attention).toBeNull()
   })
 
   it('lets an unknown capability through instead of filtering to a known list', () => {
@@ -417,5 +471,21 @@ describe('exposesReasoning', () => {
     }
 
     expect(exposesReasoning(noThinking)).toBe(false)
+  })
+})
+
+describe('isCloudRoutedName', () => {
+  // `ollama signin` publishes cloud-routed models into the LOCAL /api/tags, and
+  // both spellings are in circulation (DN3A.3) — the docs show the hyphen form,
+  // the newer catalog uses the colon one.
+  it('recognizes both spellings a signed-in daemon can publish', () => {
+    expect(isCloudRoutedName('gpt-oss:120b-cloud')).toBe(true)
+    expect(isCloudRoutedName('qwen3.5:cloud')).toBe(true)
+  })
+
+  it('leaves an installed local model alone, including one that merely mentions cloud', () => {
+    expect(isCloudRoutedName('qwen3.5:4b')).toBe(false)
+    expect(isCloudRoutedName('gemma3:4b')).toBe(false)
+    expect(isCloudRoutedName('cloud-analyst:latest')).toBe(false)
   })
 })

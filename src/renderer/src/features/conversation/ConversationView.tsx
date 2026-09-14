@@ -3,7 +3,7 @@ import { RefreshCw } from 'lucide-react'
 import type { AiModel, AiService, AppError, ConversationSettings } from '@shared/ipc'
 import { historyCharsOf, imageCountOf } from '@core/ai/messages'
 import { conversationWindow } from '@core/ai/budget'
-import { contextCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
+import { costsLocalRam, offeredCeiling, RAM_MARGIN_BYTES } from '@core/ai/memory'
 import { errorMessage } from '../../shared/ui/messages'
 import Button from '../../shared/ui/Button/Button'
 import { ICON_SIZE, ICON_STROKE } from '../../shared/ui/icon'
@@ -85,20 +85,13 @@ function ConversationView(): React.JSX.Element {
   // unlocked GLM pick back to the first local model.
   const model = resolveModel(chosen.model, allModels, locked)
 
-  // min(trained ceiling, what this machine can hold) for Ollama — see
-  // contextCeiling. For a cloud model (attention: null, N-1-C, DN1C.2) there
-  // is no RAM to bound against, so the ceiling is the model's own trained
-  // window: `contextCeiling` already returns null for that case (right for
-  // "does not cost RAM", wrong for "what should the slider offer"), and this
-  // is the one place that turns null into the real number instead of leaving
-  // the window stuck at DEFAULT_NUM_CTX with no control to change it.
+  // min(trained ceiling, what this machine can hold) for a local model, the
+  // trained window for a cloud one. The branch is `offeredCeiling`'s, decided by
+  // SERVICE — this used to read `attention === null` here, which also caught a
+  // local model whose attention could not be read (DN3A.5).
   const { memory, reload: reloadMemory } = useSystemMemory()
   const ceilingOf = (entry: AiModel): number | null =>
-    entry.attention === null
-      ? entry.contextLength
-      : memory === undefined
-        ? null
-        : contextCeiling(entry, memory.freeBytes, RAM_MARGIN_BYTES)
+    offeredCeiling(entry, memory?.freeBytes, RAM_MARGIN_BYTES)
 
   const current = allModels.find((entry) => entry.name === model)
   const ceiling = current === undefined ? null : ceilingOf(current)
@@ -108,8 +101,9 @@ function ConversationView(): React.JSX.Element {
   const service: AiService = current?.provider ?? chosen.service ?? 'ollama'
   // Whether the window costs local RAM (Ollama, can become unaffordable
   // later) or is a client-side budget bound only (cloud, N-1-C, DN1C.2) —
-  // decides whether conversationWindow ever freezes it.
-  const costed = current?.attention !== null
+  // decides whether conversationWindow ever freezes it. With no model resolved
+  // yet, the costed path is the safe assumption.
+  const costed = current === undefined ? true : costsLocalRam(current)
 
   // One writer for both settings: hold it locally so a choice made before any
   // conversation exists is not dropped in silence, and persist it as soon as

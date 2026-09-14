@@ -96,10 +96,12 @@ export function makeGlmChat(getApiKey: () => string | null): ChatFn {
           }
 
           const chunk = JSON.parse(payload) as GlmChunk
+          // Accumulated only when asked — same guard as the other two adapters,
+          // so no provider can persist a trace nobody requested (DN3A.1).
           const thinkingPiece = chunk.choices?.[0]?.delta?.reasoning_content ?? ''
-          if (thinkingPiece !== '') {
+          if (thinkingPiece !== '' && onThinking !== undefined) {
             reasoningAssembled += thinkingPiece
-            onThinking?.(thinkingPiece)
+            onThinking(thinkingPiece)
           }
           const piece = chunk.choices?.[0]?.delta?.content ?? ''
           if (piece !== '') {

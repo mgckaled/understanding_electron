@@ -3,6 +3,7 @@ import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/typ
 import { UpstreamError } from '@core/ai/types'
 import { describeUpstreamError } from '@core/ai/upstreamError'
 import {
+  isCloudRoutedName,
   normalizeOllamaModel,
   normalizeOllamaRunning,
   type OllamaRunning,
@@ -98,6 +99,9 @@ export const ollamaModels: ModelsFn = async ({ signal }) => {
 
   const models: AiModel[] = []
   for (const tag of tags.models ?? []) {
+    // Dropped before it costs a /api/show, and before anything downstream can
+    // see it — the renderer is not the place for this (DN3A.4).
+    if (isCloudRoutedName(tag.name)) continue
     const show = await requestJson<OllamaShow>('/api/show', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -232,10 +236,13 @@ export const ollamaChat: ChatFn = async (
 
         // message.thinking is a sibling field, streamed before message.content
         // (docs.ollama.com/capabilities/thinking) — the two never share a piece.
+        // Accumulated only when asked: a model may stream `thinking` against a
+        // `think: false` it does not honour, and the trace would be persisted
+        // with the toggle off (DN3A.1).
         const thinkingPiece = parsed.message?.thinking ?? ''
-        if (thinkingPiece !== '') {
+        if (thinkingPiece !== '' && onThinking !== undefined) {
           reasoningAssembled += thinkingPiece
-          onThinking?.(thinkingPiece)
+          onThinking(thinkingPiece)
         }
         const piece = parsed.message?.content ?? ''
         if (piece !== '') {
