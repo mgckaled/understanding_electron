@@ -1,5 +1,8 @@
 import type { AiModel, ChatMessage, ChatReply, LoadedModel } from '@shared/ipc'
 
+/** How hard to think, where a level replaces the boolean. Orthogonal to `onThinking`, which stays the signal that reasoning is wanted (D21A.1, DN3D.1). */
+export type ThinkLevel = 'low' | 'medium' | 'high'
+
 // The single network-touching seam, injected by the caller (D9.2). core/ never
 // knows which provider fulfills it — the concrete adapters live in
 // main/features/ai/providers/. Same shape as mill.tools' make_llm_fn, and the
@@ -18,6 +21,8 @@ export type ChatFn = (
      * provider to think at all.
      */
     onThinking?: (text: string) => void
+    /** Set only for a model that rejects the boolean form; absent means the adapter sends its own (DN3D.2). */
+    thinkLevel?: ThinkLevel
     /**
      * A JSON Schema that constrains decoding (D19.3/D19.5) — the same schema
      * `core/ai/proposal.ts` later `.parse()`s the reply with. Ollama's own

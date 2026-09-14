@@ -258,6 +258,29 @@ describe('chat', () => {
     expect(result).toEqual({ ok: false, error: { kind: 'cancelled' } })
   })
 
+  it('passes the required level down for gpt-oss, and nothing for a model on the boolean', async () => {
+    const seen: (string | undefined)[] = []
+    const chatFn: ChatFn = async (_messages, { thinkLevel }) => {
+      seen.push(thinkLevel)
+      return { content: 'ok' }
+    }
+
+    await chat(
+      { service: 'ollama-cloud', model: 'gpt-oss:120b', messages, jobId: 'jt1' },
+      chatFn,
+      () => {},
+      resolveImageBytes
+    )
+    await chat(
+      { service: 'ollama-cloud', model: 'gemma4:31b', messages, jobId: 'jt2' },
+      chatFn,
+      () => {},
+      resolveImageBytes
+    )
+
+    expect(seen).toEqual(['low', undefined])
+  })
+
   it('materializes Message[] into ChatMessage[] before calling chatFn (D17.5)', async () => {
     let received: ChatMessage[] | undefined
     const chatFn: ChatFn = async (sentMessages) => {

@@ -1,5 +1,5 @@
 import type { ChatMessage, ChatReply, Result } from '@shared/ipc'
-import type { ChatFn } from '@core/ai/types'
+import type { ChatFn, ThinkLevel } from '@core/ai/types'
 import { runChat } from '@core/ai/chat'
 import type { PerformanceEvent } from '@core/observatory/performance'
 
@@ -23,7 +23,13 @@ export type ChatTiming = Pick<
  */
 export async function measureChatTiming(
   chatFn: ChatFn,
-  request: { messages: ChatMessage[]; model: string; numThread?: number; numCtx?: number },
+  request: {
+    messages: ChatMessage[]
+    model: string
+    numThread?: number
+    numCtx?: number
+    thinkLevel?: ThinkLevel
+  },
   opts: {
     signal?: AbortSignal
     onChunk?: (text: string) => void

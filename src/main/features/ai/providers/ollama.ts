@@ -229,7 +229,10 @@ async function requestStructuredChat(
 }
 
 export function makeOllamaChat(target: OllamaTarget): ChatFn {
-  return async (messages, { model, numThread, numCtx, signal, onChunk, onThinking, format }) => {
+  return async (
+    messages,
+    { model, numThread, numCtx, signal, onChunk, onThinking, thinkLevel, format }
+  ) => {
     const options = chatOptions(numThread, numCtx)
 
     if (format !== undefined) {
@@ -244,7 +247,9 @@ export function makeOllamaChat(target: OllamaTarget): ChatFn {
         messages,
         stream: true,
         // D21A.1: onThinking's presence is the request, not a separate flag.
-        think: onThinking !== undefined,
+        // A level replaces it wholesale for a model that rejects the boolean,
+        // off toggle included — it has no off, so the floor is cheapest (DN3D.3).
+        think: thinkLevel ?? onThinking !== undefined,
         ...(options === undefined ? {} : { options })
       }),
       signal

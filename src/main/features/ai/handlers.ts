@@ -13,6 +13,7 @@ import type {
 import type { ChatFn, LoadedFn, ModelsFn, ProbeFn, UnloadFn } from '@core/ai/types'
 import { UpstreamError } from '@core/ai/types'
 import { isCloudService, toChatMessagesWithImages } from '@core/ai/messages'
+import { requiredThinkLevel } from '@core/ai/models'
 import { ok, err } from '@core/result'
 import type { PerformanceEvent } from '@core/observatory/performance'
 import { countAttachments, type PrivacyEvent } from '@core/observatory/privacy'
@@ -151,9 +152,12 @@ export async function chat(
     if (isCloudService(service)) {
       recordPrivacy?.({ service, model, ...countAttachments(messages) })
     }
+    // Sent even with reasoning off: gpt-oss ignores the boolean and would then
+    // think at its default level, 7x the tokens for the same answer (DN3D.3).
+    const thinkLevel = requiredThinkLevel(model) ?? undefined
     const { result, timing } = await measureChatTiming(
       chatFn,
-      { messages: chatMessages, model, numThread, numCtx },
+      { messages: chatMessages, model, numThread, numCtx, thinkLevel },
       { signal: controller.signal, onChunk, onThinking }
     )
     if (timing !== null) recordPerformance?.({ service, model, ...timing })

@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { ChatMessage, ChatReply, Result } from '@shared/ipc'
 import { ok, err } from '../result'
-import type { ChatFn } from './types'
+import type { ChatFn, ThinkLevel } from './types'
 
 // Pure orchestration around the injected network seam: owns only the cancelled
 // short-circuit. HTTP and network failures thrown by ChatFn propagate to the
@@ -9,7 +9,13 @@ import type { ChatFn } from './types'
 // timeout).
 export async function runChat(
   chat: ChatFn,
-  request: { messages: ChatMessage[]; model: string; numThread?: number; numCtx?: number },
+  request: {
+    messages: ChatMessage[]
+    model: string
+    numThread?: number
+    numCtx?: number
+    thinkLevel?: ThinkLevel
+  },
   opts: {
     signal?: AbortSignal
     onChunk?: (text: string) => void
@@ -22,6 +28,7 @@ export async function runChat(
     model: request.model,
     numThread: request.numThread,
     numCtx: request.numCtx,
+    thinkLevel: request.thinkLevel,
     signal: opts.signal,
     onChunk: opts.onChunk,
     onThinking: opts.onThinking

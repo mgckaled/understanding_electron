@@ -7,6 +7,7 @@ import {
   findEmbedders,
   hasCapability,
   isCloudRoutedName,
+  requiredThinkLevel,
   normalizeOllamaModel,
   normalizeOllamaRunning,
   type OllamaShow,
@@ -487,5 +488,21 @@ describe('isCloudRoutedName', () => {
     expect(isCloudRoutedName('qwen3.5:4b')).toBe(false)
     expect(isCloudRoutedName('gemma3:4b')).toBe(false)
     expect(isCloudRoutedName('cloud-analyst:latest')).toBe(false)
+  })
+})
+
+describe('requiredThinkLevel', () => {
+  it('floors the gpt-oss family at low, tagged or bare', () => {
+    expect(requiredThinkLevel('gpt-oss:120b')).toBe('low')
+    expect(requiredThinkLevel('gpt-oss:20b')).toBe('low')
+    expect(requiredThinkLevel('gpt-oss')).toBe('low')
+  })
+
+  // A thinking model that takes the boolean must NOT be forced onto a level:
+  // both qwen3.5 report `thinking` and honour think: false today (DN3D.2).
+  it('leaves every other model on the boolean form', () => {
+    expect(requiredThinkLevel('qwen3.5:4b')).toBeNull()
+    expect(requiredThinkLevel('gemma4:31b')).toBeNull()
+    expect(requiredThinkLevel('gpt-oss-clone:latest')).toBeNull()
   })
 })
