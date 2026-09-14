@@ -3,6 +3,7 @@
 > Anexo de [`README.md`](README.md). Bateria de qualidade rodada em 13/09/2026, **n=1 por célula** salvo onde indicado. Velocidade e cota estão em [`desempenho.md`](desempenho.md); esta página responde outra pergunta — **qual modelo escolher**, que velocidade sozinha não responde.
 >
 > ✅ **A resposta está em § 5: dois — `gemma4:31b` e `gpt-oss:120b`.** As seções 1–4 são a evidência que levou até lá, e continuam sendo o método a repetir quando o catálogo mudar.
+> ⛔ **Consumido em 14/09/2026** — leitura histórica. Donos vivos: skill [`ai`](../../../.claude/skills/ai/SKILL.md) (regra) e [`reference/models/cloud-optin.md`](../models/cloud-optin.md) (ficha). Ver [`README.md`](README.md).
 
 ⚠️ **A régua desta página não é "qual é o melhor modelo", é "qual serve a este app".** O crivo responde sobre **o arquivo que o usuário anexou** e sobre **a documentação que ele consultou**. Um modelo que preenche lacunas com o plausível é pior aqui do que um modelo lento, e foi isso que a bateria procurou separar.
 

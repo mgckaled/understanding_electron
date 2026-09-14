@@ -1,6 +1,7 @@
 # Ollama Cloud — desempenho e custo de cota
 
 > Anexo de [`README.md`](README.md). Medido do lado do cliente, desta máquina, em 13/09/2026. São **ordens de grandeza comparáveis**, não benchmark controlado: a latência da rede local entra em todos os números.
+> ⛔ **Consumido em 14/09/2026** — leitura histórica. Donos vivos: skill [`ai`](../../../.claude/skills/ai/SKILL.md) (regra) e [`reference/models/cloud-optin.md`](../models/cloud-optin.md) (ficha). Ver [`README.md`](README.md).
 
 ---
 

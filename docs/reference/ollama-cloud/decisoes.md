@@ -1,6 +1,7 @@
 # Ollama Cloud — as 32 decisões
 
 > Anexo de [`README.md`](README.md). Todas fechadas em **13/09/2026**, **antes de existir código** — mesma forma das `DM-<n>` do arco 23 ([`reference/context7/decisoes.md`](../context7/decisoes.md)). Consulta por `Grep` na sigla `DNC-<n>`. **Não `Read` inteiro.**
+> ⛔ **Consumido em 14/09/2026** — leitura histórica. Donos vivos: skill [`ai`](../../../.claude/skills/ai/SKILL.md) (regra) e [`reference/models/cloud-optin.md`](../models/cloud-optin.md) (ficha). Ver [`README.md`](README.md).
 
 ⚠️ **A sigla é `DNC-<n>`, com hífen, e isso não é estética.** `DN1A.3` (ponto) é decisão tomada **dentro** do plano `N-1-A`; `DNC-<n>` (hífen) é decisão tomada **antes** de qualquer plano existir, e por isso não entra no [`DECISOES.md`](../../DECISOES.md) — que indexa decisão de plano. Quando um corte da N-3 executar, ele produz as suas próprias `D<id>.<n>`, e **é lá que a errata desta lista vai morar**.
 

@@ -1,6 +1,7 @@
 # Ollama Cloud — a API, endpoint a endpoint
 
 > Anexo de [`README.md`](README.md). Tudo aqui é **medido** contra `https://ollama.com` em 13/09/2026. Contexto, fronteira e metodologia estão no README.
+> ⛔ **Consumido em 14/09/2026** — leitura histórica. Donos vivos: skill [`ai`](../../../.claude/skills/ai/SKILL.md) (regra) e [`reference/models/cloud-optin.md`](../models/cloud-optin.md) (ficha). Ver [`README.md`](README.md).
 
 ---
 

@@ -15,13 +15,14 @@ Companheiro deste arquivo: [`ollama-qualified.md`](ollama-qualified.md) e [`olla
 1. [`gemini-3.5-flash-lite`](#gemini-35-flash-lite) (Google)
 2. [`gemini-3.7-flash`](#gemini-37-flash) (Google)
 3. [`glm-4.7-flash`](#glm-47-flash) (Zai)
+4. [Ollama Cloud — `gemma4:31b` e `gpt-oss:120b`](#ollama-cloud--gemma431b-e-gpt-oss120b) (N-3)
 
 **Elegíveis, via provedor terceirizado**
 
-4. [Kimi K2 (via Groq)](#kimi-k2-via-groq)
-5. [Qwen3 32B (via Groq)](#qwen3-32b-via-groq)
-6. [DeepSeek-V3.2 (via SambaNova)](#deepseek-v32-via-sambanova)
-7. [GPT-OSS-120B (via Cerebras)](#gpt-oss-120b-via-cerebras)
+5. [Kimi K2 (via Groq)](#kimi-k2-via-groq)
+6. [Qwen3 32B (via Groq)](#qwen3-32b-via-groq)
+7. [DeepSeek-V3.2 (via SambaNova)](#deepseek-v32-via-sambanova)
+8. [GPT-OSS-120B (via Cerebras)](#gpt-oss-120b-via-cerebras)
 
 ---
 
@@ -37,7 +38,7 @@ Nuvem não tem `/api/show`: não há modelo para baixar, sondar e devolver `mode
 
 ## Comparativo rápido
 
-Cobre só o trio integrado — os quatro elegíveis via provedor terceirizado têm tabela própria em cada subseção abaixo, não repetida aqui.
+Cobre só o trio integrado **por API de fabricante** — os dois do Ollama Cloud (N-3) e os quatro elegíveis via provedor terceirizado têm tabela própria em cada seção abaixo, não repetida aqui.
 
 | | `gemini-3.5-flash-lite` | `gemini-3.7-flash` | `glm-4.7-flash` |
 |---|---|---|---|
@@ -106,6 +107,34 @@ Um agregador terceiro, sem confirmação oficial, cita ~1 req/s e ~1.000 req/dia
 ⚠️ **Portal certo:** a chave sai do portal **internacional** (`z.ai/model-api` → `docs.z.ai`), não de `open.bigmodel.cn` (portal doméstico chinês, termos e faturamento diferentes) — mesma advertência já registrada no `README.md` do mill.tools (projeto irmão, mesmo desenvolvedor).
 
 **No app:** contexto de 200K é generoso o bastante para qualquer arquivo que o app processa hoje sem precisar resumir, e sem visão nem áudio a esbarrar na regra do nível 3 sobre imagem — texto puro é nível 1/2, sempre livre. **Não ver imagem** é, aqui, uma vantagem de simplicidade: nenhuma tensão equivalente à do `gemini-2.5-flash`. A limitação real é a concorrência de 1 — o app não pode disparar duas chamadas simultâneas contra este modelo (ex.: um passo do pipeline de dados narrando enquanto a conversa responde outra pergunta) sem enfileirar, o mesmo tipo de restrição de "um modelo residente por vez" que já disciplina o Ollama nesta máquina ([`CLAUDE.md`](../../../CLAUDE.md#ambiente-de-desenvolvimento)), por um motivo diferente (fila do provedor, não RAM local).
+
+---
+
+## Ollama Cloud — `gemma4:31b` e `gpt-oss:120b`
+
+> Integrados na trilha **N-3** (13–14/09/2026). Ficha **viva**: a narrativa da sondagem que os escolheu — 82 requisições, a bateria de quatro tarefas, as quatro rejeições com motivo — ficou em [`reference/ollama-cloud/`](../ollama-cloud/README.md), marcada `⛔ consumido`. O que decide código está na skill [`ai`](../../../.claude/skills/ai/SKILL.md); o que decide **escolha de modelo** está aqui.
+
+O que os separa dos cinco acima: são servidos pela **mesma API do daemon local** (`https://ollama.com`, `Authorization: Bearer`), então o catálogo é **sondado** por `/api/tags` + `/api/show` em vez de escrito à mão — o primeiro provedor de nuvem do app com `capabilities` e teto **medidos**.
+
+| | `gemma4:31b` | `gpt-oss:120b` |
+|---|---|---|
+| Papel | **o padrão** — vence ou empata nas quatro tarefas da bateria | o segundo, pela capacidade bruta |
+| Parâmetros | 32,7 B | 116,8 B |
+| Contexto | 262.144 | 131.072 |
+| `capabilities` | completion · thinking · tools · **vision** | completion · thinking · tools |
+| Velocidade medida | 61,5 tok/s | **315,5 tok/s** — ~8× o melhor local |
+| Raciocínio | respeita `think: false` | **exige nível** (`low`/`medium`/`high`), fixado em `medium` — o default do próprio modelo (`DN3E.1`) |
+| Ressalva | — | aciona ferramenta de forma **inconsistente**; não morde enquanto o app não tiver loop de ferramenta |
+
+**Três fatos que valem para os dois, e que o código já assume:**
+
+- **Não custam RAM local.** `attention: null` e `sizeBytes: 0` são **forçados** pelo normalizador, nunca herdados (`DNC-6`): a nuvem hoje não publica atenção, e um modelo que passasse a publicá-la faria o app orçar RAM local para quem não usa nenhuma. `sizeBytes` herdado exibiria 13,7 GB de disco que não existe.
+- **Sem chave não há linha no seletor.** O catálogo é público, mas sondá-lo no boot faria o app falar com terceiro sem opt-in (`DN3C.7`) — a descoberta acontece no campo de chave em Configurações.
+- **Não há indicador de cota, e é a forma final** (`DNC-15`): a API não manda header de saldo, e o painel da conta não permite atribuição por lote — quatro leituras no mesmo período deram taxas por requisição que variam sem correlação com o peso. Ordem de grandeza medida: **82 requisições de uso pesado = 2,2 %** da cota mensal.
+
+⚠️ **Retenção é política, não garantia técnica.** A FAQ oficial diz que processam prompts e respostas para servir, mas **não armazenam, não registram e não treinam** com o conteúdo. Isso não substitui o que o [`ESCOPO.md`](../../ESCOPO.md) exige: os três níveis seguem opt-in por anexo, porque essa garantia é do app e mora em `core/`.
+
+⚠️ **A lista de modelos é fixa e envelhece de propósito** (`OLLAMA_CLOUD_MODEL_NAMES`, `core/ai/models.ts`): `/api/tags` traz 20 modelos, 14 respondem **402**, e o catálogo autenticado é idêntico ao anônimo — nada na API separa os gratuitos. Um modelo que suma não aparece; um modelo novo e bom **não entra sozinho**.
 
 ---
 
