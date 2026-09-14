@@ -9,6 +9,9 @@ import { makeOllamaCloudModels, makeOllamaCloudProbe } from './ollamaCloud'
 const TAGS = {
   models: [
     { name: 'gemma4:31b', size: 21_000_000_000, details: { parameter_size: '32.7B' } },
+    { name: 'gpt-oss:120b', size: 65_000_000_000, details: { parameter_size: '116.8B' } },
+    // Out by measurement, not oversight: HTTP 400 on every request with tools.
+    { name: 'gpt-oss:20b', size: 13_700_000_000, details: { parameter_size: '20.9B' } },
     // Paid tier: present in the catalog, answers 402 on use. The fixed list is
     // the only thing that tells it apart — the API does not.
     { name: 'deepseek-v4-pro:0813', size: 892_000_000_000, details: { parameter_size: '671B' } }
@@ -40,14 +43,14 @@ function stubCatalog(): ReturnType<typeof vi.fn> {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('the cloud catalog', () => {
-  it('spends one /api/show on the listed model and none on the paid one', async () => {
+  it('spends one /api/show per listed model and none on the rest', async () => {
     const fetchMock = stubCatalog()
 
     const models = await makeOllamaCloudModels(() => 'k')({})
 
-    // 1 + 1, not 1 + 20: the list filters BEFORE the probe (DNC-5).
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(models.map((model) => model.name)).toEqual(['gemma4:31b'])
+    // 1 + 2, not 1 + 20: the list filters BEFORE the probe (DNC-5).
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(models.map((model) => model.name)).toEqual(['gemma4:31b', 'gpt-oss:120b'])
   })
 
   it('forces attention and sizeBytes, and inherits the ceiling and capabilities', async () => {

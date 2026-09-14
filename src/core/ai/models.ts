@@ -72,10 +72,10 @@ export const GEMINI_MODELS: AiModel[] = [
  * the LOCAL daemon's cloud routing (`ollama run gpt-oss:120b-cloud`), while
  * the REST API answers to the bare name (docs.ollama.com/api/authentication).
  *
- * `gpt-oss:120b` is deliberately absent until N-3-D: it only accepts a
- * reasoning LEVEL, never the boolean this app sends today (DNC-12).
+ * `gpt-oss:20b` stays out for a measured reason, not an oversight: HTTP 400 on
+ * every request carrying `tools`, and dominated by the 120b without it (DNC-4).
  */
-export const OLLAMA_CLOUD_MODEL_NAMES = ['gemma4:31b'] as const
+export const OLLAMA_CLOUD_MODEL_NAMES = ['gemma4:31b', 'gpt-oss:120b'] as const
 
 /**
  * Like `normalizeOllamaModel`, but `attention` and `sizeBytes` are FORCED
