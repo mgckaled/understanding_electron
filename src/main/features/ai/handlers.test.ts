@@ -278,7 +278,7 @@ describe('chat', () => {
       resolveImageBytes
     )
 
-    expect(seen).toEqual(['low', undefined])
+    expect(seen).toEqual(['medium', undefined])
   })
 
   it('materializes Message[] into ChatMessage[] before calling chatFn (D17.5)', async () => {

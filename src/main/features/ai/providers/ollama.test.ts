@@ -248,14 +248,14 @@ describe('ollamaChat', () => {
   // so false would only buy the default level's 7x tokens (DN3D.3).
   it('sends the level instead of the boolean, reasoning on', async () => {
     const fetchMock = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
-    await ollamaChat(messages, { model: 'gpt-oss:120b', thinkLevel: 'low', onThinking: () => {} })
-    expect(requestBody(fetchMock).think).toBe('low')
+    await ollamaChat(messages, { model: 'gpt-oss:120b', thinkLevel: 'medium', onThinking: () => {} })
+    expect(requestBody(fetchMock).think).toBe('medium')
   })
 
   it('sends the level instead of the boolean, reasoning off', async () => {
     const fetchMock = stubChatStream(['{"message":{"content":"x"},"done":true}\n'])
-    await ollamaChat(messages, { model: 'gpt-oss:120b', thinkLevel: 'low' })
-    expect(requestBody(fetchMock).think).toBe('low')
+    await ollamaChat(messages, { model: 'gpt-oss:120b', thinkLevel: 'medium' })
+    expect(requestBody(fetchMock).think).toBe('medium')
   })
 
   it('forwards message.thinking to onThinking, separately from onChunk', async () => {

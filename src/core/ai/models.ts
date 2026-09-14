@@ -254,10 +254,11 @@ export function isCloudRoutedName(name: string): boolean {
 /**
  * The level a model requires instead of the boolean, or null (DN3D.2). Read by
  * NAME: `capabilities` reports only `thinking`, and gpt-oss ignores `true`/`false`.
- * `'low'` is the floor, never an off switch — that family cannot disable it.
+ * `'medium'` is the model's OWN default, not a floor: effort buys answer quality,
+ * not just trace length, so the app stops choosing for it until N-2 (DN3E.1).
  */
 export function requiredThinkLevel(name: string): ThinkLevel | null {
-  return /^gpt-oss(:|$)/.test(name) ? 'low' : null
+  return /^gpt-oss(:|$)/.test(name) ? 'medium' : null
 }
 
 /** Models the catalog declares `embedding` for (O-4, DO4.5) — takes whatever catalog the caller passes; it is the caller's job to have already dropped redundant variants (`dropRedundantVariants`), not this function's. */

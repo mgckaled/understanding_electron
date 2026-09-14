@@ -492,10 +492,10 @@ describe('isCloudRoutedName', () => {
 })
 
 describe('requiredThinkLevel', () => {
-  it('floors the gpt-oss family at low, tagged or bare', () => {
-    expect(requiredThinkLevel('gpt-oss:120b')).toBe('low')
-    expect(requiredThinkLevel('gpt-oss:20b')).toBe('low')
-    expect(requiredThinkLevel('gpt-oss')).toBe('low')
+  it('puts the gpt-oss family on its own default level, tagged or bare', () => {
+    expect(requiredThinkLevel('gpt-oss:120b')).toBe('medium')
+    expect(requiredThinkLevel('gpt-oss:20b')).toBe('medium')
+    expect(requiredThinkLevel('gpt-oss')).toBe('medium')
   })
 
   // A thinking model that takes the boolean must NOT be forced onto a level:
