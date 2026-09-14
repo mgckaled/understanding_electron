@@ -14,6 +14,7 @@ const SUMMARIES: PerformanceSummary[] = [
     avgDecodeMs: 2_930,
     avgInputTokensPerSec: 180.4,
     avgOutputTokensPerSec: 34.2,
+    avgTotalDurationMs: 3_100,
     medianOutputTokensPerSec: 33.1,
     p90OutputTokensPerSec: 40.5,
     maxLoadDurationMs: 48_000
@@ -26,6 +27,8 @@ const SUMMARIES: PerformanceSummary[] = [
     avgDecodeMs: 1_200,
     avgInputTokensPerSec: null,
     avgOutputTokensPerSec: 60,
+    // GLM reports no total of its own — the cell reads as absent, not as zero.
+    avgTotalDurationMs: null,
     medianOutputTokensPerSec: 58,
     p90OutputTokensPerSec: 70,
     maxLoadDurationMs: null
@@ -63,6 +66,7 @@ describe('PerformancePanel', () => {
     expect(ollamaRow).toHaveTextContent('180,4 tok/s')
     expect(ollamaRow).toHaveTextContent('34,2 tok/s')
     expect(ollamaRow).toHaveTextContent('48,0s')
+    expect(ollamaRow).toHaveTextContent('3,1s')
   })
 
   it('shows — for input tok/s and the load column when the bucket has no Ollama-native fields', async () => {

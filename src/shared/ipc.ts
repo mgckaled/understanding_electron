@@ -113,6 +113,8 @@ export type PerformanceSummary = {
   avgDecodeMs: number
   avgInputTokensPerSec: number | null
   avgOutputTokensPerSec: number
+  /** The provider's own total for the call, averaged — `null` where none reported it (DNC-20). */
+  avgTotalDurationMs: number | null
   medianOutputTokensPerSec: number
   p90OutputTokensPerSec: number
   maxLoadDurationMs: number | null

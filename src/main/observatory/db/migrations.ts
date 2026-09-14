@@ -68,4 +68,11 @@ const v4: Migration = (db) => {
   `)
 }
 
-export const migrations: readonly Migration[] = [v1, v2, v3, v4]
+// Same rung-not-edit rule as v3: a dev database with real rows already ran v2,
+// and the cloud reports this duration alone (DNC-20). Older rows keep NULL,
+// which is the true answer — that reply had no provider total recorded.
+const v5: Migration = (db) => {
+  db.exec(`ALTER TABLE performance_events ADD COLUMN total_duration_ms REAL;`)
+}
+
+export const migrations: readonly Migration[] = [v1, v2, v3, v4, v5]

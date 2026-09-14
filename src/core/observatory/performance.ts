@@ -115,6 +115,7 @@ export function summarizeByModel(rows: PerformanceRow[]): PerformanceSummary[] {
       avgDecodeMs: average(bucket.map((row) => row.decodeMs)),
       avgInputTokensPerSec: avgOf(bucket.map(inputTokensPerSec)),
       avgOutputTokensPerSec: average(outputRates),
+      avgTotalDurationMs: avgOf(bucket.map((row) => row.totalDurationMs)),
       medianOutputTokensPerSec: percentile(outputRates, 0.5),
       p90OutputTokensPerSec: percentile(outputRates, 0.9),
       maxLoadDurationMs: loads.length === 0 ? null : max(loads)

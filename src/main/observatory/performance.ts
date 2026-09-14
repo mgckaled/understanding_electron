@@ -6,8 +6,9 @@ export function recordPerformanceEvent(db: DatabaseSync, event: PerformanceEvent
   db.prepare(
     `INSERT INTO performance_events
        (service, model, prompt_tokens, eval_tokens, ttft_ms, decode_ms,
-        load_duration_ms, prompt_eval_duration_ms, native_eval_duration_ms, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        total_duration_ms, load_duration_ms, prompt_eval_duration_ms,
+        native_eval_duration_ms, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     event.service,
     event.model,
@@ -15,6 +16,7 @@ export function recordPerformanceEvent(db: DatabaseSync, event: PerformanceEvent
     event.evalTokens,
     event.ttftMs,
     event.decodeMs,
+    event.totalDurationMs ?? null,
     event.loadDurationMs ?? null,
     event.promptEvalDurationMs ?? null,
     event.nativeEvalDurationMs ?? null,
@@ -34,7 +36,8 @@ export function listPerformanceEvents(
   const rows = db
     .prepare(
       `SELECT id, service, model, prompt_tokens, eval_tokens, ttft_ms, decode_ms,
-              load_duration_ms, prompt_eval_duration_ms, native_eval_duration_ms, created_at
+              total_duration_ms, load_duration_ms, prompt_eval_duration_ms,
+              native_eval_duration_ms, created_at
        FROM performance_events
        WHERE created_at >= ?
        ORDER BY created_at DESC`
@@ -51,6 +54,8 @@ export function listPerformanceEvents(
     evalTokens: Number(row['eval_tokens']),
     ttftMs: Number(row['ttft_ms']),
     decodeMs: Number(row['decode_ms']),
+    totalDurationMs:
+      row['total_duration_ms'] === null ? undefined : Number(row['total_duration_ms']),
     loadDurationMs: row['load_duration_ms'] === null ? undefined : Number(row['load_duration_ms']),
     promptEvalDurationMs:
       row['prompt_eval_duration_ms'] === null ? undefined : Number(row['prompt_eval_duration_ms']),

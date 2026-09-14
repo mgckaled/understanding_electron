@@ -35,6 +35,8 @@ function PerformanceTable({ summaries }: { summaries: PerformanceSummary[] }): R
             {/* Three-way split promised in reference/observatory/README.md § 9.2: rede+prefill, decode, tokens/s. */}
             <th className={`${CELL} text-right`}>Rede+Prefill / Decode</th>
             <th className={`${CELL} text-right`}>Entrada / Saída tok/s</th>
+            {/* The provider's own total, next to our wall clock: the gap is the network (DNC-20). */}
+            <th className={`${CELL} text-right`}>Total (provedor)</th>
             <th className={`${CELL} text-right`}>Mediana saída</th>
             <th className={`${CELL} text-right`}>P90 saída</th>
             <th className={`${CELL} text-right`}>Carga (pico)</th>
@@ -67,6 +69,11 @@ function PerformanceTable({ summaries }: { summaries: PerformanceSummary[] }): R
                     {formatTokensPerSec(summary.avgOutputTokensPerSec)}
                   </span>
                 </div>
+              </td>
+              <td className={`${CELL} text-right font-mono text-text-faint`}>
+                {summary.avgTotalDurationMs === null
+                  ? '—'
+                  : formatDurationMs(summary.avgTotalDurationMs)}
               </td>
               <td className={`${CELL} text-right font-mono text-text-muted`}>
                 {formatTokensPerSec(summary.medianOutputTokensPerSec)}

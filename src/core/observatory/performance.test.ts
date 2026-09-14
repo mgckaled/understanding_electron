@@ -70,6 +70,18 @@ describe('summarizeByModel', () => {
     expect(summaries.map((s) => s.service).sort()).toEqual(['glm', 'ollama'])
   })
 
+  it('averages the provider total, and reports null where nobody reported one', () => {
+    const withTotal = summarizeByModel([
+      row({ id: 1, totalDurationMs: 2000 }),
+      row({ id: 2, totalDurationMs: 4000 }),
+      row({ id: 3 })
+    ])
+    // Averaged over the rows that HAVE it, never diluted by the one that does not.
+    expect(withTotal[0].avgTotalDurationMs).toBe(3000)
+
+    expect(summarizeByModel([row({ id: 4 })])[0].avgTotalDurationMs).toBeNull()
+  })
+
   it('reports null maxLoadDurationMs when no row in the bucket has it — never zero', () => {
     const [summary] = summarizeByModel([row({ loadDurationMs: undefined })])
     expect(summary.maxLoadDurationMs).toBeNull()

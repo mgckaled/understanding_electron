@@ -15,6 +15,7 @@ describe('recordPerformanceEvent / listPerformanceEvents', () => {
       evalTokens: 42,
       ttftMs: 120,
       decodeMs: 900,
+      totalDurationMs: 3_100,
       loadDurationMs: 48_000,
       promptEvalDurationMs: 80,
       nativeEvalDurationMs: 850
@@ -33,6 +34,7 @@ describe('recordPerformanceEvent / listPerformanceEvents', () => {
     const ollamaRow = rows.find((row) => row.service === 'ollama')
     expect(ollamaRow).toMatchObject({
       promptTokens: 512,
+      totalDurationMs: 3_100,
       loadDurationMs: 48_000,
       promptEvalDurationMs: 80
     })
@@ -40,6 +42,7 @@ describe('recordPerformanceEvent / listPerformanceEvents', () => {
     const cloudRow = rows.find((row) => row.service === 'glm')
     expect(cloudRow?.promptTokens).toBeUndefined()
     expect(cloudRow?.loadDurationMs).toBeUndefined()
+    expect(cloudRow?.totalDurationMs).toBeUndefined()
   })
 
   it('filters by retentionDays at read time (DO6.7(b)-equivalent)', () => {
@@ -79,5 +82,22 @@ describe('recordPerformanceEvent / listPerformanceEvents', () => {
     // Backfilled NULL, not an error and not a fabricated 0 — the row predates
     // promptTokens existing at all.
     expect(rows[0].promptTokens).toBeUndefined()
+  })
+
+  it('v5 climbs over a database that already ran v1..v4 with a real row in it', () => {
+    const db = new DatabaseSync(':memory:')
+    migrate(db, migrations.slice(0, 4))
+    db.prepare(
+      `INSERT INTO performance_events (service, model, eval_tokens, ttft_ms, decode_ms, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run('ollama', 'gemma3:4b', 100, 400, 1500, Date.now())
+
+    migrate(db, migrations)
+
+    const rows = listPerformanceEvents(db, 30)
+    expect(rows).toHaveLength(1)
+    // NULL, not 0: that reply had no provider total recorded, and a zero would
+    // be averaged into the panel as an instant answer.
+    expect(rows[0].totalDurationMs).toBeUndefined()
   })
 })
