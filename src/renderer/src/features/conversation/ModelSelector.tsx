@@ -27,7 +27,12 @@ const GROUP_LABEL =
 // ⚠️ `min-w-[0px]`, never `min-w-0`: the project sets `--spacing-*: initial`
 // and redeclares only steps 1-9, so every step-0 utility emits no CSS at all.
 const ROW = 'flex cursor-pointer items-center gap-3 rounded-md border px-4 py-2'
-const ROW_NAME = 'min-w-[0px] flex-1 truncate font-ui text-md'
+// ⚠️ Fixed width, NOT `flex-1`: with the name growing, all the row's slack goes
+// to it, so the metadata column slides left or right with the CHIP COUNT and
+// the chips end up flush right — measured on screen, the very alignment DNC-28
+// exists to avoid. Two fixed columns before the chips is what puts their left
+// edge at the same x on every row.
+const ROW_NAME = 'w-[160px] flex-none truncate font-ui text-md'
 
 /**
  * Which row is highlighted, in the one shape both groups share (DNC-29). A
@@ -48,7 +53,7 @@ const rowHighlight = (on: boolean): string =>
  *  right-aligned inside a fixed width so the chip column lines up. */
 function RowMeta({ items }: { items: React.ReactNode[] }): React.JSX.Element {
   return (
-    <span className="flex w-[170px] flex-none items-center justify-end gap-2 text-2xs text-text-muted group-disabled:opacity-40">
+    <span className="flex w-[160px] flex-none items-center justify-end gap-2 text-2xs text-text-muted group-disabled:opacity-40">
       {items.map((item, index) => (
         <Fragment key={index}>
           {index > 0 && <span aria-hidden="true">·</span>}
