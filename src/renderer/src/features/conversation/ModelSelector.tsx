@@ -280,18 +280,20 @@ function ModelPicker({
           const ready = cloudReadyFor[model.provider] ?? false
           const chips = capabilityChips(model)
           const rateLimit = model.rateLimit
-          // The RPM·TPM·RPD tripod is administration — nobody picks a model by
-          // RPD — so it moves to the hover (DNC-25), while a concurrency cap is
-          // short and stays on the line (DN3B.3). The key hint wins the `title`
-          // whenever the row is disabled: it is the only actionable of the two,
-          // and the row already owned that attribute since N-1-B (DN3B.2).
-          const tripod = rateLimit?.kind === 'rate' ? formatRateLimit(rateLimit) : undefined
+          // The free-tier limit is administration — nobody picks a model by RPD
+          // — so it moves to the hover, WHATEVER its shape (DNC-25, DN3B.3
+          // reversed live): splitting by `kind` split one fact into two rules,
+          // and left the one concurrency row longer than every line beside it.
+          // The key hint wins the `title` whenever the row is disabled: it is
+          // the only actionable of the two, and the row already owned that
+          // attribute since N-1-B (DN3B.2).
+          const limit = rateLimit === undefined ? undefined : formatRateLimit(rateLimit)
           return (
             <button
               key={model.name}
               type="button"
               disabled={!ready}
-              title={ready ? tripod : cloudHintFor[model.provider]}
+              title={ready ? limit : cloudHintFor[model.provider]}
               onClick={() => {
                 onSelect(model.name)
                 setOpen(false)
@@ -307,12 +309,9 @@ function ModelPicker({
               {/* `até <n>k` in both groups (DNC-26): "de contexto" was a second
                   grammar for the same fact, one list apart from the first. */}
               <RowMeta
-                items={[
-                  ...(model.contextLength !== null
-                    ? [`até ${formatContext(model.contextLength)}`]
-                    : []),
-                  ...(rateLimit?.kind === 'concurrency' ? [formatRateLimit(rateLimit)] : [])
-                ]}
+                items={
+                  model.contextLength === null ? [] : [`até ${formatContext(model.contextLength)}`]
+                }
               />
               {/* CapabilityChip sets its own color/background, so disabled:text-*
                   can't reach it — group-disabled:opacity fades the chips instead. */}

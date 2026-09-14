@@ -42,12 +42,15 @@ const CODER: AiModel = {
  * overriding `secrets.has` after `mount()` returns is already too late — the
  * query already captured the default `false` (N-1-C).
  */
-function mount(geminiReady = false): Api {
+function mount(geminiReady = false, glmReady = false): Api {
   const api = installApiMock()
   vi.mocked(api.ai.isAvailable).mockResolvedValue(ready)
   vi.mocked(api.ai.models).mockResolvedValue({ ok: true, value: [TEST_MODEL, CODER] })
   vi.mocked(api.ai.chat).mockResolvedValue({ ok: true, value: { content: 'pronto' } })
-  if (geminiReady) vi.mocked(api.secrets.has).mockImplementation(async (p) => p === 'gemini')
+  if (geminiReady || glmReady)
+    vi.mocked(api.secrets.has).mockImplementation(
+      async (p) => (p === 'gemini' && geminiReady) || (p === 'glm' && glmReady)
+    )
   render(
     providers(
       <>
@@ -139,9 +142,11 @@ describe('ModelSelector', () => {
     // "de contexto" suffix is gone: both groups say "até <n>k" now (DNC-26).
     expect(glm).toHaveTextContent('até 195k')
     expect(glm).not.toHaveTextContent('de contexto')
-    // A concurrency cap is short and stays on the line; only the RPM·TPM·RPD
-    // tripod moves to the hover (DN3B.3).
-    expect(glm).toHaveTextContent('1 simultânea')
+    // No free-tier limit on the line, whatever its shape: a concurrency cap is
+    // the same class of fact as the RPM·TPM·RPD tripod, and splitting them by
+    // `kind` left this one row longer than every line beside it (DN3B.3,
+    // reversed against the live screen).
+    expect(glm).not.toHaveTextContent('simultânea')
 
     // Not a selectable option: the arrow-key listbox is scoped to Locais.
     expect(
@@ -178,6 +183,18 @@ describe('ModelSelector', () => {
     expect(flashLite).not.toHaveTextContent('15 RPM')
     expect(flashLite).toHaveAttribute('title', '15 RPM · 250k TPM · 500 RPD')
     expect(flash).toHaveAttribute('title', '5 RPM · 250k TPM · 20 RPD')
+  })
+
+  it('puts a concurrency cap in the title too, not only the tripod (DN3B.3)', async () => {
+    // The one row whose limit is not a tripod, with a key so nothing else
+    // claims its `title`.
+    const user = userEvent.setup()
+    mount(false, true)
+    await user.click(await modelTrigger())
+
+    const glm = await screen.findByRole('button', { name: /glm-4\.7-flash/, hidden: true })
+    expect(glm).toBeEnabled()
+    expect(glm).toHaveAttribute('title', '1 simultânea')
   })
 
   it('highlights exactly one row, whatever the arrows and the mouse do (DNC-29)', async () => {
